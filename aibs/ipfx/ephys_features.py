@@ -1274,6 +1274,39 @@ def find_stim_start(stim, idx0=0):
     
     return idxs[0]+1
 
+def find_stim_window(stim, idx0=0):
+    """ 
+    Find the index of the first nonzero positive or negative jump in an array and the number of timesteps until the last such jump.
+
+    Parameters
+    ----------
+    stim: np.ndarray
+        Array to be searched
+
+    idx0: int
+        Start searching with this index (default: 0).
+
+    Returns
+    -------
+    start_index, duration
+    """
+
+    di = np.diff(stim)
+    idxs = np.flatnonzero(di)
+    idxs = idxs[idxs >= idx0]
+    
+    if len(idxs) == 0:
+        return -1, 0
+
+    stim_start = idxs[0]+1
+
+    if len(idxs) == 1:
+        return stim_start, len(stim)-stim_start
+
+    stim_end = idxs[-1]+1
+
+    return stim_start, stim_end - stim_start
+
 def find_stim_start_old(idx0, stim):
     # find stim start, using adaptation of nathan's numpy algorithm
     di = np.diff(stim)

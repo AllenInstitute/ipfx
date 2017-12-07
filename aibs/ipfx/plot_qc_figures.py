@@ -1,21 +1,12 @@
 import matplotlib
-
 matplotlib.use('agg')
 
 import logging
 
-import allensdk.internal.core.lims_utilities as lims_utilities
-import allensdk.core.json_utilities as json_utilities
+import aibs.ipfx.ephys_features as ft
+import aibs.ipfx.experiment_features as exft
 
-from allensdk.core.nwb_data_set import NwbDataSet
-import allensdk.ephys.ephys_features as ft
-from allensdk.ephys.extract_cell_features import get_square_stim_characteristics, get_ramp_stim_characteristics, get_stim_characteristics
-
-import sys
-import argparse
 import os
-import json
-import h5py
 import numpy as np
 
 from scipy.optimize import curve_fit
@@ -24,7 +15,9 @@ import scipy.misc
 
 import datetime
 import matplotlib.pyplot as plt
+import glob
 #import seaborn as sns
+
 
 AXIS_Y_RANGE = [ -110, 60 ]
 
@@ -40,9 +33,8 @@ def get_features(sweep_features, sweep_number):
     except KeyError:
         return sweep_features[str(sweep_number)]
 
-def load_experiment(file_name, sweep_number):
-    ds = NwbDataSet(file_name)
-    sweep = ds.get_sweep(sweep_number)
+def load_sweep(data_set, sweep_number):
+    sweep = data_set.sweep(sweep_number)
     
     r = sweep['index_range']
     v = sweep['response'] * 1e3
@@ -52,14 +44,14 @@ def load_experiment(file_name, sweep_number):
 
     return (v, i, t, r, dt)
 
-def plot_single_ap_values(nwb_file, sweep_numbers, lims_features, sweep_features, cell_features, type_name):
+def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features, cell_features, type_name):
     figs = [ plt.figure() for f in range(3+len(sweep_numbers)) ]
 
-    v, i, t, r, dt = load_experiment(nwb_file, sweep_numbers[0])
+    v, i, t, r, dt = load_sweep(data_set, sweep_numbers[0])
     if type_name == "short_square" or type_name == "long_square":
-        stim_start, stim_dur, stim_amp, start_idx, end_idx = get_square_stim_characteristics(i, t)
+        stim_start, stim_dur, stim_amp, start_idx, end_idx = exft.get_stim_characteristics(i, t)
     elif type_name == "ramp":
-        stim_start, start_idx = get_ramp_stim_characteristics(i, t)
+        stim_start, _, _, start_idx, _ = exft.get_stim_characteristics(i, t)
 
     gen_features = ["threshold", "peak", "trough", "fast_trough", "slow_trough"]
     voltage_features = ["threshold_v", "peak_v", "trough_v", "fast_trough_v", "slow_trough_v"]
@@ -120,7 +112,7 @@ def plot_single_ap_values(nwb_file, sweep_numbers, lims_features, sweep_features
     for index, sn in enumerate(sweep_numbers):
         plt.figure(figs[3 + index].number)
 
-        v, i, t, r, dt = load_experiment(nwb_file, sn)
+        v, i, t, r, dt = load_sweep(data_set, sn)
         plt.plot(t, v, color='black')
         plt.title(str(sn))
 
@@ -167,9 +159,9 @@ def plot_single_ap_values(nwb_file, sweep_numbers, lims_features, sweep_features
 
     return figs
 
-def plot_sweep_figures(nwb_file, ephys_roi_result, image_dir, sizes):
-    sweeps = ephys_roi_result["specimens"][0]["ephys_sweeps"]
-    vclamp_sweep_numbers = sorted([ s['sweep_number'] for s in sweeps if s['stimulus_units'] == 'Amps' or s['stimulus_units'] == 'pA' ])
+def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
+    iclamp_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True, passing_only=False)['sweep_number'].values
+    iclamp_sweep_numbers.sort()
 
     image_file_sets = {}
 
@@ -183,10 +175,10 @@ def plot_sweep_figures(nwb_file, ephys_roi_result, image_dir, sizes):
 
     b, a = sg.bessel(4, 0.1, "low")
 
-    for i, sweep_number in enumerate(vclamp_sweep_numbers):
+    for i, sweep_number in enumerate(iclamp_sweep_numbers):
         logging.info("plotting sweep %d" %  sweep_number)
         if i == 0:
-            v_init, i_init, t_init, r_init, dt_init = load_experiment(nwb_file, sweep_number)    
+            v_init, i_init, t_init, r_init, dt_init = load_sweep(data_set, sweep_number)    
 
             tp_fig = plt.figure()
             axTP = plt.gca()
@@ -221,7 +213,7 @@ def plot_sweep_figures(nwb_file, ephys_roi_result, image_dir, sizes):
             v_prev, i_prev, t_prev, r_prev = v_init, i_init, t_init, r_init
 
         else:
-            v, i, t, r, dt = load_experiment(nwb_file, sweep_number)    
+            v, i, t, r, dt = load_sweep(data_set, sweep_number)    
 
             tp_fig = plt.figure()
             axTP = plt.gca()
@@ -290,16 +282,11 @@ def save_figure(fig, image_name, image_set_name, image_dir, sizes, image_sets, s
     plt.close()
 
 
-def plot_images(ephys_roi_result, image_dir, sizes, image_sets):
-    wkfs = [ f for f in ephys_roi_result['well_known_files'] if f['filename'].endswith('tif') ]
-    
-    paths = [ os.path.join(f['storage_directory'], f['filename']) for f in wkfs ]
-
-    paths = [ lims_utilities.safe_system_path(p) for p in paths ]
-
+def plot_images(input_image_dir, output_image_dir, sizes, image_sets):
     image_set_name = "images"
     image_sets[image_set_name] = { size_name: [] for size_name in sizes }
 
+    paths = glob.glob(input_image_dir + "/*.tif")
     for i, path in enumerate(paths):
         image_data = plt.imread(path)
         image_data = np.array(image_data, dtype=np.float32)
@@ -324,7 +311,7 @@ def plot_images(ephys_roi_result, image_dir, sizes, image_sets):
             image_sets['images'][size_name].append(filename)
         
 
-def plot_subthreshold_long_square_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
+def plot_subthreshold_long_square_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     lsq_sweeps = cell_features["long_squares"]["sweeps"]
     sub_sweeps = cell_features["long_squares"]["subthreshold_sweeps"]
     tau_sweeps = cell_features["long_squares"]["subthreshold_membrane_property_sweeps"]
@@ -368,7 +355,7 @@ def plot_subthreshold_long_square_figures(nwb_file, cell_features, lims_features
     tau_figs = [ plt.figure() for i in range(len(tau_sweeps)) ]
 
     for index, s in enumerate(tau_sweeps):
-        v, i, t, r, dt = load_experiment(nwb_file, s)
+        v, i, t, r, dt = load_sweep(data_set, s)
         
         plt.figure(tau_figs[index].number)
         
@@ -383,7 +370,7 @@ def plot_subthreshold_long_square_figures(nwb_file, cell_features, lims_features
             if max_y < ylims[1]:
                 max_y = ylims[1]
 
-        stim_start, stim_dur, stim_amp, start_idx, end_idx = get_square_stim_characteristics(i, t)
+        stim_start, stim_dur, stim_amp, start_idx, end_idx = exft.get_stim_characteristics(i, t)
         plt.xlim(stim_start - 0.05, stim_start + stim_dur + 0.05)
         peak_idx = subthresh_dict[s]['peak_deflect'][1]
         peak_t = peak_idx*dt
@@ -401,20 +388,20 @@ def plot_subthreshold_long_square_figures(nwb_file, cell_features, lims_features
     for index, tau_fig in enumerate(tau_figs):
         save_figure(tau_figs[index], 'tau_%d' % index, 'subthreshold_long_squares', image_dir, sizes, cell_image_files)
 
-def plot_short_square_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
+def plot_short_square_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     repeat_amp = cell_features["short_squares"].get("stimulus_amplitude", None)
 
     if repeat_amp is not None:
         short_square_sweep_nums = [ s['id'] for s in cell_features["short_squares"]["common_amp_sweeps"] ]
 
-        figs = plot_single_ap_values(nwb_file, short_square_sweep_nums, 
+        figs = plot_single_ap_values(data_set, short_square_sweep_nums, 
                                      lims_features, sweep_features, cell_features, 
                                      "short_square") 
 
         for index, fig in enumerate(figs):
             save_figure(fig, 'short_squares_%d' % index, 'short_squares', image_dir, sizes, cell_image_files)
 
-        fig = plot_instantaneous_threshold_thumbnail(nwb_file, short_square_sweep_nums, 
+        fig = plot_instantaneous_threshold_thumbnail(data_set, short_square_sweep_nums, 
                                                      cell_features, lims_features, sweep_features)
 
         save_figure(fig, 'instantaneous_threshold_thumbnail', 'short_squares', image_dir, sizes, cell_image_files)
@@ -424,7 +411,7 @@ def plot_short_square_figures(nwb_file, cell_features, lims_features, sweep_feat
         logging.warning("No short square figures to plot.")
 
 
-def plot_instantaneous_threshold_thumbnail(nwb_file, sweep_numbers, cell_features, lims_features, sweep_features, color='red'):
+def plot_instantaneous_threshold_thumbnail(data_set, sweep_numbers, cell_features, lims_features, sweep_features, color='red'):
     min_sweep_number = None
     for sn in sorted(sweep_numbers):
         spikes = get_spikes(sweep_features, sn)
@@ -441,8 +428,8 @@ def plot_instantaneous_threshold_thumbnail(nwb_file, sweep_numbers, cell_feature
     ax.set_xlabel('')
     ax.set_ylabel('')
 
-    v, i, t, r, dt = load_experiment(nwb_file, sn)
-    stim_start, stim_dur, stim_amp, start_idx, end_idx = get_square_stim_characteristics(i, t)
+    v, i, t, r, dt = load_sweep(data_set, sn)
+    stim_start, stim_dur, stim_amp, start_idx, end_idx = exft.get_stim_characteristics(i, t)
 
     tstart = stim_start - 0.002
     tend = stim_start + stim_dur + 0.005
@@ -456,29 +443,29 @@ def plot_instantaneous_threshold_thumbnail(nwb_file, sweep_numbers, cell_feature
     return fig
 
 
-def plot_ramp_figures(nwb_file, cell_specimen, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
-    sweeps = cell_specimen['ephys_sweeps']
-    ramps_sweeps = [ s["sweep_number"] for s in sweeps if s["workflow_state"].endswith("passed") and s["ephys_stimulus"]["description"][:10] == "C1RP25PR1S"]
+def plot_ramp_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
+    ramps_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=exft.RAMP_NAMES)
+    ramps_sweeps = np.sort(ramps_sweeps['sweep_number'].values)
 
     figs = []
     if len(ramps_sweeps) > 0:
-        figs = plot_single_ap_values(nwb_file, ramps_sweeps, lims_features, sweep_features, cell_features, "ramp")
+        figs = plot_single_ap_values(data_set, ramps_sweeps, lims_features, sweep_features, cell_features, "ramp")
 
         for index, fig in enumerate(figs):
             save_figure(fig, 'ramps_%d' % index, 'ramps', image_dir, sizes, cell_image_files)            
 
-def plot_rheo_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
+def plot_rheo_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     rheo_sweeps = [ lims_features["rheobase_sweep_num"] ]
-    figs = plot_single_ap_values(nwb_file, rheo_sweeps, lims_features, sweep_features, cell_features, "long_square")
+    figs = plot_single_ap_values(data_set, rheo_sweeps, lims_features, sweep_features, cell_features, "long_square")
 
     for index, fig in enumerate(figs):
         save_figure(fig, 'rheo_%d' % index, 'rheo', image_dir, sizes, cell_image_files)            
 
-def plot_hero_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
+def plot_hero_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     fig = plt.figure()
-    v, i, t, r, dt = load_experiment(nwb_file, int(lims_features["thumbnail_sweep_num"]))
+    v, i, t, r, dt = load_sweep(data_set, int(lims_features["thumbnail_sweep_num"]))
     plt.plot(t, v, color='black')
-    stim_start, stim_dur, stim_amp, start_idx, end_idx = get_square_stim_characteristics(i, t)
+    stim_start, stim_dur, stim_amp, start_idx, end_idx = exft.get_stim_characteristics(i, t)
     plt.xlim(stim_start - 0.05, stim_start + stim_dur + 0.05)
     plt.ylim(-110, 50)
     spike_times = [spk['threshold_t'] for spk in get_spikes(sweep_features, lims_features["thumbnail_sweep_num"])]
@@ -518,21 +505,21 @@ def plot_hero_figures(nwb_file, cell_features, lims_features, sweep_features, im
 
     save_figure(fig, 'thumbnail_2', 'thumbnail', image_dir, sizes, cell_image_files)
 
-    summary_fig = plot_long_square_summary(nwb_file, cell_features, lims_features, sweep_features)
+    summary_fig = plot_long_square_summary(data_set, cell_features, lims_features, sweep_features)
     save_figure(summary_fig, 'ephys_summary', 'thumbnail', image_dir, sizes, cell_image_files, scalew=2)
 
 
-def plot_long_square_summary(nwb_file, cell_features, lims_features, sweep_features):
+def plot_long_square_summary(data_set, cell_features, lims_features, sweep_features):
     long_square_sweeps = cell_features['long_squares']['sweeps']
     long_square_sweep_numbers = [ int(s['id']) for s in long_square_sweeps ]
     
-    thumbnail_summary_fig = plot_sweep_set_summary(nwb_file, int(lims_features['thumbnail_sweep_num']), long_square_sweep_numbers)
+    thumbnail_summary_fig = plot_sweep_set_summary(data_set, int(lims_features['thumbnail_sweep_num']), long_square_sweep_numbers)
     plt.figure(thumbnail_summary_fig.number)
 
     return thumbnail_summary_fig
 
 
-def plot_fi_curve_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
+def plot_fi_curve_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     fig = plt.figure()
     fi_sorted = sorted(cell_features["long_squares"]["spiking_sweeps"], key=lambda s:s['stim_amp'])
     x = [d['stim_amp'] for d in fi_sorted]
@@ -546,8 +533,8 @@ def plot_fi_curve_figures(nwb_file, cell_features, lims_features, sweep_features
     rheo_hero_sweeps = [int(lims_features["rheobase_sweep_num"]), int(lims_features["thumbnail_sweep_num"])]
     rheo_hero_x = []
     for s in rheo_hero_sweeps:
-        v, i, t, r, dt = load_experiment(nwb_file, s)
-        stim_start, stim_dur, stim_amp, start_idx, end_idx = get_square_stim_characteristics(i, t)
+        v, i, t, r, dt = load_sweep(data_set, s)
+        stim_start, stim_dur, stim_amp, start_idx, end_idx = exft.get_stim_characteristics(i, t)
         rheo_hero_x.append(stim_amp)
     rheo_hero_y = [ len(get_spikes(sweep_features, s)) for s in rheo_hero_sweeps ]
     plt.scatter(rheo_hero_x, rheo_hero_y, zorder=20)
@@ -555,12 +542,12 @@ def plot_fi_curve_figures(nwb_file, cell_features, lims_features, sweep_features
 
     save_figure(fig, 'fi_curve', 'fi_curve', image_dir, sizes, cell_image_files, scalew=2)
 
-def plot_sag_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
+def plot_sag_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     fig = plt.figure()
     for d in cell_features["long_squares"]["subthreshold_sweeps"]:
         if d['peak_deflect'][0] == lims_features["vm_for_sag"]:
-            v, i, t, r, dt = load_experiment(nwb_file, int(d['id']))
-            stim_start, stim_dur, stim_amp, start_idx, end_idx = get_square_stim_characteristics(i, t)
+            v, i, t, r, dt = load_sweep(data_set, int(d['id']))
+            stim_start, stim_dur, stim_amp, start_idx, end_idx = exft.get_stim_characteristics(i, t)
             plt.plot(t, v, color='black')
             plt.scatter(d['peak_deflect'][1], d['peak_deflect'][0], color='red', zorder=10)
             #plt.plot([stim_start + stim_dur - 0.1, stim_start + stim_dur], [d['steady'], d['steady']], color='red', zorder=10)
@@ -573,8 +560,8 @@ def plot_sag_figures(nwb_file, cell_features, lims_features, sweep_features, ima
 def mask_nulls(data):
     data[0, np.equal(data[0,:], None) | np.equal(data[0,:],0)] = np.nan
 
-def plot_sweep_value_figures(cell_specimen, image_dir, sizes, cell_image_files):
-    sweeps = sorted(cell_specimen['ephys_sweeps'], key=lambda s: s['sweep_number'] )
+def plot_sweep_value_figures(sweeps, image_dir, sizes, cell_image_files):
+    sweeps = sweeps.sort_values('sweep_number').to_dict(orient='records')
     
     # plot bridge balance
     data = np.array([ [ s['bridge_balance_mohm'], s['sweep_number'] ] for s in sweeps ]).T
@@ -589,7 +576,7 @@ def plot_sweep_value_figures(cell_specimen, image_dir, sizes, cell_image_files):
     # plot pre_vm_mv, no blowout sweep
     data = np.array([ [ s['pre_vm_mv'], s['sweep_number'] ] 
                       for s in sweeps 
-                      if not s['ephys_stimulus']['description'].startswith('EXTPBLWOUT')]).T
+                      if not s['stimulus_code'].startswith('EXTPBLWOUT')]).T
     mask_nulls(data)
 
     fig = plt.figure()
@@ -608,44 +595,43 @@ def plot_sweep_value_figures(cell_specimen, image_dir, sizes, cell_image_files):
     
     save_figure(fig, 'leak', 'sweep_values', image_dir, sizes, cell_image_files, scalew=2)
 
-def plot_cell_figures(nwb_file, ephys_roi_result, image_dir, sizes):
+def plot_cell_figures(data_set, figure_data, image_dir, sizes):
     
     cell_image_files = {}
 
     plt.style.use('ggplot')
 
-    cell_specimen = ephys_roi_result["specimens"][0]
-    cell_features = cell_specimen["cell_ephys_features"]
-    lims_features = cell_specimen["ephys_features"][0]
-    sweep_features = cell_specimen["sweep_ephys_features"]
+    cell_features = figure_data['cell_features']
+    lims_features = figure_data['cell_record']
+    sweep_features = figure_data['sweep_features']
 
     logging.info("saving sweep feature figures")
-    plot_sweep_value_figures(cell_specimen, image_dir, sizes, cell_image_files)
+    plot_sweep_value_figures(data_set.sweep_table, image_dir, sizes, cell_image_files)
 
     logging.info("saving tau and vi figs")
-    plot_subthreshold_long_square_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+    plot_subthreshold_long_square_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
     
     logging.info("saving short square figs")
-    plot_short_square_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+    plot_short_square_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
     logging.info("saving ramps")
-    plot_ramp_figures(nwb_file, cell_specimen, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+    plot_ramp_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
     logging.info("saving rheo figs")
-    plot_rheo_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+    plot_rheo_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
     logging.info("saving thumbnail figs")
-    plot_hero_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+    plot_hero_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
     logging.info("saving fi curve figs")
-    plot_fi_curve_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+    plot_fi_curve_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
     logging.info("saving sag figs")
-    plot_sag_figures(nwb_file, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+    plot_sag_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
     return cell_image_files
 
-def plot_sweep_set_summary(nwb_file, highlight_sweep_number, sweep_numbers,
+def plot_sweep_set_summary(data_set, highlight_sweep_number, sweep_numbers,
                            highlight_color='#0779BE', background_color='#dddddd'):
 
     fig = plt.figure(frameon=False)
@@ -658,13 +644,13 @@ def plot_sweep_set_summary(nwb_file, highlight_sweep_number, sweep_numbers,
     ax.set_ylabel('')
 
     for sn in sweep_numbers:
-        v, i, t, r, dt = load_experiment(nwb_file, sn)
+        v, i, t, r, dt = load_sweep(data_set, sn)
         ax.plot(t, v, linewidth=0.5, color=background_color)
 
-    v, i, t, r, dt = load_experiment(nwb_file, highlight_sweep_number)
+    v, i, t, r, dt = load_sweep(data_set, highlight_sweep_number)
     plt.plot(t, v, linewidth=1, color=highlight_color)
 
-    stim_start, stim_dur, stim_amp, start_idx, end_idx = get_square_stim_characteristics(i, t)
+    stim_start, stim_dur, stim_amp, start_idx, end_idx = exft.get_stim_characteristics(i, t)
     
     tstart = stim_start - 0.05
     tend = stim_start + stim_dur + 0.25
@@ -701,27 +687,22 @@ def make_sweep_html(sweep_files, file_name):
     with open(file_name, 'w') as f:
         f.write(html)
 
-def make_cell_html(image_files, ephys_roi_result, file_name, relative_sweep_link):
+def make_cell_html(image_files, metadata, file_name, required_fields=( 'electrode_0_pa', 
+                                                                       'seal_gohm',
+                                                                       'initial_access_resistance_mohm',
+                                                                       'input_resistance_mohm' )):
 
     html = "<html><body>"
 
-    specimen = ephys_roi_result['specimens'][0]
-
-    html += "<h3>Specimen %d: %s</h3>" % ( specimen['id'],  specimen['name'] )
     html += "<p>page created at: %s</p>" % get_time_string()
 
-    if relative_sweep_link:
-        html += "<p><a href='sweep.html' target='_blank'> Sweep QC Figures </a></p>"
-    else:
-        sweep_qc_link = '/'.join([ephys_roi_result['storage_directory'], 'qc_figures', 'sweep.html'])
-        sweep_qc_link = lims_utilities.safe_system_path(sweep_qc_link)
-        html += "<p><a href='%s' target='_blank'> Sweep QC Figures </a></p>" % sweep_qc_link
+    html += "<p><a href='sweep.html' target='_blank'> Sweep QC Figures </a></p>"
 
-    fields_to_show = [ 'electrode_0_pa', 'seal_gohm', 'initial_access_resistance_mohm', 'input_resistance_mohm' ]
+    fields = set(required_fields) | set(metadata.keys())
 
     html += "<table>"
-    for field in fields_to_show:
-        html += "<tr><td>%s</td><td>%s</td></tr>" % (field, ephys_roi_result.get(field,None))
+    for field in sorted(fields):
+        html += "<tr><td>%s</td><td>%s</td></tr>" % (field, metadata.get(field,None))
     html += "</table>"
 
     for image_file_set_name in image_files:
@@ -737,65 +718,33 @@ def make_cell_html(image_files, ephys_roi_result, file_name, relative_sweep_link
     with open(file_name, 'w') as f:
         f.write(html)
 
-def make_sweep_page(nwb_file, ephys_roi_result, working_dir):
+def make_sweep_page(data_set, feature_data, working_dir):
     sizes = { 'small': 2.0, 'large': 6.0 }
 
-    sweep_files = plot_sweep_figures(nwb_file, ephys_roi_result, working_dir, sizes)
-    make_sweep_html(sweep_files,
-                    os.path.join(working_dir, 'sweep.html'))
+    sweep_files = plot_sweep_figures(data_set, feature_data, working_dir, sizes)
+    sweep_page = os.path.join(working_dir, 'sweep.html')
+    make_sweep_html(sweep_files, sweep_page)
 
-def make_cell_page(nwb_file, ephys_roi_result, working_dir, save_cell_plots=True):
+    return sweep_page
 
+def make_cell_page(data_set, feature_data, working_dir, image_dir=".", save_cell_plots=True):
     if save_cell_plots:
         sizes = { 'small': 2.0, 'large': 6.0 }
-        cell_files = plot_cell_figures(nwb_file, ephys_roi_result, working_dir, sizes)
+        cell_files = plot_cell_figures(data_set, feature_data, working_dir, sizes)
     else:
         cell_files = {}
         
     logging.info("saving images")
     sizes = { 'small': 200, 'large': None }
-    plot_images(ephys_roi_result, working_dir, sizes, cell_files)
+    plot_images(image_dir, working_dir, sizes, cell_files)
 
-    sweep_page = os.path.join(working_dir, 'sweep.html')
-    relative_sweep_link = os.path.exists(sweep_page)
+    cell_page = os.path.join(working_dir, 'index.html')
+    make_cell_html(cell_files, feature_data['cell_record'], cell_page)
 
-    if not relative_sweep_link:
-        logging.info("sweep page doesn't exist, point to production sweep page")
-    
-    make_cell_html(cell_files, ephys_roi_result,
-                   os.path.join(working_dir, 'index.html'),
-                   relative_sweep_link)
+    return cell_page
 
 def exp_curve(x, a, inv_tau, y0):
     ''' Function used for tau curve fitting '''
     return y0 + a * np.exp(-inv_tau * x)
 
 
-def main():
-    parser = argparse.ArgumentParser(description='analyze specimens for cell-wide features')
-    parser.add_argument('nwb_file')
-    parser.add_argument('feature_json')
-    parser.add_argument('--output_directory', default='.')
-    parser.add_argument('--no-sweep-page', action='store_false', dest='sweep_page')
-    parser.add_argument('--no-cell-page', action='store_false', dest='cell_page')
-    parser.add_argument('--log_level')
-    
-
-    args = parser.parse_args()
-
-    if args.log_level:
-        logging.getLogger().setLevel(args.log_level)
-
-    ephys_roi_result = json_utilities.read(args.feature_json)
-
-    if args.sweep_page:
-        logging.debug("making sweep page")
-        make_sweep_page(args.nwb_file, ephys_roi_result, args.output_directory)
-
-    if args.cell_page:
-        logging.debug("making cell page")
-        make_cell_page(args.nwb_file, ephys_roi_result, args.output_directory, True)
-
-
-
-if __name__ == '__main__': main()

@@ -42,15 +42,6 @@ from collections import Counter
 from . import ephys_features as ft
 import six
 
-# Constants for stimulus-specific analysis
-RAMPS_START = 1.02
-LONG_SQUARES_START = 1.02
-LONG_SQUARES_END = 2.02
-SHORT_SQUARES_WINDOW_START = 1.02
-SHORT_SQUARES_WINDOW_END = 1.021
-SHORT_SQUARE_TRIPLE_WINDOW_START = 2.02
-SHORT_SQUARE_TRIPLE_WINDOW_END = 2.021
-
 class EphysSweepFeatureExtractor:
     """Feature calculation for a sweep (voltage and/or current time series)."""
 
@@ -745,7 +736,7 @@ class EphysCellFeatureExtractor:
 
         Parameters
         ----------
-        dataset : NwbDataSet
+        data_set : EphysDataSet
         ramps_ext : EphysSweepSetFeatureExtractor prepared with ramp sweeps
         short_squares_ext : EphysSweepSetFeatureExtractor prepared with short square sweeps
         long_squares_ext : EphysSweepSetFeatureExtractor prepared with long square sweeps
@@ -1015,85 +1006,13 @@ def fit_fi_slope(ext):
     return m
 
 
-def reset_long_squares_start(when):
-    global LONG_SQUARES_START, LONG_SQUARES_END
-    delta = LONG_SQUARES_END - LONG_SQUARES_START
-    LONG_SQUARES_START = when
-    LONG_SQUARES_END = when + delta
+#def reset_long_squares_start(when):
+#    global LONG_SQUARES_START, LONG_SQUARES_END
+#    delta = LONG_SQUARES_END - LONG_SQUARES_START
+#    LONG_SQUARES_START = when
+#    LONG_SQUARES_END = when + delta
 
 
-def cell_extractor_for_nwb(dataset, ramps, short_squares, long_squares, subthresh_min_amp=-100):
-    """Initialize EphysCellFeatureExtractor object from NWB data set
-
-    Parameters
-    ----------
-    dataset : NwbDataSet
-    ramps : list of sweep numbers of ramp sweeps
-    short_squares : list of sweep numbers of short square sweeps
-    long_squares : list of sweep numbers of long square sweeps
-    """
-
-    if len(short_squares) == 0:
-        raise ft.FeatureError("no short square sweep numbers provided")
-    if len(ramps) == 0:
-        raise ft.FeatureError("no ramp sweep numbers provided")
-    if len(long_squares) == 0:
-        raise ft.FeatureError("no long_square sweep numbers provided")
-
-    ramps_ext = extractor_for_nwb_sweeps(dataset, ramps, fixed_start=RAMPS_START)
-
-    temp_short_sq_ext = extractor_for_nwb_sweeps(dataset, short_squares)
-    t_set = [s.t for s in temp_short_sq_ext.sweeps()]
-    v_set = [s.v for s in temp_short_sq_ext.sweeps()]
-    cutoff, thresh_frac = ft.estimate_adjusted_detection_parameters(v_set, t_set,
-                                                                    SHORT_SQUARES_WINDOW_START,
-                                                                    SHORT_SQUARES_WINDOW_END)
-
-    thresh_frac = max(thresh_frac, 0.1)
-
-    short_squares_ext = extractor_for_nwb_sweeps(dataset, short_squares,
-                                                 dv_cutoff=cutoff, thresh_frac=thresh_frac)
-    long_squares_ext = extractor_for_nwb_sweeps(dataset, long_squares,
-                                                fixed_start=LONG_SQUARES_START,
-                                                fixed_end=LONG_SQUARES_END)
-
-    return EphysCellFeatureExtractor(ramps_ext, short_squares_ext, long_squares_ext, subthresh_min_amp)
-
-
-def extractor_for_nwb_sweeps(dataset, sweep_numbers,
-                             fixed_start=None, fixed_end=None,
-                             dv_cutoff=20., thresh_frac=0.05):
-    v_set = []
-    t_set = []
-    i_set = []
-
-    start = []
-    end = []
-
-    for sweep_number in sweep_numbers:
-        data = dataset.get_sweep(sweep_number)
-        v = data['response'] * 1e3 # mV
-        i = data['stimulus'] * 1e12 # pA
-        hz = data['sampling_rate']
-        dt = 1. / hz
-        t = np.arange(0, len(v)) * dt # sec
-
-        s, e = dt * np.array(data['index_range'])
-        v_set.append(v)
-        i_set.append(i)
-        t_set.append(t)
-        start.append(s)
-        end.append(e)
-
-    if fixed_start and not fixed_end:
-        start = [fixed_start] * len(end)
-    elif fixed_start and fixed_end:
-        start = fixed_start
-        end = fixed_end
-
-    return EphysSweepSetFeatureExtractor(t_set, v_set, i_set, start=start, end=end,
-                                         dv_cutoff=dv_cutoff, thresh_frac=thresh_frac,
-                                         id_set=sweep_numbers)
 
 
 def _step_stim_amp(sweep):
