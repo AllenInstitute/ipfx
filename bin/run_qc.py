@@ -11,9 +11,8 @@ import argparse
 import h5py
 
 from allensdk.internal.core.lims_pipeline_module import PipelineModule
-from allensdk.core.nwb_data_set import NwbDataSet
+from aibs.ipfx.mies_nwb.mies_data_set import MiesDataSet
 
-    
 def main(jin):
     # load QC criteria and sweep table from input json file
     try:
@@ -243,7 +242,12 @@ def main(jin):
 
     return jout
 
+def main():
+    
+
+
 if __name__ == "__main__": 
+    main()
     # read module input. PipelineModule object automatically parses the 
     #   command line to pull out input.json and output.json file names
     module = PipelineModule()

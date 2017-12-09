@@ -39,29 +39,18 @@ import six
 import pandas as pd
 from . import ephys_extractor as efex
 from . import ephys_features as ft
+from . import ephys_data_set as eds
 
 HERO_MIN_AMP_OFFSET = 39.0
 HERO_MAX_AMP_OFFSET = 61.0
 
-SHORT_SQUARE_NAMES = ( "Short Square",
-                       "Short Square - Hold -60mv",
-                       "Short Square - Hold -70mv",
-                       "Short Square - Hold -80mv" )
-
-SHORT_SQUARE_TRIPLE_NAMES = ( "Short Square - Triple", ) 
-
-LONG_SQUARE_NAMES = ( "Long Square", )
-COARSE_LONG_SQUARE_CODE_PREFIXES = ("C1LSCOARSE",)
-
-RAMP_NAMES = ( "Ramp", )
-
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
 DETECTION_PARAMETERS = {
-    SHORT_SQUARE_NAMES: { 'est_window': (1.02, 1.021), 'thresh_frac_floor': 0.1 },
-    SHORT_SQUARE_TRIPLE_NAMES: { 'est_window': (2.02, 2.021), 'thresh_frac_floor': 0.1 },
-    RAMP_NAMES: { 'fixed_start': 1.02 },
-    LONG_SQUARE_NAMES: { 'fixed_start': 1.02, 'fixed_end': 2.02 }
+    eds.SHORT_SQUARE: { 'est_window': (1.02, 1.021), 'thresh_frac_floor': 0.1 },
+    eds.SHORT_SQUARE_TRIPLE: { 'est_window': (2.02, 2.021), 'thresh_frac_floor': 0.1 },
+    eds.RAMP: { 'fixed_start': 1.02 },
+    eds.LONG_SQUARE: { 'fixed_start': 1.02, 'fixed_end': 2.02 }
 }   
 
 MEAN_FEATURES = [ "upstroke_downstroke_ratio", "peak_v", "peak_t", "trough_v", "trough_t",
@@ -98,15 +87,15 @@ def cell_extractor_for_data_set(data_set, ramps, short_squares, long_squares,
         raise ft.FeatureError("no long_square sweep numbers provided")
 
     if ramp_params is None:
-        ramp_params = DETECTION_PARAMETERS[RAMP_NAMES]
+        ramp_params = DETECTION_PARAMETERS[eds.RAMP]
     ramps_ext = extractor_for_data_set_sweeps(data_set, ramps, **ramp_params)
 
     if ssq_params is None:
-        ssq_params = DETECTION_PARAMETERS[SHORT_SQUARE_NAMES]
+        ssq_params = DETECTION_PARAMETERS[eds.SHORT_SQUARE]
     short_squares_ext = extractor_for_data_set_sweeps(data_set, short_squares, **ssq_params)
 
     if lsq_params is None:
-        lsq_params = DETECTION_PARAMETERS[LONG_SQUARE_NAMES]
+        lsq_params = DETECTION_PARAMETERS[eds.LONG_SQUARE]
     long_squares_ext = extractor_for_data_set_sweeps(data_set, long_squares, **lsq_params)
 
     return efex.EphysCellFeatureExtractor(ramps_ext, short_squares_ext, long_squares_ext, subthresh_min_amp)
@@ -443,7 +432,7 @@ def extract_experiment_features(data_set):
     logging.debug("Computing sweep features")
 
     # for logging purposes
-    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, passing_only=False)
+    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
     passed_iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, passing_only=True)
     logging.info("%d of %d current-clamp sweeps passed QC", len(passed_iclamp_sweeps), len(iclamp_sweeps))
 
@@ -452,10 +441,10 @@ def extract_experiment_features(data_set):
 
     # extract cell-level features
     logging.info("Computing cell features")
-    lsq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=LONG_SQUARE_NAMES)
-    ssq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=SHORT_SQUARE_NAMES)
-    ramp_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=RAMP_NAMES)
-    clsq_sweeps = data_set.filtered_sweep_table(passing_only=False, current_clamp_only=True, stimulus_code_prefixes=COARSE_LONG_SQUARE_CODE_PREFIXES)
+    lsq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.LONG_SQUARE_NAMES)
+    ssq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.SHORT_SQUARE_NAMES)
+    ramp_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.RAMP_NAMES)
+    clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimulus_codes=data_set.COARSE_LONG_SQUARE_CODES)
 
     lsq_sweep_numbers = lsq_sweeps['sweep_number'].sort_values().values
     clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values

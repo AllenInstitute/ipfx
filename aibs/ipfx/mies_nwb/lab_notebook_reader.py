@@ -165,13 +165,12 @@ class LabNotebookReaderIgorNwb(LabNotebookReader):
 
 # creates LabNotebookReader appropriate to ivscc-NWB file version
 def create_lab_notebook_reader(nwb_file, h5_file=None):
-    pass
-    h5 = h5py.File(nwb_file, "r")
-    if "general/labnotebook" in h5:
-        version = "IgorNwb"
-    else:
-        version = "IgorH5"
-    h5.close()
+    with h5py.File(nwb_file, "r") as h5:
+        if "general/labnotebook" in h5:
+            version = "IgorNwb"
+        else:
+            version = "IgorH5"
+
     if version == "IgorNwb":
         return LabNotebookReaderIgorNwb(nwb_file)
     elif version == "IgorH5":
