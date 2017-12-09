@@ -33,6 +33,7 @@ class EphysDataSet(object):
         self.bath_codes = ( 'EXTPINBATH', )
         self.seal_codes = ( 'EXTPCllATT', )
         self.breakin_codes = ( 'EXTPBREAKN', )
+        self.extp_codes = ( 'EXTP', )
 
         self.current_clamp_units = ( 'Amps', 'pA' )
 
