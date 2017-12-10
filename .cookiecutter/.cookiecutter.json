@@ -1,0 +1,13 @@
+{
+    "_template": "https://github.com/AllenInstitute/pyproject_template", 
+    "email": "davidf@alleninstitute.org", 
+    "full_name": "David Feng", 
+    "open_source_license": "Allen Institute Software License", 
+    "project_name": "ipfx", 
+    "project_namespace": "aibs", 
+    "project_short_description": "intrinsic physiology feature extractor", 
+    "project_slug": "ipfx", 
+    "repo_url": "https://github.com/AllenInstitute/aibs.ipfx", 
+    "user_name": "dyf", 
+    "version": "0.1.0"
+}

@@ -1,0 +1,11 @@
+default_context:
+  project_name: ipfx
+  repo_url: https://github.com/AllenInstitute/aibs.ipfx
+  project_slug: ipfx
+  project_short_description: intrinsic physiology feature extractor
+  project_namespace: aibs
+  version: 0.1.0
+  full_name: David Feng
+  user_name: dyf
+  email: davidf@alleninstitute.org
+  open_source_license: Allen Institute Software License
