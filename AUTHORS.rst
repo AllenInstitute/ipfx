@@ -5,7 +5,8 @@ Credits
 Development Lead
 ----------------
 
-* David Feng <davidf@alleninstitute.org>
+* David Feng <davidf@alleninstitute.org> @dyf
+* Nathan Gouwens <nathang@alleninstitute.org> @gouwens
 
 Contributors
 ------------
