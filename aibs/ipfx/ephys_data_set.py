@@ -1,3 +1,10 @@
+import json
+
+class EphysStimulusOntology(object):
+    def __init__(self, file_name):
+        with open(file_name,'r') as f:
+            self.mapping = json.load(f)
+
 
 class EphysDataSet(object):
     STIMULUS_NAME = 'stimulus_name'
@@ -12,8 +19,9 @@ class EphysDataSet(object):
     SHORT_SQUARE= 'short_square'
     RAMP = 'ramp'
     
-    def __init__(self):
+    def __init__(self, ontology=None):
         self.sweep_table = None
+        self.ontology = ontology
 
         self.ramp_codes = ( "C1RP", )
         self.ramp_names = ( "Ramp", )
@@ -51,7 +59,7 @@ class EphysDataSet(object):
             st = st[st[self.STIMULUS_NAME].isin(stimulus_names)]
 
         if stimulus_codes:
-            mask = st[self.STIMULUS_CODE].apply(self.stimulus_code_matches, args=stimulus_codes)
+            mask = st[self.STIMULUS_CODE].apply(self.stimulus_code_matches, args=(stimulus_codes,))
             st = st[mask]
 
         return st

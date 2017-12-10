@@ -34,6 +34,7 @@ class SweepExtractionParameters(ArgSchema):
     manual_seal_gohm = Float(description="blah")
     manual_initial_access_resistance_mohm = Float(description="blah")
     manual_initial_input_mohm = Float(description="blah") 
+    stimulus_ontology_file = InputFile(description="blash")
 
 class QcCriteria(DefaultSchema):
     pre_noise_rms_mv_max = Float(description="blash")
@@ -49,7 +50,7 @@ class QcCriteria(DefaultSchema):
     access_resistance_mohm_max = Float(description="blash")
 
 class CellFeatures(DefaultSchema):
-    blowout_mv = Float(description="blash")
+    blowout_mv = Float(description="blash", required=False, allow_none=True)
     seal_gohm = Float(description="blash")
     electrode_0_pa = Float(description="blash")
     input_access_resistance_ratio = Float(description="blash")

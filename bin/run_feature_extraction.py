@@ -20,7 +20,8 @@ from allensdk.config.manifest import Manifest
 import allensdk.core.json_utilities as ju
 
 class PipelineDataSet(EphysDataSet):
-    def __init__(self, sweep_list, file_name):
+    def __init__(self, sweep_list, file_name, ontology=None):
+        super(PipelineDataSet, self).__init__(ontology)
         self.sweep_list = sweep_list
         self.sweep_table = pd.DataFrame.from_records(self.sweep_list)
         self.data_set = NwbDataSet(file_name)

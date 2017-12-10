@@ -47,10 +47,10 @@ HERO_MAX_AMP_OFFSET = 61.0
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
 DETECTION_PARAMETERS = {
-    eds.SHORT_SQUARE: { 'est_window': (1.02, 1.021), 'thresh_frac_floor': 0.1 },
-    eds.SHORT_SQUARE_TRIPLE: { 'est_window': (2.02, 2.021), 'thresh_frac_floor': 0.1 },
-    eds.RAMP: { 'fixed_start': 1.02 },
-    eds.LONG_SQUARE: { 'fixed_start': 1.02, 'fixed_end': 2.02 }
+    eds.EphysDataSet.SHORT_SQUARE: { 'est_window': (1.02, 1.021), 'thresh_frac_floor': 0.1 },
+    eds.EphysDataSet.SHORT_SQUARE_TRIPLE: { 'est_window': (2.02, 2.021), 'thresh_frac_floor': 0.1 },
+    eds.EphysDataSet.RAMP: { 'fixed_start': 1.02 },
+    eds.EphysDataSet.LONG_SQUARE: { 'fixed_start': 1.02, 'fixed_end': 2.02 }
 }   
 
 MEAN_FEATURES = [ "upstroke_downstroke_ratio", "peak_v", "peak_t", "trough_v", "trough_t",
@@ -87,15 +87,15 @@ def cell_extractor_for_data_set(data_set, ramps, short_squares, long_squares,
         raise ft.FeatureError("no long_square sweep numbers provided")
 
     if ramp_params is None:
-        ramp_params = DETECTION_PARAMETERS[eds.RAMP]
+        ramp_params = DETECTION_PARAMETERS[data_set.RAMP]
     ramps_ext = extractor_for_data_set_sweeps(data_set, ramps, **ramp_params)
 
     if ssq_params is None:
-        ssq_params = DETECTION_PARAMETERS[eds.SHORT_SQUARE]
+        ssq_params = DETECTION_PARAMETERS[data_set.SHORT_SQUARE]
     short_squares_ext = extractor_for_data_set_sweeps(data_set, short_squares, **ssq_params)
 
     if lsq_params is None:
-        lsq_params = DETECTION_PARAMETERS[eds.LONG_SQUARE]
+        lsq_params = DETECTION_PARAMETERS[data_set.LONG_SQUARE]
     long_squares_ext = extractor_for_data_set_sweeps(data_set, long_squares, **lsq_params)
 
     return efex.EphysCellFeatureExtractor(ramps_ext, short_squares_ext, long_squares_ext, subthresh_min_amp)
@@ -441,10 +441,10 @@ def extract_experiment_features(data_set):
 
     # extract cell-level features
     logging.info("Computing cell features")
-    lsq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.LONG_SQUARE_NAMES)
-    ssq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.SHORT_SQUARE_NAMES)
-    ramp_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.RAMP_NAMES)
-    clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimulus_codes=data_set.COARSE_LONG_SQUARE_CODES)
+    lsq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.long_square_names)
+    ssq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.short_square_names)
+    ramp_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.ramp_names)
+    clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimulus_codes=data_set.coarse_long_square_codes)
 
     lsq_sweep_numbers = lsq_sweeps['sweep_number'].sort_values().values
     clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values
