@@ -641,6 +641,7 @@ def calculate_dvdt(v, t, filter=None):
         filt_coeff = (filter * 1e3) / (sample_freq / 2.) # filter kHz -> Hz, then get fraction of Nyquist frequency
         if filt_coeff < 0 or filt_coeff > 1:
             raise FeatureError("bessel coeff (%f) is outside of valid range [0,1]. cannot compute features." % filt_coeff)
+        
         b, a = signal.bessel(4, filt_coeff, "low")
         v_filt = signal.filtfilt(b, a, v, axis=0)
         dv = np.diff(v_filt)
