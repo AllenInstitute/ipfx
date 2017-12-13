@@ -1190,27 +1190,14 @@ def find_stim_window(stim, idx0=0):
     return stim_start, stim_end - stim_start
 
 def find_stim_amplitude_and_duration(idx0, stim, hz):
+    vstart = stim[idx0]
 
-    if len(stim) < idx0:
-        idx0 = 0
+    start, dur = find_stim_window(stim, idx0)
+    stim = np.array(stim)[start:start+dur]
 
-    stim = stim[idx0:]
-
-    peak_high = max(stim)
-    peak_low = min(stim)
-
-    # measure stimulus length
-    # find index of first non-zero value, and last return to zero
-    nzero = np.where(stim!=0)[0]
-    if len(nzero) > 0:
-        start = nzero[0]
-        end = nzero[-1]
-        dur = (end - start) / hz
-    else:
-        dur = 0
+    peak_high = max(stim-vstart)
+    peak_low = min(stim-vstart)
 	
-    dur = float(dur)
-
     if abs(peak_high) > abs(peak_low):
         amp = float(peak_high)
     else:
@@ -1219,7 +1206,7 @@ def find_stim_amplitude_and_duration(idx0, stim, hz):
     return amp, dur
 
 def find_stim_interval(idx0, stim, hz):
-    stim = stim[idx0:]
+    stim = np.array(stim)[idx0:]
 
     # indices where is the stimulus off
     zero_idxs = np.where(stim == 0)[0]
