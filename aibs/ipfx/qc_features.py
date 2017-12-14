@@ -503,8 +503,7 @@ def qc_cell(data_set, cell_data, sweep_data, qc_criteria):
     # input and access resistance
     cell_state["failed_input_access_resistance"] = \
         evaluate_input_and_access_resistance(cell_data.get("input_access_resistance_ratio", None),
-                                             # WARNING!  this criteria is misnamed
-                                             qc_criteria["input_vs_access_resistance_min"],
+                                             qc_criteria["input_vs_access_resistance_max"],
                                              cell_data.get("initial_access_resistance_mohm", None),
                                              qc_criteria["access_resistance_mohm_min"],
                                              qc_criteria["access_resistance_mohm_max"],

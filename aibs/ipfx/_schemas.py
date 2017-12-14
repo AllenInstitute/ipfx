@@ -54,7 +54,7 @@ class QcCriteria(DefaultSchema):
     blowout_mv_max = Float(description="blash")
     electrode_0_pa_max = Float(description="blash")
     seal_gohm_min = Float(description="blash")
-    input_vs_access_resistance_min = Float(description="blash")
+    input_vs_access_resistance_max = Float(description="blash")
     access_resistance_mohm_min = Float(description="blash")
     access_resistance_mohm_max = Float(description="blash")
 
