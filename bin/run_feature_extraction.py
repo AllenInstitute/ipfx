@@ -58,20 +58,15 @@ def save_qc_figures(qc_fig_dir, data_set, feature_data, plot_cell_figures):
     plotqc.make_cell_page(data_set, feature_data, qc_fig_dir, save_cell_plots=plot_cell_figures)
             
 
-def main():
-    module = ags.ArgSchemaParser(schema_type=FeatureExtractionParameters)
-    args = module.args
+def run_feature_extraction(input_nwb_file, output_nwb_file, qc_fig_dir, sweep_list, cell_features):
+    input_cell_features = cell_features
 
-
-    input_nwb_file = args["input_nwb_file"]
-    output_nwb_file = args["output_nwb_file"]
-    qc_fig_dir = args["qc_fig_dir"]
-    sweep_list = args["sweep_list"]
-    
     data_set = PipelineDataSet(sweep_list, input_nwb_file)
     
-
     cell_features, sweep_features, cell_record, sweep_records = efx.extract_experiment_features(data_set)
+
+    if input_cell_features:
+        cell_record.update(input_cell_features)
 
     feature_data = { 'cell_features': cell_features,
                      'sweep_features': sweep_features,
@@ -79,8 +74,15 @@ def main():
                      'sweep_records': sweep_records }
 
     embed_spike_times(input_nwb_file, output_nwb_file, sweep_features)
-    ju.write(args["output_json"], feature_data)
-
     save_qc_figures(qc_fig_dir, data_set, feature_data, True)
+
+    return feature_data
+
+def main():
+    module = ags.ArgSchemaParser(schema_type=FeatureExtractionParameters)
+    args = module.args
+
+    feature_data = run_feature_extraction(**args)
+    ju.write(args["output_json"], feature_data)
             
 if __name__ == "__main__": main()

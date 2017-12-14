@@ -17,23 +17,27 @@ from aibs.ipfx._schemas import SweepExtractionParameters
 # a better name might be 'DEFAULT_VALUE_KEYS'
 MANUAL_KEYS = ['manual_seal_gohm', 'manual_initial_access_resistance_mohm', 'manual_initial_input_mohm' ]
 
-def main():
-    module = ags.ArgSchemaParser(schema_type=SweepExtractionParameters)    
-    args = module.args
+def run_sweep_extraction(input_nwb_file, stimulus_ontology_file, input_manual_values=None):
+    if input_manual_values is None:
+        input_manual_values = {}
 
-    nwb_file = args["input_nwb_file"]
     manual_values = {}
     for mk in MANUAL_KEYS:
-        if mk in args:
-            manual_values[mk] = args[mk]
+        if mk in input_manual_values:
+            manual_values[mk] = input_manual_values[mk]
 
-    ont = EphysStimulusOntology(args['stimulus_ontology_file'])
-    ds = MiesDataSet(nwb_file, ontology=ont)
+    ont = EphysStimulusOntology(stimulus_ontology_file)
+    ds = MiesDataSet(input_nwb_file, ontology=ont)
     cell_features, cell_tags = qcf.cell_qc_features(ds, manual_values)
     sweep_features = qcf.sweep_qc_features(ds)
+    
+    return dict(cell_features=cell_features,
+                cell_tags=cell_tags,
+                sweep_data=sweep_features)
 
-    ju.write(args["output_json"], dict(cell_features=cell_features,
-                                       cell_tags=cell_tags,
-                                       sweep_data=sweep_features))
+def main():
+    module = ags.ArgSchemaParser(schema_type=SweepExtractionParameters)    
+    output = run_sweep_extraction(**module.args)
+    ju.write(args["output_json"], output)
 
 if __name__ == "__main__": main()

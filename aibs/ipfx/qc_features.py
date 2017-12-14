@@ -355,7 +355,7 @@ def evaluate_seal(seal_gohm, seal_gohm_min, fail_tags):
     return False
 
 def evaluate_input_and_access_resistance(input_access_resistance_ratio,
-                                         input_vs_access_resistance_min,
+                                         input_vs_access_resistance_max,
                                          initial_access_resistance_mohm,
                                          access_resistance_mohm_min,
                                          access_resistance_mohm_max,
@@ -380,9 +380,10 @@ def evaluate_input_and_access_resistance(input_access_resistance_ratio,
             failed_bad_rs = True
             sr_fail_tags.append("initial_access_resistance_mohm %f exceeds max %f" % (initial_access_resistance_mohm, access_resistance_mohm_max))
 
-        if input_access_resistance_ratio < input_vs_access_resistance_min:
+            #
+        if input_access_resistance_ratio > input_vs_access_resistance_max:
             failed_bad_rs = True
-            sr_fail_tags.append("input_access_resistance_ratio %f below min %f" % (input_access_resistance_ratio, input_vs_access_resistance_min))
+            sr_fail_tags.append("input_access_resistance_ratio %f above max %f" % (input_access_resistance_ratio, input_vs_access_resistance_max))
 
     fail_tags += sr_fail_tags
 
@@ -502,6 +503,7 @@ def qc_cell(data_set, cell_data, sweep_data, qc_criteria):
     # input and access resistance
     cell_state["failed_input_access_resistance"] = \
         evaluate_input_and_access_resistance(cell_data.get("input_access_resistance_ratio", None),
+                                             # WARNING!  this criteria is misnamed
                                              qc_criteria["input_vs_access_resistance_min"],
                                              cell_data.get("initial_access_resistance_mohm", None),
                                              qc_criteria["access_resistance_mohm_min"],
