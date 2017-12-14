@@ -37,7 +37,8 @@ def run_sweep_extraction(input_nwb_file, stimulus_ontology_file, input_manual_va
 
 def main():
     module = ags.ArgSchemaParser(schema_type=SweepExtractionParameters)    
-    output = run_sweep_extraction(**module.args)
-    ju.write(args["output_json"], output)
+    output = run_sweep_extraction(module.args["input_nwb_file"],
+                                  module.args["stimulus_ontology_file"])
+    ju.write(module.args["output_json"], output)
 
 if __name__ == "__main__": main()

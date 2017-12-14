@@ -80,9 +80,13 @@ def run_feature_extraction(input_nwb_file, output_nwb_file, qc_fig_dir, sweep_li
 
 def main():
     module = ags.ArgSchemaParser(schema_type=FeatureExtractionParameters)
-    args = module.args
 
-    feature_data = run_feature_extraction(**args)
-    ju.write(args["output_json"], feature_data)
+    feature_data = run_feature_extraction(module.args["input_nwb_file"], 
+                                          module.args["output_nwb_file"], 
+                                          module.args["qc_fig_dir"], 
+                                          module.args["sweep_list"], 
+                                          module.args["cell_features"])
+
+    ju.write(module.args["output_json"], feature_data)
             
 if __name__ == "__main__": main()

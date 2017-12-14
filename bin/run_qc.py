@@ -28,8 +28,13 @@ def run_qc(input_nwb_file, cell_features, sweep_data, qc_criteria):
 
 def main():
     module = ags.ArgSchemaParser(schema_type=QcParameters)
-    output = run_qc(**module.args)
-    ju.write(args["output_json"], output)
+
+    output = run_qc(module.args["input_nwb_file"],
+                    module.args["cell_features"],
+                    module.args["sweep_data"],
+                    module.args["qc_criteria"])
+
+    ju.write(module.args["output_json"], output)
 
 
 if __name__ == "__main__": main()
