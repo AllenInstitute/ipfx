@@ -62,9 +62,10 @@ def get_r_from_stable_pulse_response(v, i, t):
 
     dt = t[1] - t[0]
     one_ms = int(0.001 / dt)
+
     r = []
     for ii in range(len(up_idx)):
-        # take average v and i one ms before
+        # take average v and i one ms before start
         end = up_idx[ii] - 1
         start = end - one_ms
 
@@ -75,12 +76,14 @@ def get_r_from_stable_pulse_response(v, i, t):
         end = down_idx[ii]-1
         start = end - one_ms
 
+
         avg_v_steady = np.mean(v[start:end])
         avg_i_steady = np.mean(i[start:end])
 
         r_instance = (avg_v_steady-avg_v_base) / (avg_i_steady-avg_i_base)
 
         r.append(r_instance)
+
     return np.mean(r)
 
 def get_r_from_peak_pulse_response(v, i, t):
@@ -104,6 +107,7 @@ def get_r_from_peak_pulse_response(v, i, t):
         avg_i_peak = i[idx]
         r_instance = (avg_v_peak-avg_v_base) / (avg_i_peak-avg_i_base)
         r.append(r_instance)
+
     return np.mean(r)
 
 def get_sweep_number_by_stimulus_codes(data_set, stimulus_codes):
@@ -234,11 +238,10 @@ def cell_qc_features(data_set, manual_values):
 
     sr_ratio = None # input access resistance ratio
     if ir is not None and sr is not None:
-        try:
-            sr_ratio = sr / ir
-        except Exception as e:
-            raise
-            pass    # let sr_ratio stay as None
+        sr_ratio = sr / ir
+    else:
+        logging.warning("could not compute input/access resistance ratio (sr: %s, ir:: %s)", str(sr), str(ir))
+
     output_data['input_access_resistance_ratio'] = sr_ratio
 
     return output_data, tag_list
