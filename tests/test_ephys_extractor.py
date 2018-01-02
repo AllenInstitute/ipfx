@@ -132,7 +132,7 @@ def test_extractor_with_high_init_dvdt(spike_test_high_init_dvdt):
 
     ext = EphysSweepSetFeatureExtractor([t], [v])
     ext.process_spikes()
-    expected_thresh_ind = np.array([11222, 16256, 24058])
+    expected_thresh_ind = np.array([11222, 16258, 24060])
     sweep = ext.sweeps()[0]
     assert np.allclose(sweep.spike_feature("threshold_index"), expected_thresh_ind)
 
