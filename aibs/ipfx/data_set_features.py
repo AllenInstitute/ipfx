@@ -40,9 +40,7 @@ import pandas as pd
 from . import ephys_extractor as efex
 from . import ephys_features as ft
 from . import ephys_data_set as eds
-
-HERO_MIN_AMP_OFFSET = 39.0
-HERO_MAX_AMP_OFFSET = 61.0
+from . import stimulus_protocol_analysis as spa
 
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
@@ -53,9 +51,6 @@ DETECTION_PARAMETERS = {
     eds.EphysDataSet.LONG_SQUARE: { 'fixed_start': 1.02, 'fixed_end': 2.02 }
 }   
 
-MEAN_FEATURES = [ "upstroke_downstroke_ratio", "peak_v", "peak_t", "trough_v", "trough_t",
-                  "fast_trough_v", "fast_trough_t", "slow_trough_v", "slow_trough_t",
-                  "threshold_v", "threshold_i", "threshold_t", "peak_v", "peak_t" ]
 
 SUBTHRESHOLD_LONG_SQUARE_MIN_AMPS = { 
     20.0: -100.0,
@@ -134,26 +129,6 @@ def extract_sweep_features(data_set, sweep_table):
         sweep_features.update({ f.id:f.as_dict() for f in fex.sweeps() })
 
     return sweep_features
-
-def find_hero_sweep(rheo_amp, long_square_spiking_sweeps, 
-                    min_offset=HERO_MIN_AMP_OFFSET, 
-                    max_offset=HERO_MAX_AMP_OFFSET):
-    hero_min, hero_max = rheo_amp + min_offset, rheo_amp + max_offset
-    hero_amp = float("inf")
-    hero_sweep = None
-
-    for sweep in long_square_spiking_sweeps:
-        nspikes = len(sweep.spikes())
-        amp = sweep.sweep_feature("stim_amp")
-
-        if nspikes > 0 and amp > hero_min and amp < hero_max and amp < hero_amp:
-            hero_amp = amp
-            hero_sweep = sweep
-
-    if hero_sweep is None:
-        raise ft.FeatureError("Could not find hero sweep.")
-
-    return hero_sweep
     
 def extract_cell_features(data_set,
                           ramp_sweep_numbers,
@@ -172,10 +147,13 @@ def extract_cell_features(data_set,
     if len(long_square_sweep_numbers) == 0:
         raise ft.FeatureError("no long_square sweep numbers provided")
 
-    ext = extractor_for_data_set_sweeps(data_set, long_square_sweep_numbers, fixed_start=lsq_start, fixed_end=lsq_start+lsq_dur)
-    long_squares_ext = efex.LongSquareFeatureExtractor(ext, subthresh_min_amp=subthresh_min_amp)
-    long_squares_ext.analyze()
-    cell_features["long_squares"] = long_squares_ext.as_dict()
+    lsq_ext = extractor_for_data_set_sweeps(data_set, long_square_sweep_numbers, fixed_start=lsq_start, fixed_end=lsq_start+lsq_dur)
+    lsq_an = spa.LongSquareAnalysis(lsq_ext, subthresh_min_amp=subthresh_min_amp)
+    lsq_an.analyze()
+    cell_features["long_squares"] = lsq_an.as_dict()
+
+    if cell_features["long_squares"]["hero_sweep"] is None:
+        raise ft.FeatureError("Could not find hero sweep.")
 
     # short squares
     sweep = data_set.sweep(short_square_sweep_numbers[0])
@@ -185,10 +163,10 @@ def extract_cell_features(data_set,
     if len(short_square_sweep_numbers) == 0:
         raise ft.FeatureError("no short square sweep numbers provided")
 
-    ext = extractor_for_data_set_sweeps(data_set, short_square_sweep_numbers, **DETECTION_PARAMETERS[data_set.SHORT_SQUARE])
-    short_squares_ext = efex.ShortSquareFeatureExtractor(ext)
-    short_squares_ext.analyze()
-    cell_features["short_squares"] = short_squares_ext.as_dict()
+    ssq_ext = extractor_for_data_set_sweeps(data_set, short_square_sweep_numbers, **DETECTION_PARAMETERS[data_set.SHORT_SQUARE])
+    ssq_an = spa.ShortSquareAnalysis(ssq_ext)
+    ssq_an.analyze()
+    cell_features["short_squares"] = ssq_an.as_dict()
 
     # ramps
     sweep = data_set.sweep(ramp_sweep_numbers[0])
@@ -198,40 +176,14 @@ def extract_cell_features(data_set,
     if len(ramp_sweep_numbers) == 0:
         raise ft.FeatureError("no ramp sweep numbers provided")
 
-    ext = extractor_for_data_set_sweeps(data_set, ramp_sweep_numbers, **DETECTION_PARAMETERS[data_set.RAMP])
-    ramps_ext = efex.RampFeatureExtractor(ext)
-    ramps_ext.analyze()
-    cell_features["ramps"] = ramps_ext.as_dict()
-
-    # find hero sweep
-    hero_sweep = find_hero_sweep(cell_features['long_squares']['rheobase_i'], 
-                                 long_squares_ext.suprathreshold_extractor.sweeps())
-    adapt = hero_sweep.sweep_feature("adapt")
-    latency = hero_sweep.sweep_feature("latency")
-    mean_isi = hero_sweep.sweep_feature("mean_isi")
-
-    # find the mean features of the first spike for the ramps and short squares
-    ramps_ms0 = mean_features_spike_zero(ramps_ext.extractor.sweeps())
-    ss_ms0 = mean_features_spike_zero(short_squares_ext.extractor.sweeps())
-
-    # compute baseline from all long square sweeps
-    v_baseline = np.mean(long_squares_ext.extractor.sweep_features('v_baseline'))
-
-    cell_features['long_squares']['v_baseline'] = v_baseline
-    cell_features['long_squares']['hero_sweep'] = hero_sweep.as_dict() if hero_sweep else None
-    cell_features["ramps"]["mean_spike_0"] = ramps_ms0
-    cell_features["short_squares"]["mean_spike_0"] = ss_ms0
+    ramps_ext = extractor_for_data_set_sweeps(data_set, ramp_sweep_numbers, **DETECTION_PARAMETERS[data_set.RAMP])
+    ramps_an = spa.RampAnalysis(ramps_ext)
+    ramps_an.analyze()
+    cell_features["ramps"] = ramps_an.as_dict()
 
     return cell_features
 
-def mean_features_spike_zero(sweeps):
-    """ Compute mean feature values for the first spike in list of extractors """
 
-    output = {}
-    for mf in MEAN_FEATURES:
-        mfd = [ sweep.spikes()[0][mf] for sweep in sweeps if sweep.sweep_feature("avg_rate") > 0 ]
-        output[mf] = np.mean(mfd)
-    return output
 
 def get_stim_characteristics(i, t, no_test_pulse=False):
     '''

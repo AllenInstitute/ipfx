@@ -1216,7 +1216,7 @@ def find_stim_amplitude_and_duration(idx0, stim, hz):
     else:
         amp = float(peak_low)
 
-    return amp, dur
+    return amp, dur / hz
 
 def find_stim_interval(idx0, stim, hz):
     stim = np.array(stim)[idx0:]
