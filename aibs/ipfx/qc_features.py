@@ -316,7 +316,7 @@ def sweep_qc_features(data_set):
         stim_int = ft.find_stim_interval(idx_start, current, hz)
 
         sweep['stimulus_amplitude'] = stim_amp * 1e12
-        sweep['stimulus_duration'] = stim_dur
+        sweep['stimulus_duration'] = stim_dur 
         sweep['stimulus_interval'] = stim_int
         sweep.update(sweep_info)
         
