@@ -37,12 +37,11 @@ import numpy as np
 from pandas import DataFrame
 import warnings
 import logging
-from collections import Counter
 
 from . import ephys_features as ft
 import six
 
-class EphysSweepFeatureExtractor:
+class EphysSweepFeatureExtractor(object):
     """Feature calculation for a sweep (voltage and/or current time series)."""
 
     def __init__(self, t=None, v=None, i=None, start=None, end=None, filter=10.,
@@ -612,7 +611,7 @@ class EphysSweepFeatureExtractor:
         return output_dict
 
 
-class EphysSweepSetFeatureExtractor:
+class EphysSweepSetFeatureExtractor(object):
     def __init__(self, t_set=None, v_set=None, i_set=None, start=None, end=None,
                  filter=10., dv_cutoff=20., max_interval=0.005, min_height=2.,
                  min_peak=-30., thresh_frac=0.05, baseline_interval=0.1,
@@ -723,231 +722,6 @@ class EphysSweepSetFeatureExtractor:
     def spike_feature_averages(self, key):
         """Get nparray of average spike-level feature (`key`) for all sweeps"""
         return np.array([swp.spike_feature(key).mean() for swp in self._sweeps])
-
-
-class EphysCellFeatureExtractor:
-    # Class constants for specific processing
-    SUBTHRESH_MAX_AMP = 0
-    SAG_TARGET = -100.
-
-    def __init__(self, ramps_ext, short_squares_ext, long_squares_ext, subthresh_min_amp=-100):
-        """Initialize EphysCellFeatureExtractor object from EphysSweepSetExtractors for
-        ramp, short square, and long square sweeps.
-
-        Parameters
-        ----------
-        data_set : EphysDataSet
-        ramps_ext : EphysSweepSetFeatureExtractor prepared with ramp sweeps
-        short_squares_ext : EphysSweepSetFeatureExtractor prepared with short square sweeps
-        long_squares_ext : EphysSweepSetFeatureExtractor prepared with long square sweeps
-        """
-
-        self._ramps_ext = ramps_ext
-        self._short_squares_ext = short_squares_ext
-        self._long_squares_ext = long_squares_ext
-
-        self._subthresh_min_amp = subthresh_min_amp
-
-        self._features = {
-            "ramps": {},
-            "short_squares": {},
-            "long_squares": {},
-        }
-
-        self._spiking_long_squares_ext = None
-        self._subthreshold_long_squares_ext = None
-        self._subthreshold_membrane_property_ext = None
-
-
-    def process(self, keys=None):
-        """Processes features. Can take a specific key (or set of keys) to do a subset of processing."""
-
-        dispatch = {
-            "ramps": self._analyze_ramps,
-            "short_squares": self._analyze_short_squares,
-            "long_squares": self._analyze_long_squares,
-            "long_squares_spiking": self._analyze_long_squares_spiking,
-        }
-
-        if keys is None:
-            keys = dispatch.keys()
-
-        if type(keys) is not list:
-            keys = [keys]
-
-        for k in [j for j in keys if j in dispatch.keys()]:
-            dispatch[k]()
-
-    def _analyze_ramps(self):
-        ext = self._ramps_ext
-        ext.process_spikes()
-
-        self._all_ramps_ext = ext
-
-        # pull out the spiking sweeps
-        spiking_sweeps = [ sweep for sweep in self._ramps_ext.sweeps() if sweep.sweep_feature("avg_rate") > 0 ]
-        ext = EphysSweepSetFeatureExtractor.from_sweeps(spiking_sweeps)
-        self._ramps_ext = ext
-
-        self._features["ramps"]["spiking_sweeps"] = ext.sweeps()
-
-    def ramps_features(self, all=False):
-        if all:
-            return self._all_ramps_ext
-        else:
-            return self._ramps_ext
-
-    def _analyze_short_squares(self):
-        ext = self._short_squares_ext
-        ext.process_spikes()
-
-        # Need to count how many had spikes at each amplitude; find most; ties go to lower amplitude
-        spiking_sweeps = [sweep for sweep in ext.sweeps() if sweep.sweep_feature("avg_rate") > 0]
-
-        if len(spiking_sweeps) == 0:
-            raise ft.FeatureError("No spiking short square sweeps, cannot compute cell features.")
-
-        most_common = Counter(map(_short_step_stim_amp, spiking_sweeps)).most_common()
-        common_amp, common_count = most_common[0]
-        for c in most_common[1:]:
-            if c[1] < common_count:
-                break
-            if c[0] < common_amp:
-                common_amp = c[0]
-
-        self._features["short_squares"]["stimulus_amplitude"] = common_amp
-        ext = EphysSweepSetFeatureExtractor.from_sweeps([sweep for sweep in spiking_sweeps if _short_step_stim_amp(sweep) == common_amp])
-        self._short_squares_ext = ext
-
-        self._features["short_squares"]["common_amp_sweeps"] = ext.sweeps()
-        for s in self._features["short_squares"]["common_amp_sweeps"]:
-            s.set_stimulus_amplitude_calculator(_short_step_stim_amp)
-
-    def short_squares_features(self):
-        return self._short_squares_ext
-
-    def _analyze_long_squares(self):
-        self._analyze_long_squares_spiking()
-        self._analyze_long_squares_subthreshold()
-
-    def _analyze_long_squares_spiking(self, force_reprocess=False):
-        if not force_reprocess and self._spiking_long_squares_ext:
-            return
-
-        ext = self._long_squares_ext
-        ext.process_spikes()
-        self._features["long_squares"]["sweeps"] = ext.sweeps()
-        for s in self._features["long_squares"]["sweeps"]:
-            s.set_stimulus_amplitude_calculator(_step_stim_amp)
-
-        spiking_indexes = np.flatnonzero(ext.sweep_features("avg_rate"))
-
-        if len(spiking_indexes) == 0:
-            raise ft.FeatureError("No spiking long square sweeps, cannot compute cell features.")
-
-        amps = ext.sweep_features("stim_amp")#self.long_squares_stim_amps()
-        min_index = np.argmin(amps[spiking_indexes])
-        rheobase_index = spiking_indexes[min_index]
-        rheobase_i = _step_stim_amp(ext.sweeps()[rheobase_index])
-
-        self._features["long_squares"]["rheobase_extractor_index"] = rheobase_index
-        self._features["long_squares"]["rheobase_i"] = rheobase_i
-        self._features["long_squares"]["rheobase_sweep"] = ext.sweeps()[rheobase_index]
-        spiking_sweeps = [sweep for sweep in ext.sweeps() if sweep.sweep_feature("avg_rate") > 0]
-        self._spiking_long_squares_ext = EphysSweepSetFeatureExtractor.from_sweeps(spiking_sweeps)
-        self._features["long_squares"]["spiking_sweeps"] = self._spiking_long_squares_ext.sweeps()
-
-        self._features["long_squares"]["fi_fit_slope"] = fit_fi_slope(self._spiking_long_squares_ext)
-
-
-    def _analyze_long_squares_subthreshold(self):
-        ext = self._long_squares_ext
-        subthresh_sweeps = [sweep for sweep in ext.sweeps() if sweep.sweep_feature("avg_rate") == 0]
-        subthresh_ext = EphysSweepSetFeatureExtractor.from_sweeps(subthresh_sweeps)
-        self._subthreshold_long_squares_ext = subthresh_ext
-
-        if len(subthresh_ext.sweeps()) == 0:
-            raise ft.FeatureError("No subthreshold long square sweeps, cannot evaluate cell features.")
-
-        peaks = subthresh_ext.sweep_features("peak_deflect")
-        sags = subthresh_ext.sweep_features("sag")
-        sag_eval_levels = np.array([sweep.voltage_deflection()[0] for sweep in subthresh_ext.sweeps()])
-        target_level = self.SAG_TARGET
-        closest_index = np.argmin(np.abs(sag_eval_levels - target_level))
-        self._features["long_squares"]["sag"] = sags[closest_index]
-        self._features["long_squares"]["vm_for_sag"] = sag_eval_levels[closest_index]
-        self._features["long_squares"]["subthreshold_sweeps"] = subthresh_ext.sweeps()
-        for s in self._features["long_squares"]["subthreshold_sweeps"]:
-            s.set_stimulus_amplitude_calculator(_step_stim_amp)
-
-        logging.debug("subthresh_sweeps: %d", len(subthresh_sweeps))
-        calc_subthresh_sweeps = [sweep for sweep in subthresh_sweeps if
-                                 sweep.sweep_feature("stim_amp") < self.SUBTHRESH_MAX_AMP and
-                                 sweep.sweep_feature("stim_amp") > self._subthresh_min_amp]
-
-        logging.debug("calc_subthresh_sweeps: %d", len(calc_subthresh_sweeps))
-        calc_subthresh_ext = EphysSweepSetFeatureExtractor.from_sweeps(calc_subthresh_sweeps)
-        self._subthreshold_membrane_property_ext = calc_subthresh_ext
-        self._features["long_squares"]["subthreshold_membrane_property_sweeps"] = calc_subthresh_ext.sweeps()
-        self._features["long_squares"]["input_resistance"] = input_resistance(calc_subthresh_ext)
-        self._features["long_squares"]["tau"] = membrane_time_constant(calc_subthresh_ext)
-        self._features["long_squares"]["v_baseline"] = np.nanmean(ext.sweep_features("v_baseline"))
-
-    def long_squares_features(self, option=None):
-        option_table = {
-            "spiking": self._spiking_long_squares_ext,
-            "subthreshold": self._subthreshold_long_squares_ext,
-            "subthreshold_membrane_property": self._subthreshold_membrane_property_ext,
-        }
-        if option:
-            return option_table[option]
-
-        return self._long_squares_ext
-
-    def long_squares_stim_amps(self, option=None):
-        option_table = {
-            "spiking": self._spiking_long_squares_ext,
-            "subthreshold": self._subthreshold_long_squares_ext,
-            "subthreshold_membrane_property": self._subthreshold_membrane_property_ext,
-        }
-        if option:
-            ext = option_table[option]
-        else:
-            ext = self._long_squares_ext
-
-        return np.array(map(_step_stim_amp, ext.sweeps()))
-
-    def cell_features(self):
-        return self._features
-
-    def as_dict(self):
-        """Create dict of cell features."""
-
-        # get shallow copies of the sub-type dictionaries
-        out = {
-            "long_squares": self._features["long_squares"].copy(),
-            "short_squares": self._features["short_squares"].copy(),
-            "ramps": self._features["ramps"].copy(),
-            }
-
-        # convert feature extractor lists to sweep dictionarsweep extract lists
-        ls_sweeps = [ s.as_dict() for s in out["long_squares"]["sweeps"] ]
-        ls_spike_sweeps = [ s.as_dict() for s in out["long_squares"]["spiking_sweeps"] ]
-        rheo_sweep = out["long_squares"]["rheobase_sweep"].as_dict()
-        ls_sub_sweeps = [ s.as_dict() for s in out["long_squares"]["subthreshold_sweeps"] ]
-        ls_sub_mem_sweeps = [ s.as_dict() for s in out["long_squares"]["subthreshold_membrane_property_sweeps"] ]
-        ss_sweeps = [ s.as_dict() for s in out["short_squares"]["common_amp_sweeps"] ]
-        ramp_sweeps = [ s.as_dict() for s in out["ramps"]["spiking_sweeps"] ]
-
-        out["long_squares"]["sweeps"] = ls_sweeps
-        out["long_squares"]["spiking_sweeps"] = ls_spike_sweeps
-        out["long_squares"]["subthreshold_sweeps"] = ls_sub_sweeps
-        out["long_squares"]["subthreshold_membrane_property_sweeps"] = ls_sub_mem_sweeps
-        out["long_squares"]["rheobase_sweep"] = rheo_sweep
-        out["short_squares"]["common_amp_sweeps"] = ss_sweeps
-        out["ramps"]["spiking_sweeps"] = ramp_sweeps
-
-        return out
 
 
 def input_resistance(ext):

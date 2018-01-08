@@ -10,7 +10,7 @@ import pandas as pd
 
 import argschema as ags
 
-import aibs.ipfx.experiment_features as efx
+import aibs.ipfx.data_set_features as dsft
 from aibs.ipfx.ephys_data_set import EphysDataSet
 from aibs.ipfx._schemas import FeatureExtractionParameters
 import aibs.ipfx.plot_qc_figures as plotqc
@@ -63,7 +63,7 @@ def run_feature_extraction(input_nwb_file, output_nwb_file, qc_fig_dir, sweep_li
 
     data_set = PipelineDataSet(sweep_list, input_nwb_file)
     
-    cell_features, sweep_features, cell_record, sweep_records = efx.extract_experiment_features(data_set)
+    cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
 
     if input_cell_features:
         cell_record.update(input_cell_features)
