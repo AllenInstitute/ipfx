@@ -103,6 +103,8 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         super(LongSquareAnalysis, self).analyze(sweep_set, ids, extra_sweep_features=extra_sweep_features)
 
         self.features["sweeps"] = self._sweep_features
+        self.features["v_baseline"] = np.nanmean(self._sweep_features["v_baseline"].values)
+
         self.analyze_suprathreshold(sweep_set)
         self.analyze_subthreshold(sweep_set)
 
@@ -164,7 +166,6 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
                                                                 self.baseline_interval)
         
         self.features["tau"] = np.nanmean(calc_subthresh_features['tau'])
-        self.features["v_baseline"] = np.nanmean(calc_subthresh_features["v_baseline"].values)
 
     def as_dict(self):
         out = self.features.copy()
