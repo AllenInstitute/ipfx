@@ -2,14 +2,12 @@ import h5py
 import logging
 import pandas as pd
 
-from aibs.ipfx.ephys_data_set import EphysDataSet
+from aibs.ipfx.aibs_data_set import AibsDataSet
 import aibs.ipfx.mies_nwb.lab_notebook_reader as lab_notebook_reader
-from allensdk.core.nwb_data_set import NwbDataSet
 
-class MiesDataSet(EphysDataSet):
+class MiesDataSet(AibsDataSet):
     def __init__(self, nwb_file, h5_file=None, ontology=None):
-        super(MiesDataSet, self).__init__(ontology)
-        self.nwb_file = nwb_file
+        super(MiesDataSet, self).__init__(None, nwb_file, ontology)
         self.h5_file = h5_file
         self.sweep_table = self.build_sweep_table()
 
@@ -96,10 +94,4 @@ class MiesDataSet(EphysDataSet):
         nwbf.close()
 
         return pd.DataFrame.from_records(sweep_data)
-
-     
-    def sweep(self, sweep_number):
-        return NwbDataSet(self.nwb_file).get_sweep(sweep_number)
-
-
     

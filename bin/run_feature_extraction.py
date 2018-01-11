@@ -14,20 +14,11 @@ import aibs.ipfx.data_set_features as dsft
 from aibs.ipfx.ephys_data_set import EphysDataSet
 from aibs.ipfx._schemas import FeatureExtractionParameters
 import aibs.ipfx.plot_qc_figures as plotqc
+from aibs.ipfx.aibs_data_set import AibsDataSet
 
-from allensdk.core.nwb_data_set import NwbDataSet
 from allensdk.config.manifest import Manifest
 import allensdk.core.json_utilities as ju
-
-class PipelineDataSet(EphysDataSet):
-    def __init__(self, sweep_list, file_name, ontology=None):
-        super(PipelineDataSet, self).__init__(ontology)
-        self.sweep_list = sweep_list
-        self.sweep_table = pd.DataFrame.from_records(self.sweep_list)
-        self.data_set = NwbDataSet(file_name)
-
-    def sweep(self, sweep_number):
-        return self.data_set.get_sweep(sweep_number)
+from allensdk.core.nwb_data_set import NwbDataSet
 
 def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
     # embed spike times in NWB file
@@ -61,7 +52,7 @@ def save_qc_figures(qc_fig_dir, data_set, feature_data, plot_cell_figures):
 def run_feature_extraction(input_nwb_file, output_nwb_file, qc_fig_dir, sweep_list, cell_features):
     input_cell_features = cell_features
 
-    data_set = PipelineDataSet(sweep_list, input_nwb_file)
+    data_set = AibsDataSet(sweep_list, input_nwb_file)
     
     cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
 
