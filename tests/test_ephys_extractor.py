@@ -35,11 +35,13 @@
 #
 import pytest
 import numpy as np
-from aibs.ipfx.ephys_extractor import EphysSweepSetFeatureExtractor, input_resistance
+import aibs.ipfx.ephys_extractor as efex
+import aibs.ipfx.ephys_data_set as eds
 import os
 
-def test_extractor_no_values():
-    ext = EphysSweepSetFeatureExtractor()
+def test_extractors_no_values():
+    efex.SpikeExtractor()
+    efex.SpikeTrainFeatureExtractor(start=0,end=0)
 
 
 def test_extractor_wrong_inputs(spike_test_pair):
@@ -49,20 +51,19 @@ def test_extractor_wrong_inputs(spike_test_pair):
     v = data[:, 1]
     i = np.zeros_like(v)
 
-    with pytest.raises(ValueError):
-        ext = EphysSweepSetFeatureExtractor(t, v, i)
+    ext = efex.SpikeExtractor()
+
+    with pytest.raises(IndexError):
+        ext.process([t],v,i)
+
+    with pytest.raises(IndexError):
+        ext.process([t],[v],i)
 
     with pytest.raises(ValueError):
-        ext = EphysSweepSetFeatureExtractor([t], v, i)
+        ext.process([t, t], [v], [i])
 
     with pytest.raises(ValueError):
-        ext = EphysSweepSetFeatureExtractor([t], [v], i)
-
-    with pytest.raises(ValueError):
-        ext = EphysSweepSetFeatureExtractor([t, t], [v], [i])
-
-    with pytest.raises(ValueError):
-        ext = EphysSweepSetFeatureExtractor([t, t], [v, v], [i])
+        ext.process([t, t], [v, v], [i])
 
 
 def test_extractor_on_sample_data(spike_test_pair):
@@ -71,23 +72,11 @@ def test_extractor_on_sample_data(spike_test_pair):
     t = data[:, 0]
     v = data[:, 1]
 
-    ext = EphysSweepSetFeatureExtractor([t], [v])
-    ext.process_spikes()
-    swp = ext.sweeps()[0]
-    spikes = swp.spikes()
+    ext = efex.SpikeExtractor()
+    spikes = ext.process(t=t, v=v, i=None)
 
-    keys = swp.spike_feature_keys()
-    swp_keys = swp.sweep_feature_keys()
-    result = swp.spike_feature(keys[0])
-    result = swp.sweep_feature("first_isi")
-    result = ext.sweep_features("first_isi")
-    result = ext.spike_feature_averages(keys[0])
-
-    with pytest.raises(KeyError):
-        result = swp.spike_feature("nonexistent_key")
-
-    with pytest.raises(KeyError):
-        result = swp.sweep_feature("nonexistent_key")
+    sx = efex.SpikeTrainFeatureExtractor(start=0, end=t[-1])
+    sx.process(t=t, v=v, i=None, spikes_df=spikes)
 
 
 def test_extractor_on_sample_data_with_i(spike_test_pair):
@@ -97,8 +86,11 @@ def test_extractor_on_sample_data_with_i(spike_test_pair):
     v = data[:, 1]
     i = np.zeros_like(v)
 
-    ext = EphysSweepSetFeatureExtractor([t], [v], [i])
-    ext.process_spikes()
+    ext = efex.SpikeExtractor()
+    spikes = ext.process(t, v, i)
+
+    sx = efex.SpikeTrainFeatureExtractor(start=0, end=t[-1])
+    sx.process(t, v, i, spikes)
 
 
 def test_extractor_on_zero_voltage():
@@ -107,8 +99,8 @@ def test_extractor_on_zero_voltage():
     v = np.zeros_like(t)
     i = np.zeros_like(t)
 
-    ext = EphysSweepSetFeatureExtractor([t], [v], [i])
-    ext.process_spikes()
+    ext = efex.SpikeExtractor()
+    spikes = ext.process(t, v, i)
 
 
 def test_extractor_on_variable_time_step(spike_test_var_dt):
@@ -117,11 +109,11 @@ def test_extractor_on_variable_time_step(spike_test_var_dt):
     t = data[:, 0]
     v = data[:, 1]
 
-    ext = EphysSweepSetFeatureExtractor([t], [v])
-    ext.process_spikes()
+    ext = efex.SpikeExtractor()
+    spikes = ext.process(t, v, i=None)
+
     expected_thresh_ind = np.array([73, 183, 314, 463, 616, 770])
-    sweep = ext.sweeps()[0]
-    assert np.allclose(sweep.spike_feature("threshold_index"), expected_thresh_ind)
+    assert np.allclose(spikes["threshold_index"].values, expected_thresh_ind)
 
 
 def test_extractor_with_high_init_dvdt(spike_test_high_init_dvdt):
@@ -130,20 +122,10 @@ def test_extractor_with_high_init_dvdt(spike_test_high_init_dvdt):
     t = data[:, 0]
     v = data[:, 1]
 
-    ext = EphysSweepSetFeatureExtractor([t], [v])
-    ext.process_spikes()
+    ext = efex.SpikeExtractor()
+    spikes = ext.process(t, v, i=None)
+
     expected_thresh_ind = np.array([11222, 16258, 24060])
-    sweep = ext.sweeps()[0]
-    assert np.allclose(sweep.spike_feature("threshold_index"), expected_thresh_ind)
+    assert np.allclose(spikes["threshold_index"].values, expected_thresh_ind)
 
 
-def test_extractor_input_resistance():
-    t = np.arange(0, 1.0, 5e-6)
-    v1 = np.ones_like(t) * -5.
-    v2 = np.ones_like(t) * -10.
-    i1 = np.ones_like(t) * -50.
-    i2 = np.ones_like(t) * -100.
-
-    ext = EphysSweepSetFeatureExtractor([t, t], [v1, v2], [i1, i2])
-    ri = input_resistance(ext)
-    assert np.allclose(ri, 100.)
