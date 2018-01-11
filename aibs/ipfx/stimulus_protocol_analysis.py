@@ -126,7 +126,6 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
     def analyze_suprathreshold(self, sweep_set):
         features = {}
-
         spiking_sweeps = self.suprathreshold_sweeps(self._sweep_features)
 
         if len(spiking_sweeps) == 0:

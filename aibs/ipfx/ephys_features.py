@@ -1203,14 +1203,12 @@ def find_stim_window(stim, idx0=0):
     return stim_start, stim_end - stim_start
 
 def find_stim_amplitude_and_duration(idx0, stim, hz):
-
-
     start, dur = find_stim_window(stim, idx0)
-    stim = np.array(stim)[start:start+dur]
+    sstim = np.array(stim)[start:start+dur]
 
     istart = stim[idx0]
-    peak_high = max(stim-istart)
-    peak_low = min(stim-istart)
+    peak_high = max(sstim-istart)
+    peak_low = min(sstim-istart)
 	
     if abs(peak_high) > abs(peak_low):
         amp = float(peak_high)
