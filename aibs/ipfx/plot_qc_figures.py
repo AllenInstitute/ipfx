@@ -35,14 +35,9 @@ def get_features(sweep_features, sweep_number):
 
 def load_sweep(data_set, sweep_number):
     sweep = data_set.sweep(sweep_number)
-    
-    r = sweep['index_range']
-    v = sweep['response'] * 1e3
-    i = sweep['stimulus'] * 1e12
-    dt = 1.0 / sweep['sampling_rate']
-    t = np.arange(0, len(v)) * dt
-
-    return (v, i, t, r, dt)
+    dt = sweep.t[1] - sweep.t[0]
+    r = sweep.start / dt, sweep.end / dt
+    return (sweep.v, sweep.i, sweep.t, r, dt)
 
 def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features, cell_features, type_name):
     figs = [ plt.figure() for f in range(3+len(sweep_numbers)) ]

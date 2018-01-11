@@ -69,12 +69,55 @@ class EphysDataSet(object):
         return any(stimulus_code.startswith(mc) for mc in match_codes)
 
     def sweep(self, sweep_number):
-        """ returns a dictionary """
+        """ returns a dictionary with properties: i (in pA), v (in mV), t (in sec), start, end"""
         raise NotImplementedError
 
-    def aligned_sweep(self, sweep_number, stim_onset_delta):
-        sweep = self.get_sweep(sweep_number)
+    def sweep_set(self, sweep_numbers):
+        return SweepSet([ self.sweep(sn) for sn in sweep_numbers ])
 
-        # do it
-        
-        
+    def aligned_sweeps(self, sweep_numbers, stim_onset_delta):
+        pass
+
+class Sweep(object):
+    def __init__(self, t, v, i, start, end):
+        self.t = t
+        self.v = v
+        self.i = i
+        self.start = start
+        self.end = end
+
+    @property
+    def t_end(self):
+        return self.t[-1]
+
+    @property
+    def sampling_rate(self):
+        return self.t[1] - self.t[0]
+    
+
+class SweepSet(object):
+    def __init__(self, sweeps):
+        self.sweeps = sweeps
+
+    def _prop(self, prop):
+        return [ getattr(s, prop) for s in self.sweeps ]
+ 
+    @property
+    def t(self):
+        return self._prop('t')
+
+    @property
+    def v(self):
+        return self._prop('v')
+
+    @property
+    def i(self):
+        return self._prop('i')
+
+    @property 
+    def start(self):
+        return self._prop('start')
+    
+    @property
+    def end(self):
+        return self._prop('end')
