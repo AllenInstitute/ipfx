@@ -22,7 +22,8 @@ class AibsDataSet(EphysDataSet):
         return Sweep(t = np.arange(0, len(data['response'])) * dt,
                      v = data['response'] * 1e3, # mV
                      i = data['stimulus'] * 1e12, # pA
-                     start = s,
-                     end = e)
+                     expt_start = s,
+                     expt_end = e,
+                     sampling_rate = hz)
 
     

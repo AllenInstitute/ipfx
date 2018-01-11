@@ -79,20 +79,18 @@ class EphysDataSet(object):
         pass
 
 class Sweep(object):
-    def __init__(self, t, v, i, start, end):
+    def __init__(self, t, v, i, expt_start=None, expt_end=None, sampling_rate=None):
         self.t = t
         self.v = v
         self.i = i
-        self.start = start
-        self.end = end
 
+        self.expt_start = expt_start if expt_start else 0
+        self.expt_end = expt_end if expt_end else self.t_end
+        self.sampling_rate = sampling_rate
+        
     @property
     def t_end(self):
         return self.t[-1]
-
-    @property
-    def sampling_rate(self):
-        return self.t[1] - self.t[0]
     
 
 class SweepSet(object):
@@ -115,9 +113,9 @@ class SweepSet(object):
         return self._prop('i')
 
     @property 
-    def start(self):
-        return self._prop('start')
+    def expt_start(self):
+        return self._prop('expt_start')
     
     @property
-    def end(self):
-        return self._prop('end')
+    def expt_end(self):
+        return self._prop('expt_end')
