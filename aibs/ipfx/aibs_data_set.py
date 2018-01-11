@@ -10,6 +10,7 @@ class AibsDataSet(EphysDataSet):
         self.sweep_list = sweep_list
         self.sweep_table = pd.DataFrame.from_records(self.sweep_list)
         self.data_set = NwbDataSet(nwb_file)
+        self.nwb_file = nwb_file
 
     def sweep(self, sweep_number):
         data = self.data_set.get_sweep(sweep_number)

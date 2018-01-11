@@ -129,8 +129,8 @@ def cell_qc_features(data_set, manual_values):
     try:
         blowout_sweep_number = get_sweep_number_by_stimulus_codes(data_set, data_set.blowout_codes)
         blowout_data = data_set.sweep(blowout_sweep_number)
-        blowout_mv = measure_blowout(blowout_data['response'], 
-                                     blowout_data['index_range'][0])
+        blowout_mv = measure_blowout(blowout_data.v*1e-3, 
+                                     blowout_data.expt_start*blowout_data.sampling_rate)
         output_data['blowout_mv'] = blowout
     except IndexError as e:
         msg = "Blowout is not available"
@@ -143,8 +143,8 @@ def cell_qc_features(data_set, manual_values):
     try:
         bath_sweep_number = get_sweep_number_by_stimulus_codes(data_set, data_set.bath_codes)
         bath_data = data_set.sweep(bath_sweep_number)
-        e0 = measure_electrode_0(bath_data['response'], 
-                                 bath_data['sampling_rate'])
+        e0 = measure_electrode_0(bath_data.v*1e-3, 
+                                 bath_data.sampling_rate)
         output_data['electrode_0_pa'] = e0
     except IndexError as e:
         msg = "Electrode 0 is not available"
@@ -157,9 +157,9 @@ def cell_qc_features(data_set, manual_values):
     try:
         seal_sweep_number = get_sweep_number_by_stimulus_codes(data_set, data_set.seal_codes)
         seal_data = data_set.sweep(seal_sweep_number)
-        seal_gohm = measure_seal(seal_data['stimulus'], 
-                                 seal_data['response'], 
-                                 seal_data['sampling_rate'])
+        seal_gohm = measure_seal(seal_data.i*1e-12, 
+                                 seal_data.v*1e-3, 
+                                 seal_data.sampling_rate)
 
         # error may arise in computing seal, which falls through to
         #   exception handler. if seal computation didn't fail but
@@ -199,9 +199,9 @@ def cell_qc_features(data_set, manual_values):
         ###########################
         # input resistance
         try:
-            ir = measure_input_resistance(breakin_data['stimulus'], 
-                                          breakin_data['response'], 
-                                          breakin_data['sampling_rate'])
+            ir = measure_input_resistance(breakin_data.i*1e-12, 
+                                          breakin_data.v*1e-3, 
+                                          breakin_data.sampling_rate)
         except Exception as e:
             logging.warning("Error reading input resistance.")
             raise
@@ -217,9 +217,9 @@ def cell_qc_features(data_set, manual_values):
         ###########################
         # initial access resistance
         try:
-            sr = measure_initial_access_resistance(breakin_data['stimulus'], 
-                                                   breakin_data['response'], 
-                                                   breakin_data['sampling_rate'])
+            sr = measure_initial_access_resistance(breakin_data.i*1e-12,
+                                                   breakin_data.v*1e-3,
+                                                   breakin_data.sampling_rate)
         except Exception as e:
             logging.warning("Error reading initial access resistance.")
             raise
@@ -263,10 +263,10 @@ def sweep_qc_features(data_set):
 
         sweep = {}
         
-        volts = sweep_data['response']
-        current = sweep_data['stimulus']
-        hz = sweep_data['sampling_rate']
-        idx_start, idx_stop = sweep_data['index_range']
+        volts = sweep_data.v*1e-3
+        current = sweep_data.i*1e-12
+        hz = sweep_data.sampling_rate
+        idx_start, idx_stop = int(sweep_data.expt_start*sweep_data.sampling_rate), int(sweep_data.expt_end*sweep_data.sampling_rate)
 
         # measure Vm and noise before stimulus
         idx0, idx1 = get_first_vm_noise_epoch(idx_start, current, hz)
@@ -292,7 +292,7 @@ def sweep_qc_features(data_set):
 
         # measure Vm and noise over extended interval, to check stability
         stim_start = ft.find_stim_start(current, idx_start)
-        sweep['stimulus_start_time'] = stim_start / sweep_data['sampling_rate']
+        sweep['stimulus_start_time'] = stim_start / sweep_data.sampling_rate
 
         idx0, idx1 = get_stability_vm_epoch(idx_start, stim_start, hz)
         mean2, rms2 = measure_vm(1e3 * volts[idx0:idx1])
@@ -319,7 +319,7 @@ def sweep_qc_features(data_set):
         sweep['stimulus_duration'] = stim_dur 
         sweep['stimulus_interval'] = stim_int
         sweep.update(sweep_info)
-        
+
         sweep_features.append(sweep)
 
     return sweep_features
@@ -431,10 +431,10 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria):
 
     # pull data streams from file (this is for detecting truncated sweeps)
     sweep_data = data_set.sweep(sweep_num)
-    volts = sweep_data['response']
-    current = sweep_data['stimulus']
-    hz = sweep_data['sampling_rate']
-    idx_start, idx_stop = sweep_data['index_range']
+    volts = sweep_data.v*1e-3
+    current = sweep_data.i*1e-12
+    hz = sweep_data.sampling_rate
+    idx_start, idx_stop = int(sweep_data.expt_start*hz), int(sweep_data.expt_end*hz)
 
     if sweep["pre_noise_rms_mv"] > qc_criteria["pre_noise_rms_mv_max"]:
         fail_tags.append("pre-noise exceeded qc threshold")
