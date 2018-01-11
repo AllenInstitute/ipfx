@@ -132,8 +132,8 @@ def extract_cell_features(data_set,
 
     lsq_spx, lsq_spfx = extractors_for_sweeps(lsq_sweeps, **detection_parameters(data_set.LONG_SQUARE))
     lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=subthresh_min_amp)
-    lsq_an.analyze(lsq_sweeps, long_square_sweep_numbers)
-    cell_features["long_squares"] = lsq_an.as_dict()
+    lsq_features = lsq_an.analyze(lsq_sweeps)
+    cell_features["long_squares"] = lsq_an.as_dict(lsq_features, [ dict(id=sn) for sn in long_square_sweep_numbers ])
 
     if cell_features["long_squares"]["hero_sweep"] is None:
         raise ft.FeatureError("Could not find hero sweep.")
@@ -148,8 +148,8 @@ def extract_cell_features(data_set,
 
     ssq_spx, ssq_spfx = extractors_for_sweeps(ssq_sweeps, **detection_parameters(data_set.SHORT_SQUARE))
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
-    ssq_an.analyze(ssq_sweeps, short_square_sweep_numbers)
-    cell_features["short_squares"] = ssq_an.as_dict()
+    ssq_features = ssq_an.analyze(ssq_sweeps)
+    cell_features["short_squares"] = ssq_an.as_dict(ssq_features, [ dict(id=sn) for sn in short_square_sweep_numbers ])
 
     # ramps
     if len(ramp_sweep_numbers) == 0:
@@ -159,10 +159,10 @@ def extract_cell_features(data_set,
     ramp_start, ramp_dur, _, _, _ = get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
     logging.info("Ramp stim %f, %f", ramp_start, ramp_dur)
 
-    ramps_spx, ramps_spfx = extractors_for_sweeps(ramp_sweeps, **detection_parameters(data_set.RAMP))
-    ramps_an = spa.RampAnalysis(ramps_spx, ramps_spfx)
-    ramps_an.analyze(ramp_sweeps, ramp_sweep_numbers)
-    cell_features["ramps"] = ramps_an.as_dict()
+    ramp_spx, ramp_spfx = extractors_for_sweeps(ramp_sweeps, **detection_parameters(data_set.RAMP))
+    ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
+    ramp_features = ramp_an.analyze(ramp_sweeps)
+    cell_features["ramps"] = ramp_an.as_dict(ramp_features, [ dict(id=sn) for sn in ramp_sweep_numbers ])
 
     return cell_features
 
