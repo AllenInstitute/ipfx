@@ -115,8 +115,8 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         
         spiking_features = self._sweep_features[spiking_sweeps]
-        min_index = np.argmin(spiking_features["stim_amp"])
-        rheobase_index = spiking_features.loc[min_index].name
+        min_index = np.argmin(spiking_features["stim_amp"].values)
+        rheobase_index = spiking_features.iloc[min_index].name
         rheo_sweep = sweep_set.sweeps[rheobase_index]
         rheobase_i = ft._step_stim_amp(rheo_sweep.t, rheo_sweep.i, self.spx.start)
 
