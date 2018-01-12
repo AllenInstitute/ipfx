@@ -131,7 +131,7 @@ def cell_qc_features(data_set, manual_values):
         blowout_data = data_set.sweep(blowout_sweep_number)
         blowout_mv = measure_blowout(blowout_data.v*1e-3, 
                                      blowout_data.expt_start*blowout_data.sampling_rate)
-        output_data['blowout_mv'] = blowout
+        output_data['blowout_mv'] = blowout_mv
     except IndexError as e:
         msg = "Blowout is not available"
         tag_list.append(msg)
@@ -465,7 +465,7 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria):
     # fail sweeps if stimulus duration is zero
     # Uncomment out hte following 3 lines to have sweeps without stimulus
     #   faile QC
-    if sweep["stimulus_duration"] <= 0 and not data_set.stimulus_matches(data_set.extp_codes):
+    if sweep["stimulus_duration"] <= 0 and not data_set.stimulus_code_matches(stim_code, data_set.extp_codes):
         fail_tags.append("No stimulus detected")
 
     return len(fail_tags) > 0, fail_tags

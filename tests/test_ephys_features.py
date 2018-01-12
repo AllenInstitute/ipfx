@@ -320,18 +320,18 @@ def test_find_stim_amplitude_and_duration():
 
     a = [1,1,0,0,0,0,0]
     amp, dur = ft.find_stim_amplitude_and_duration(0, a, hz=1)
-    assert amp == -1
-    assert dur == 5
+    assert amp == 1
+    assert dur == 2
 
     a = [1,1,0,0,0,0,1]
     amp, dur = ft.find_stim_amplitude_and_duration(0, a, hz=1)
-    assert amp == -1
-    assert dur == 4
+    assert amp == 1
+    assert dur == 7
 
     a = [1,1,0,0,1,0,1]
     amp, dur = ft.find_stim_amplitude_and_duration(0, a, hz=1)
-    assert amp == -1
-    assert dur == 4    
+    assert amp == 1
+    assert dur == 7    
 
 def test_find_stim_interval():
     a = [0,1,0,1,0,1,0]

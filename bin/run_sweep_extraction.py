@@ -17,7 +17,7 @@ from aibs.ipfx._schemas import SweepExtractionParameters
 # a better name might be 'DEFAULT_VALUE_KEYS'
 MANUAL_KEYS = ['manual_seal_gohm', 'manual_initial_access_resistance_mohm', 'manual_initial_input_mohm' ]
 
-def run_sweep_extraction(input_nwb_file, stimulus_ontology_file, input_manual_values=None):
+def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, input_manual_values=None):
     if input_manual_values is None:
         input_manual_values = {}
 
@@ -27,7 +27,7 @@ def run_sweep_extraction(input_nwb_file, stimulus_ontology_file, input_manual_va
             manual_values[mk] = input_manual_values[mk]
 
     ont = EphysStimulusOntology(stimulus_ontology_file)
-    ds = MiesDataSet(input_nwb_file, ontology=ont)
+    ds = MiesDataSet(input_nwb_file, input_h5_file, ontology=ont)
     cell_features, cell_tags = qcf.cell_qc_features(ds, manual_values)
     sweep_features = qcf.sweep_qc_features(ds)
     
@@ -38,6 +38,7 @@ def run_sweep_extraction(input_nwb_file, stimulus_ontology_file, input_manual_va
 def main():
     module = ags.ArgSchemaParser(schema_type=SweepExtractionParameters)    
     output = run_sweep_extraction(module.args["input_nwb_file"],
+                                  module.args.get("input_h5_file"),
                                   module.args["stimulus_ontology_file"])
     ju.write(module.args["output_json"], output)
 

@@ -17,8 +17,8 @@ import argschema as ags
 from aibs.ipfx._schemas import QcParameters
 import allensdk.core.json_utilities as ju
 
-def run_qc(input_nwb_file, cell_features, sweep_data, qc_criteria):
-    ds = MiesDataSet(input_nwb_file)
+def run_qc(input_nwb_file, input_h5_file, cell_features, sweep_data, qc_criteria):
+    ds = MiesDataSet(input_nwb_file, input_h5_file)
     cell_state, sweep_states = qcf.qc_experiment(ds, 
                                                  cell_features, 
                                                  sweep_data, 
@@ -30,6 +30,7 @@ def main():
     module = ags.ArgSchemaParser(schema_type=QcParameters)
 
     output = run_qc(module.args["input_nwb_file"],
+                    module.args.get("input_h5_file"),                    
                     module.args["cell_features"],
                     module.args["sweep_data"],
                     module.args["qc_criteria"])

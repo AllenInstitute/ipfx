@@ -7,11 +7,13 @@ from run_feature_extraction import run_feature_extraction
 
 import allensdk.core.json_utilities as ju
 
-def run_pipeline(input_nwb_file, output_nwb_file, stimulus_ontology_file, qc_fig_dir, qc_criteria):
+def run_pipeline(input_nwb_file, input_h5_file, output_nwb_file, stimulus_ontology_file, qc_fig_dir, qc_criteria):
     se_output = run_sweep_extraction(input_nwb_file,
+                                     input_h5_file,
                                      stimulus_ontology_file)
     
     qc_output = run_qc(input_nwb_file,
+                       input_h5_file,
                        se_output["cell_features"], 
                        se_output["sweep_data"], 
                        qc_criteria)
@@ -36,6 +38,7 @@ def run_pipeline(input_nwb_file, output_nwb_file, stimulus_ontology_file, qc_fig
 def main():
     module = ags.ArgSchemaParser(schema_type=PipelineParameters)    
     output = run_pipeline(module.args["input_nwb_file"],
+                          module.args.get("input_h5_file", None),
                           module.args["output_nwb_file"],
                           module.args["stimulus_ontology_file"],
                           module.args["qc_fig_dir"],

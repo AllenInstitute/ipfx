@@ -66,6 +66,7 @@ class QcParameters(ArgSchema):
 
 class PipelineParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
+    input_h5_file = InputFile(desription="input h5 file", required=False)
     output_nwb_file = OutputFile(description="output nwb file", required=True)
     qc_fig_dir = OutputFile(description="output qc figure directory", required=True)
     qc_criteria = Nested(QcCriteria, required=True)

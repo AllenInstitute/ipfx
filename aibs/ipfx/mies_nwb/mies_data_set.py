@@ -7,6 +7,7 @@ import aibs.ipfx.mies_nwb.lab_notebook_reader as lab_notebook_reader
 
 class MiesDataSet(AibsDataSet):
     def __init__(self, nwb_file, h5_file=None, ontology=None):
+        print nwb_file, h5_file, ontology
         super(MiesDataSet, self).__init__([], nwb_file, ontology)
         self.h5_file = h5_file
         self.sweep_table = self.build_sweep_table()
@@ -37,7 +38,7 @@ class MiesDataSet(AibsDataSet):
                 logging.debug("reading stim code from nwb")
                 stim_code = sweep_ts["aibs_stimulus_description"].value[0]
                 if len(stim_code) == 1:
-                    stim_code = acq[sweep]["aibs_stimulus_description"].value
+                    stim_code = sweep_ts["aibs_stimulus_description"].value
             else:
                 # fetch stim description from lab notebook
                 logging.debug("reading stim code from lab notebook")
