@@ -75,12 +75,6 @@ def extractors_for_sweeps(sweep_set,
                                                                            est_window[0], 
                                                                            est_window[1])
 
-    
-    if start is None:
-        start = 0
-    if end is None:
-        end = sweep_set.sweeps[0].t_end
-    
     if thresh_frac_floor is not None:
         thresh_frac = max(thresh_frac_floor, thresh_frac)
 
@@ -90,7 +84,7 @@ def extractors_for_sweeps(sweep_set,
 
 def extract_sweep_features(data_set, sweep_table):
     sweep_groups = sweep_table.groupby(data_set.STIMULUS_NAME)[data_set.SWEEP_NUMBER]
-
+    
     # extract sweep-level features
     sweep_features = {}
 

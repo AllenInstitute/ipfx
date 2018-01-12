@@ -119,3 +119,7 @@ class SweepSet(object):
     @property
     def expt_end(self):
         return self._prop('expt_end')
+
+    @property
+    def t_end(self):
+        return self._prop('t_end')

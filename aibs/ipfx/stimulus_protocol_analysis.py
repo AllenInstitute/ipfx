@@ -220,7 +220,7 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
         self.sptx.stim_amp_fn = ft._short_step_stim_amp
 
     def analyze(self, sweep_set):
-        extra_sweep_features = ['peak_deflect','stim_amp','v_baseline','sag','burst','delay']
+        extra_sweep_features = [ "stim_amp" ]
         self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_features)
 
         features = {}
