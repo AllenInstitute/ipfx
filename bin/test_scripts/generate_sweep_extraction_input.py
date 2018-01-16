@@ -10,7 +10,7 @@ for stim_type in d[1]:
     for code in stim_type['ephys_raw_stimulus_names']:
         stim_names[code['name']] = stim_name
 
-ontology_file = "test/stimulus_onotology.json"
+ontology_file = "test_scripts/stimulus_ontology.json"
 
 ju.write(ontology_file, stim_names)
 
