@@ -24,7 +24,7 @@ for stim_type in d[1]:
     for code in stim_type['ephys_raw_stimulus_names']:
         stim_names[code['name']] = stim_name
 
-stimulus_ontology_file = "stimulus_ontology.json" 
+stimulus_ontology_file = "test_scripts/stimulus_ontology.json" 
 test_dir = "specimen_%d" % specimen_id
 if not os.path.exists(test_dir):
     os.makedirs(test_dir)
