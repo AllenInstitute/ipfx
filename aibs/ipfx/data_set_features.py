@@ -193,7 +193,10 @@ def get_stim_characteristics(i, t, no_test_pulse=False):
 def select_subthreshold_min_amplitude(stim_amps, decimals=0):
     amp_diff = np.round(np.diff(sorted(stim_amps)), decimals=decimals)
 
-    if len(np.unique(amp_diff)) != 1:
+    # repeats are okay
+    amp_diff = list(set(np.unique(amp_diff)) - set([0]))
+
+    if len(amp_diff) != 1:
         raise ft.FeatureError("Long square sweeps must have even amplitude step differences")
     
     amp_delta = amp_diff[0]

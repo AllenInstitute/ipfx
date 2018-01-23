@@ -137,9 +137,10 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
                       spikes[0]['upstroke_t'] + 1e-3 * (delta_v / spikes[0]['upstroke'])], 
                      [spikes[0]['upstroke_v'] - delta_v, spikes[0]['upstroke_v'] + delta_v], color='red')
 
-            plt.plot([spikes[0]['downstroke_t'] - 1e-3 * (delta_v / spikes[0]['downstroke']),
-                      spikes[0]['downstroke_t'] + 1e-3 * (delta_v / spikes[0]['downstroke'])], 
-                     [spikes[0]['downstroke_v'] - delta_v, spikes[0]['downstroke_v'] + delta_v], color='red')
+            if 'downstroke_t' in spikes[0]:
+                plt.plot([spikes[0]['downstroke_t'] - 1e-3 * (delta_v / spikes[0]['downstroke']),
+                          spikes[0]['downstroke_t'] + 1e-3 * (delta_v / spikes[0]['downstroke'])], 
+                         [spikes[0]['downstroke_v'] - delta_v, spikes[0]['downstroke_v'] + delta_v], color='red')
 
         if type_name == "ramp":
             if nspikes:
