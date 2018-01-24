@@ -197,17 +197,16 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
     amp_diff_no_zero = list(set(np.unique(amp_diff)) - set([0]))
 
     if len(amp_diff_no_zero) == 0:
-        return 0
-
-    if len(amp_diff_no_zero) != 1:
+        amp_delta = 0
+    elif len(amp_diff_no_zero) != 1:
         raise ft.FeatureError("Long square sweeps must have even amplitude step differences")
-    
-    amp_delta = amp_diff_no_zero[0]
+    else:
+        amp_delta = amp_diff_no_zero[0]
 
     subthresh_min_amp = SUBTHRESHOLD_LONG_SQUARE_MIN_AMPS.get(amp_delta, None)
 
     if subthresh_min_amp is None:
-        raise ft.FeatureError("Unknown coarse long square amplitude delta: %f" % long_square_amp_delta)
+        raise ft.FeatureError("Unknown coarse long square amplitude delta: %f" % amp_delta)
 
     return subthresh_min_amp, amp_delta
 
