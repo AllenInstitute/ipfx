@@ -194,12 +194,15 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
     amp_diff = np.round(np.diff(sorted(stim_amps)), decimals=decimals)
 
     # repeats are okay
-    amp_diff = list(set(np.unique(amp_diff)) - set([0]))
+    amp_diff_no_zero = list(set(np.unique(amp_diff)) - set([0]))
 
-    if len(amp_diff) != 1:
+    if len(amp_diff_no_zero) == 0:
+        return 0
+
+    if len(amp_diff_no_zero) != 1:
         raise ft.FeatureError("Long square sweeps must have even amplitude step differences")
     
-    amp_delta = amp_diff[0]
+    amp_delta = amp_diff_no_zero[0]
 
     subthresh_min_amp = SUBTHRESHOLD_LONG_SQUARE_MIN_AMPS.get(amp_delta, None)
 
