@@ -26,6 +26,11 @@ def test_select_subthreshold_min_amplitude():
     assert delta == 40
     assert min_amp == -200
 
+    a = [10, 50, 50, 90, 90, 130]
+    min_amp, delta = dsft.select_subthreshold_min_amplitude(a)
+    assert delta == 40
+    assert min_amp == -200
+
 def test_nan_get():
     a = {}
     v = dsft.nan_get(a, 'fish')
