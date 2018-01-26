@@ -1,8 +1,10 @@
 {
+    "_copy_without_render": [
+        "docs/aibs_sphinx"
+    ], 
     "_template": "https://github.com/AllenInstitute/pyproject_template", 
     "email": "davidf@alleninstitute.org", 
     "full_name": "David Feng", 
-    "open_source_license": "Allen Institute Software License", 
     "project_name": "ipfx", 
     "project_namespace": "aibs", 
     "project_short_description": "intrinsic physiology feature extractor", 

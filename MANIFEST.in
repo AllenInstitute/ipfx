@@ -1,8 +1,8 @@
 include requirements.txt
-include test_requirements.txt
+include requirements-test.txt
+include requirements-dev.txt
 include AUTHORS.rst
 include HISTORY.rst
-include LICENSE
 include README.md
 
 recursive-include tests *
