@@ -46,8 +46,14 @@ help:
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 
+update-aibs_sphinx: clean
+	rm -rf aibs_sphinx
+	git clone git@github.com:AllenInstitute/aibs_sphinx.git
+	rm -rf aibs_sphinx/.git
+
 clean:
 	rm -rf $(BUILDDIR)/*
+	rm -rf auto_examples
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

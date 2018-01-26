@@ -20,7 +20,6 @@ def test_example(decorated_example):
     """Sample pytest test function with the pytest fixture as an argument.
     """
     import aibs.ipfx
-    from aibs import ipfx
 
 
 
