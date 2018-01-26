@@ -22,6 +22,6 @@ pytest = "*"
 matplotlib = "*"
 pillow = "*"
 argschema = "*"
-pandas
-scipy
-numpy
+pandas = "*"
+scipy = "*"
+numpy = "*"
