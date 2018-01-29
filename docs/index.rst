@@ -3,11 +3,13 @@ ipfx documentation
 
 Contents:
 
+`gallery <auto_examples>`_
+
 .. toctree::
    :maxdepth: 2
 
    readme
-   installation
+   installation   
    usage
    authors
    history
