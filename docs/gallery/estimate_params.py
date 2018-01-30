@@ -8,16 +8,19 @@ Estimate spike detection parameters
 from aibs.ipfx.aibs_data_set import AibsDataSet
 import aibs.ipfx.ephys_features as ft
 import aibs.ipfx.ephys_extractor as fx
+
 from allensdk.api.queries.cell_types_api import CellTypesApi
+
+import os
 import matplotlib.pyplot as plt
 
 specimen_id = 488679042
-nwb_file = 'ephys.nwb'
-sweeps_file = 'sweeps.json'
+nwb_file = '%d.nwb' % specimen_id
 
 # download a specific experiment NWB file via AllenSDK
 ct = CellTypesApi()
-ct.save_ephys_data(specimen_id, nwb_file)
+if not os.path.exists(nwb_file):
+    ct.save_ephys_data(specimen_id, nwb_file)
 sweeps = ct.get_ephys_sweeps(specimen_id)
 
 # sweeps have required fields with particular names
