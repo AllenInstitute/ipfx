@@ -7,6 +7,7 @@ Detect spikes for a single sweep
 
 import matplotlib.pyplot as plt
 from allensdk.api.queries.cell_types_api import CellTypesApi
+from aibs.ipfx.aibs_data_set import AibsDataSet
 from aibs.ipfx.ephys_extractor import SpikeExtractor
 
 # Download and access the experimental data
