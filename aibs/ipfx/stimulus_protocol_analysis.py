@@ -7,7 +7,7 @@ from . import ephys_features as ft
 from . import ephys_extractor as efex
 
 from .ephys_data_set import SweepSet
-    
+
 class StimulusProtocolAnalysis(object):
     MEAN_FEATURES = [ "upstroke_downstroke_ratio", "peak_v", "peak_t", "trough_v", "trough_t",
                       "fast_trough_v", "fast_trough_t", "slow_trough_v", "slow_trough_t",
@@ -21,7 +21,7 @@ class StimulusProtocolAnalysis(object):
         self._sweep_features = None
 
     def _sweep_to_dict(self, sweep, extra_params=None):
-        s = sweep.to_dict() 
+        s = sweep.to_dict()
         s['index'] = sweep.name
         s['spikes'] = self._spikes_set[sweep.name].to_dict(orient='records')
         if extra_params:
@@ -40,11 +40,20 @@ class StimulusProtocolAnalysis(object):
             out.append(s)
         return out
 
-    def subthreshold_sweeps(self, sweep_features):
+    def subthreshold_sweeps(self, sweep_features=None):
+        if sweep_features is None:
+            sweep_features = self.all_sweep_features()
+
         return sweep_features["avg_rate"] == 0
 
-    def suprathreshold_sweeps(self, sweep_features):
+    def suprathreshold_sweeps(self, sweep_features=None):
+        if sweep_features is None:
+            sweep_features = self.all_sweep_features()
+
         return sweep_features["avg_rate"] > 0
+
+    def all_sweep_features(self):
+        return self._sweep_features
 
     def mean_features_first_spike(self, spikes_set, features_list=None):
         """ Compute mean feature values for the first spike in list of extractors """
@@ -57,12 +66,12 @@ class StimulusProtocolAnalysis(object):
             mfd = [ spikes[mf].values[0] for spikes in spikes_set if len(spikes) > 0 ]
             output[mf] = np.mean(mfd)
         return output
-    
+
     def analyze_basic_features(self, sweep_set, extra_sweep_features=None):
-        self._spikes_set = [ self.spx.process(sweep.t, sweep.v, sweep.i) 
+        self._spikes_set = [ self.spx.process(sweep.t, sweep.v, sweep.i)
                              for sweep in sweep_set.sweeps ]
 
-        self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features) 
+        self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features)
                                               for sweep, spikes in zip(sweep_set.sweeps, self._spikes_set) ])
 
     def reset_basic_features(self):
@@ -71,12 +80,12 @@ class StimulusProtocolAnalysis(object):
 
     def analyze(self, sweep_set, extra_sweep_features=None):
         return {}
-        
+
     def as_dict(self, features, extra_params=None):
         return {}
 
 class RampAnalysis(StimulusProtocolAnalysis):
-    def analyze(self, sweep_set): 
+    def analyze(self, sweep_set):
         self.analyze_basic_features(sweep_set)
 
         features = {}
@@ -98,7 +107,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
     SUBTHRESH_MAX_AMP = 0
     SAG_TARGET = -100.
     HERO_MIN_AMP_OFFSET = 39.0
-    HERO_MAX_AMP_OFFSET = 61.0    
+    HERO_MAX_AMP_OFFSET = 61.0
 
     def __init__(self, spx, sptx, subthresh_min_amp, baseline_interval=0.3, tau_frac=0.1):
         super(LongSquareAnalysis, self).__init__(spx, sptx)
@@ -107,7 +116,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         self.baseline_interval = baseline_interval
         self.tau_frac = tau_frac
 
-    def analyze(self, sweep_set): 
+    def analyze(self, sweep_set):
         extra_sweep_features = ['peak_deflect','stim_amp','v_baseline','sag','burst','delay']
         self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_features)
 
@@ -131,7 +140,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         if len(spiking_sweeps) == 0:
             raise ft.FeatureError("No spiking long square sweeps, cannot compute cell features.")
 
-        
+
         spiking_features = self._sweep_features[spiking_sweeps]
         min_index = np.argmin(spiking_features["stim_amp"].values)
         rheobase_index = spiking_features.iloc[min_index].name
@@ -184,7 +193,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
                                                            calc_subthresh_ss.v,
                                                            self.spx.start, self.spx.end,
                                                            self.baseline_interval)
-        
+
         features["tau"] = np.nanmean(calc_subthresh_features['tau'])
 
         return features
@@ -200,8 +209,8 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         return out
 
-    def find_hero_sweep(self, rheo_amp, spiking_features, 
-                        min_offset=HERO_MIN_AMP_OFFSET, 
+    def find_hero_sweep(self, rheo_amp, spiking_features,
+                        min_offset=HERO_MIN_AMP_OFFSET,
                         max_offset=HERO_MAX_AMP_OFFSET):
 
         hero_min, hero_max = rheo_amp + min_offset, rheo_amp + max_offset
@@ -214,7 +223,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
             return hero_features.iloc[0]
 
 
-class ShortSquareAnalysis(StimulusProtocolAnalysis): 
+class ShortSquareAnalysis(StimulusProtocolAnalysis):
     def __init__(self, spx, sptx):
         super(ShortSquareAnalysis, self).__init__(spx, sptx)
         self.sptx.stim_amp_fn = ft._short_step_stim_amp
@@ -247,7 +256,7 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
 
         return features
 
-            
+
     def as_dict(self, features, extra_params=None):
         out = features.copy()
         for k in [ "common_amp_sweeps" ]:
