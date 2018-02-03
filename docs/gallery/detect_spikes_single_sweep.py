@@ -5,17 +5,19 @@ Single sweep detection
 Detect spikes for a single sweep
 """
 
+import os
 import matplotlib.pyplot as plt
 from allensdk.api.queries.cell_types_api import CellTypesApi
-from aibs.ipfx.aibs_data_set import AibsDataSet
-from aibs.ipfx.ephys_extractor import SpikeExtractor
+from allensdk.ipfx.aibs_data_set import AibsDataSet
+from allensdk.ipfx.ephys_extractor import SpikeExtractor
 
 # Download and access the experimental data
 ct = CellTypesApi()
 
 specimen_id = 488679042
-nwb_filename = "example.nwb"
-ct.save_ephys_data(specimen_id, nwb_filename)
+nwb_filename = "%d.nwb" % specimen_id
+if not os.path.exists(nwb_filename):
+    ct.save_ephys_data(specimen_id, nwb_filename)
 
 # Get the data for the sweep into a format we can use
 dataset = AibsDataSet([], nwb_filename)

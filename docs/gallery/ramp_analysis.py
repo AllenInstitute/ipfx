@@ -5,20 +5,22 @@ Ramp Analysis
 Detect ramp features
 """
 
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from allensdk.api.queries.cell_types_api import CellTypesApi
-from aibs.ipfx.aibs_data_set import AibsDataSet
-from aibs.ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
-from aibs.ipfx.stimulus_protocol_analysis import RampAnalysis
+from allensdk.ipfx.aibs_data_set import AibsDataSet
+from allensdk.ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
+from allensdk.ipfx.stimulus_protocol_analysis import RampAnalysis
 
 # Download and access the experimental data
 ct = CellTypesApi()
 
 specimen_id = 488679042
-nwb_filename = "example.nwb"
-ct.save_ephys_data(specimen_id, nwb_filename)
+nwb_filename = "%d.nwb" % specimen_id
+if not os.path.exists(nwb_filename):
+    ct.save_ephys_data(specimen_id, nwb_filename)
 sweeps = ct.get_ephys_sweeps(specimen_id)
 
 # Sweeps have required fields with particular names

@@ -4,19 +4,22 @@ Short Square Analysis
 
 Detect short square features
 """
+
+import os
 import matplotlib.pyplot as plt
 from allensdk.api.queries.cell_types_api import CellTypesApi
-from aibs.ipfx.aibs_data_set import AibsDataSet
-from aibs.ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
-from aibs.ipfx.stimulus_protocol_analysis import ShortSquareAnalysis
-import aibs.ipfx.ephys_features as ft
+from allensdk.ipfx.aibs_data_set import AibsDataSet
+from allensdk.ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
+from allensdk.ipfx.stimulus_protocol_analysis import ShortSquareAnalysis
+import allensdk.ipfx.ephys_features as ft
 
 # Download and access the experimental data
 ct = CellTypesApi()
 
 specimen_id = 488679042
-nwb_filename = "example.nwb"
-ct.save_ephys_data(specimen_id, nwb_filename)
+nwb_filename = "%d.nwb" % specimen_id
+if not os.path.exists(nwb_filename):
+    ct.save_ephys_data(specimen_id, nwb_filename)
 sweeps = ct.get_ephys_sweeps(specimen_id)
 
 # Sweeps have required fields with particular names

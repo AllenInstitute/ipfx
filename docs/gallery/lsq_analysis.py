@@ -5,10 +5,10 @@ Long Square Analysis
 Detect Long Square Features
 """
 
-from aibs.ipfx.aibs_data_set import AibsDataSet
-import aibs.ipfx.ephys_features as ft
-import aibs.ipfx.ephys_extractor as efex
-import aibs.ipfx.stimulus_protocol_analysis as spa
+from allensdk.ipfx.aibs_data_set import AibsDataSet
+import allensdk.ipfx.ephys_features as ft
+import allensdk.ipfx.ephys_extractor as efex
+import allensdk.ipfx.stimulus_protocol_analysis as spa
 
 from allensdk.api.queries.cell_types_api import CellTypesApi
 
