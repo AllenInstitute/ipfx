@@ -10,11 +10,11 @@ import numpy as np
 import argparse
 import h5py
 
-from aibs.ipfx.mies_nwb.mies_data_set import MiesDataSet
-import aibs.ipfx.qc_features as qcf
+from allensdk.ipfx.mies_nwb.mies_data_set import MiesDataSet
+import allensdk.ipfx.qc_features as qcf
 
 import argschema as ags
-from aibs.ipfx._schemas import QcParameters
+from allensdk.ipfx._schemas import QcParameters
 import allensdk.core.json_utilities as ju
 
 def run_qc(input_nwb_file, input_h5_file, cell_features, sweep_data, qc_criteria):

@@ -2,8 +2,8 @@ import h5py
 import logging
 import pandas as pd
 
-from aibs.ipfx.aibs_data_set import AibsDataSet
-import aibs.ipfx.mies_nwb.lab_notebook_reader as lab_notebook_reader
+from allensdk.ipfx.aibs_data_set import AibsDataSet
+import allensdk.ipfx.mies_nwb.lab_notebook_reader as lab_notebook_reader
 
 class MiesDataSet(AibsDataSet):
     def __init__(self, nwb_file, h5_file=None, ontology=None):

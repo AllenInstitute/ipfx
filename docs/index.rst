@@ -1,15 +1,19 @@
 ipfx documentation
 ======================================
 
-Contents:
+Gallery:
+==================
 
-`gallery <auto_examples>`_
+:ref:`examples-index`
+
+Contents:
+==================
 
 .. toctree::
    :maxdepth: 2
 
    readme
-   installation   
+   installation
    usage
    authors
    history

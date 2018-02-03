@@ -3,8 +3,8 @@ matplotlib.use('agg')
 
 import logging
 
-import aibs.ipfx.ephys_features as ft
-import aibs.ipfx.data_set_features as dsft
+import allensdk.ipfx.ephys_features as ft
+import allensdk.ipfx.data_set_features as dsft
 
 import os
 import numpy as np

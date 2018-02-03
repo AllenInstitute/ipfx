@@ -10,11 +10,11 @@ import pandas as pd
 
 import argschema as ags
 
-import aibs.ipfx.data_set_features as dsft
-from aibs.ipfx.ephys_data_set import EphysDataSet
-from aibs.ipfx._schemas import FeatureExtractionParameters
-import aibs.ipfx.plot_qc_figures as plotqc
-from aibs.ipfx.aibs_data_set import AibsDataSet
+import allensdk.ipfx.data_set_features as dsft
+from allensdk.ipfx.ephys_data_set import EphysDataSet
+from allensdk.ipfx._schemas import FeatureExtractionParameters
+import allensdk.ipfx.plot_qc_figures as plotqc
+from allensdk.ipfx.aibs_data_set import AibsDataSet
 
 from allensdk.config.manifest import Manifest
 import allensdk.core.json_utilities as ju
