@@ -35,8 +35,8 @@
 #
 import pytest
 import numpy as np
-import aibs.ipfx.ephys_extractor as efex
-import aibs.ipfx.ephys_data_set as eds
+import allensdk.ipfx.ephys_extractor as efex
+import allensdk.ipfx.ephys_data_set as eds
 import os
 
 def test_extractors_no_values():

@@ -1,5 +1,5 @@
 import argschema as ags
-from aibs.ipfx._schemas import PipelineParameters
+from allensdk.ipfx._schemas import PipelineParameters
 
 from run_sweep_extraction import run_sweep_extraction
 from run_qc import run_qc

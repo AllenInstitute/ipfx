@@ -1,4 +1,4 @@
-import aibs.ipfx.qc_features as qcf
+import allensdk.ipfx.qc_features as qcf
 import numpy as np
 
 def test_measure_blowout():

@@ -3,14 +3,14 @@ import sys
 import numpy as np
 import h5py
 
-from aibs.ipfx.ephys_data_set import EphysStimulusOntology
-from aibs.ipfx.mies_nwb.mies_data_set import MiesDataSet
+from allensdk.ipfx.ephys_data_set import EphysStimulusOntology
+from allensdk.ipfx.mies_nwb.mies_data_set import MiesDataSet
 
-import aibs.ipfx.qc_features as qcf
+import allensdk.ipfx.qc_features as qcf
 import allensdk.core.json_utilities as ju
 
 import argschema as ags
-from aibs.ipfx._schemas import SweepExtractionParameters
+from allensdk.ipfx._schemas import SweepExtractionParameters
 
 # manual keys are values that can be passed in through input.json.
 # these values are used if the particular value cannot be computed.

@@ -1,6 +1,6 @@
 import pytest
-import aibs.ipfx.data_set_features as dsft
-from aibs.ipfx.ephys_features import FeatureError
+import allensdk.ipfx.data_set_features as dsft
+from allensdk.ipfx.ephys_features import FeatureError
 
 def test_select_subthreshold_min_amplitude():
     a = [ 10, 10, 10, 10 ]

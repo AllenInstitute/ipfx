@@ -1,10 +1,10 @@
 default_context:
   project_name: ipfx
-  repo_url: https://github.com/AllenInstitute/aibs.ipfx
+  repo_url: https://github.com/AllenInstitute/allensdk.ipfx
   project_slug: ipfx
   user_name: dyf
   project_short_description: intrinsic physiology feature extractor
-  project_namespace: aibs
+  project_namespace: allensdk
   version: 0.1.0
   full_name: David Feng
   _template: https://github.com/AllenInstitute/pyproject_template

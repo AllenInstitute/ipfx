@@ -34,7 +34,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 import pytest
-import aibs.ipfx.ephys_features as ft
+import allensdk.ipfx.ephys_features as ft
 import numpy as np
 import os
 
