@@ -7,7 +7,6 @@ import allensdk.ipfx.mies_nwb.lab_notebook_reader as lab_notebook_reader
 
 class MiesDataSet(AibsDataSet):
     def __init__(self, nwb_file, h5_file=None, ontology=None):
-        print nwb_file, h5_file, ontology
         super(MiesDataSet, self).__init__([], nwb_file, ontology)
         self.h5_file = h5_file
         self.sweep_table = self.build_sweep_table()
@@ -81,14 +80,14 @@ class MiesDataSet(AibsDataSet):
             cnt = notebook.get_value("Set Sweep Count", sweep_num, 0)
             stim_code_ext = stim_code + "[%d]" % int(cnt)
             
-            sweep_record["stimulus_code"] = stim_code_ext
+            sweep_record["stimulus_code_ext"] = stim_code_ext
+            sweep_record["stimulus_code"] = stim_code
 
             if self.ontology:
-                stim_name = self.ontology.mapping.get(stim_code, None)
-                if stim_name:
-                    sweep_record["stimulus_name"] = stim_name
-                else:
-                    logging.warning("no stimulus name found for stimulus %s" % stim_code)
+                # make sure we can find all of our stimuli in the ontology
+                stim = self.ontology.find(stim_code)
+                sweep_record["stimulus_name"] = stim["name"]
+
 
             sweep_data.append(sweep_record)
         #

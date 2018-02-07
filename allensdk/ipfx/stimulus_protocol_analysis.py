@@ -109,11 +109,10 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
     HERO_MIN_AMP_OFFSET = 39.0
     HERO_MAX_AMP_OFFSET = 61.0
 
-    def __init__(self, spx, sptx, subthresh_min_amp, baseline_interval=0.3, tau_frac=0.1):
+    def __init__(self, spx, sptx, subthresh_min_amp, tau_frac=0.1):
         super(LongSquareAnalysis, self).__init__(spx, sptx)
         self.subthresh_min_amp = subthresh_min_amp
         self.sptx.stim_amp_fn = ft._step_stim_amp
-        self.baseline_interval = baseline_interval
         self.tau_frac = tau_frac
 
     def analyze(self, sweep_set):
@@ -183,16 +182,18 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         calc_subthresh_features = subthresh_features[ (subthresh_features["stim_amp"] < self.SUBTHRESH_MAX_AMP) & \
                                                       (subthresh_features["stim_amp"] > self.subthresh_min_amp) ].copy()
 
+        logging.debug("calc_subthresh_sweeps: %d", len(calc_subthresh_features))
+
         calc_subthresh_ss = SweepSet([sweep_set.sweeps[i] for i in calc_subthresh_features.index.values])
-        taus = [ ft.time_constant(s.t, s.v, self.spx.start, self.spx.end, self.tau_frac, self.baseline_interval) for s in calc_subthresh_ss.sweeps ]
-        calc_subthresh_features['tau'] = pd.Series(taus)
+        taus = [ ft.time_constant(s.t, s.i, s.v, self.spx.start, self.spx.end, self.tau_frac, self.sptx.baseline_interval) for s in calc_subthresh_ss.sweeps ]
+        calc_subthresh_features['tau'] = taus
 
         features["subthreshold_membrane_property_sweeps"] = calc_subthresh_features
         features["input_resistance"] = ft.input_resistance(calc_subthresh_ss.t,
                                                            calc_subthresh_ss.i,
                                                            calc_subthresh_ss.v,
                                                            self.spx.start, self.spx.end,
-                                                           self.baseline_interval)
+                                                           self.sptx.baseline_interval)
 
         features["tau"] = np.nanmean(calc_subthresh_features['tau'])
 
