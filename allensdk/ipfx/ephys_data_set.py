@@ -1,3 +1,14 @@
+import json
+import os
+import logging
+
+DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(os.path.dirname(__file__), 'stimulus_ontology.json')
+
+def load_default_stimulus_ontology():
+    logging.debug("loading default stimulus ontology: %s", DEFAULT_STIMULUS_ONTOLOGY_FILE)
+    with open(DEFAULT_STIMULUS_ONTOLOGY_FILE) as f:
+        return json.load(f)
+
 class EphysStimulusOntology(object):
     def __init__(self, stimuli):
         self.stimuli = stimuli
@@ -34,6 +45,10 @@ class EphysDataSet(object):
     
     def __init__(self, ontology=None):
         self.sweep_table = None
+
+        if ontology is None:
+            ontology = load_default_stimulus_ontology()
+            
         self.ontology = ontology
 
         self.ramp_names = ( "Ramp", )

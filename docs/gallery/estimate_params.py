@@ -23,13 +23,6 @@ if not os.path.exists(nwb_file):
     ct.save_ephys_data(specimen_id, nwb_file)
 sweeps = ct.get_ephys_sweeps(specimen_id)
 
-# sweeps have required fields with particular names
-sweeps = [ { AibsDataSet.SWEEP_NUMBER: s['sweep_number'],
-             AibsDataSet.STIMULUS_UNITS: s['stimulus_units'],
-             AibsDataSet.STIMULUS_CODE: s['stimulus_description'],
-             AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
-             AibsDataSet.PASSED: True } for s in sweeps ]
-
 # build a data set and find the short squares
 data_set = AibsDataSet(sweeps, nwb_file)
 ssq_table = data_set.filtered_sweep_table(stimulus_names=["Short Square"])

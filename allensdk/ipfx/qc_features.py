@@ -1,6 +1,14 @@
+import os, json
 from . import ephys_features as ft
 import logging
 import numpy as np
+
+DEFAULT_QC_CRITERIA_FILE = os.path.join(os.path.dirname(__file__), 'qc_criteria.json')
+
+def load_default_qc_criteria():
+    logging.debug("loading default qc criteria file: %s", DEFAULT_QC_CRITERIA_FILE)
+    with open(DEFAULT_QC_CRITERIA_FILE,"r") as f:
+        return json.load(f)
 
 def get_last_vm_epoch(idx1, stim, hz):
     return idx1-int(0.500 * hz), idx1
@@ -121,7 +129,10 @@ def get_sweep_number_by_stimulus_names(data_set, stimulus_names):
 
     return sweeps.sweep_number.values[-1]    
 
-def cell_qc_features(data_set, manual_values):
+def cell_qc_features(data_set, manual_values=None):
+    if manual_values is None:
+        manual_values = {}
+
     output_data = {}
     tag_list = []
     
@@ -392,7 +403,10 @@ def evaluate_input_and_access_resistance(input_access_resistance_ratio,
 
     return failed_bad_rs
 
-def qc_experiment(data_set, cell_data, sweep_data, qc_criteria):
+def qc_experiment(data_set, cell_data, sweep_data, qc_criteria=None):
+    if qc_criteria is None:
+        qc_criteria = load_default_qc_criteria()
+
     cell_state = qc_cell(data_set, cell_data, sweep_data, qc_criteria)
     
     sweep_data_index = { sweep['sweep_number']:sweep for sweep in sweep_data }
@@ -408,7 +422,10 @@ def qc_experiment(data_set, cell_data, sweep_data, qc_criteria):
     return cell_state, sweep_states
 
 
-def qc_current_clamp_sweep(data_set, sweep, qc_criteria):
+def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
+    if qc_criteria is None:
+        qc_criteria = load_default_qc_criteria()
+
     # keep track of failures
     fail_tags = []
 
@@ -471,7 +488,10 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria):
     return len(fail_tags) > 0, fail_tags
 
     
-def qc_cell(data_set, cell_data, sweep_data, qc_criteria):
+def qc_cell(data_set, cell_data, sweep_data, qc_criteria=None):
+    if qc_criteria is None:
+        qc_criteria = load_default_qc_criteria()
+
     # PBS-333
     # C1NSSEED stimuli have many instances, but these instances aren't
     #   stored with the sweep. Ie, the sweep stores the stimulus value
