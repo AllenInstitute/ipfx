@@ -343,7 +343,7 @@ def nan_get(obj, key):
         return None if np.isnan(v) else v
 
     
-def extract_data_set_features(data_set):
+def extract_data_set_features(data_set, subthresh_min_amp=None):
     # extract sweep-level features
     logging.debug("Computing sweep features")
 
@@ -372,8 +372,9 @@ def extract_data_set_features(data_set):
     logging.debug("short square sweeps: %s", str(ssq_sweep_numbers))
     logging.debug("ramp sweeps: %s", str(ramp_sweep_numbers))
 
-    subthresh_min_amp, clsq_amp_delta = select_subthreshold_min_amplitude(clsq_sweeps['stimulus_amplitude'])
-    logging.info("Long squares using %fpA step size.  Using subthreshold minimum amplitude of %f.", clsq_amp_delta, subthresh_min_amp)
+    if subthresh_min_amp is None:
+        subthresh_min_amp, clsq_amp_delta = select_subthreshold_min_amplitude(clsq_sweeps['stimulus_amplitude'])
+        logging.info("Long squares using %fpA step size.  Using subthreshold minimum amplitude of %f.", clsq_amp_delta, subthresh_min_amp)
 
     cell_features = extract_cell_features(data_set, 
                                           ramp_sweep_numbers,

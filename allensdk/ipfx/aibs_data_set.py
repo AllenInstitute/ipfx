@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import re
 
 from .ephys_data_set import EphysDataSet, Sweep
 from allensdk.core.nwb_data_set import NwbDataSet
@@ -15,7 +16,8 @@ class AibsDataSet(EphysDataSet):
     def modify_sweep_list(self, sweep_list):
         return [ { AibsDataSet.SWEEP_NUMBER: s['sweep_number'],
                    AibsDataSet.STIMULUS_UNITS: s['stimulus_units'],
-                   AibsDataSet.STIMULUS_CODE: s['stimulus_description'],
+                   AibsDataSet.STIMULUS_AMPLITUDE: s['stimulus_absolute_amplitude'],
+                   AibsDataSet.STIMULUS_CODE: re.sub("\[\d+\]", "", s['stimulus_description']),
                    AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
                    AibsDataSet.PASSED: True } for s in sweep_list ]
     
