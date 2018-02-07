@@ -7,7 +7,6 @@ import allensdk.ipfx.mies_nwb.lab_notebook_reader as lab_notebook_reader
 
 class MiesDataSet(AibsDataSet):
     def __init__(self, nwb_file, h5_file=None, ontology=None):
-        print nwb_file, h5_file, ontology
         super(MiesDataSet, self).__init__([], nwb_file, ontology)
         self.h5_file = h5_file
         self.sweep_table = self.build_sweep_table()

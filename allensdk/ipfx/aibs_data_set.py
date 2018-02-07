@@ -7,11 +7,18 @@ from allensdk.core.nwb_data_set import NwbDataSet
 class AibsDataSet(EphysDataSet):
     def __init__(self, sweep_list, nwb_file, ontology=None):
         super(AibsDataSet, self).__init__(ontology)
-        self.sweep_list = sweep_list
+        self.sweep_list = self.modify_sweep_list(sweep_list)
         self.sweep_table = pd.DataFrame.from_records(self.sweep_list)
         self.data_set = NwbDataSet(nwb_file)
         self.nwb_file = nwb_file
 
+    def modify_sweep_list(self, sweep_list):
+        return [ { AibsDataSet.SWEEP_NUMBER: s['sweep_number'],
+                   AibsDataSet.STIMULUS_UNITS: s['stimulus_units'],
+                   AibsDataSet.STIMULUS_CODE: s['stimulus_description'],
+                   AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
+                   AibsDataSet.PASSED: True } for s in sweep_list ]
+    
     def sweep(self, sweep_number):
         data = self.data_set.get_sweep(sweep_number)
 
