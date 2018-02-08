@@ -1,10 +1,8 @@
-import logging
-logging.basicConfig(level=logging.DEBUG)
 """
 All Analysis
 ====================
 
-Run all analysis on NWB file
+Run all analyses on NWB file
 """
 
 import os
