@@ -7,7 +7,7 @@ DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(os.path.dirname(__file__), 'stimul
 def load_default_stimulus_ontology():
     logging.debug("loading default stimulus ontology: %s", DEFAULT_STIMULUS_ONTOLOGY_FILE)
     with open(DEFAULT_STIMULUS_ONTOLOGY_FILE) as f:
-        return json.load(f)
+        return EphysStimulusOntology(json.load(f))
 
 class EphysStimulusOntology(object):
     def __init__(self, stimuli):
@@ -33,6 +33,7 @@ class EphysStimulusOntology(object):
 class EphysDataSet(object):
     STIMULUS_UNITS = 'stimulus_units'
     STIMULUS_CODE = 'stimulus_code'
+    STIMULUS_AMPLITUDE = 'stimulus_amplitude'
     STIMULUS_NAME = 'stimulus_name'
     SWEEP_NUMBER = 'sweep_number'
     PASSED = 'passed'
