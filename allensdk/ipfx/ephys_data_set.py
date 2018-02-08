@@ -10,16 +10,31 @@ def load_default_stimulus_ontology():
         return EphysStimulusOntology(json.load(f))
 
 class EphysStimulusOntology(object):
-    def __init__(self, file_name):
-        with open(file_name,'r') as f:
-            self.mapping = json.load(f)
+    def __init__(self, stimuli):
+        self.stimuli = stimuli
+        
+    def find(self, val, key='code'):
+        try:
+            return next(s for s in self.stimuli if s[key] == val)
+        except StopIteration as e:
+            raise KeyError("Could not find stimulus: %s" % val)
+
+    def stimulus_has_any_tags(self, stim, tags, key='code'):
+        stim = self.find(stim, key)
+
+        return any(tag in stim['tags'] for tag in tags)
+
+    def stimulus_has_all_tags(self, stim, tags, key='code'):
+        stim = self.find(stim, key)
+
+        return all(tag in stim['tags'] for tag in tags)
 
 
 class EphysDataSet(object):
-    STIMULUS_NAME = 'stimulus_name'
     STIMULUS_UNITS = 'stimulus_units'
     STIMULUS_CODE = 'stimulus_code'
     STIMULUS_AMPLITUDE = 'stimulus_amplitude'
+    STIMULUS_NAME = 'stimulus_name'
     SWEEP_NUMBER = 'sweep_number'
     PASSED = 'passed'
   
@@ -37,30 +52,27 @@ class EphysDataSet(object):
             
         self.ontology = ontology
 
-        self.ramp_codes = ( "C1RP", )
         self.ramp_names = ( "Ramp", )
 
         self.long_square_names = ( "Long Square", )
-        self.coarse_long_square_codes = ( "C1LSCOARSE", )
-        self.long_square_codes = ( "C1LS", )
-
+        self.coarse_long_square_names = ( "C1LSCOARSE",  )
         self.short_square_triple_names = ( "Short Square - Triple", ) 
         
         self.short_square_names = ( "Short Square",
-                                    "Short Square - Hold -60mv",
-                                    "Short Square - Hold -70mv",
-                                    "Short Square - Hold -80mv" )
+                                    "Short Square - Hold -60mV",
+                                    "Short Square - Hold -70mV",
+                                    "Short Square - Hold -80mV" )
 
-        self.blowout_codes = ( 'EXTPBLWOUT', )
-        self.bath_codes = ( 'EXTPINBATH', )
-        self.seal_codes = ( 'EXTPCllATT', )
-        self.breakin_codes = ( 'EXTPBREAKN', )
-        self.extp_codes = ( 'EXTP', )
+        self.blowout_names = ( 'EXTPBLWOUT', )
+        self.bath_names = ( 'EXTPINBATH', )
+        self.seal_names = ( 'EXTPCllATT', )
+        self.breakin_names = ( 'EXTPBREAKN', )
+        self.extp_names = ( 'EXTP', )
 
-        self.current_clamp_units = ( 'Amps', 'pA' )
 
-    def filtered_sweep_table(self, current_clamp_only=False, passing_only=False, 
-                             stimulus_names=None, stimulus_codes=None):
+        self.current_clamp_units = ( 'Amps', 'pA') 
+
+    def filtered_sweep_table(self, current_clamp_only=False, passing_only=False, stimuli=None):
         st = self.sweep_table
 
         if current_clamp_only:
@@ -69,18 +81,11 @@ class EphysDataSet(object):
         if passing_only:
             st = st[st[self.PASSED]]
 
-        if stimulus_names:
-            st = st[st[self.STIMULUS_NAME].isin(stimulus_names)]
-
-        if stimulus_codes:
-            mask = st[self.STIMULUS_CODE].apply(self.stimulus_code_matches, args=(stimulus_codes,))
+        if stimuli:
+            mask = st[self.STIMULUS_CODE].apply(self.ontology.stimulus_has_any_tags, args=(stimuli,))
             st = st[mask]
 
         return st
-
-    @staticmethod
-    def stimulus_code_matches(stimulus_code, match_codes):
-        return any(stimulus_code.startswith(mc) for mc in match_codes)
 
     def sweep(self, sweep_number):
         """ returns a dictionary with properties: i (in pA), v (in mV), t (in sec), start, end"""

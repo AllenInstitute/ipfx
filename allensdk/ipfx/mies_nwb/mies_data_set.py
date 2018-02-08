@@ -80,14 +80,14 @@ class MiesDataSet(AibsDataSet):
             cnt = notebook.get_value("Set Sweep Count", sweep_num, 0)
             stim_code_ext = stim_code + "[%d]" % int(cnt)
             
-            sweep_record["stimulus_code"] = stim_code_ext
+            sweep_record["stimulus_code_ext"] = stim_code_ext
+            sweep_record["stimulus_code"] = stim_code
 
             if self.ontology:
-                stim_name = self.ontology.mapping.get(stim_code, None)
-                if stim_name:
-                    sweep_record["stimulus_name"] = stim_name
-                else:
-                    logging.warning("no stimulus name found for stimulus %s" % stim_code)
+                # make sure we can find all of our stimuli in the ontology
+                stim = self.ontology.find(stim_code)
+                sweep_record["stimulus_name"] = stim["name"]
+
 
             sweep_data.append(sweep_record)
         #

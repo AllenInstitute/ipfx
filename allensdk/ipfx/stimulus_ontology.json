@@ -1,76 +1,735 @@
-{
-  "EXTPBLWOUT141203": "Test",
-  "C2SQRHELNG150216": "Square - 2s Suprathreshold",
-  "EXTPSMOKET141203": "Test",
-  "C1LSCOARSE150217": "Long Square",
-  "C1LSCOARSE150216": "Long Square",
-  "C2SQRHELNG150112": "Square - 2s Suprathreshold",
-  "C2SSHM80CS150112": "Short Square - Hold -80mV",
-  "CCapcheck": "Unknown",
-  "C1NSSEED_2141203": "Noise 2",
-  "C1NSSEED_1150217": "Noise 1",
-  "S20_Blowout": "Unknown",
-  "C2SSHM70CS150126": "Short Square - Hold -70mV",
-  "C2NSRMPRH2150120": "Ramp to Rheobase",
-  "S5_AfterBreakIn": "Unknown",
-  "C2SSHM60FN141203": "Short Square - Hold -60mV",
-  "VCLAMP_RNA_STIM": "Test",
-  "C1NSSEED_2150216": "Noise 2",
-  "C1NSSEED_2150217": "Noise 2",
-  "C1LSCOARSE150112": "Long Square",
-  "C1NSSEED_2150112": "Noise 2",
-  "C2SSTRIPLE141203": "Short Square - Triple",
-  "C1SQCAPCHK141203": "Square - 0.5ms Subthreshold",
-  "C2SSHM70FN150126": "Short Square - Hold -70mV",
-  "C1LSFINEST150112": "Long Square",
-  "C2SSHM80FN141203": "Short Square - Hold -80mV",
-  "C2SQRHELNG141203": "Square - 2s Suprathreshold",
-  "S10_LPFine": "Unknown",
-  "C2NSRMPRH2150119": "Ramp to Rheobase",
-  "C2SSHM60CS150112": "Short Square - Hold -60mV",
-  "C1SSCOARSE150112": "Short Square",
-  "S7_BlipCoarse": "Unknown",
-  "EXTPRSCHEK150209": "Test",
-  "C2SSHM80CS141203": "Short Square - Hold -80mV",
-  "subthreshold": "Test",
-  "TestPulse": "Unknown",
-  "EXTPBREAKN141203": "Test",
-  "C1LSCOARSE141203": "Long Square",
-  "C1RP25PR1S141203": "Ramp",
-  "S19_GigaSeal": "Unknown",
-  "C1NSSEED_1150216": "Noise 1",
-  "newNoise2": "Unknown",
-  "newRamp": "Unknown",
-  "C2SSHM80FN150112": "Short Square - Hold -80mV",
-  "C1LSFINEST141203": "Long Square",
-  "C2SSTRIPLE150429": "Short Square - Triple",
-  "C2SSHM60CS141203": "Short Square - Hold -60mV",
-  "EXTPCllATT141203": "Test",
-  "S18_ExpEnd": "Unknown",
-  "C2NSRMPRHE141203": "Ramp to Rheobase",
-  "LPreplacement": "Unknown",
-  "C2NSRMPRH2150216": "Ramp to Rheobase",
-  "C1SSFINEST150112": "Short Square",
-  "C1SSFINEST141203": "Short Square",
-  "C1NSSEED_1141203": "Noise 1",
-  "EXTPINBATH141203": "Test",
-  "deltabliptest": "Unknown",
-  "C2SSHM60FN150112": "Short Square - Hold -60mV",
-  "S8_BlipFine": "Unknown",
-  "Rheobase_finder": "Test",
-  "RMPtoRHEO": "Unknown",
-  "EXTPGGAEND141203": "Test",
-  "S2_InBath": "Unknown",
-  "C2NSRMPRHE150112": "Ramp to Rheobase",
-  "EXTPSAFETY141203": "Test",
-  "EXTPEXPEND141203": "Test",
-  "C1LSCOARSEMICRO": "Long Square",
-  "newNoise1": "Unknown",
-  "C1SSCOARSE141203": "Short Square",
-  "Blip_finder": "Test",
-  "C1NSSEED_1150112": "Noise 1",
-  "S1_SmokeTest": "Unknown",
-  "S4_CellAttached": "Unknown",
-  "C1LSFINESTMICRO": "Long Square",
-  "C2NSRMPRH2150217": "Ramp to Rheobase"
-}
+[
+  {
+    "code": "EXTPGGAEND141203",
+    "name": "Test",
+    "tags": [
+      "EXTPGGAEND141203",
+      "Test",
+      "EXTPGGAEND"
+    ]
+  },
+  {
+    "code": "S10_LPFine",
+    "name": "Unknown",
+    "tags": [
+      "S10_LPFine",
+      "Unknown"
+    ]
+  },
+  {
+    "code": "EXTPEXPEND141203",
+    "name": "Test",
+    "tags": [
+      "Test",
+      "EXTPEXPEND",
+      "EXTPEXPEND141203"
+    ]
+  },
+  {
+    "code": "S20_Blowout",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "S20_Blowout"
+    ]
+  },
+  {
+    "code": "newNoise2",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "newNoise2"
+    ]
+  },
+  {
+    "code": "S4_CellAttached",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "S4_CellAttached"
+    ]
+  },
+  {
+    "code": "deltabliptest",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "deltabliptest"
+    ]
+  },
+  {
+    "code": "S18_ExpEnd",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "S18_ExpEnd"
+    ]
+  },
+  {
+    "code": "LPreplacement",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "LPreplacement"
+    ]
+  },
+  {
+    "code": "CCapcheck",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "CCapcheck"
+    ]
+  },
+  {
+    "code": "S2_InBath",
+    "name": "Unknown",
+    "tags": [
+      "S2_InBath",
+      "Unknown"
+    ]
+  },
+  {
+    "code": "EXTPCllATT141203",
+    "name": "Test",
+    "tags": [
+      "Test",
+      "EXTPCllATT141203",
+      "EXTPCllATT"
+    ]
+  },
+  {
+    "code": "S19_GigaSeal",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "S19_GigaSeal"
+    ]
+  },
+  {
+    "code": "S5_AfterBreakIn",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "S5_AfterBreakIn"
+    ]
+  },
+  {
+    "code": "newNoise1",
+    "name": "Unknown",
+    "tags": [
+      "newNoise1",
+      "Unknown"
+    ]
+  },
+  {
+    "code": "EXTPRSCHEK150209",
+    "name": "Test",
+    "tags": [
+      "Test",
+      "EXTPRSCHEK",
+      "EXTPRSCHEK150209"
+    ]
+  },
+  {
+    "code": "S7_BlipCoarse",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "S7_BlipCoarse"
+    ]
+  },
+  {
+    "code": "newRamp",
+    "name": "Unknown",
+    "tags": [
+      "newRamp",
+      "Unknown"
+    ]
+  },
+  {
+    "code": "EXTPSMOKET141203",
+    "name": "Test",
+    "tags": [
+      "Test",
+      "EXTPSMOKET141203",
+      "EXTPSMOKET"
+    ]
+  },
+  {
+    "code": "S8_BlipFine",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "S8_BlipFine"
+    ]
+  },
+  {
+    "code": "RMPtoRHEO",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "RMPtoRHEO"
+    ]
+  },
+  {
+    "code": "EXTPSAFETY141203",
+    "name": "Test",
+    "tags": [
+      "Test",
+      "EXTPSAFETY",
+      "EXTPSAFETY141203"
+    ]
+  },
+  {
+    "code": "EXTPINBATH141203",
+    "name": "Test",
+    "tags": [
+      "EXTPINBATH141203",
+      "Test",
+      "EXTPINBATH"
+    ]
+  },
+  {
+    "code": "EXTPBREAKN141203",
+    "name": "Test",
+    "tags": [
+      "EXTPBREAKN",
+      "Test",
+      "EXTPBREAKN141203"
+    ]
+  },
+  {
+    "code": "C1SSFINEST150112",
+    "name": "Short Square",
+    "tags": [
+      "C1SSFINEST",
+      "Core 1",
+      "Short Square",
+      "Fine",
+      "C1SSFINEST150112"
+    ]
+  },
+  {
+    "code": "TestPulse",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "TestPulse"
+    ]
+  },
+  {
+    "code": "S1_SmokeTest",
+    "name": "Unknown",
+    "tags": [
+      "Unknown",
+      "S1_SmokeTest"
+    ]
+  },
+  {
+    "code": "VCLAMP_RNA_STIM",
+    "name": "Test",
+    "tags": [
+      "Test",
+      "VCLAMP_RNA_STIM"
+    ]
+  },
+  {
+    "code": "C1NSSEED_1150216",
+    "name": "Noise 1",
+    "tags": [
+      "C1NSSEED_1",
+      "Noise 1",
+      "Core 1",
+      "C1NSSEED_1150216",
+      "Noise"
+    ]
+  },
+  {
+    "code": "C1NSSEED_2150112",
+    "name": "Noise 2",
+    "tags": [
+      "Noise",
+      "Noise 2",
+      "C1NSSEED_2",
+      "Core 1",
+      "C1NSSEED_2150112"
+    ]
+  },
+  {
+    "code": "C1SSCOARSE150112",
+    "name": "Short Square",
+    "tags": [
+      "Coarse",
+      "Core 1",
+      "C1SSCOARSE150112",
+      "Short Square",
+      "C1SSCOARSE"
+    ]
+  },
+  {
+    "code": "C1NSSEED_1150217",
+    "name": "Noise 1",
+    "tags": [
+      "C1NSSEED_1",
+      "Noise 1",
+      "C1NSSEED_1150217",
+      "Noise",
+      "Core 1"
+    ]
+  },
+  {
+    "code": "C1LSCOARSE150112",
+    "name": "Long Square",
+    "tags": [
+      "Long Square",
+      "C1LSCOARSE150112",
+      "Core 1",
+      "C1LSCOARSE",
+      "Coarse"
+    ]
+  },
+  {
+    "code": "C1NSSEED_2150216",
+    "name": "Noise 2",
+    "tags": [
+      "C1NSSEED_2150216",
+      "Noise 2",
+      "C1NSSEED_2",
+      "Core 1",
+      "Noise"
+    ]
+  },
+  {
+    "code": "C1NSSEED_1150112",
+    "name": "Noise 1",
+    "tags": [
+      "C1NSSEED_1",
+      "Noise 1",
+      "Core 1",
+      "Noise",
+      "C1NSSEED_1150112"
+    ]
+  },
+  {
+    "code": "C1NSSEED_2150217",
+    "name": "Noise 2",
+    "tags": [
+      "Noise",
+      "C1NSSEED_2150217",
+      "Noise 2",
+      "C1NSSEED_2",
+      "Core 1"
+    ]
+  },
+  {
+    "code": "C1NSSEED_2141203",
+    "name": "Noise 2",
+    "tags": [
+      "Noise",
+      "Noise 2",
+      "C1NSSEED_2",
+      "C1NSSEED_2141203",
+      "Core 1"
+    ]
+  },
+  {
+    "code": "C1SSFINEST141203",
+    "name": "Short Square",
+    "tags": [
+      "C1SSFINEST",
+      "Core 1",
+      "Short Square",
+      "Fine",
+      "C1SSFINEST141203"
+    ]
+  },
+  {
+    "code": "C1LSCOARSE150216",
+    "name": "Long Square",
+    "tags": [
+      "Long Square",
+      "Core 1",
+      "C1LSCOARSE150216",
+      "C1LSCOARSE",
+      "Coarse"
+    ]
+  },
+  {
+    "code": "C1LSCOARSE150217",
+    "name": "Long Square",
+    "tags": [
+      "Long Square",
+      "Core 1",
+      "C1LSCOARSE150217",
+      "Coarse",
+      "C1LSCOARSE"
+    ]
+  },
+  {
+    "code": "C1NSSEED_1141203",
+    "name": "Noise 1",
+    "tags": [
+      "C1NSSEED_1",
+      "Noise 1",
+      "Core 1",
+      "Noise",
+      "C1NSSEED_1141203"
+    ]
+  },
+  {
+    "code": "C1LSCOARSE141203",
+    "name": "Long Square",
+    "tags": [
+      "Long Square",
+      "C1LSCOARSE141203",
+      "Core 1",
+      "Coarse",
+      "C1LSCOARSE"
+    ]
+  },
+  {
+    "code": "C1LSFINEST150112",
+    "name": "Long Square",
+    "tags": [
+      "C1LSFINEST150112",
+      "Long Square",
+      "Core 1",
+      "Fine",
+      "C1LSFINEST"
+    ]
+  },
+  {
+    "code": "C1LSFINEST141203",
+    "name": "Long Square",
+    "tags": [
+      "Long Square",
+      "Fine",
+      "Core 1",
+      "C1LSFINEST141203",
+      "C1LSFINEST"
+    ]
+  },
+  {
+    "code": "C1SSCOARSE141203",
+    "name": "Short Square",
+    "tags": [
+      "C1SSCOARSE141203",
+      "Core 1",
+      "Short Square",
+      "Coarse",
+      "C1SSCOARSE"
+    ]
+  },
+  {
+    "code": "C1SQCAPCHK141203",
+    "name": "Square - 0.5ms Subthreshold",
+    "tags": [
+      "C1SQCAPCHK",
+      "Core 1",
+      "C1SQCAPCHK141203",
+      "Square - 0.5ms Subthreshold"
+    ]
+  },
+  {
+    "code": "C1RP25PR1S141203",
+    "name": "Ramp",
+    "tags": [
+      "C1RP25PR1S141203",
+      "Core 1",
+      "Ramp",
+      "C1RP25PR1S"
+    ]
+  },
+  {
+    "code": "C1LSCOARSEMICRO",
+    "name": "Long Square",
+    "tags": [
+      "Long Square",
+      "Core 1",
+      "Coarse",
+      "C1LSCOARSEMICRO"
+    ]
+  },
+  {
+    "code": "C1LSFINESTMICRO",
+    "name": "Long Square",
+    "tags": [
+      "Long Square",
+      "Core 1",
+      "Fine",
+      "C1LSFINESTMICRO"
+    ]
+  },
+  {
+    "code": "C2NSRMPRHE150112",
+    "name": "Ramp to Rheobase",
+    "tags": [
+      "C2NSRMPRHE",
+      "Ramp to Rheobase",
+      "C2NSRMPRHE150112",
+      "Core 2"
+    ]
+  },
+  {
+    "code": "C2SSHM80CS150112",
+    "name": "Short Square - Hold -80mV",
+    "tags": [
+      "C2SSHM80CS",
+      "C2SSHM80CS150112",
+      "Short Square",
+      "Short Square - Hold -80mV",
+      "Hold -80mV",
+      "Core 2"
+    ]
+  },
+  {
+    "code": "C2NSRMPRH2150119",
+    "name": "Ramp to Rheobase",
+    "tags": [
+      "C2NSRMPRH2150119",
+      "Core 2",
+      "Ramp to Rheobase",
+      "C2NSRMPRH2"
+    ]
+  },
+  {
+    "code": "C2SQRHELNG141203",
+    "name": "Square - 2s Suprathreshold",
+    "tags": [
+      "Core 2",
+      "C2SQRHELNG141203",
+      "C2SQRHELNG",
+      "Square - 2s Suprathreshold"
+    ]
+  },
+  {
+    "code": "C2NSRMPRH2150120",
+    "name": "Ramp to Rheobase",
+    "tags": [
+      "C2NSRMPRH2150120",
+      "Core 2",
+      "Ramp to Rheobase",
+      "C2NSRMPRH2"
+    ]
+  },
+  {
+    "code": "C2SSHM80FN150112",
+    "name": "Short Square - Hold -80mV",
+    "tags": [
+      "C2SSHM80FN150112",
+      "C2SSHM80FN",
+      "Short Square",
+      "Short Square - Hold -80mV",
+      "Hold -80mV",
+      "Core 2"
+    ]
+  },
+  {
+    "code": "C2NSRMPRHE141203",
+    "name": "Ramp to Rheobase",
+    "tags": [
+      "C2NSRMPRHE",
+      "Core 2",
+      "Ramp to Rheobase",
+      "C2NSRMPRHE141203"
+    ]
+  },
+  {
+    "code": "C2SSHM80FN141203",
+    "name": "Short Square - Hold -80mV",
+    "tags": [
+      "C2SSHM80FN141203",
+      "C2SSHM80FN",
+      "Short Square",
+      "Short Square - Hold -80mV",
+      "Hold -80mV",
+      "Core 2"
+    ]
+  },
+  {
+    "code": "C2SSHM70CS150126",
+    "name": "Short Square - Hold -70mV",
+    "tags": [
+      "C2SSHM70CS",
+      "Hold -70mV",
+      "Short Square",
+      "Short Square - Hold -70mV",
+      "C2SSHM70CS150126",
+      "Core 2"
+    ]
+  },
+  {
+    "code": "C2SSHM80CS141203",
+    "name": "Short Square - Hold -80mV",
+    "tags": [
+      "C2SSHM80CS",
+      "Short Square",
+      "Short Square - Hold -80mV",
+      "Hold -80mV",
+      "C2SSHM80CS141203",
+      "Core 2"
+    ]
+  },
+  {
+    "code": "C2SQRHELNG150112",
+    "name": "Square - 2s Suprathreshold",
+    "tags": [
+      "C2SQRHELNG150112",
+      "C2SQRHELNG",
+      "Core 2",
+      "Square - 2s Suprathreshold"
+    ]
+  },
+  {
+    "code": "C2SSTRIPLE150429",
+    "name": "Short Square - Triple",
+    "tags": [
+      "Core 2",
+      "C2SSTRIPLE",
+      "C2SSTRIPLE150429",
+      "Short Square - Triple"
+    ]
+  },
+  {
+    "code": "C2SSHM60FN150112",
+    "name": "Short Square - Hold -60mV",
+    "tags": [
+      "C2SSHM60FN150112",
+      "Short Square",
+      "Short Square - Hold -60mV",
+      "Hold -60mV",
+      "Core 2",
+      "C2SSHM60FN"
+    ]
+  },
+  {
+    "code": "C2SSHM60FN141203",
+    "name": "Short Square - Hold -60mV",
+    "tags": [
+      "C2SSHM60FN141203",
+      "Short Square",
+      "Short Square - Hold -60mV",
+      "Hold -60mV",
+      "Core 2",
+      "C2SSHM60FN"
+    ]
+  },
+  {
+    "code": "C2SSHM60CS150112",
+    "name": "Short Square - Hold -60mV",
+    "tags": [
+      "C2SSHM60CS150112",
+      "Short Square",
+      "Short Square - Hold -60mV",
+      "Hold -60mV",
+      "Core 2",
+      "C2SSHM60CS"
+    ]
+  },
+  {
+    "code": "C2SSTRIPLE141203",
+    "name": "Short Square - Triple",
+    "tags": [
+      "Core 2",
+      "C2SSTRIPLE",
+      "C2SSTRIPLE141203",
+      "Short Square - Triple"
+    ]
+  },
+  {
+    "code": "C2SQRHELNG150216",
+    "name": "Square - 2s Suprathreshold",
+    "tags": [
+      "Core 2",
+      "C2SQRHELNG",
+      "C2SQRHELNG150216",
+      "Square - 2s Suprathreshold"
+    ]
+  },
+  {
+    "code": "C2SSHM60CS141203",
+    "name": "Short Square - Hold -60mV",
+    "tags": [
+      "C2SSHM60CS141203",
+      "Short Square",
+      "Short Square - Hold -60mV",
+      "Hold -60mV",
+      "Core 2",
+      "C2SSHM60CS"
+    ]
+  },
+  {
+    "code": "C2NSRMPRH2150217",
+    "name": "Ramp to Rheobase",
+    "tags": [
+      "Core 2",
+      "Ramp to Rheobase",
+      "C2NSRMPRH2150217",
+      "C2NSRMPRH2"
+    ]
+  },
+  {
+    "code": "C2SSHM70FN150126",
+    "name": "Short Square - Hold -70mV",
+    "tags": [
+      "Hold -70mV",
+      "Short Square",
+      "Short Square - Hold -70mV",
+      "C2SSHM70FN",
+      "Core 2",
+      "C2SSHM70FN150126"
+    ]
+  },
+  {
+    "code": "C2NSRMPRH2150216",
+    "name": "Ramp to Rheobase",
+    "tags": [
+      "Ramp to Rheobase",
+      "C2NSRMPRH2150216",
+      "Core 2",
+      "C2NSRMPRH2"
+    ]
+  },
+  {
+    "code": "EXTPBLWOUT141203",
+    "name": "Test",
+    "tags": [
+      "Test",
+      "EXTPBLWOUT141203",
+      "EXTPBLWOUT"
+    ]
+  },
+  {
+    "code": "subthreshold",
+    "name": "Test",
+    "tags": [
+      "Test",
+      "subthreshold"
+    ]
+  },
+  {
+    "code": "Blip_finder",
+    "name": "Test",
+    "tags": [
+      "Test",
+      "Blip_finder"
+    ]
+  },
+  {
+    "code": "Rheobase_finder",
+    "name": "Test",
+    "tags": [
+      "Test",
+      "Rheobase_finder"
+    ]
+  },
+  {
+    "code": "C1NSSEED",
+    "name": "Noise 1",
+    "tags": [
+      "Noise",
+      "Core 1"
+    ]
+  }
+]

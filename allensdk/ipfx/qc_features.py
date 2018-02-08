@@ -118,11 +118,11 @@ def get_r_from_peak_pulse_response(v, i, t):
 
     return np.mean(r)
 
-def get_sweep_number_by_stimulus_codes(data_set, stimulus_codes):
-    sweeps = data_set.filtered_sweep_table(stimulus_codes=stimulus_codes).sort_values(by='sweep_number')
+def get_sweep_number_by_stimulus_names(data_set, stimulus_names):
+    sweeps = data_set.filtered_sweep_table(stimuli=stimulus_names).sort_values(by='sweep_number')
     
     if len(sweeps) > 1:
-        logging.warning("Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimulus_codes))
+        logging.warning("Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimulus_names))
 
     if len(sweeps) == 0:
         raise IndexError
@@ -138,7 +138,7 @@ def cell_qc_features(data_set, manual_values=None):
     
     # measure blowout voltage
     try:
-        blowout_sweep_number = get_sweep_number_by_stimulus_codes(data_set, data_set.blowout_codes)
+        blowout_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
         blowout_mv = measure_blowout(blowout_data.v*1e-3, 
                                      blowout_data.expt_start*blowout_data.sampling_rate)
@@ -152,7 +152,7 @@ def cell_qc_features(data_set, manual_values=None):
 
     # measure "electrode 0"
     try:
-        bath_sweep_number = get_sweep_number_by_stimulus_codes(data_set, data_set.bath_codes)
+        bath_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.bath_names)
         bath_data = data_set.sweep(bath_sweep_number)
         e0 = measure_electrode_0(bath_data.v*1e-3, 
                                  bath_data.sampling_rate)
@@ -166,7 +166,7 @@ def cell_qc_features(data_set, manual_values=None):
 
     # measure clamp seal
     try:
-        seal_sweep_number = get_sweep_number_by_stimulus_codes(data_set, data_set.seal_codes)
+        seal_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.seal_names)
         seal_data = data_set.sweep(seal_sweep_number)
         seal_gohm = measure_seal(seal_data.i*1e-12, 
                                  seal_data.v*1e-3, 
@@ -197,7 +197,7 @@ def cell_qc_features(data_set, manual_values=None):
     # if the value is unavailable then check to see if it was set manually
     breakin_data = None
     try:
-        breakin_sweep_number = get_sweep_number_by_stimulus_codes(data_set, data_set.breakin_codes)
+        breakin_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.breakin_names)
         breakin_data = data_set.sweep(breakin_sweep_number)
     except IndexError as e:
         logging.warning("Error reading breakin sweep.")
@@ -291,7 +291,7 @@ def sweep_qc_features(data_set):
         mean1 = None
         sweep_not_truncated = ( idx_stop == len(current) - 1 )
 
-        if sweep_not_truncated and not data_set.stimulus_code_matches(sweep_info['stimulus_code'], data_set.ramp_codes):
+        if sweep_not_truncated and not data_set.ontology.stimulus_has_any_tags(sweep_info['stimulus_code'], data_set.ramp_names):
             idx0, idx1 = get_last_vm_epoch(idx_stop, current, hz)
             mean1, _ = measure_vm(1e3 * volts[idx0:idx1])
             idx0, idx1 = get_last_vm_noise_epoch(idx_stop, current, hz)
@@ -460,7 +460,7 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
     # only do so if acquisition not truncated 
     # do not check for ramps, because they do not have 
     #   enough time to recover
-    is_ramp = data_set.stimulus_code_matches(sweep["stimulus_code"], data_set.ramp_codes)
+    is_ramp = data_set.ontology.stimulus_has_any_tags(sweep["stimulus_code"], data_set.ramp_names)
 
     if is_ramp:
         logging.info("sweep %d skipping vrest criteria on ramp", sweep_num)
@@ -482,7 +482,7 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
     # fail sweeps if stimulus duration is zero
     # Uncomment out hte following 3 lines to have sweeps without stimulus
     #   faile QC
-    if sweep["stimulus_duration"] <= 0 and not data_set.stimulus_code_matches(stim_code, data_set.extp_codes):
+    if sweep["stimulus_duration"] <= 0 and not data_set.ontology.stimulus_has_any_tags(stim_code, data_set.extp_names):
         fail_tags.append("No stimulus detected")
 
     return len(fail_tags) > 0, fail_tags

@@ -357,10 +357,10 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
 
     # extract cell-level features
     logging.info("Computing cell features")
-    lsq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.long_square_names)
-    ssq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.short_square_names)
-    ramp_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.ramp_names)
-    clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimulus_codes=data_set.coarse_long_square_codes)
+    lsq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.long_square_names)
+    ssq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.short_square_names)
+    ramp_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.ramp_names)
+    clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=data_set.coarse_long_square_names)
 
     lsq_sweep_numbers = lsq_sweeps['sweep_number'].sort_values().values
     clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values

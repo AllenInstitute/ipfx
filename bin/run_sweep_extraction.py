@@ -26,7 +26,7 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
         if mk in input_manual_values:
             manual_values[mk] = input_manual_values[mk]
 
-    ont = EphysStimulusOntology(stimulus_ontology_file)
+    ont = EphysStimulusOntology(ju.read(stimulus_ontology_file))
     ds = MiesDataSet(input_nwb_file, input_h5_file, ontology=ont)
     cell_features, cell_tags = qcf.cell_qc_features(ds, manual_values)
     sweep_features = qcf.sweep_qc_features(ds)
