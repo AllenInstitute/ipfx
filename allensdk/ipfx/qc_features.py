@@ -291,7 +291,7 @@ def sweep_qc_features(data_set):
         mean1 = None
         sweep_not_truncated = ( idx_stop == len(current) - 1 )
 
-        if sweep_not_truncated and not data_set.ontology.matches_any(sweep_info['stimulus_code'], data_set.ramp_names):
+        if sweep_not_truncated and not data_set.ontology.stimulus_has_any_tags(sweep_info['stimulus_code'], data_set.ramp_names):
             idx0, idx1 = get_last_vm_epoch(idx_stop, current, hz)
             mean1, _ = measure_vm(1e3 * volts[idx0:idx1])
             idx0, idx1 = get_last_vm_noise_epoch(idx_stop, current, hz)
@@ -460,7 +460,7 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
     # only do so if acquisition not truncated 
     # do not check for ramps, because they do not have 
     #   enough time to recover
-    is_ramp = data_set.ontology.matches_any(sweep["stimulus_code"], data_set.ramp_names)
+    is_ramp = data_set.ontology.stimulus_has_any_tags(sweep["stimulus_code"], data_set.ramp_names)
 
     if is_ramp:
         logging.info("sweep %d skipping vrest criteria on ramp", sweep_num)
@@ -482,7 +482,7 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
     # fail sweeps if stimulus duration is zero
     # Uncomment out hte following 3 lines to have sweeps without stimulus
     #   faile QC
-    if sweep["stimulus_duration"] <= 0 and not data_set.ontology.matches_any(stim_code, data_set.extp_names):
+    if sweep["stimulus_duration"] <= 0 and not data_set.ontology.stimulus_has_any_tags(stim_code, data_set.extp_names):
         fail_tags.append("No stimulus detected")
 
     return len(fail_tags) > 0, fail_tags

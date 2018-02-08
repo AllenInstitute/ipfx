@@ -53,7 +53,7 @@ def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_fi
     input_cell_features = cell_features
 
     ont = EphysStimulusOntology(ju.read(stimulus_ontology_file))
-    data_set = AibsDataSet(sweep_list, input_nwb_file, ont)
+    data_set = AibsDataSet(sweep_list, input_nwb_file, ont, api_sweeps=False)
     
     cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
 

@@ -185,7 +185,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         logging.debug("calc_subthresh_sweeps: %d", len(calc_subthresh_features))
 
         calc_subthresh_ss = SweepSet([sweep_set.sweeps[i] for i in calc_subthresh_features.index.values])
-        taus = [ ft.time_constant(s.t, s.i, s.v, self.spx.start, self.spx.end, self.tau_frac, self.sptx.baseline_interval) for s in calc_subthresh_ss.sweeps ]
+        taus = [ ft.time_constant(s.t, s.v, s.i, self.spx.start, self.spx.end, self.tau_frac, self.sptx.baseline_interval) for s in calc_subthresh_ss.sweeps ]
         calc_subthresh_features['tau'] = taus
 
         features["subthreshold_membrane_property_sweeps"] = calc_subthresh_features

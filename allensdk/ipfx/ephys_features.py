@@ -785,7 +785,7 @@ def has_fixed_dt(t):
     return np.allclose(dt, np.ones_like(dt) * dt[0])
 
 
-def fit_membrane_time_constant(v, t, start, end, min_rsme=1e-4):
+def fit_membrane_time_constant(t, v, start, end, min_rsme=1e-4):
     """Fit an exponential to estimate membrane time constant between start and end
 
     Parameters
@@ -1005,7 +1005,7 @@ def detect_bursts(isis, isi_types, fast_tr_v, fast_tr_t, slow_tr_v, slow_tr_t,
     return bursts
 
 
-def fit_prespike_time_constant(v, t, start, spike_time, dv_limit=-0.001, tau_limit=0.3):
+def fit_prespike_time_constant(t, v, start, spike_time, dv_limit=-0.001, tau_limit=0.3):
     """Finds the dominant time constant of the pre-spike rise in voltage
 
     Parameters
@@ -1318,7 +1318,7 @@ def baseline_voltage(t, v, start, baseline_interval=0.1, baseline_detect_thresh=
         logging.info("Could not find sufficiently flat interval for automatic baseline voltage", RuntimeWarning)
         return np.nan
 
-def voltage_deflection(t, i, v, start, end, deflect_type=None):
+def voltage_deflection(t, v, i, start, end, deflect_type=None):
     """Measure deflection (min or max, between start and end if specified).
 
     Parameters
@@ -1360,7 +1360,7 @@ def voltage_deflection(t, i, v, start, end, deflect_type=None):
     return v[deflect_index], deflect_index
 
 
-def time_constant(t, i, v, start, end, frac=0.1, baseline_interval=0.1):
+def time_constant(t, v, i, start, end, frac=0.1, baseline_interval=0.1):
     """Calculate the membrane time constant by fitting the voltage response with a
     single exponential.
 
@@ -1370,7 +1370,7 @@ def time_constant(t, i, v, start, end, frac=0.1, baseline_interval=0.1):
     """
 
     # Assumes this is being done on a hyperpolarizing step
-    v_peak, peak_index = voltage_deflection(t, i, v, start, end, "min")
+    v_peak, peak_index = voltage_deflection(t, v, i, start, end, "min")
     v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
 
     start_index = find_time_index(t, start)
@@ -1382,11 +1382,11 @@ def time_constant(t, i, v, start, end, frac=0.1, baseline_interval=0.1):
     fit_start = t[search_result[0] + start_index]
     fit_end = t[peak_index]
 
-    a, inv_tau, y0 = fit_membrane_time_constant(v, t, fit_start, fit_end)
+    a, inv_tau, y0 = fit_membrane_time_constant(t, v, fit_start, fit_end)
 
     return 1. / inv_tau
 
-def sag(t, i, v, start, end, peak_width=0.005, baseline_interval=0.03):
+def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     """Calculate the sag in a hyperpolarizing voltage response.
 
     Parameters
@@ -1397,7 +1397,7 @@ def sag(t, i, v, start, end, peak_width=0.005, baseline_interval=0.03):
     -------
     sag : fraction that membrane potential relaxes back to baseline
     """
-    v_peak, peak_index = voltage_deflection(t, i, v, start, end, "min")
+    v_peak, peak_index = voltage_deflection(t, v, i, start, end, "min")
     v_peak_avg = average_voltage(v, t, start=t[peak_index] - peak_width / 2.,
                                  end=t[peak_index] + peak_width / 2.)
     v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
@@ -1412,7 +1412,7 @@ def input_resistance(t_set, i_set, v_set, start, end, baseline_interval=0.1):
     v_vals = []
     i_vals = []
     for t, i, v, in zip(t_set, i_set, v_set):
-        v_peak, min_index = voltage_deflection(t, i, v, start, end, 'min')
+        v_peak, min_index = voltage_deflection(t, v, i, start, end, 'min')
         v_vals.append(v_peak)
         i_vals.append(i[min_index])
 

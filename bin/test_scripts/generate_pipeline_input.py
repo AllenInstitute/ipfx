@@ -24,7 +24,8 @@ for stim_type in d[1]:
     for code in stim_type['ephys_raw_stimulus_names']:
         stim_names[code['name']] = stim_name
 
-stimulus_ontology_file = "test_scripts/stimulus_ontology.json" 
+import allensdk.ipfx.ephys_data_set as eds
+stimulus_ontology_file = eds.DEFAULT_STIMULUS_ONTOLOGY_FILE
 test_dir = "specimen_%d" % specimen_id
 if not os.path.exists(test_dir):
     os.makedirs(test_dir)
@@ -37,24 +38,9 @@ d['input_nwb_file'] = res['nwb_file']
 d['output_nwb_file'] = os.path.join(test_dir, "output.nwb")
 d['qc_fig_dir'] = os.path.join(test_dir,"qc_figs")
 d['stimulus_ontology_file'] = stimulus_ontology_file
-d['qc_criteria'] = { "access_resistance_mohm_max":20.0, 
-                     "access_resistance_mohm_min":1.0,
-                     "blowout_mv_max":10.0,
-                     "blowout_mv_min":-10.0,
-                     "created_at":"2015-01-29T13:51:29-08:00",
-                     "electrode_0_pa_max":200.0,
-                     "electrode_0_pa_min":-200.0,
-                     "id":324256702,
-                     "input_vs_access_resistance_max":0.15,
-                     "leak_pa_max":100.0,
-                     "leak_pa_min":-100.0,
-                     "name":"Ephys QC Criteria v1.1",
-                     "post_noise_rms_mv_max":0.07,
-                     "pre_noise_rms_mv_max":0.07,
-                     "seal_gohm_min":1.0,
-                     "slow_noise_rms_mv_max":0.5,
-                     "updated_at":"2015-01-29T13:51:29-08:00",
-                     "vm_delta_mv_max":1.0}
+import allensdk.ipfx.qc_features as qcf
+import allensdk.core.json_utilities as ju
+d['qc_criteria'] = ju.read(qcf.DEFAULT_QC_CRITERIA_FILE)
 
 with open(os.path.join(test_dir, 'pipeline_input.json'), 'w') as f:
     f.write(json.dumps(d, indent=2))

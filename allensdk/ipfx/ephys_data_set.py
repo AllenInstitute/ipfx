@@ -19,15 +19,15 @@ class EphysStimulusOntology(object):
         except StopIteration as e:
             raise KeyError("Could not find stimulus: %s" % val)
 
-    def matches_any(self, query_stim, tags, key='code'):
-        query_stim = self.find(query_stim, key)
+    def stimulus_has_any_tags(self, stim, tags, key='code'):
+        stim = self.find(stim, key)
 
-        return any(tag in query_stim['tags'] for tag in tags)
+        return any(tag in stim['tags'] for tag in tags)
 
-    def matches_all(self, query_stim, tags, key='code'):
-        query_stim = self.find(query_stim, key)
+    def stimulus_has_all_tags(self, stim, tags, key='code'):
+        stim = self.find(stim, key)
 
-        return all(tag in query_stim['tags'] for tag in tags)
+        return all(tag in stim['tags'] for tag in tags)
 
 
 class EphysDataSet(object):
@@ -81,7 +81,7 @@ class EphysDataSet(object):
             st = st[st[self.PASSED]]
 
         if stimuli:
-            mask = st[self.STIMULUS_CODE].apply(self.ontology.matches_any, args=(stimuli,))
+            mask = st[self.STIMULUS_CODE].apply(self.ontology.stimulus_has_any_tags, args=(stimuli,))
             st = st[mask]
 
         return st

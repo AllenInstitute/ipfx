@@ -257,7 +257,7 @@ class SpikeTrainFeatureExtractor(object):
             extra_features = []
 
         if 'peak_deflect' in extra_features:
-            features['peak_deflect'] = ft.voltage_deflection(t, i, v, self.start, self.end, self.deflect_type)
+            features['peak_deflect'] = ft.voltage_deflection(t, v, i, self.start, self.end, self.deflect_type)
 
         if 'stim_amp' in extra_features:
             features['stim_amp'] = self.stim_amp_fn(t, i, self.start) if self.stim_amp_fn else None
@@ -266,7 +266,7 @@ class SpikeTrainFeatureExtractor(object):
             features['v_baseline'] = ft.baseline_voltage(t, v, self.start, self.baseline_interval, self.filter_frequency)
 
         if 'sag' in extra_features:
-            features['sag'] = ft.sag(t, i, v, self.start, self.end, self.peak_width, self.sag_baseline_interval)
+            features['sag'] = ft.sag(t, v, i, self.start, self.end, self.peak_width, self.sag_baseline_interval)
 
         if features["avg_rate"] > 0:
             if 'pause' in extra_features:
@@ -378,7 +378,7 @@ def delay(t, v, spikes_df, start, end):
 
     spike_time = spikes_df["threshold_t"].values[0]
 
-    tau = ft.fit_prespike_time_constant(v, t, start, spike_time)
+    tau = ft.fit_prespike_time_constant(t, v, start, spike_time)
     latency = spike_time - start
 
     delay_ratio = latency / tau
