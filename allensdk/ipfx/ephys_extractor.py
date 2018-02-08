@@ -232,9 +232,11 @@ class SpikeTrainFeatureExtractor(object):
     def __init__(self, start, end, 
                 #pause_cost_weight=1.0,
                  burst_tol=0.5, pause_cost=1.0, 
-                 deflect_type="min", 
+                 #deflect_type="min", 
+                 deflect_type=None, 
                  stim_amp_fn=None,
                  baseline_interval=0.1, filter_frequency=1.0,
+                 sag_baseline_interval=0.03,
                  peak_width=0.005):
         self.start = start
         self.end = end
@@ -245,6 +247,7 @@ class SpikeTrainFeatureExtractor(object):
         self.stim_amp_fn = stim_amp_fn
         self.baseline_interval = baseline_interval
         self.filter_frequency = filter_frequency
+        self.sag_baseline_interval = sag_baseline_interval
         self.peak_width = peak_width
 
     def process(self, t, v, i, spikes_df, extra_features=None):
@@ -254,7 +257,7 @@ class SpikeTrainFeatureExtractor(object):
             extra_features = []
 
         if 'peak_deflect' in extra_features:
-            features['peak_deflect'] = ft.voltage_deflection(t, v, self.start, self.end, self.deflect_type)
+            features['peak_deflect'] = ft.voltage_deflection(t, v, i, self.start, self.end, self.deflect_type)
 
         if 'stim_amp' in extra_features:
             features['stim_amp'] = self.stim_amp_fn(t, i, self.start) if self.stim_amp_fn else None
@@ -263,7 +266,7 @@ class SpikeTrainFeatureExtractor(object):
             features['v_baseline'] = ft.baseline_voltage(t, v, self.start, self.baseline_interval, self.filter_frequency)
 
         if 'sag' in extra_features:
-            features['sag'] = ft.sag(t, v, self.start, self.end, self.peak_width, self.baseline_interval)
+            features['sag'] = ft.sag(t, v, i, self.start, self.end, self.peak_width, self.sag_baseline_interval)
 
         if features["avg_rate"] > 0:
             if 'pause' in extra_features:
@@ -375,7 +378,7 @@ def delay(t, v, spikes_df, start, end):
 
     spike_time = spikes_df["threshold_t"].values[0]
 
-    tau = ft.fit_prespike_time_constant(v, t, start, spike_time)
+    tau = ft.fit_prespike_time_constant(t, v, start, spike_time)
     latency = spike_time - start
 
     delay_ratio = latency / tau

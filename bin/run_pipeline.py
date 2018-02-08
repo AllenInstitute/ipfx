@@ -14,6 +14,7 @@ def run_pipeline(input_nwb_file, input_h5_file, output_nwb_file, stimulus_ontolo
     
     qc_output = run_qc(input_nwb_file,
                        input_h5_file,
+                       stimulus_ontology_file,
                        se_output["cell_features"], 
                        se_output["sweep_data"], 
                        qc_criteria)
@@ -26,6 +27,7 @@ def run_pipeline(input_nwb_file, input_h5_file, output_nwb_file, stimulus_ontolo
     se_output['cell_features']['cell_state'] = qc_output['cell_state']
 
     fx_output = run_feature_extraction(input_nwb_file,
+                                       stimulus_ontology_file, 
                                        output_nwb_file,
                                        qc_fig_dir,
                                        se_output['sweep_data'],

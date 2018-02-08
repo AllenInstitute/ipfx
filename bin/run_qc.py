@@ -11,14 +11,18 @@ import argparse
 import h5py
 
 from allensdk.ipfx.mies_nwb.mies_data_set import MiesDataSet
+from allensdk.ipfx.ephys_data_set import EphysStimulusOntology
+
 import allensdk.ipfx.qc_features as qcf
 
 import argschema as ags
 from allensdk.ipfx._schemas import QcParameters
 import allensdk.core.json_utilities as ju
 
-def run_qc(input_nwb_file, input_h5_file, cell_features, sweep_data, qc_criteria):
-    ds = MiesDataSet(input_nwb_file, input_h5_file)
+def run_qc(input_nwb_file, input_h5_file, stimulus_ontology_file, cell_features, sweep_data, qc_criteria):
+    ont = EphysStimulusOntology(ju.read(stimulus_ontology_file))
+    ds = MiesDataSet(input_nwb_file, input_h5_file, ont)
+    
     cell_state, sweep_states = qcf.qc_experiment(ds, 
                                                  cell_features, 
                                                  sweep_data, 
@@ -31,6 +35,7 @@ def main():
 
     output = run_qc(module.args["input_nwb_file"],
                     module.args.get("input_h5_file"),                    
+                    module.args["stimulus_ontology_file"],
                     module.args["cell_features"],
                     module.args["sweep_data"],
                     module.args["qc_criteria"])

@@ -371,7 +371,7 @@ def plot_subthreshold_long_square_figures(data_set, cell_features, lims_features
         peak_idx = subthresh_dict[s]['peak_deflect'][1]
         peak_t = peak_idx*dt
         plt.scatter([peak_t], [subthresh_dict[s]['peak_deflect'][0]], color='red', zorder=10)
-        popt = ft.fit_membrane_time_constant(v, t, stim_start, peak_t)
+        popt = ft.fit_membrane_time_constant(t, v, stim_start, peak_t)
         plt.title(str(s))
         plt.plot(t[start_idx:peak_idx], exp_curve(t[start_idx:peak_idx] - t[start_idx], *popt), color='blue')
 
@@ -440,7 +440,7 @@ def plot_instantaneous_threshold_thumbnail(data_set, sweep_numbers, cell_feature
 
 
 def plot_ramp_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
-    ramps_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimulus_names=data_set.ramp_names)
+    ramps_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.ramp_names)
     ramps_sweeps = np.sort(ramps_sweeps['sweep_number'].values)
 
     figs = []
