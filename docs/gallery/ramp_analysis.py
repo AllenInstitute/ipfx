@@ -25,7 +25,7 @@ sweeps = ct.get_ephys_sweeps(specimen_id)
 
 # Build the data set and find the ramp sweeps
 dataset = AibsDataSet(sweeps, nwb_filename)
-ramp_table = dataset.filtered_sweep_table(stimulus_names=dataset.ramp_names)
+ramp_table = dataset.filtered_sweep_table(stimuli=dataset.ramp_names)
 ramp_sweep_set = dataset.sweep_set(ramp_table.sweep_number)
 
 # Build the extractors (we know stimulus starts at 1.02 s)

@@ -24,7 +24,7 @@ sweeps = ct.get_ephys_sweeps(specimen_id)
 
 # Build the data set and find the ramp sweeps
 dataset = AibsDataSet(sweeps, nwb_filename)
-shsq_table = dataset.filtered_sweep_table(stimulus_names=dataset.short_square_names)
+shsq_table = dataset.filtered_sweep_table(stimuli=dataset.short_square_names)
 shsq_sweep_set = dataset.sweep_set(shsq_table.sweep_number)
 
 

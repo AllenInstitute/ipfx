@@ -1,6 +1,6 @@
 """
 All Analysis
-====================
+============
 
 Run all analyses on NWB file
 """

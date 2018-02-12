@@ -26,7 +26,7 @@ sweeps = ct.get_ephys_sweeps(specimen_id)
 
 # build a data set and find the short squares
 data_set = AibsDataSet(sweeps, nwb_file)
-lsq_table = data_set.filtered_sweep_table(stimulus_names=data_set.long_square_names)
+lsq_table = data_set.filtered_sweep_table(stimuli=data_set.long_square_names)
 lsq_set = data_set.sweep_set(lsq_table.sweep_number)
 
 # build the extractors
