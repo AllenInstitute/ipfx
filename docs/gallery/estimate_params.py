@@ -25,7 +25,7 @@ sweeps = ct.get_ephys_sweeps(specimen_id)
 
 # build a data set and find the short squares
 data_set = AibsDataSet(sweeps, nwb_file)
-ssq_table = data_set.filtered_sweep_table(stimulus_names=["Short Square"])
+ssq_table = data_set.filtered_sweep_table(stimuli=["Short Square"])
 ssq_set = data_set.sweep_set(ssq_table.sweep_number)
 
 # estimate the dv cutoff and threshold fraction
