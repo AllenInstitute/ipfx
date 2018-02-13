@@ -14,7 +14,7 @@ from allensdk.api.queries.cell_types_api import CellTypesApi
 import os
 import matplotlib.pyplot as plt
 
-specimen_id = 488679042
+specimen_id = 595570553
 nwb_file = '%d.nwb' % specimen_id
 
 # download a specific experiment NWB file via AllenSDK
