@@ -1,6 +1,6 @@
 """
 Short Square Analysis
-====================
+=====================
 
 Detect short square features
 """

@@ -50,7 +50,7 @@ sphinx_gallery_conf = {
     'examples_dirs' : './gallery',
     # path where to save gallery generated examples
     'gallery_dirs'  : 'auto_examples',
-    'filename_pattern': '/',
+    'filename_pattern': '/*.pybob',
     'backreferences_dir': False}
 
 # Add any paths that contain templates here, relative to this directory.
@@ -286,3 +286,14 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)
+
+def run_apidoc(_):
+    from sphinx.apidoc import main
+    import sys
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    cur_dir = os.path.abspath(os.path.dirname(__file__))
+    module = os.path.join(cur_dir,"..","allensdk","ipfx")
+    main(['-e', '-o', cur_dir, module, '--force'])

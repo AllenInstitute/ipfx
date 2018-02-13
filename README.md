@@ -1,6 +1,10 @@
-ipfx
-===============================
+Welcome to allensdk.ipfx
+========================
 
-https://github.com/AllenInstitute/aibs.ipfx
+allensdk.ipfx is a python 2/3 package for computing intrinsic cell features from electrophysiology data.  This includes:
+   
+    * action potential detection (e.g. threshold time and voltage)
+    * cell quality control (e.g. resting potential stability)
+    * stimulus-specific cell features (e.g. input resistance)
 
-intrinsic physiology feature extractor
+This software is designed for use in the Allen Institute for Brain Science electrophysiology data processing pipeline.  

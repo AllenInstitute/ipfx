@@ -1,6 +1,6 @@
 """
 Single sweep detection with analysis window
-=================================
+===========================================
 
 Detect spikes for a single sweep in a specified time window
 """
