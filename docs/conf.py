@@ -50,7 +50,7 @@ sphinx_gallery_conf = {
     'examples_dirs' : './gallery',
     # path where to save gallery generated examples
     'gallery_dirs'  : 'auto_examples',
-    'filename_pattern': '/*.pybob',
+    'filename_pattern': '/*.py',
     'backreferences_dir': False}
 
 # Add any paths that contain templates here, relative to this directory.
