@@ -53,6 +53,13 @@ sphinx_gallery_conf = {
     'filename_pattern': '/*.py',
     'backreferences_dir': False}
 
+print("*********************")
+print("*********************")
+print(cwd)
+print("*********************")
+print("*********************")
+
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['aibs_sphinx/templates']
 
