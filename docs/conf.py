@@ -47,9 +47,9 @@ extensions = ['sphinx.ext.autodoc',
 
 sphinx_gallery_conf = {
     # path to your examples scripts
-    'examples_dirs' : './gallery',
+    'examples_dirs' : [ './gallery' ],
     # path where to save gallery generated examples
-    'gallery_dirs'  : './auto_examples',
+    'gallery_dirs'  : [ './auto_examples' ],
     'filename_pattern': '/*.py',
     'backreferences_dir': False}
 
@@ -57,6 +57,7 @@ print("*********************")
 print("*********************")
 print(cwd)
 print(list(os.listdir(cwd)))
+print(os.path.exists(os.path.join(cwd,sphinx_gallery_conf['examples_dirs'][0])))
 print("*********************")
 print("*********************")
 
