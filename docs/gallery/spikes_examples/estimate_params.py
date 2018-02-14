@@ -34,7 +34,8 @@ dv_cutoff, thresh_frac = ft.estimate_adjusted_detection_parameters(ssq_set.v,
                                                                    1.02, 1.021)
 
 # detect spikes
-sweep = data_set.sweep(24)
+sweep_number = 16
+sweep = data_set.sweep(sweep_number)
 ext = fx.SpikeExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac)
 spikes = ext.process(t=sweep.t, v=sweep.v, i=sweep.i)
 
