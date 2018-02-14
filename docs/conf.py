@@ -56,6 +56,7 @@ sphinx_gallery_conf = {
 print("*********************")
 print("*********************")
 print(cwd)
+print(list(os.listdir(cwd)))
 print("*********************")
 print("*********************")
 
