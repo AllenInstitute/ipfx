@@ -58,6 +58,8 @@ print("*********************")
 print(cwd)
 print(list(os.listdir(cwd)))
 print(os.path.exists(os.path.join(cwd,sphinx_gallery_conf['examples_dirs'][0])))
+for d in os.path.join(cwd,sphinx_gallery_conf['examples_dirs']):
+    print(os.listdir(d))
 print("*********************")
 print("*********************")
 
