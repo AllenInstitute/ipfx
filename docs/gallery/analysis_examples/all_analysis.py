@@ -1,3 +1,4 @@
+
 """
 All Analysis
 ============
@@ -16,7 +17,7 @@ from allensdk.ipfx.data_set_features import extract_data_set_features
 # Download and access the experimental data
 ct = CellTypesApi()
 
-specimen_id = 488679042
+specimen_id = 595570553
 nwb_filename = "%d.nwb" % specimen_id
 if not os.path.exists(nwb_filename):
     ct.save_ephys_data(specimen_id, nwb_filename)

@@ -1,0 +1,53 @@
+Data Sets and Stimuli
+=====================
+
+All of the ``StimulusProtocolAnalysis`` classes process a ``SweepSet`` instance.  Creating ``SweepSets`` by hand takes some work, 
+so ``allensdk.ipfx`` defines a class called ``EphysDataSet`` that tries to standardize this a bit.  Put another way, ``EphysDataSet`` 
+is an abstract class that defines an API for reading data (from, say, NWB files) that is organized into stimulus-specific "sweeps". 
+An implementation of this class has two responsibilities:
+
+    1. Build a "sweep table" for a data set (``pandas`` ``DataFrame`` with specific, required column names).
+    2. Given a sweep number, return ``t``, ``v``, and ``i``.
+
+``allensdk.ipfx`` provides concrete instantiations of these classes for NWB files generated
+by MIES (``MiesDataSet``) and for NWB files available for download from the Allen Institute for Brain Science API (``AibsDataSet``).  With an instance of this
+class in hand, you can construct ``SweepSets`` easily:
+
+.. code-block:: python
+
+    from allensdk.ipfx.mies_nwb.mies_data_set import MiesDataSet
+
+    ds = MiesDataSet(nwb_file="example.nwb")
+    long_squares = ds.filtered_sweep_table(stimuli=ds.long_square_names) # more on this next!
+    sweep_set = ds.sweep_set(long_squares.sweep_number) 
+
+Stimulus Naming
+---------------
+
+Higher-level analyses available in ``allensdk.ipfx`` are critically-dependent on stimulus type and naming conventions.  In the example
+above, ``MiesDataSet`` was able to find all of the long square sweeps because the stimuli in the stimulus table have been named according
+to the Allen Institute's stimulus naming protocol.  
+
+Unless overwritten, all ``EphysDataSet`` classes create a default ``EphysStimulusOntology`` based on `stimulus_ontology.json <http://github.com/AllenInstitute/allensdk.ipfx/blob/master/allensdk/ipfx/stimulus_ontology.json>`_.  The job of this class is to provide mechanisms for searching for stimuli that have been tagged
+with standardized names.  For example, "``C1SSCOARSE150112``" is a short square stimulus with the associated tags "``Core 1``" (part of the basic
+protocol used for all data sets), "``Short Square``" (3ms square pulse), and "``Coarse``" (large jumps between amplitudes while searching for an action potential).  
+
+To run end-to-end analyses on an NWB file, ``allensdk.ipfx`` uses the naming conventions defined in the ``EphysStimulusOntology`` to identify sweeps 
+by stimulus type that can be used to compute stimulus-specific features (e.g. use all long squares to identify rheobase).  This enables the following
+example:
+
+
+.. code-block:: python
+
+    from allensdk.ipfx.mies_nwb.mies_data_set import MiesDataSet
+    from allensdk.ipfx.data_set_features import extract_data_set_features
+
+    data_set = MiesDataSet(nwb_filename='example.nwb')
+    cell_features, sweep_features, cell_record, sweep_records = extract_data_set_features(data_set)
+
+This concise code block does a large number of things:
+
+    1. Compute spike times and spike features for all current-clamp sweeps
+    2. Compute long square response features (e.g. input resistance, membrane time constant)
+    3. Compute short square response features
+    4. Compute ramp response features

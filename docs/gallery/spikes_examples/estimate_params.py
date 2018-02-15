@@ -14,7 +14,7 @@ from allensdk.api.queries.cell_types_api import CellTypesApi
 import os
 import matplotlib.pyplot as plt
 
-specimen_id = 488679042
+specimen_id = 595570553
 nwb_file = '%d.nwb' % specimen_id
 
 # download a specific experiment NWB file via AllenSDK
@@ -34,7 +34,8 @@ dv_cutoff, thresh_frac = ft.estimate_adjusted_detection_parameters(ssq_set.v,
                                                                    1.02, 1.021)
 
 # detect spikes
-sweep = data_set.sweep(24)
+sweep_number = 16
+sweep = data_set.sweep(sweep_number)
 ext = fx.SpikeExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac)
 spikes = ext.process(t=sweep.t, v=sweep.v, i=sweep.i)
 
