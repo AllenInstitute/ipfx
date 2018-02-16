@@ -48,7 +48,7 @@ Stimulus-specific Analysis
 --------------------------
 
 To analyze all of the sweeps with a particular stimulus type (say, long square pulses), you'll first need to create 
-a :py:meth:`~allensdk.ipfx.ephys_data_set.SweepSet` object.  This is an object that groups together the stimuli and responses of a group of sweeps.  
+a :py:class:`~allensdk.ipfx.ephys_data_set.SweepSet` object.  This is an object that groups together the stimuli and responses of a group of sweeps.  
 
 .. code-block:: python
 
@@ -59,7 +59,7 @@ a :py:meth:`~allensdk.ipfx.ephys_data_set.SweepSet` object.  This is an object t
                            Sweep(t=t2, v=v2, i=i2) ])
     
 Now that we have this object, we can hand it to one of the stimulus-specific analysis classes.  You first need 
-to configure a ``SpikeExtractor`` and ``SpikeTrainExtractor``:
+to configure a :py:class:`~allensdk.ipfx.ephys_extractor.SpikeExtractor` and :py:class:`~allensdk.ipfx.ephys_extractor.SpikeTrainExtractor`:
 
 .. code-block:: python
 
@@ -78,8 +78,8 @@ At this point ``results`` contains whatever features/objects the analysis instan
 Analyze a Data Set
 ------------------
 
-You can compute all features available in a data set with the ``extract_data_set_features`` function.  To 
-use this you need to create an ``EphysDataSet`` instance, and your data set will need to follow
+You can compute all features available in a data set with the :py:meth:`~allensdk.ipfx.data_set_features.extract_data_set_features` function.  To 
+use this you need to create an :py:class:`~allensdk.ipfx.ephys_data_set.EphysDataSet` instance, and your data set will need to follow
 some standardized stimulus naming conventions and have some prerequisite sweep types.  This is described 
 in more detail in :doc:`data_sets`. Once you've done this, the following is possible:
 
