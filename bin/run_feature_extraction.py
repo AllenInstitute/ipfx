@@ -11,7 +11,7 @@ import pandas as pd
 import argschema as ags
 
 import allensdk.ipfx.data_set_features as dsft
-from allensdk.ipfx.ephys_data_set import EphysDataSet, EphysStimulusOntology
+from allensdk.ipfx.ephys_data_set import EphysDataSet, StimulusOntology
 from allensdk.ipfx._schemas import FeatureExtractionParameters
 import allensdk.ipfx.plot_qc_figures as plotqc
 from allensdk.ipfx.aibs_data_set import AibsDataSet
@@ -52,7 +52,7 @@ def save_qc_figures(qc_fig_dir, data_set, feature_data, plot_cell_figures):
 def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_file, qc_fig_dir, sweep_list, cell_features):
     input_cell_features = cell_features
 
-    ont = EphysStimulusOntology(ju.read(stimulus_ontology_file))
+    ont = StimulusOntology(ju.read(stimulus_ontology_file))
     data_set = AibsDataSet(sweep_list, input_nwb_file, ont, api_sweeps=False)
     
     cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
