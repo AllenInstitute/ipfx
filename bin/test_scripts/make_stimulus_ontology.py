@@ -74,7 +74,7 @@ for stim in stims:
 
     out.append(list(tags))
 
-out.append([ (NAME, 'Noise', 'Noise 1'), (CORE, 'Core 1') ])
+out.append([ (CODE, 'C1NSSEED'), (NAME, 'Noise', 'Noise 1'), (CORE, 'Core 1') ])
 
 for o in out:
     print(o)
