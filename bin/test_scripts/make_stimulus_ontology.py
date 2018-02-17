@@ -9,50 +9,74 @@ join ephys_stimulus_types est on ersn.ephys_stimulus_type_id = est.id
 
 out = []
 
+# all core one sweeps
+# ont.has_any(stim, ('Core 1'))
+
+# only Coarse Long Squares
+# ont.has_all(stim, ('Long Square', 'Coarse'))
+
+# 
+# 
+stims =  [ { k.decode("UTF-8"):v for k,v in stim.items() } for stim in stims   ]
+
+NAME = 'name'
+CODE = 'code'
+RES = 'resolution'
+CORE = 'core'
+HOLD = 'hold'
+
 for stim in stims:
     tags = set()
 
     sname = stim['stimulus_name']
     scode = stim['stimulus_code']
 
-    tags.add(scode)
+    #tags.add(scode)
 
     m = re.search("(.*)\d{6}$", scode)
     if m:
         code_name, = m.groups()
-        tags.add(code_name)
+        tags.add((CODE, code_name, scode))
+    else:
+        tags.add((CODE, scode))
 
-    tags.add(sname)
-    
+    # core tags
     if scode.startswith('C1'):
-        tags.add('Core 1')
+        tags.add((CORE, 'Core 1'))
     elif scode.startswith('C2'):
-        tags.add('Core 2')
-
-    if 'C1NS' in scode:
-        tags.add('Noise')
-
-    if 'FINE' in scode:
-        tags.add('Fine')
-
-    if 'COARSE' in scode:
-        tags.add('Coarse')
+        tags.add((CORE, 'Core 2'))
     
-    if 'Short Square' in sname and 'Triple' not in sname:
-        tags.add('Short Square')
+    # resolution tags
+    if 'FINE' in scode:
+        tags.add((RES, 'Fine'))
+    elif 'COARSE' in scode:
+        tags.add((RES, 'Coarse'))
+    
+    # name tags
+    if 'C1NS' in scode:
+        tags.add((NAME, 'Noise', sname))
+    elif 'Short Square' in sname and 'Triple' not in sname:
+        tags.add((NAME, 'Short Square'))
+    elif 'Long Square' in sname:
+        tags.add((NAME, 'Long Square'))
+    else:
+        tags.add((NAME, sname))
 
-    if 'Long Square' in sname:
-        tags.add('Long Square')
-
+    # hold tags
     if 'Hold' in sname:
         # find the first dash
         idx = sname.find('-')
         a = sname[:idx]
         b = sname[idx+1:]
-        tags.add(a.strip())
-        tags.add(b.strip())
+        #tags.add(a.strip())
+        #tags.add(b.strip())
+        tags.add((HOLD, b.strip()))
 
-    out.append({ 'code': scode, 'name': sname, 'tags': list(tags) })
+    out.append(list(tags))
 
-out.append({ 'code': 'C1NSSEED', 'name': 'Noise 1', 'tags': [ 'Noise', 'Core 1'] })
+out.append([ (NAME, 'Noise', 'Noise 1'), (CORE, 'Core 1') ])
+
+for o in out:
+    print(o)
+
 ju.write('stimulus_ontology.json', out)
