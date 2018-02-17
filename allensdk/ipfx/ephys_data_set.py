@@ -13,21 +13,23 @@ class EphysStimulusOntology(object):
     def __init__(self, stimuli):
         self.stimuli = stimuli
         
-    def find(self, val, key='code'):
-        try:
-            return next(s for s in self.stimuli if s[key] == val)
-        except StopIteration as e:
-            raise KeyError("Could not find stimulus: %s" % val)
+    def find(self, val):
+        for stim in self.stimuli:
+            for kind in stim:
+                if val in kind:
+                    return stim
 
-    def stimulus_has_any_tags(self, stim, tags, key='code'):
-        stim = self.find(stim, key)
+        raise KeyError("Could not find stimulus: %s" % val)
 
-        return any(tag in stim['tags'] for tag in tags)
+    def stimulus_has_any_tags(self, stim, tags):
+        stim = self.find(stim)
+        flat_stim_tags = [ t for v in stim for t in v  ]
+        return any(tag in flat_stim_tags for tag in tags)
 
-    def stimulus_has_all_tags(self, stim, tags, key='code'):
-        stim = self.find(stim, key)
-
-        return all(tag in stim['tags'] for tag in tags)
+    def stimulus_has_all_tags(self, stim, tags):
+        stim = self.find(stim)
+        flat_stim_tags = [ t for v in stim for t in v  ]
+        return all(tag in flat_stim_tags for tag in tags)
 
 
 class EphysDataSet(object):
