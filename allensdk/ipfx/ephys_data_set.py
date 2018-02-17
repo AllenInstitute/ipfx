@@ -34,7 +34,7 @@ class StimulusOntology(object):
         matching_stims = [ s for s in self.stimuli if s.has_tag(tag, tag_type=tag_type) ]
 
         if not matching_stims:
-            raise KeyError("Could not find stimulus: %s" % val)
+            raise KeyError("Could not find stimulus: %s" % tag)
 
         return matching_stims
 
@@ -42,7 +42,7 @@ class StimulusOntology(object):
         matching_stims = self.find(tag, tag_type)
 
         if len(matching_stims) > 1:
-            raise KeyError("Multiple stimuli match '%s', one expected" % stim)
+            raise KeyError("Multiple stimuli match '%s', one expected" % tag)
 
         return matching_stims[0]
     
