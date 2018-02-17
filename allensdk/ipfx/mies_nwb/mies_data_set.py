@@ -86,7 +86,7 @@ class MiesDataSet(AibsDataSet):
             if self.ontology:
                 # make sure we can find all of our stimuli in the ontology
                 stim = self.ontology.find_one(stim_code, tag_type='code')
-                sweep_record["stimulus_name"] = stim.tags(tag_type='name')[-1]
+                sweep_record["stimulus_name"] = stim.tags(tag_type='name')[0][-1]
 
 
             sweep_data.append(sweep_record)
