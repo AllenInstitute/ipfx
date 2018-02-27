@@ -957,7 +957,7 @@ def detect_bursts(isis, isi_types, fast_tr_v, fast_tr_t, slow_tr_v, slow_tr_t,
     mask[drop_into] = False
     into_burst = into_burst[mask]
 
-    out_of_burst = np.array(out_of_burst)
+    out_of_burst = np.array(out_of_burst, dtype=int)
     if len(out_of_burst) == len(into_burst) - 1:
         out_of_burst = np.append(out_of_burst, len(isi_types))
 
@@ -1136,7 +1136,7 @@ def estimate_adjusted_detection_parameters(v_set, t_set, interval_start, interva
     for v, t, dv in zip(v_set, t_set, dv_set):
         putative_spikes = detect_putative_spikes(v, t, dv_cutoff=new_dv_cutoff, filter=filter)
         peaks = find_peak_indexes(v, t, putative_spikes)
-        putative_spikes, peaks = filter_putative_spikes(v, t, putative_spikes, peaks)
+        putative_spikes, peaks = filter_putative_spikes(v, t, putative_spikes, peaks, dvdt=dv, filter=filter)
         upstrokes = find_upstroke_indexes(v, t, putative_spikes, peaks, dvdt=dv)
         if upstrokes.size:
             all_upstrokes = np.append(all_upstrokes, dv[upstrokes])

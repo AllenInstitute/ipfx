@@ -36,7 +36,7 @@ def get_features(sweep_features, sweep_number):
 def load_sweep(data_set, sweep_number):
     sweep = data_set.sweep(sweep_number)
     dt = sweep.t[1] - sweep.t[0]
-    r = sweep.expt_start / dt, sweep.expt_end / dt
+    r = int(sweep.expt_start / dt), int(sweep.expt_end / dt)
     return (sweep.v, sweep.i, sweep.t, r, dt)
 
 def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features, cell_features, type_name):

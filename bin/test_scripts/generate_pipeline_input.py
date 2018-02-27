@@ -15,6 +15,8 @@ where sp.id = %d
 """ % specimen_id)[0]
 #       
 # /allen/programs/celltypes/production/humancelltypes/prod242/Ephys_Roi_Result_642966460/EPHYS_FEATURE_EXTRACTION_V2_QUEUE_642966460_input.json
+res = { k.decode('UTF-8'):v for k,v in res.items() }
+print(res)
 with open(res['input_json'], 'r') as f:
     d = json.load(f)
 

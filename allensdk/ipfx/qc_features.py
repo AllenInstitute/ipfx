@@ -141,7 +141,7 @@ def cell_qc_features(data_set, manual_values=None):
         blowout_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
         blowout_mv = measure_blowout(blowout_data.v*1e-3, 
-                                     blowout_data.expt_start*blowout_data.sampling_rate)
+                                     int(blowout_data.expt_start*blowout_data.sampling_rate))
         output_data['blowout_mv'] = blowout_mv
     except IndexError as e:
         msg = "Blowout is not available"
@@ -476,7 +476,7 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
     if sweep["slow_noise_rms_mv"] > qc_criteria["slow_noise_rms_mv_max"]:
         fail_tags.append("slow noise above threshold")
 
-    if sweep["vm_delta_mv"] > qc_criteria["vm_delta_mv_max"]:
+    if sweep["vm_delta_mv"] is not None and sweep["vm_delta_mv"] > qc_criteria["vm_delta_mv_max"]:
         fail_tags.append("Vm delta above threshold")
 
     # fail sweeps if stimulus duration is zero

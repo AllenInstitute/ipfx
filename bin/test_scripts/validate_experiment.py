@@ -16,9 +16,9 @@ def validate_feature_set(features, d1, d2):
         
         if isinstance(v1, unicode):
             if v1 != v2:
-                print f, v1, v2                
+                print(f, v1, v2)
         elif not nullisclose(v1, v2):
-            print f, v1, v2
+            print(f, v1, v2)
 
 def validate_pipeline(input_json, output_json):
     input_data = ju.read(input_json)
@@ -27,7 +27,7 @@ def validate_pipeline(input_json, output_json):
     storage_dir = os.path.dirname(input_data["input_nwb_file"])
     err_id,_ = os.path.splitext(os.path.basename(input_data["input_nwb_file"]))
     pipeline_output_json = os.path.join(storage_dir, "EPHYS_FEATURE_EXTRACTION_V2_QUEUE_%s_output.json" % err_id)
-    print pipeline_output_json
+    print(pipeline_output_json)
 
     pipeline_output = ju.read(pipeline_output_json)
     test_output = ju.read(output_json)
@@ -52,7 +52,7 @@ def validate_se(test_output_json="test/sweep_extraction_output.json"):
             d2 = test_sweeps[d1['sweep_number']]
             validate_feature_set(sweep_features, d1, d2)
         except KeyError as e:
-            print e
+            print(e)
 
     other_sweep_features = [ "stimulus_name", "clamp_mode", "stimulus_scale_factor", "stimulus_code" ] 
         
