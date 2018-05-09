@@ -118,29 +118,49 @@ def get_r_from_peak_pulse_response(v, i, t):
 
     return np.mean(r)
 
+
 def get_sweep_number_by_stimulus_names(data_set, stimulus_names):
     sweeps = data_set.filtered_sweep_table(stimuli=stimulus_names).sort_values(by='sweep_number')
-    
+
     if len(sweeps) > 1:
         logging.warning("Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimulus_names))
 
     if len(sweeps) == 0:
         raise IndexError
 
-    return sweeps.sweep_number.values[-1]    
+    return sweeps.sweep_number.values[-1]
+
 
 def cell_qc_features(data_set, manual_values=None):
+    """
+
+    Parameters
+    ----------
+    data_set : MiesDataSet
+        dataset
+    manual_values : dict
+        default (manual) values that can be passed in through input.json.
+
+
+    Returns
+    -------
+    output_data : dict
+        cell qc features
+    tag_list : list
+        tag list
+
+    """
     if manual_values is None:
         manual_values = {}
 
     output_data = {}
     tag_list = []
-    
+
     # measure blowout voltage
     try:
         blowout_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
-        blowout_mv = measure_blowout(blowout_data.v*1e-3, 
+        blowout_mv = measure_blowout(blowout_data.v*1e-3,
                                      int(blowout_data.expt_start*blowout_data.sampling_rate))
         output_data['blowout_mv'] = blowout_mv
     except IndexError as e:
@@ -154,7 +174,7 @@ def cell_qc_features(data_set, manual_values=None):
     try:
         bath_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.bath_names)
         bath_data = data_set.sweep(bath_sweep_number)
-        e0 = measure_electrode_0(bath_data.v*1e-3, 
+        e0 = measure_electrode_0(bath_data.v*1e-3,
                                  bath_data.sampling_rate)
         output_data['electrode_0_pa'] = e0
     except IndexError as e:
@@ -168,13 +188,13 @@ def cell_qc_features(data_set, manual_values=None):
     try:
         seal_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.seal_names)
         seal_data = data_set.sweep(seal_sweep_number)
-        seal_gohm = measure_seal(seal_data.i*1e-12, 
-                                 seal_data.v*1e-3, 
+        seal_gohm = measure_seal(seal_data.i*1e-12,
+                                 seal_data.v*1e-3,
                                  seal_data.sampling_rate)
 
         # error may arise in computing seal, which falls through to
         #   exception handler. if seal computation didn't fail but
-        #   computation generated invalid value, trigger same 
+        #   computation generated invalid value, trigger same
         #   exception handler with different error
         if seal_gohm is None or not np.isfinite(seal_gohm):
             raise ft.FeatureError("Could not compute seal")
@@ -192,7 +212,7 @@ def cell_qc_features(data_set, manual_values=None):
 
 
     # measure input and series resistance
-    # this requires two steps -- finding the breakin sweep, and then 
+    # this requires two steps -- finding the breakin sweep, and then
     #   analyzing it
     # if the value is unavailable then check to see if it was set manually
     breakin_data = None
@@ -210,8 +230,8 @@ def cell_qc_features(data_set, manual_values=None):
         ###########################
         # input resistance
         try:
-            ir = measure_input_resistance(breakin_data.i*1e-12, 
-                                          breakin_data.v*1e-3, 
+            ir = measure_input_resistance(breakin_data.i*1e-12,
+                                          breakin_data.v*1e-3,
                                           breakin_data.sampling_rate)
         except Exception as e:
             logging.warning("Error reading input resistance.")
@@ -258,7 +278,21 @@ def cell_qc_features(data_set, manual_values=None):
     return output_data, tag_list
 
 ##############################
+
 def sweep_qc_features(data_set):
+    """Compute QC features for iclamp sweeps in the dataset
+
+    Parameters
+    ----------
+    data_set : MiesDataSet
+        dataset
+
+    Returns
+    -------
+    sweep_features : dict
+        sweep features
+
+    """
     sweep_features = []
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
 
@@ -273,7 +307,7 @@ def sweep_qc_features(data_set):
             raise
 
         sweep = {}
-        
+
         volts = sweep_data.v*1e-3
         current = sweep_data.i*1e-12
         hz = sweep_data.sampling_rate
@@ -284,9 +318,9 @@ def sweep_qc_features(data_set):
         _, rms0 = measure_vm(1e3 * volts[idx0:idx1])
 
         sweep["pre_noise_rms_mv"] = float(rms0)
-        
+
         # measure Vm and noise at end of recording
-        # only do so if acquisition not truncated 
+        # only do so if acquisition not truncated
         # do not check for ramps, because they do not have enough time to recover
         mean1 = None
         sweep_not_truncated = ( idx_stop == len(current) - 1 )
@@ -327,7 +361,7 @@ def sweep_qc_features(data_set):
         stim_int = ft.find_stim_interval(idx_start, current, hz)
 
         sweep['stimulus_amplitude'] = stim_amp * 1e12
-        sweep['stimulus_duration'] = stim_dur 
+        sweep['stimulus_duration'] = stim_dur
         sweep['stimulus_interval'] = stim_int
         sweep.update(sweep_info)
 
@@ -345,7 +379,7 @@ def evaluate_blowout(blowout_mv, blowout_mv_min, blowout_mv_max, fail_tags):
         return True
 
     return False
-    
+
 def evaluate_electrode_0(electrode_0_pa, electrode_0_pa_max, fail_tags):
     if electrode_0_pa is None or np.isnan(electrode_0_pa):
         fail_tags.append("electrode_0_pa missing value")
@@ -373,7 +407,7 @@ def evaluate_input_and_access_resistance(input_access_resistance_ratio,
                                          initial_access_resistance_mohm,
                                          access_resistance_mohm_min,
                                          access_resistance_mohm_max,
-                                         fail_tags):    
+                                         fail_tags):
 
     failed_bad_rs = False
 
@@ -403,18 +437,40 @@ def evaluate_input_and_access_resistance(input_access_resistance_ratio,
 
     return failed_bad_rs
 
+
 def qc_experiment(data_set, cell_data, sweep_data, qc_criteria=None):
+
+    """
+
+    Parameters
+    ----------
+    data_set : MiesDataSet object
+        dataset
+    cell_data : dict
+        cell features
+    sweep_data: list of dicts
+        sweep features
+    qc_criteria : dict
+        qc criteria
+
+    Returns
+    -------
+        cell_state : list
+        sweep_states : list
+    """
     if qc_criteria is None:
         qc_criteria = load_default_qc_criteria()
 
     cell_state = qc_cell(data_set, cell_data, sweep_data, qc_criteria)
-    
+
     sweep_data_index = { sweep['sweep_number']:sweep for sweep in sweep_data }
 
     sweep_states = []
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
+
     for sweep_num in iclamp_sweeps.sweep_number:
         sweep = sweep_data_index[sweep_num]
+
         failed, fail_tags = qc_current_clamp_sweep(data_set, sweep, qc_criteria)
         sweep_state = { 'sweep_number': sweep_num, 'passed': not failed, 'reasons': fail_tags }
         sweep_states.append(sweep_state)
@@ -423,6 +479,25 @@ def qc_experiment(data_set, cell_data, sweep_data, qc_criteria=None):
 
 
 def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
+    """QC for the current-clamp sweeps
+
+    Parameters
+    ----------
+    data_set : MiesDataSet
+        data set
+    sweep : dict
+        features of a sweep
+    qc_criteria : dict
+        qc criteria
+
+    Returns
+    -------
+        fails   : int
+            number of fails
+        fail_tags : list of str
+            tags of the failed sweeps
+
+    """
     if qc_criteria is None:
         qc_criteria = load_default_qc_criteria()
 
@@ -457,8 +532,8 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
         fail_tags.append("pre-noise exceeded qc threshold")
 
     # check Vm and noise at end of recording
-    # only do so if acquisition not truncated 
-    # do not check for ramps, because they do not have 
+    # only do so if acquisition not truncated
+    # do not check for ramps, because they do not have
     #   enough time to recover
     is_ramp = data_set.ontology.stimulus_has_any_tags(sweep["stimulus_code"], data_set.ramp_names)
 
@@ -487,8 +562,27 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
 
     return len(fail_tags) > 0, fail_tags
 
-    
+
 def qc_cell(data_set, cell_data, sweep_data, qc_criteria=None):
+    """Evaluate cell state across different types of stimuli
+
+    Parameters
+    ----------
+    data_set : MiesDataSet
+        data set
+    cell_data : dict
+        cell features
+    sweep_data : list of dicts
+        sweep features
+    qc_criteria : dict
+        qc criteria
+
+    Returns
+    -------
+        dict
+            cell state
+    """
+
     if qc_criteria is None:
         qc_criteria = load_default_qc_criteria()
 

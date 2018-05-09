@@ -33,7 +33,7 @@ class QcSweepFeatures(SweepFeatures):
 
 class FeatureExtractionParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
-    stimulus_ontology_file = InputFile(description="stimulus ontology JSON", required=True)
+    stimulus_ontology_file = InputFile(description="stimulus ontology JSON", required=False)
     output_nwb_file = OutputFile(description="output nwb file", required=True)
     qc_fig_dir = OutputFile(description="output qc figure directory", required=True)
     sweep_list = Nested(FxSweepFeatures, many=True)
@@ -41,10 +41,11 @@ class FeatureExtractionParameters(ArgSchema):
 
 class SweepExtractionParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
+    input_h5_file = InputFile(description="input h5 file", required=True)
     stimulus_ontology_file = InputFile(description="stimulus ontology JSON", required=True)
     manual_seal_gohm = Float(description="blah")
     manual_initial_access_resistance_mohm = Float(description="blah")
-    manual_initial_input_mohm = Float(description="blah") 
+    manual_initial_input_mohm = Float(description="blah")
 
 class QcCriteria(DefaultSchema):
     pre_noise_rms_mv_max = Float(description="blash")
@@ -61,7 +62,8 @@ class QcCriteria(DefaultSchema):
 
 class QcParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
-    stimulus_ontology_file = InputFile(description="blash", required=True)
+    input_h5_file = InputFile(description="input h5 file", required=True)
+    stimulus_ontology_file = InputFile(description="blash", required=False)
     qc_criteria = Nested(QcCriteria, required=True)
     sweep_data = Nested(QcSweepFeatures, many=True, required=True)
     cell_features = Nested(CellFeatures)

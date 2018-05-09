@@ -74,6 +74,8 @@ class StimulusProtocolAnalysis(object):
         self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features)
                                               for sweep, spikes in zip(sweep_set.sweeps, self._spikes_set) ])
 
+        print "self._sweep_features", self._sweep_features
+
     def reset_basic_features(self):
         self._spikes_set = None
         self._sweep_features = None
@@ -103,7 +105,9 @@ class RampAnalysis(StimulusProtocolAnalysis):
 
         return out
 
+
 class LongSquareAnalysis(StimulusProtocolAnalysis):
+
     SUBTHRESH_MAX_AMP = 0
     SAG_TARGET = -100.
     HERO_MIN_AMP_OFFSET = 39.0
@@ -116,6 +120,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         self.tau_frac = tau_frac
 
     def analyze(self, sweep_set):
+
         extra_sweep_features = ['peak_deflect','stim_amp','v_baseline','sag','burst','delay']
         self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_features)
 
@@ -139,8 +144,10 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         if len(spiking_sweeps) == 0:
             raise ft.FeatureError("No spiking long square sweeps, cannot compute cell features.")
 
-
         spiking_features = self._sweep_features[spiking_sweeps]
+        print "spiking sweeps:", spiking_sweeps
+
+        print "spiking features:", spiking_features
         min_index = np.argmin(spiking_features["stim_amp"].values)
         rheobase_index = spiking_features.iloc[min_index].name
         rheo_sweep = sweep_set.sweeps[rheobase_index]

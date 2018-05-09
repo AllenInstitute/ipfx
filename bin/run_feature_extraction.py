@@ -20,6 +20,7 @@ from allensdk.config.manifest import Manifest
 import allensdk.core.json_utilities as ju
 from allensdk.core.nwb_data_set import NwbDataSet
 
+
 def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
     # embed spike times in NWB file
     logging.debug("Embedding spike times")
@@ -37,6 +38,7 @@ def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
         logging.error("Problem renaming file: %s -> %s" % (tmp_nwb_file, output_nwb_file))
         raise e
 
+
 def save_qc_figures(qc_fig_dir, data_set, feature_data, plot_cell_figures):
     if os.path.exists(qc_fig_dir):
         logging.warning("removing existing qc figures directory: %s", qc_fig_dir)
@@ -47,14 +49,16 @@ def save_qc_figures(qc_fig_dir, data_set, feature_data, plot_cell_figures):
     logging.debug("saving qc plot figures")
     sweep_page = plotqc.make_sweep_page(data_set, feature_data, qc_fig_dir)
     plotqc.make_cell_page(data_set, feature_data, qc_fig_dir, save_cell_plots=plot_cell_figures)
-            
+
 
 def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_file, qc_fig_dir, sweep_list, cell_features):
+
     input_cell_features = cell_features
 
-    ont = StimulusOntology(ju.read(stimulus_ontology_file))
+#    ont = StimulusOntology(ju.read(stimulus_ontology_file))
+    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else None
     data_set = AibsDataSet(sweep_list, input_nwb_file, ont, api_sweeps=False)
-    
+
     cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
 
     if input_cell_features:
@@ -70,16 +74,17 @@ def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_fi
 
     return feature_data
 
+
 def main():
     module = ags.ArgSchemaParser(schema_type=FeatureExtractionParameters)
 
-    feature_data = run_feature_extraction(module.args["input_nwb_file"], 
-                                          module.args["stimulus_ontology_file"], 
-                                          module.args["output_nwb_file"], 
-                                          module.args["qc_fig_dir"], 
-                                          module.args["sweep_list"], 
+    feature_data = run_feature_extraction(module.args["input_nwb_file"],
+                                          module.args.get("stimulus_ontology_file", None),
+                                          module.args["output_nwb_file"],
+                                          module.args["qc_fig_dir"],
+                                          module.args["sweep_list"],
                                           module.args["cell_features"])
 
     ju.write(module.args["output_json"], feature_data)
-            
+
 if __name__ == "__main__": main()

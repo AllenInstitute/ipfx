@@ -1,13 +1,19 @@
 import json
-with open('test/sweep_extraction_output.json', 'r') as f:
+with open('../sweep_extraction_output.json', 'r') as f:
     outd = json.load(f)
 
-with open('test/sweep_extraction_input.json', 'r') as f:
+with open('../sweep_extraction_input.json', 'r') as f:
     ind = json.load(f)
 
 d = {}
 d['input_nwb_file'] = ind['input_nwb_file']
-d['qc_criteria'] = { "access_resistance_mohm_max":20.0, 
+print ind['input_h5_file']
+print ind['stimulus_ontology_file']
+
+d['input_h5_file'] = ind['input_h5_file']
+d['stimulus_ontology_file'] = ind['stimulus_ontology_file']
+
+d['qc_criteria'] = { "access_resistance_mohm_max":20.0,
                      "access_resistance_mohm_min":1.0,
                      "blowout_mv_max":10.0,
                      "blowout_mv_min":-10.0,
@@ -29,5 +35,5 @@ d['qc_criteria'] = { "access_resistance_mohm_max":20.0,
 d['sweep_data'] = outd['sweep_data']
 d['cell_features'] = outd['cell_features']
 
-with open('test/qc_input.json', 'w') as f:
+with open('../qc_input.json', 'w') as f:
     f.write(json.dumps(d, indent=2))

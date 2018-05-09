@@ -28,7 +28,7 @@ def get_spikes(sweep_features, sweep_number):
     return get_features(sweep_features, sweep_number)["spikes"]
 
 def get_features(sweep_features, sweep_number):
-    try: 
+    try:
         return sweep_features[int(sweep_number)]
     except KeyError:
         return sweep_features[str(sweep_number)]
@@ -83,10 +83,10 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
 
 
     plt.figure(figs[0].number)
-    
+
     yvals = [float(lims_features[k + "_v_" + type_name]) for k in gen_features if lims_features[k + "_v_" + type_name] is not None]
     xvals = range(len(yvals))
-    
+
     plt.scatter(xvals, yvals, color='blue', marker='_', s=40, zorder=100)
     plt.xticks(xvals, ['thr', 'pk', 'tr', 'ftr', 'str'])
     plt.title(type_name + ": voltages")
@@ -97,7 +97,7 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
     plt.scatter(xvals, yvals, color='blue', marker='_', s=40, zorder=100)
     plt.xticks(xvals, ['thr', 'pk', 'tr', 'ftr', 'str'])
     plt.title(type_name + ": times")
-    
+
     plt.figure(figs[2].number)
     if lims_features["upstroke_downstroke_ratio_" + type_name] is not None:
         plt.scatter([0], [float(lims_features["upstroke_downstroke_ratio_" + type_name])], color='blue', marker='_', s=40, zorder=100)
@@ -129,17 +129,17 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
             times = [ rheo_spike[f] for f in time_features ]
 
         plt.scatter(times, voltages, color='red', zorder=20)
-        
+
 
         delta_v = 5.0
         if nspikes:
             plt.plot([spikes[0]['upstroke_t'] - 1e-3 * (delta_v / spikes[0]['upstroke']),
-                      spikes[0]['upstroke_t'] + 1e-3 * (delta_v / spikes[0]['upstroke'])], 
+                      spikes[0]['upstroke_t'] + 1e-3 * (delta_v / spikes[0]['upstroke'])],
                      [spikes[0]['upstroke_v'] - delta_v, spikes[0]['upstroke_v'] + delta_v], color='red')
 
             if 'downstroke_t' in spikes[0]:
                 plt.plot([spikes[0]['downstroke_t'] - 1e-3 * (delta_v / spikes[0]['downstroke']),
-                          spikes[0]['downstroke_t'] + 1e-3 * (delta_v / spikes[0]['downstroke'])], 
+                          spikes[0]['downstroke_t'] + 1e-3 * (delta_v / spikes[0]['downstroke'])],
                          [spikes[0]['downstroke_v'] - delta_v, spikes[0]['downstroke_v'] + delta_v], color='red')
 
         if type_name == "ramp":
@@ -174,7 +174,7 @@ def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
     for i, sweep_number in enumerate(iclamp_sweep_numbers):
         logging.info("plotting sweep %d" %  sweep_number)
         if i == 0:
-            v_init, i_init, t_init, r_init, dt_init = load_sweep(data_set, sweep_number)    
+            v_init, i_init, t_init, r_init, dt_init = load_sweep(data_set, sweep_number)
 
             tp_fig = plt.figure()
             axTP = plt.gca()
@@ -187,7 +187,7 @@ def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
             axTP.plot(xTP, yTP, linewidth=1)
             axTP.set_xlim(0, tp_len)
 #            sns.despine()
-    
+
             exp_fig = plt.figure()
             axDP = plt.gca()
             axDP.set_yticklabels([])
@@ -200,7 +200,7 @@ def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
             xDP = t_exp
             baseline = yDP[5000:9000]
             baselineMean = np.mean(baseline)
-            baselineV = (np.ones(len(xDP))) * baselineMean     
+            baselineV = (np.ones(len(xDP))) * baselineMean
             axDP.plot(xDP, yDP, linewidth=1)
             axDP.plot(xDP, baselineV, linewidth=1)
             axDP.set_xlim(t_exp[0], t_exp[-1])
@@ -209,7 +209,7 @@ def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
             v_prev, i_prev, t_prev, r_prev = v_init, i_init, t_init, r_init
 
         else:
-            v, i, t, r, dt = load_sweep(data_set, sweep_number)    
+            v, i, t, r, dt = load_sweep(data_set, sweep_number)
 
             tp_fig = plt.figure()
             axTP = plt.gca()
@@ -245,14 +245,14 @@ def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
             xDP = t_exp
             baseline = yDP[5000:9000]
             baselineMean = np.mean(baseline)
-            baselineV = (np.ones(len(xDP))) * baselineMean     
+            baselineV = (np.ones(len(xDP))) * baselineMean
             axDP.plot(xDP, yDP, linewidth=1)
             axDP.plot(xDP, baselineV, linewidth=1)
             axDP.set_xlim(t_exp[0], t_exp[-1])
 #            sns.despine()
 
             v_prev, i_prev, t_prev, r_prev = v, i, t, r
-            
+
         prev_sweep_number = sweep_number
 
         save_figure(tp_fig, 'test_pulse_%d' % sweep_number, 'test_pulses', image_dir, sizes, image_file_sets)
@@ -260,7 +260,7 @@ def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
 
     return image_file_sets
 
-def save_figure(fig, image_name, image_set_name, image_dir, sizes, image_sets, scalew=1, scaleh=1, ext='jpg'):
+def save_figure(fig, image_name, image_set_name, image_dir, sizes, image_sets, scalew=1, scaleh=1, ext='png'):
     plt.figure(fig.number)
 
     if image_set_name not in image_sets:
@@ -286,10 +286,10 @@ def plot_images(input_image_dir, output_image_dir, sizes, image_sets):
     for i, path in enumerate(paths):
         image_data = plt.imread(path)
         image_data = np.array(image_data, dtype=np.float32)
-        
+
         vmin = image_data.min()
         vmax = image_data.max()
-        
+
         image_data = np.array((image_data - vmin) / (vmax - vmin) * 255.0, dtype=np.uint8)
 
         for size_name, size in sizes.iteritems():
@@ -305,7 +305,7 @@ def plot_images(input_image_dir, output_image_dir, sizes, image_sets):
             scipy.misc.imsave(filename, sdata)
 
             image_sets['images'][size_name].append(filename)
-        
+
 
 def plot_subthreshold_long_square_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     lsq_sweeps = cell_features["long_squares"]["sweeps"]
@@ -327,7 +327,7 @@ def plot_subthreshold_long_square_figures(data_set, cell_features, lims_features
     plt.tight_layout()
 
     save_figure(fig, 'VI_curve', 'subthreshold_long_squares', image_dir, sizes, cell_image_files)
-    
+
     # 0b - Plot tau curve and average
     fig = plt.figure()
     x = np.array([ s['stim_amp'] for s in tau_sweeps ])
@@ -343,7 +343,7 @@ def plot_subthreshold_long_square_figures(data_set, cell_features, lims_features
 
 
     save_figure(fig, 'tau_curve', 'subthreshold_long_squares', image_dir, sizes, cell_image_files)
-    
+
     subthresh_dict = {s['id']:s for s in tau_sweeps}
 
     # 0c - Plot the subthreshold squares
@@ -352,9 +352,9 @@ def plot_subthreshold_long_square_figures(data_set, cell_features, lims_features
 
     for index, s in enumerate(tau_sweeps):
         v, i, t, r, dt = load_sweep(data_set, s)
-        
+
         plt.figure(tau_figs[index].number)
-        
+
         plt.plot(t, v, color="black")
 
         if index == 0:
@@ -390,18 +390,18 @@ def plot_short_square_figures(data_set, cell_features, lims_features, sweep_feat
     if repeat_amp is not None:
         short_square_sweep_nums = [ s['id'] for s in cell_features["short_squares"]["common_amp_sweeps"] ]
 
-        figs = plot_single_ap_values(data_set, short_square_sweep_nums, 
-                                     lims_features, sweep_features, cell_features, 
-                                     "short_square") 
+        figs = plot_single_ap_values(data_set, short_square_sweep_nums,
+                                     lims_features, sweep_features, cell_features,
+                                     "short_square")
 
         for index, fig in enumerate(figs):
             save_figure(fig, 'short_squares_%d' % index, 'short_squares', image_dir, sizes, cell_image_files)
 
-        fig = plot_instantaneous_threshold_thumbnail(data_set, short_square_sweep_nums, 
+        fig = plot_instantaneous_threshold_thumbnail(data_set, short_square_sweep_nums,
                                                      cell_features, lims_features, sweep_features)
 
         save_figure(fig, 'instantaneous_threshold_thumbnail', 'short_squares', image_dir, sizes, cell_image_files)
-                                                     
+
 
     else:
         logging.warning("No short square figures to plot.")
@@ -418,7 +418,7 @@ def plot_instantaneous_threshold_thumbnail(data_set, sweep_numbers, cell_feature
     fig = plt.figure(frameon=False)
     ax = plt.Axes(fig, [0., 0., 1., 1.])
     ax.set_axis_off()
-    fig.add_axes(ax)    
+    fig.add_axes(ax)
     ax.set_yticklabels([])
     ax.set_xticklabels([])
     ax.set_xlabel('')
@@ -432,7 +432,7 @@ def plot_instantaneous_threshold_thumbnail(data_set, sweep_numbers, cell_feature
     tscale = 0.005
 
     plt.plot(t, v, linewidth=1, color=color)
-    
+
     plt.ylim(AXIS_Y_RANGE[0], AXIS_Y_RANGE[1])
     plt.xlim(tstart, tend)
 
@@ -448,14 +448,14 @@ def plot_ramp_figures(data_set, cell_features, lims_features, sweep_features, im
         figs = plot_single_ap_values(data_set, ramps_sweeps, lims_features, sweep_features, cell_features, "ramp")
 
         for index, fig in enumerate(figs):
-            save_figure(fig, 'ramps_%d' % index, 'ramps', image_dir, sizes, cell_image_files)            
+            save_figure(fig, 'ramps_%d' % index, 'ramps', image_dir, sizes, cell_image_files)
 
 def plot_rheo_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     rheo_sweeps = [ lims_features["rheobase_sweep_num"] ]
     figs = plot_single_ap_values(data_set, rheo_sweeps, lims_features, sweep_features, cell_features, "long_square")
 
     for index, fig in enumerate(figs):
-        save_figure(fig, 'rheo_%d' % index, 'rheo', image_dir, sizes, cell_image_files)            
+        save_figure(fig, 'rheo_%d' % index, 'rheo', image_dir, sizes, cell_image_files)
 
 def plot_hero_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     fig = plt.figure()
@@ -468,7 +468,7 @@ def plot_hero_figures(data_set, cell_features, lims_features, sweep_features, im
     isis = np.diff(np.array(spike_times))
     plt.title("thumbnail {:d}, amp = {:.1f}".format(lims_features["thumbnail_sweep_num"], stim_amp))
     plt.tight_layout()
-    
+
     save_figure(fig, 'thumbnail_0', 'thumbnail', image_dir, sizes, cell_image_files, scalew=2)
 
     fig = plt.figure()
@@ -478,14 +478,14 @@ def plot_hero_figures(data_set, cell_features, lims_features, sweep_features, im
         plt.title("adapt = {:.3g}".format(lims_features["adaptation"]))
     else:
         plt.title("adapt = not defined")
-    
+
     for k in ["has_delay", "has_burst", "has_pause"]:
         if lims_features.get(k, None) is None:
             lims_features[k] = False
 
     plt.tight_layout()
     save_figure(fig, 'thumbnail_1', 'thumbnail', image_dir, sizes, cell_image_files)
-        
+
     yvals = [
         float(lims_features["has_delay"]),
         float(lims_features["has_burst"]),
@@ -508,7 +508,7 @@ def plot_hero_figures(data_set, cell_features, lims_features, sweep_features, im
 def plot_long_square_summary(data_set, cell_features, lims_features, sweep_features):
     long_square_sweeps = cell_features['long_squares']['sweeps']
     long_square_sweep_numbers = [ int(s['id']) for s in long_square_sweeps ]
-    
+
     thumbnail_summary_fig = plot_sweep_set_summary(data_set, int(lims_features['thumbnail_sweep_num']), long_square_sweep_numbers)
     plt.figure(thumbnail_summary_fig.number)
 
@@ -520,7 +520,7 @@ def plot_fi_curve_figures(data_set, cell_features, lims_features, sweep_features
     fi_sorted = sorted(cell_features["long_squares"]["spiking_sweeps"], key=lambda s:s['stim_amp'])
     x = [d['stim_amp'] for d in fi_sorted]
     y = [d['avg_rate'] for d in fi_sorted]
-    last_zero_idx = np.nonzero(y)[0][0] - 1    
+    last_zero_idx = np.nonzero(y)[0][0] - 1
     plt.scatter(x, y, color='black')
     plt.plot(x[last_zero_idx:], cell_features["long_squares"]["fi_fit_slope"] * (np.array(x[last_zero_idx:]) - x[last_zero_idx]), color='red')
     plt.xlabel("pA")
@@ -558,7 +558,7 @@ def mask_nulls(data):
 
 def plot_sweep_value_figures(sweeps, image_dir, sizes, cell_image_files):
     sweeps = sweeps.sort_values('sweep_number').to_dict(orient='records')
-    
+
     # plot bridge balance
     data = np.array([ [ s['bridge_balance_mohm'], s['sweep_number'] ] for s in sweeps ]).T
     mask_nulls(data)
@@ -566,33 +566,33 @@ def plot_sweep_value_figures(sweeps, image_dir, sizes, cell_image_files):
     fig = plt.figure()
     plt.title('bridge balance')
     plt.plot(data[1,:], data[0,:], marker='.')
-    
+
     save_figure(fig, 'bridge_balance', 'sweep_values', image_dir, sizes, cell_image_files, scalew=2)
 
     # plot pre_vm_mv, no blowout sweep
-    data = np.array([ [ s['pre_vm_mv'], s['sweep_number'] ] 
-                      for s in sweeps 
+    data = np.array([ [ s['pre_vm_mv'], s['sweep_number'] ]
+                      for s in sweeps
                       if not s['stimulus_code'].startswith('EXTPBLWOUT')]).T
     mask_nulls(data)
 
     fig = plt.figure()
     plt.title('pre vm')
     plt.plot(data[1,:], data[0,:], marker='.')
-    
+
     save_figure(fig, 'pre_vm_mv', 'sweep_values', image_dir, sizes, cell_image_files, scalew=2)
 
     # plot bias current
     data = np.array([ [ s['leak_pa'], s['sweep_number'] ] for s in sweeps ]).T
     mask_nulls(data)
-                   
+
     fig = plt.figure()
     plt.title('leak')
     plt.plot(data[1,:], data[0,:], marker='.')
-    
+
     save_figure(fig, 'leak', 'sweep_values', image_dir, sizes, cell_image_files, scalew=2)
 
 def plot_cell_figures(data_set, figure_data, image_dir, sizes):
-    
+
     cell_image_files = {}
 
     plt.style.use('ggplot')
@@ -606,7 +606,7 @@ def plot_cell_figures(data_set, figure_data, image_dir, sizes):
 
     logging.info("saving tau and vi figs")
     plot_subthreshold_long_square_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
-    
+
     logging.info("saving short square figs")
     plot_short_square_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
@@ -633,7 +633,7 @@ def plot_sweep_set_summary(data_set, highlight_sweep_number, sweep_numbers,
     fig = plt.figure(frameon=False)
     ax = plt.Axes(fig, [0., 0., 1., 1.])
     ax.set_axis_off()
-    fig.add_axes(ax)    
+    fig.add_axes(ax)
     ax.set_yticklabels([])
     ax.set_xticklabels([])
     ax.set_xlabel('')
@@ -647,7 +647,7 @@ def plot_sweep_set_summary(data_set, highlight_sweep_number, sweep_numbers,
     plt.plot(t, v, linewidth=1, color=highlight_color)
 
     stim_start, stim_dur, stim_amp, start_idx, end_idx = dsft.get_stim_characteristics(i, t)
-    
+
     tstart = stim_start - 0.05
     tend = stim_start + stim_dur + 0.25
 
@@ -664,26 +664,26 @@ def make_sweep_html(sweep_files, file_name):
 
     html += "<div style='position:absolute;width:50%;left:0;top:40'>"
     if 'test_pulses' in sweep_files:
-        for small_img, large_img in zip(sweep_files['test_pulses']['small'], 
+        for small_img, large_img in zip(sweep_files['test_pulses']['small'],
                                         sweep_files['test_pulses']['large']):
-            html += "<a href='%s' target='_blank'><img src='%s'></img></a>" % ( os.path.basename(large_img), 
-                                                                                os.path.basename(small_img) ) 
+            html += "<a href='%s' target='_blank'><img src='%s'></img></a>" % ( os.path.basename(large_img),
+                                                                                os.path.basename(small_img) )
     html += "</div>"
 
     html += "<div style='position:absolute;width:50%;right:0;top:40'>"
     if 'experiments' in sweep_files:
-        for small_img, large_img in zip(sweep_files['experiments']['small'], 
+        for small_img, large_img in zip(sweep_files['experiments']['small'],
                                         sweep_files['experiments']['large']):
             html += "<a href='%s' target='_blank'><img src='%s'></img></a>" % ( os.path.basename(large_img),
                                                                                 os.path.basename(small_img) )
     html += "</div>"
-    
+
     html += "</body></html>"
 
     with open(file_name, 'w') as f:
         f.write(html)
 
-def make_cell_html(image_files, metadata, file_name, required_fields=( 'electrode_0_pa', 
+def make_cell_html(image_files, metadata, file_name, required_fields=( 'electrode_0_pa',
                                                                        'seal_gohm',
                                                                        'initial_access_resistance_mohm',
                                                                        'input_resistance_mohm' )):
@@ -707,7 +707,7 @@ def make_cell_html(image_files, metadata, file_name, required_fields=( 'electrod
         image_set_files = image_files[image_file_set_name]
 
         for small_img, large_img in zip(image_set_files['small'], image_set_files['large']):
-            html += "<a href='%s' target='_blank'><img src='%s'></img></a>" % ( os.path.basename(large_img), 
+            html += "<a href='%s' target='_blank'><img src='%s'></img></a>" % ( os.path.basename(large_img),
                                                                                 os.path.basename(small_img) )
     html += ("</body></html>")
 
@@ -729,7 +729,7 @@ def make_cell_page(data_set, feature_data, working_dir, image_dir=".", save_cell
         cell_files = plot_cell_figures(data_set, feature_data, working_dir, sizes)
     else:
         cell_files = {}
-        
+
     logging.info("saving images")
     sizes = { 'small': 200, 'large': None }
     plot_images(image_dir, working_dir, sizes, cell_files)

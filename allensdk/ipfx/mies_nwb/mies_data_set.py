@@ -5,15 +5,24 @@ import pandas as pd
 from allensdk.ipfx.aibs_data_set import AibsDataSet
 import allensdk.ipfx.mies_nwb.lab_notebook_reader as lab_notebook_reader
 
+
 class MiesDataSet(AibsDataSet):
+
     def __init__(self, nwb_file, h5_file=None, ontology=None):
         super(MiesDataSet, self).__init__([], nwb_file, ontology)
         self.h5_file = h5_file
         self.sweep_table = self.build_sweep_table()
 
+
     def build_sweep_table(self):
+        """
+        :parameter:
+
+        :return:
+            Data Frame of sweeps data
+        """
         notebook = lab_notebook_reader.create_lab_notebook_reader(self.nwb_file, self.h5_file)
-        
+
         nwbf = h5py.File(self.nwb_file, 'r')
 
         sweep_data = []
@@ -28,7 +37,7 @@ class MiesDataSet(AibsDataSet):
 
             ancestry = sweep_ts.attrs["ancestry"]
             sweep_record['clamp_mode'] = ancestry[-1]
-                    
+
             sweep_num = int(sweep_name.split('_')[-1])
             sweep_record['sweep_number'] = sweep_num
 
@@ -44,7 +53,7 @@ class MiesDataSet(AibsDataSet):
                 stim_code = notebook.get_value("Stim Wave Name", sweep_num, "")
                 if len(stim_code) == 0:
                     raise Exception("Could not read stimulus wave name from lab notebook")
-                
+
             stim_code = stim_code.split('_')[0]
 
             # stim units are based on timeseries type
@@ -56,11 +65,11 @@ class MiesDataSet(AibsDataSet):
                 sweep_record['stimulus_units'] = 'mV'
                 sweep_record['clamp_mode'] = 'VoltageClamp'
             else:
-                # it's probably OK to skip this sweep and put a 'continue' 
+                # it's probably OK to skip this sweep and put a 'continue'
                 #   here instead of an exception, but wait until there's
                 #   an actual error and investigate the data before doing so
                 raise Exception("Unable to determine clamp mode in " + sweep_name)
-           
+
             # bridge balance
             bridge_balance = notebook.get_value("Bridge Bal Value", sweep_num, None)
             sweep_record["bridge_balance_mohm"] = bridge_balance
@@ -79,7 +88,7 @@ class MiesDataSet(AibsDataSet):
             # PBS-229 change stim name by appending set_sweep_count
             cnt = notebook.get_value("Set Sweep Count", sweep_num, 0)
             stim_code_ext = stim_code + "[%d]" % int(cnt)
-            
+
             sweep_record["stimulus_code_ext"] = stim_code_ext
             sweep_record["stimulus_code"] = stim_code
 
@@ -90,8 +99,7 @@ class MiesDataSet(AibsDataSet):
 
 
             sweep_data.append(sweep_record)
-        #
-        nwbf.close()
 
+        nwbf.close()
         return pd.DataFrame.from_records(sweep_data)
-    
+

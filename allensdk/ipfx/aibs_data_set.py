@@ -5,6 +5,7 @@ import re
 from .ephys_data_set import EphysDataSet, Sweep
 from allensdk.core.nwb_data_set import NwbDataSet
 
+
 class AibsDataSet(EphysDataSet):
     def __init__(self, sweep_list, nwb_file, ontology=None, api_sweeps=True):
         super(AibsDataSet, self).__init__(ontology)
@@ -20,7 +21,7 @@ class AibsDataSet(EphysDataSet):
                    AibsDataSet.STIMULUS_CODE: re.sub("\[\d+\]", "", s['stimulus_description']),
                    AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
                    AibsDataSet.PASSED: True } for s in sweep_list ]
-    
+
     def sweep(self, sweep_number):
         data = self.data_set.get_sweep(sweep_number)
 
@@ -36,4 +37,4 @@ class AibsDataSet(EphysDataSet):
                      expt_end = e,
                      sampling_rate = hz)
 
-    
+
