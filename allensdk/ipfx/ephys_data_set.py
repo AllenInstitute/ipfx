@@ -117,7 +117,9 @@ class EphysDataSet(object):
 
         self.current_clamp_units = ( 'Amps', 'pA')
 
+
     def filtered_sweep_table(self, current_clamp_only=False, passing_only=False, stimuli=None):
+
         st = self.sweep_table
 
         if current_clamp_only:

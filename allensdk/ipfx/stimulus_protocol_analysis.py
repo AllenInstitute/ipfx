@@ -74,7 +74,7 @@ class StimulusProtocolAnalysis(object):
         self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features)
                                               for sweep, spikes in zip(sweep_set.sweeps, self._spikes_set) ])
 
-        print "self._sweep_features", self._sweep_features
+#        print "self._sweep_features", self._sweep_features
 
     def reset_basic_features(self):
         self._spikes_set = None
@@ -145,11 +145,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
             raise ft.FeatureError("No spiking long square sweeps, cannot compute cell features.")
 
         spiking_features = self._sweep_features[spiking_sweeps]
-        print "spiking sweeps:", spiking_sweeps
 
-        print "spiking features:", spiking_features
         min_index = np.argmin(spiking_features["stim_amp"].values)
+
         rheobase_index = spiking_features.iloc[min_index].name
+
         rheo_sweep = sweep_set.sweeps[rheobase_index]
         rheobase_i = ft._step_stim_amp(rheo_sweep.t, rheo_sweep.i, self.spx.start)
 
@@ -163,6 +163,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         # find hero sweep
         hero_sweep = self.find_hero_sweep(rheobase_i, spiking_features)
+
         features['hero_sweep'] = hero_sweep
 
         return features
@@ -226,7 +227,8 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         hero_features = spiking_features[(spiking_features["stim_amp"] > hero_min) & (spiking_features["stim_amp"] < hero_max)]
 
         if len(hero_features) == 0:
-            return None
+#            return None
+            raise ValueError
         else:
             return hero_features.iloc[0]
 

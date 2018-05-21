@@ -14,6 +14,11 @@ class MiesDataSet(AibsDataSet):
         self.sweep_table = self.build_sweep_table()
 
 
+        st = self.sweep_table
+        st.to_csv("sweep_table.csv", sep=" ",index=False)
+
+
+
     def build_sweep_table(self):
         """
         :parameter:

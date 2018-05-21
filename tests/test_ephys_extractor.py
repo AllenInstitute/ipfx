@@ -95,7 +95,7 @@ def test_extractor_on_sample_data_with_i(spike_test_pair):
 
 def test_extractor_on_zero_voltage():
     t = np.arange(0, 4000) * 2e-5
-    
+
     v = np.zeros_like(t)
     i = np.zeros_like(t)
 
@@ -106,6 +106,7 @@ def test_extractor_on_zero_voltage():
 def test_extractor_on_variable_time_step(spike_test_var_dt):
     data = spike_test_var_dt
 
+    print data
     t = data[:, 0]
     v = data[:, 1]
 

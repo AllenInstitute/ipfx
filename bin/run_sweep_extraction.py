@@ -25,9 +25,7 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
     ont = StimulusOntology(ju.read(stimulus_ontology_file))
     ds = MiesDataSet(input_nwb_file, input_h5_file, ontology=ont)
     cell_features, cell_tags = qcf.cell_qc_features(ds, manual_values)
-    print cell_features
     sweep_features = qcf.sweep_qc_features(ds)
-    print sweep_features[0]
 
     return dict(cell_features=cell_features,
                 cell_tags=cell_tags,

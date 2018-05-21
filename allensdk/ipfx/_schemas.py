@@ -75,6 +75,7 @@ class PipelineParameters(ArgSchema):
     output_nwb_file = OutputFile(description="output nwb file", required=True)
     qc_fig_dir = OutputFile(description="output qc figure directory", required=True)
     qc_criteria = Nested(QcCriteria, required=True)
+    specimen_id = Integer(description="specimen id", required=True)
 
 
 class OutputSchema(DefaultSchema):

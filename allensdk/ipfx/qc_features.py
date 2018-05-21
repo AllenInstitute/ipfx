@@ -47,9 +47,14 @@ def measure_seal(v, curr, hz):
     t = np.arange(len(v)) / hz
     return 1e-9 * get_r_from_stable_pulse_response(v, curr, t)
 
-def measure_input_resistance(v, curr, hz):
-    t = np.arange(len(v)) / hz
+# def measure_input_resistance(v, curr, hz):
+#     t = np.arange(len(v)) / hz
+#     return 1e-6 * get_r_from_stable_pulse_response(v, curr, t)
+
+def measure_input_resistance(v, curr, t):
+#    t = np.arange(len(v)) / hz
     return 1e-6 * get_r_from_stable_pulse_response(v, curr, t)
+
 
 def measure_initial_access_resistance(v, curr, hz):
     t = np.arange(len(v)) / hz
@@ -63,7 +68,21 @@ def measure_vm(vals):
     return mean, rms
 ########################################################################
 
+
 def get_r_from_stable_pulse_response(v, i, t):
+    """Compute input resistance from the stable pulse response
+
+    Parameters
+    ----------
+    v : float membrane voltage
+    i : float input current
+    t : time (s)
+
+    Returns
+    -------
+    ir: float input resistance
+    """
+
     dv = np.diff(v)
     up_idx = np.flatnonzero(dv > 0)
     down_idx = np.flatnonzero(dv < 0)
@@ -84,7 +103,6 @@ def get_r_from_stable_pulse_response(v, i, t):
         end = down_idx[ii]-1
         start = end - one_ms
 
-
         avg_v_steady = np.mean(v[start:end])
         avg_i_steady = np.mean(i[start:end])
 
@@ -93,6 +111,7 @@ def get_r_from_stable_pulse_response(v, i, t):
         r.append(r_instance)
 
     return np.mean(r)
+
 
 def get_r_from_peak_pulse_response(v, i, t):
     dv = np.diff(v)
@@ -120,8 +139,8 @@ def get_r_from_peak_pulse_response(v, i, t):
 
 
 def get_sweep_number_by_stimulus_names(data_set, stimulus_names):
-    sweeps = data_set.filtered_sweep_table(stimuli=stimulus_names).sort_values(by='sweep_number')
 
+    sweeps = data_set.filtered_sweep_table(stimuli=stimulus_names).sort_values(by='sweep_number')
     if len(sweeps) > 1:
         logging.warning("Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimulus_names))
 
@@ -232,7 +251,8 @@ def cell_qc_features(data_set, manual_values=None):
         try:
             ir = measure_input_resistance(breakin_data.i*1e-12,
                                           breakin_data.v*1e-3,
-                                          breakin_data.sampling_rate)
+                                          breakin_data.t)
+
         except Exception as e:
             logging.warning("Error reading input resistance.")
             raise

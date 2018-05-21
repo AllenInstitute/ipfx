@@ -389,6 +389,8 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     # extract sweep-level features
     logging.debug("Computing sweep features")
 #    print data_set.sweep_table
+    data_set.sweep_table.to_csv("sweep_table_pass.csv", sep=" ", index=False)
+
     # for logging purposes
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
     passed_iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, passing_only=True)
@@ -399,6 +401,8 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
 
     # extract cell-level features
     logging.info("Computing cell features")
+
+
     lsq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.long_square_names)
     ssq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.short_square_names)
     ramp_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.ramp_names)
@@ -412,12 +416,13 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     ramp_sweep_numbers = ramp_sweeps['sweep_number'].sort_values().values
 
     logging.debug("long square sweeps: %s", str(lsq_sweep_numbers))
+
+
     logging.debug("coarse long square sweeps: %s", str(clsq_sweep_numbers))
     logging.debug("short square sweeps: %s", str(ssq_sweep_numbers))
     logging.debug("ramp sweeps: %s", str(ramp_sweep_numbers))
 
     if subthresh_min_amp is None:
-        print "clsq_sweeps['stimulus_amplitude']:", clsq_sweeps['stimulus_amplitude']
         subthresh_min_amp, clsq_amp_delta = select_subthreshold_min_amplitude(clsq_sweeps['stimulus_amplitude'])
         logging.info("Long squares using %fpA step size.  Using subthreshold minimum amplitude of %f.", clsq_amp_delta, subthresh_min_amp)
 

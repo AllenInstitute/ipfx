@@ -645,7 +645,6 @@ def plot_sweep_set_summary(data_set, highlight_sweep_number, sweep_numbers,
 
     v, i, t, r, dt = load_sweep(data_set, highlight_sweep_number)
     plt.plot(t, v, linewidth=1, color=highlight_color)
-
     stim_start, stim_dur, stim_amp, start_idx, end_idx = dsft.get_stim_characteristics(i, t)
 
     tstart = stim_start - 0.05
