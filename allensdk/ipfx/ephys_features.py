@@ -117,7 +117,7 @@ def find_peak_indexes(v, t, spike_indexes, end=None):
     return np.array(peak_indexes)
 
 
-def filter_putative_spikes(v, t, spike_indexes, peak_indexes, min_height=2., 
+def filter_putative_spikes(v, t, spike_indexes, peak_indexes, min_height=2.,
                            min_peak=-30., filter=10., dvdt=None):
     """Filter out events that are unlikely to be spikes based on:
         * Height (threshold to peak)
@@ -785,7 +785,7 @@ def has_fixed_dt(t):
     return np.allclose(dt, np.ones_like(dt) * dt[0])
 
 
-def fit_membrane_time_constant(t, v, start, end, min_rsme=1e-4):
+def fit_membrane_time_constant(t, v, start, end, rmse_max_tol = 1e-4):
     """Fit an exponential to estimate membrane time constant between start and end
 
     Parameters
@@ -794,11 +794,11 @@ def fit_membrane_time_constant(t, v, start, end, min_rsme=1e-4):
     t : numpy array of times in seconds
     start : start of time window for exponential fit
     end : end of time window for exponential fit
-    min_rsme: minimal acceptable root mean square error (default 1e-4)
+    rsme_max_tol: minimal acceptable root mean square error (default 1e-4)
 
     Returns
     -------
-    a, inv_tau, y0 : Coeffients of equation y0 + a * exp(-inv_tau * x)
+    a, inv_tau, y0 : Coefficients of equation y0 + a * exp(-inv_tau * x)
 
     returns np.nan for values if fit fails
     """
@@ -816,9 +816,11 @@ def fit_membrane_time_constant(t, v, start, end, min_rsme=1e-4):
         return np.nan, np.nan, np.nan
 
     pred = _exp_curve(t_window, *popt)
-    rsme = np.sqrt(np.mean(pred - v_window))
-    if rsme > min_rsme:
-        logging.debug("Curve fit for membrane time constant did not meet RSME standard")
+
+    rmse = np.sqrt(np.mean(pred - v_window)**2)
+
+    if rmse > rmse_max_tol:
+        logging.debug("Curve fit for membrane time constant exceeded the maximum tolerance of %f" % rmse_max_tol)
         return np.nan, np.nan, np.nan
 
     return popt
@@ -969,7 +971,7 @@ def detect_bursts(isis, isi_types, fast_tr_v, fast_tr_t, slow_tr_v, slow_tr_t,
 
     inout_pairs = list(zip(into_burst, out_of_burst))
     delta_t = slow_tr_t - fast_tr_t
-          
+
     scores = _score_burst_set(inout_pairs, isis, delta_t)
     best_score = np.mean(scores)
     worst = np.argmin(scores)
@@ -1145,8 +1147,8 @@ def estimate_adjusted_detection_parameters(v_set, t_set, interval_start, interva
     return new_dv_cutoff, new_thresh_frac
 
 def find_stim_start(stim, idx0=0):
-    """ 
-    Find the index of the first nonzero positive or negative jump in an array. 
+    """
+    Find the index of the first nonzero positive or negative jump in an array.
 
     Parameters
     ----------
@@ -1164,14 +1166,14 @@ def find_stim_start(stim, idx0=0):
     di = np.diff(stim)
     idxs = np.flatnonzero(di)
     idxs = idxs[idxs >= idx0]
-    
+
     if len(idxs) == 0:
         return -1
-    
+
     return idxs[0]+1
 
 def find_stim_window(stim, idx0=0):
-    """ 
+    """
     Find the index of the first nonzero positive or negative jump in an array and the number of timesteps until the last such jump.
 
     Parameters
@@ -1190,7 +1192,7 @@ def find_stim_window(stim, idx0=0):
     di = np.diff(stim)
     idxs = np.flatnonzero(di)
     idxs = idxs[idxs >= idx0]
-    
+
     if len(idxs) == 0:
         return -1, 0
 
@@ -1222,7 +1224,7 @@ def find_stim_amplitude_and_duration(idx0, stim, hz):
         dur = (end - start) / hz
     else:
         dur = 0
-	
+
     dur = float(dur)
 
     if abs(peak_high) > abs(peak_low):
@@ -1238,7 +1240,7 @@ def find_stim_interval(idx0, stim, hz):
     # indices where is the stimulus off
     zero_idxs = np.where(stim == 0)[0]
 
-    # derivative of off indices.  when greater than one, indicates on period 
+    # derivative of off indices.  when greater than one, indicates on period
     dzero_idxs = np.diff(zero_idxs)
     dzero_break_idxs = np.where(dzero_idxs[:] > 1)[0]
 
