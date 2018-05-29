@@ -223,8 +223,8 @@ def cell_qc_features(data_set, manual_values=None):
         tag_list.append(msg)
         logging.warning(msg)
         # look for manual seal value and use it if it's available
-        seal = manual_keys.get('manual_seal_gohm', None)
-        if seal is not None:
+        seal_gohm = manual_values.get('manual_seal_gohm', None)
+        if seal_gohm is not None:
             logging.info("using manual seal value: %f" % seal)
             tag_list.append("Seal set using manual value")
     output_data["seal_gohm"] = seal_gohm

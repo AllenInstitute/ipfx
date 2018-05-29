@@ -120,7 +120,7 @@ def main():
 
     module = ags.ArgSchemaParser(schema_type=PipelineParameters)
     print "ontology:", module.args["stimulus_ontology_file"]
-    print "specimen_id:", module.args["specimen_id"]
+    logging.info("specimen_id: %d", module.args["specimen_id"])
 
 
 

@@ -9,6 +9,7 @@ import allensdk.core.json_utilities as ju
 import os.path
 
 specimen_id = int(sys.argv[1])
+cell_dir = sys.argv[2]
 
 res = lu.query("""
 select err.storage_directory||'EPHYS_FEATURE_EXTRACTION_V2_QUEUE_'||err.id||'_input.json' as input_v2_json,
@@ -47,9 +48,8 @@ with open(res['input_json'], 'r') as f:
 
 stimulus_ontology_file = eds.DEFAULT_STIMULUS_ONTOLOGY_FILE
 
-test_dir = "/allen/aibs/mat/slg/ephys_pipeline/specimen_%d" % specimen_id
-if not os.path.exists(test_dir):
-    os.makedirs(test_dir)
+if not os.path.exists(cell_dir):
+    os.makedirs(cell_dir)
 
 d = {}
 
@@ -57,12 +57,12 @@ if os.path.exists(res['h5_file']):
     d['input_h5_file'] = res['h5_file']
 
 d['input_nwb_file'] = res['nwb_file']
-d['output_nwb_file'] = os.path.join(test_dir, "output.nwb")
-d['qc_fig_dir'] = os.path.join(test_dir,"qc_figs")
+d['output_nwb_file'] = os.path.join(cell_dir, "output.nwb")
+d['qc_fig_dir'] = os.path.join(cell_dir,"qc_figs")
 d['stimulus_ontology_file'] = stimulus_ontology_file
 d['qc_criteria'] = ju.read(qcf.DEFAULT_QC_CRITERIA_FILE)
 d['specimen_id'] = specimen_id
 
 
-with open(os.path.join(test_dir, 'pipeline_input.json'), 'w') as f:
+with open(os.path.join(cell_dir, 'pipeline_input.json'), 'w') as f:
     f.write(json.dumps(d, indent=2))

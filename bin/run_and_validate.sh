@@ -6,5 +6,5 @@ LOG_FILE=$CELL_DIR/log.txt
 
 mkdir -p $CELL_DIR
 python generate_pipeline_input.py $CELL
-python run_pipeline.py --specimen_id $CELL --input_json $INPUT_JSON --output_json $OUTPUT_JSON --log_level DEBUG
+python run_pipeline.py --specimen_id $CELL --input_json $INPUT_JSON --output_json $OUTPUT_JSON --log_level DEBUG |& tee $LOG_FILE
 python validate_experiment.py $INPUT_JSON $OUTPUT_JSON |& tee -a $LOG_FILE

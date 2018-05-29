@@ -2,6 +2,8 @@ import allensdk.core.json_utilities as ju
 import numpy as np
 import sys
 import os
+import logging
+
 
 def nullisclose(a, b):
     if a is None or b is None:
@@ -46,6 +48,29 @@ def get_pipeline_output_json(storage_dir,err_id):
 
 
     return pipeline_output_json
+
+
+def validate_run_completion(pipeline_input_json, pipeline_output_json):
+    """Check if the pipeline output was generated as way of confirming that the run completed
+
+    Parameters
+    ----------
+    pipeline_input_json
+    pipeline_output_json
+
+    Returns
+    -------
+
+    """
+
+    pipeline_input = ju.read(pipeline_input_json)
+    if os.path.isfile(pipeline_output_json):
+        logging.info("run completed for specimen_id: %d " % pipeline_input["specimen_id"])
+        print "run completed for specimen_id: %d " % pipeline_input["specimen_id"]
+    else:
+        logging.info("run failed for specimen_id: %d " % pipeline_input["specimen_id"])
+        print "run failed"
+
 
 def validate_pipeline(input_json, output_json):
     input_data = ju.read(input_json)
@@ -108,10 +133,11 @@ def validate_fx(test_output_json="test/fx_output.json"):
 
 
 def main():
-    print "validating experiment..."
+    print "Validating experiment..."
     pij, poj = sys.argv[1:3]
     #validate_se()
     #validate_fx()
+    validate_run_completion(pij,poj)
     validate_pipeline(pij, poj)
 
 if __name__ == "__main__": main()

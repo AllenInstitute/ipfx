@@ -70,7 +70,7 @@ def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_fi
                      'sweep_records': sweep_records }
 
     embed_spike_times(input_nwb_file, output_nwb_file, sweep_features)
-    save_qc_figures(qc_fig_dir, data_set, feature_data, True)
+#    save_qc_figures(qc_fig_dir, data_set, feature_data, True)
 
     return feature_data
 

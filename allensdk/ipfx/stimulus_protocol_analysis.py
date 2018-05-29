@@ -68,6 +68,7 @@ class StimulusProtocolAnalysis(object):
         return output
 
     def analyze_basic_features(self, sweep_set, extra_sweep_features=None):
+        logging.info("analysing basic features:")
         self._spikes_set = [ self.spx.process(sweep.t, sweep.v, sweep.i)
                              for sweep in sweep_set.sweeps ]
 
@@ -121,7 +122,8 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
     def analyze(self, sweep_set):
 
-        extra_sweep_features = ['peak_deflect','stim_amp','v_baseline','sag','burst','delay']
+#        extra_sweep_features = ['peak_deflect','stim_amp','v_baseline','sag','burst','delay']
+        extra_sweep_features = ['peak_deflect','stim_amp','v_baseline','sag']
         self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_features)
 
         features = {}
@@ -260,6 +262,7 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
                 common_amp = c[0]
 
         ca_features = spiking_features[spiking_features["stim_amp"] == common_amp]
+        print "common_amp:",common_amp
         features["stimulus_amplitude"] = common_amp
         features["common_amp_sweeps"] = ca_features
         features["mean_spike_0"] = self.mean_features_first_spike(self._spikes_set)

@@ -125,6 +125,7 @@ def extract_sweep_features(data_set, sweep_table):
         spx, _ = extractors_for_sweeps(sweep_set, **dp)
 
         for sn, sweep in zip(sweep_numbers, sweep_set.sweeps):
+#            logging.info("Extracting features from the sweep %d" % sn)
             spikes_df = spx.process(sweep.t, sweep.v, sweep.i)
             sweep_features[sn] = { 'spikes': spikes_df.to_dict(orient='records'), "id": sn }
 
@@ -283,6 +284,7 @@ def build_cell_feature_record(cell_features, sweep_features):
     ephys_features["fast_trough_t_long_square"] = nan_get(base, "fast_trough_t")
     ephys_features["slow_trough_v_long_square"] = nan_get(base, "slow_trough_v")
     ephys_features["slow_trough_t_long_square"] = nan_get(base, "slow_trough_t")
+
     ephys_features["threshold_v_long_square"] = nan_get(base, "threshold_v")
     ephys_features["threshold_i_long_square"] = nan_get(base, "threshold_i")
     ephys_features["threshold_t_long_square"] = nan_get(base, "threshold_t")
@@ -290,6 +292,7 @@ def build_cell_feature_record(cell_features, sweep_features):
     ephys_features["peak_t_long_square"] = nan_get(base, "peak_t")
 
     base = cell_features["long_squares"]
+
     ephys_features["sag"] = nan_get(base, "sag")
     # convert to ms
     tau = nan_get(base, "tau")
@@ -330,6 +333,8 @@ def build_cell_feature_record(cell_features, sweep_features):
 
     ephys_features["slow_trough_v_short_square"] = nan_get(base, "slow_trough_v")
     ephys_features["slow_trough_t_short_square"] = nan_get(base, "slow_trough_t")
+
+#    print "slow trough t:", ephys_features["slow_trough_t_short_square"]
 
     ephys_features["threshold_v_short_square"] = nan_get(base, "threshold_v")
     #ephys_features["threshold_i_short_square"] = nan_get(base, "threshold_i")
@@ -387,7 +392,7 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
 
     """
     # extract sweep-level features
-    logging.debug("Computing sweep features")
+#    logging.debug("Computing sweep features")
 #    print data_set.sweep_table
     data_set.sweep_table.to_csv("sweep_table_pass.csv", sep=" ", index=False)
 
@@ -434,7 +439,8 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
 
     # compute sweep features
     logging.info("Computing sweep features")
-    sweep_features = extract_sweep_features(data_set, iclamp_sweeps)
+    sweep_features = extract_sweep_features(data_set,
+                                            iclamp_sweeps)
 
     # shuffle peak deflection for the subthreshold long squares
     for s in cell_features["long_squares"]["subthreshold_sweeps"]:

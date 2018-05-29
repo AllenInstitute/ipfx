@@ -42,13 +42,13 @@ from . import ephys_features as ft
 import six
 
 class SpikeExtractor(object):
-    AFFECTED_BY_CLIPPING = [ 
+    AFFECTED_BY_CLIPPING = [
         "trough_t", "trough_v", "trough_i", "trough_index",
         "downstroke", "downstroke_t","downstroke_v", "downstroke_index",
         "fast_trough_t", "fast_trough_v", "fast_trough_i", "fast_trough_index"
-        "adp_t", "adp_v", "adp_i", "adp_index", 
+        "adp_t", "adp_v", "adp_i", "adp_index",
         "slow_trough_t", "slow_trough_v", "slow_trough_i", "slow_trough_index",
-        "isi_type", "width", "upstroke_downstroke_ratio" ] 
+        "isi_type", "width", "upstroke_downstroke_ratio" ]
 
     """Feature calculation for a sweep (voltage and/or current time series)."""
 
@@ -109,6 +109,7 @@ class SpikeExtractor(object):
         downstrokes = ft.find_downstroke_indexes(v, t, peaks, troughs, clipped, self.filter, dvdt)
         trough_details, clipped = ft.analyze_trough_details(v, t, thresholds, peaks, clipped, self.end,
                                                             self.filter, dvdt=dvdt)
+
         widths = ft.find_widths(v, t, thresholds, peaks, trough_details[1], clipped)
 
 
@@ -128,6 +129,7 @@ class SpikeExtractor(object):
         # Trough details
         isi_types = trough_details[0]
         trough_detail_indexes = dict(zip(["fast_trough", "adp", "slow_trough"], trough_details[1:]))
+#        print "trough_detail_indexes:", trough_detail_indexes
 
         # Redundant, but ensures that DataFrame has right number of rows
         # Any better way to do it?
@@ -229,11 +231,11 @@ class SpikeExtractor(object):
         return values
 
 class SpikeTrainFeatureExtractor(object):
-    def __init__(self, start, end, 
+    def __init__(self, start, end,
                 #pause_cost_weight=1.0,
-                 burst_tol=0.5, pause_cost=1.0, 
-                 #deflect_type="min", 
-                 deflect_type=None, 
+                 burst_tol=0.5, pause_cost=1.0,
+                 #deflect_type="min",
+                 deflect_type=None,
                  stim_amp_fn=None,
                  baseline_interval=0.1, filter_frequency=1.0,
                  sag_baseline_interval=0.03,
@@ -270,14 +272,14 @@ class SpikeTrainFeatureExtractor(object):
 
         if features["avg_rate"] > 0:
             if 'pause' in extra_features:
-                features['pause'] = pause(t, spikes_df, self.start, self.end, self.paus_cost_weight)
+                features['pause'] = pause(t, spikes_df, self.start, self.end, self.pause_cost_weight)
             if 'burst' in extra_features:
                 features['burst'] = burst(t, spikes_df, self.burst_tol, self.pause_cost)
             if 'delay' in extra_features:
                 features['delay'] = delay(t, v, spikes_df, self.start, self.end)
 
         return features
-        
+
 
 def basic_spike_train_features(t, spikes_df, start, end):
     features = {}
@@ -352,8 +354,8 @@ def burst(t, spikes_df, tol=0.5, pause_cost=1.0):
     slow_tr_t = spikes_df["slow_trough_t"].values
     thr_v = spikes_df["threshold_v"].values
 
-    bursts = ft.detect_bursts(isis, isi_types, 
-                              fast_tr_v, fast_tr_t, 
+    bursts = ft.detect_bursts(isis, isi_types,
+                              fast_tr_v, fast_tr_t,
                               slow_tr_v, slow_tr_t,
                               thr_v, tol, pause_cost)
 
@@ -378,7 +380,7 @@ def delay(t, v, spikes_df, start, end):
 
     spike_time = spikes_df["threshold_t"].values[0]
 
-    tau = ft.fit_prespike_time_constant(t, v, start, spike_time)
+#    tau = ft.fit_prespike_time_constant(t, v, start, spike_time)
     latency = spike_time - start
 
     delay_ratio = latency / tau
@@ -386,7 +388,7 @@ def delay(t, v, spikes_df, start, end):
 
 def fit_fi_slope(stim_amps, avg_rates):
     """Fit the rate and stimulus amplitude to a line and return the slope of the fit."""
-      
+
     if len(stim_amps) < 2:
         raise ft.FeatureError("Cannot fit f-I curve slope with less than two sweeps")
 

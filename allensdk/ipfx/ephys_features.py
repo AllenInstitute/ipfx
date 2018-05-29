@@ -460,13 +460,14 @@ def find_widths(v, t, spike_indexes, peak_indexes, trough_indexes, clipped=None)
     width_levels = np.zeros_like(trough_indexes) * np.nan
     width_levels[use_indexes] = heights[use_indexes] / 2. + v[trough_indexes[use_indexes].astype(int)]
 
+
     thresh_to_peak_levels = np.zeros_like(trough_indexes) * np.nan
     thresh_to_peak_levels[use_indexes] = (v[peak_indexes[use_indexes]] - v[spike_indexes[use_indexes]]) / 2. + v[spike_indexes[use_indexes]]
 
     # Some spikes in burst may have deep trough but short height, so can't use same
     # definition for width
-    width_levels[width_levels < v[spike_indexes]] = \
-        thresh_to_peak_levels[width_levels < v[spike_indexes]]
+
+    width_levels[width_levels < v[spike_indexes]] = thresh_to_peak_levels[width_levels < v[spike_indexes]]
 
     width_starts = np.zeros_like(trough_indexes) * np.nan
     width_starts[use_indexes] = np.array([pk - np.flatnonzero(v[pk:spk:-1] <= wl)[0] if
@@ -1041,6 +1042,8 @@ def fit_prespike_time_constant(t, v, start, spike_time, dv_limit=-0.001, tau_lim
     y = -v_slice + y0
     y = np.log(y)
 
+    print len(y), len(t_slice), start, spike_time
+
     dy = calculate_dvdt(y, t_slice, filter=1.0)
 
     # End the fit interval if the voltage starts dropping
@@ -1425,7 +1428,7 @@ def input_resistance(t_set, i_set, v_set, start, end, baseline_interval=0.1):
     if len(v) == 1:
         # If there's just one sweep, we'll have to use its own baseline to estimate
         # the input resistance
-        v = np.append(v, baseline_voltage(t_set[0], v, start, baseline_interval=baseline_interval))
+        v = np.append(v, baseline_voltage(t_set[0], v_set[0], start, baseline_interval=baseline_interval))
         i = np.append(i, 0.)
 
     A = np.vstack([i, np.ones_like(i)]).T
