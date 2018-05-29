@@ -25,6 +25,7 @@ def run_pipeline(specimen_id,
     se_output = run_sweep_extraction(input_nwb_file,
                                      input_h5_file,
                                      stimulus_ontology_file)
+    print "sweeps extracted"
 
     qc_output = run_qc(input_nwb_file,
                        input_h5_file,

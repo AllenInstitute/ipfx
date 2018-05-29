@@ -1,3 +1,5 @@
+import allensdk.internal.core.lims_utilities as lu
+
 def get_sweep_state_from_lims(specimen_id):
 
     res = lu.query("""
