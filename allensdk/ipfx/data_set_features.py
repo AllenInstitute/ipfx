@@ -298,9 +298,6 @@ def build_cell_feature_record(cell_features, sweep_features):
     tau = nan_get(base, "tau")
     ephys_features["tau"] = (tau * 1e3) if tau is not None else None
     ephys_features["vm_for_sag"] = nan_get(base, "vm_for_sag")
-    ephys_features["has_burst"] = None#base.get("has_burst", None)
-    ephys_features["has_pause"] = None#base.get("has_pause", None)
-    ephys_features["has_delay"] = None#base.get("has_delay", None)
     ephys_features["f_i_curve_slope"] = nan_get(base, "fi_fit_slope")
 
     # change the base to ramp
