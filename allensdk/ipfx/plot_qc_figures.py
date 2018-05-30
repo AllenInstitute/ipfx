@@ -479,27 +479,8 @@ def plot_hero_figures(data_set, cell_features, lims_features, sweep_features, im
     else:
         plt.title("adapt = not defined")
 
-    for k in ["has_delay", "has_burst", "has_pause"]:
-        if lims_features.get(k, None) is None:
-            lims_features[k] = False
-
     plt.tight_layout()
     save_figure(fig, 'thumbnail_1', 'thumbnail', image_dir, sizes, cell_image_files)
-
-    yvals = [
-        float(lims_features["has_delay"]),
-        float(lims_features["has_burst"]),
-        float(lims_features["has_pause"]),
-    ]
-    xvals = range(len(yvals))
-
-    fig = plt.figure()
-    plt.scatter(xvals, yvals, color='red')
-    plt.xticks(xvals, ['Delay', 'Burst', 'Pause'])
-    plt.title("flags")
-    plt.tight_layout()
-
-    save_figure(fig, 'thumbnail_2', 'thumbnail', image_dir, sizes, cell_image_files)
 
     summary_fig = plot_long_square_summary(data_set, cell_features, lims_features, sweep_features)
     save_figure(summary_fig, 'ephys_summary', 'thumbnail', image_dir, sizes, cell_image_files, scalew=2)

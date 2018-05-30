@@ -75,8 +75,6 @@ class StimulusProtocolAnalysis(object):
         self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features)
                                               for sweep, spikes in zip(sweep_set.sweeps, self._spikes_set) ])
 
-#        print "self._sweep_features", self._sweep_features
-
     def reset_basic_features(self):
         self._spikes_set = None
         self._sweep_features = None
@@ -262,7 +260,6 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
                 common_amp = c[0]
 
         ca_features = spiking_features[spiking_features["stim_amp"] == common_amp]
-        print "common_amp:",common_amp
         features["stimulus_amplitude"] = common_amp
         features["common_amp_sweeps"] = ca_features
         features["mean_spike_0"] = self.mean_features_first_spike(self._spikes_set)

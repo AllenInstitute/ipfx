@@ -319,6 +319,7 @@ def pause(self, t, spikes_df, start, end, cost_weight=1.0):
     max_reliability : max fraction of times most reliable pause was detected given weights tested
     n_max_rel_pauses : number of pauses detected with `max_reliability`
     """
+    logging.warning("This function will be removed")
     # Pauses are unusually long ISIs with a "detour reset" among delay resets
     thresholds = spikes_df["threshold_index"].values.astype(int)
     isis = ft.get_isis(t, thresholds)
@@ -344,6 +345,7 @@ def burst(t, spikes_df, tol=0.5, pause_cost=1.0):
     max_burstiness_index : max "burstiness" index across detected bursts
     num_bursts : number of bursts detected
     """
+    logging.warning("This function will be removed")
     thresholds = spikes_df["threshold_index"].values.astype(int)
     isis = ft.get_isis(t, thresholds)
 
@@ -374,6 +376,8 @@ def delay(t, v, spikes_df, start, end):
     delay_ratio : ratio of latency to tau (higher means more delay)
     tau : dominant time constant of rise before spike
     """
+    logging.warning("This function will be removed")
+
     if len(spikes_df) == 0:
         logging.info("No spikes available for delay calculation")
         return 0., 0.
