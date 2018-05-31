@@ -65,11 +65,12 @@ def validate_run_completion(pipeline_input_json, pipeline_output_json):
 
     pipeline_input = ju.read(pipeline_input_json)
     if os.path.isfile(pipeline_output_json):
-        logging.info("run completed for specimen_id: %d " % pipeline_input["specimen_id"])
-        print "run completed for specimen_id: %d " % pipeline_input["specimen_id"]
+#        logging.info("run completed for specimen_id: %d " % pipeline_input["specimen_id"])
+#        print "run completed for specimen_id: %d " % pipeline_input["specimen_id"]
+        logging.info("run completed")
     else:
-        logging.info("run failed for specimen_id: %d " % pipeline_input["specimen_id"])
-        print "run failed"
+#        logging.info("run failed for specimen_id: %d " % pipeline_input["specimen_id"])
+        logging.info("run failed")
 
 
 def validate_pipeline(input_json, output_json):

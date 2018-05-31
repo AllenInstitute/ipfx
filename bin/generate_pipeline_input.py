@@ -52,10 +52,10 @@ join specimens sp on sp.ephys_roi_result_id = err.id
 join well_known_files wkf on wkf.attachable_id = err.id 
 where sp.id = %d 
 and wkf.well_known_file_type_id = 306905526
-""" % specimen_id)
+""" % specimen_id)[0]
 
 
-h5_file_name = os.path.join(res2['storage_directory'], h5_res[0]['filename']) if len(h5_res) else None
+h5_file_name = os.path.join(h5_res['storage_directory'], h5_res['filename']) if len(h5_res) else None
 
 # if the input_v2_json does not exist, then use input_v1_json instead:
 if os.path.isfile(res["input_v2_json"]):
