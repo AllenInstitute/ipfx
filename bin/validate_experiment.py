@@ -65,11 +65,12 @@ def validate_run_completion(pipeline_input_json, pipeline_output_json):
 
     pipeline_input = ju.read(pipeline_input_json)
     if os.path.isfile(pipeline_output_json):
-        logging.info("run completed for specimen_id: %d " % pipeline_input["specimen_id"])
-        print "run completed for specimen_id: %d " % pipeline_input["specimen_id"]
+#        logging.info("run completed for specimen_id: %d " % pipeline_input["specimen_id"])
+#        print "run completed for specimen_id: %d " % pipeline_input["specimen_id"]
+        logging.info("run completed")
     else:
-        logging.info("run failed for specimen_id: %d " % pipeline_input["specimen_id"])
-        print "run failed"
+#        logging.info("run failed for specimen_id: %d " % pipeline_input["specimen_id"])
+        logging.info("run failed")
 
 
 def validate_pipeline(input_json, output_json):
@@ -116,7 +117,7 @@ def validate_cell_features(err, ephys_features, cell_record):
 
     validate_feature_set(po_features, err, cell_record)
 
-    ef_features = [ 'tau', 'threshold_t_long_square', 'thumbnail_sweep_id', 'has_delay', 'threshold_v_ramp', 'peak_v_short_square', 'avg_isi', 'sag', 'slow_trough_v_ramp', 'adaptation', 'has_pause', 'trough_t_ramp', 'trough_v_long_square', 'thumbnail_sweep_num', 'rheobase_sweep_id', 'latency', 'rheobase_sweep_num', 'fast_trough_v_ramp', 'trough_t_long_square', 'slow_trough_v_long_square', 'threshold_t_short_square', 'peak_t_ramp', 'has_burst', 'upstroke_downstroke_ratio_short_square', 'threshold_v_long_square', 'fast_trough_t_long_square', 'ri', 'threshold_v_short_square', 'upstroke_downstroke_ratio_ramp', 'vm_for_sag', 'threshold_i_long_square', 'peak_t_long_square', 'threshold_i_short_square', 'slow_trough_t_long_square', 'peak_v_ramp', 'fast_trough_t_short_square', 'fast_trough_t_ramp', 'threshold_i_ramp', 'slow_trough_v_short_square', 'peak_t_short_square', 'slow_trough_t_short_square', 'trough_v_short_square', 'slow_trough_t_ramp', 'f_i_curve_slope', 'trough_t_short_square', 'threshold_t_ramp', 'fast_trough_v_long_square', 'upstroke_downstroke_ratio_long_square', 'trough_v_ramp', 'peak_v_long_square', 'fast_trough_v_short_square', 'vrest']
+    ef_features = [ 'tau', 'threshold_t_long_square', 'thumbnail_sweep_id', 'threshold_v_ramp', 'peak_v_short_square', 'avg_isi', 'sag', 'slow_trough_v_ramp', 'adaptation', 'trough_t_ramp', 'trough_v_long_square', 'thumbnail_sweep_num', 'rheobase_sweep_id', 'latency', 'rheobase_sweep_num', 'fast_trough_v_ramp', 'trough_t_long_square', 'slow_trough_v_long_square', 'threshold_t_short_square', 'peak_t_ramp', 'upstroke_downstroke_ratio_short_square', 'threshold_v_long_square', 'fast_trough_t_long_square', 'ri', 'threshold_v_short_square', 'upstroke_downstroke_ratio_ramp', 'vm_for_sag', 'threshold_i_long_square', 'peak_t_long_square', 'threshold_i_short_square', 'slow_trough_t_long_square', 'peak_v_ramp', 'fast_trough_t_short_square', 'fast_trough_t_ramp', 'threshold_i_ramp', 'slow_trough_v_short_square', 'peak_t_short_square', 'slow_trough_t_short_square', 'trough_v_short_square', 'slow_trough_t_ramp', 'f_i_curve_slope', 'trough_t_short_square', 'threshold_t_ramp', 'fast_trough_v_long_square', 'upstroke_downstroke_ratio_long_square', 'trough_v_ramp', 'peak_v_long_square', 'fast_trough_v_short_square', 'vrest']
 
     validate_feature_set(ef_features, ephys_features, cell_record)
 
