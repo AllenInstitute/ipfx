@@ -8,6 +8,28 @@ import allensdk.ipfx.qc_features as qcf
 import allensdk.core.json_utilities as ju
 import os.path
 
+def get_sweep_states_from_lims(specimen_id):
+
+    res = lu.query("""
+        select sweep_number, workflow_state from ephys_sweeps
+        where specimen_id = %d
+        """ % specimen_id)
+
+    sweep_states = []
+
+    for sweep in res:
+        sweep_number = sweep["sweep_number"]
+
+        # only care about manual calls
+        if sweep["workflow_state"] == "manual_passed":
+            sweep_states.append({'sweep_number': sweep["sweep_number"],
+                                 'passed': True})
+        elif sweep["workflow_state"] == "manual_failed":
+            sweep_states.append({'sweep_number': sweep["sweep_number"],
+                                 'passed': False})
+
+    return sweep_states
+
 specimen_id = int(sys.argv[1])
 cell_dir = sys.argv[2]
 
@@ -23,18 +45,17 @@ where sp.id = %d
 res = { k.decode('UTF-8'):v for k,v in res.items() }
 
 # query for the h5 file
-res2 = lu.query("""
+h5_res = lu.query("""
 select err.*, wkf.*,sp.name as specimen_name 
 from ephys_roi_results err 
 join specimens sp on sp.ephys_roi_result_id = err.id 
 join well_known_files wkf on wkf.attachable_id = err.id 
 where sp.id = %d 
 and wkf.well_known_file_type_id = 306905526
-""" % specimen_id)[0]
+""" % specimen_id)
 
-h5_file_name = os.path.join(res2['storage_directory'], res2['filename'])
 
-res["h5_file"] = h5_file_name
+h5_file_name = os.path.join(res2['storage_directory'], h5_res[0]['filename']) if len(h5_res) else None
 
 # if the input_v2_json does not exist, then use input_v1_json instead:
 if os.path.isfile(res["input_v2_json"]):
@@ -53,15 +74,15 @@ if not os.path.exists(cell_dir):
 
 d = {}
 
-if os.path.exists(res['h5_file']):
-    d['input_h5_file'] = res['h5_file']
+if h5_file_name and os.path.exists(h5_file_name):
+    d['input_h5_file'] = h5_file_name
 
 d['input_nwb_file'] = res['nwb_file']
 d['output_nwb_file'] = os.path.join(cell_dir, "output.nwb")
 d['qc_fig_dir'] = os.path.join(cell_dir,"qc_figs")
 d['stimulus_ontology_file'] = stimulus_ontology_file
 d['qc_criteria'] = ju.read(qcf.DEFAULT_QC_CRITERIA_FILE)
-d['specimen_id'] = specimen_id
+d['manual_sweep_states'] = get_sweep_states_from_lims(specimen_id)
 
 
 with open(os.path.join(cell_dir, 'pipeline_input.json'), 'w') as f:

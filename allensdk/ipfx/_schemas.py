@@ -68,6 +68,10 @@ class QcParameters(ArgSchema):
     sweep_data = Nested(QcSweepFeatures, many=True, required=True)
     cell_features = Nested(CellFeatures)
 
+class ManualSweepState(DefaultSchema):
+    sweep_number = Integer(description="sweep number", required=True)
+    passed = Boolean(description="manual override state", required=True)
+
 class PipelineParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
     stimulus_ontology_file = InputFile(description="blash", required=True)
@@ -75,7 +79,7 @@ class PipelineParameters(ArgSchema):
     output_nwb_file = OutputFile(description="output nwb file", required=True)
     qc_fig_dir = OutputFile(description="output qc figure directory", required=True)
     qc_criteria = Nested(QcCriteria, required=True)
-    specimen_id = Integer(description="specimen id", required=True)
+    manual_sweep_states = Nested(ManualSweepState, required=False, many=True)
 
 
 class OutputSchema(DefaultSchema):

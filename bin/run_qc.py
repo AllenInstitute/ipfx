@@ -44,8 +44,7 @@ def run_qc(input_nwb_file, input_h5_file, stimulus_ontology_file, cell_features,
         containing state of the cell and sweeps
     """
 
-    print "stimulus ontology file:",stimulus_ontology_file
-#    ont = StimulusOntology(ju.read(stimulus_ontology_file))
+    logging.debug("stimulus ontology file: %s", stimulus_ontology_file)
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else None
     ds = MiesDataSet(input_nwb_file, input_h5_file, ont)
 

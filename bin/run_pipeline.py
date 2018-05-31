@@ -1,7 +1,6 @@
 import os
 import argschema as ags
 from allensdk.ipfx._schemas import PipelineParameters
-import allensdk.ipfx.state_assignment as stas
 
 from run_sweep_extraction import run_sweep_extraction
 from run_qc import run_qc
@@ -11,21 +10,32 @@ import allensdk.core.json_utilities as ju
 
 import logging
 
+def assign_sweep_states(manual_sweep_states, qc_sweep_states, out_sweep_data):
+    sweep_states = { s["sweep_number"]:s["passed"] for s in qc_sweep_states }
 
+    for mss in manual_sweep_states:
+        sn = mss["sweep_number"]
+        logging.debug("overriding sweep state for sweep number %d from %s to %s", sn, str(sweep_states[sn]), mss["passed"])
+        sweep_states[sn] = mss["passed"]
 
-
-def run_pipeline(specimen_id,
-                 input_nwb_file,
+    for sweep in out_sweep_data:
+        sn = sweep["sweep_number"]
+        if sn in sweep_states:
+            sweep["passed"] = sweep_states[sn]
+        else:
+            logging.warning("could not find QC state for sweep number %d", sn)
+                               
+def run_pipeline(input_nwb_file,
                  input_h5_file,
                  output_nwb_file,
                  stimulus_ontology_file,
                  qc_fig_dir,
-                 qc_criteria):
+                 qc_criteria,
+                 manual_sweep_states):
 
     se_output = run_sweep_extraction(input_nwb_file,
                                      input_h5_file,
                                      stimulus_ontology_file)
-    print "sweeps extracted"
 
     qc_output = run_qc(input_nwb_file,
                        input_h5_file,
@@ -34,12 +44,10 @@ def run_pipeline(specimen_id,
                        se_output["sweep_data"],
                        qc_criteria)
 
-    se_output = stas.assign_state(se_output,
-                             qc_output)
-
-    sweep_states_lims = stas.get_sweep_state_from_lims(specimen_id)
-    se_output = stas.overwrite_sweep_state_from_lims(se_output, sweep_states_lims)
-
+    assign_sweep_states(manual_sweep_states, 
+                        qc_output["sweep_states"], 
+                        se_output["sweep_data"])
+    
     fx_output = run_feature_extraction(input_nwb_file,
                                        stimulus_ontology_file,
                                        output_nwb_file,
@@ -55,18 +63,15 @@ def run_pipeline(specimen_id,
 def main():
 
     module = ags.ArgSchemaParser(schema_type=PipelineParameters)
-    print "ontology:", module.args["stimulus_ontology_file"]
-    logging.info("specimen_id: %d", module.args["specimen_id"])
 
-
-
-    output = run_pipeline(module.args["specimen_id"],
-                          module.args["input_nwb_file"],
+    output = run_pipeline(module.args["input_nwb_file"],
                           module.args.get("input_h5_file", None),
                           module.args["output_nwb_file"],
                           module.args["stimulus_ontology_file"],
                           module.args["qc_fig_dir"],
-                          module.args["qc_criteria"])
+                          module.args["qc_criteria"],
+                          module.args["manual_sweep_states"])
+
 
     ju.write(module.args["output_json"], output)
 
