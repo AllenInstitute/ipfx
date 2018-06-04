@@ -213,26 +213,47 @@ def get_stim_characteristics(i, t, no_test_pulse=False):
     return (stim_start, stim_dur, stim_amp, start_idx, end_idx)
 
 
-
 def select_subthreshold_min_amplitude(stim_amps, decimals=0):
-    amp_diff = np.round(np.diff(sorted(stim_amps)), decimals=decimals)
+    """Find the min delta between amplitudes of coarse long square sweeps.  Includes failed sweeps.
 
-    # repeats are okay
-    amp_diff_no_zero = list(set(np.unique(amp_diff)) - set([0]))
+    Parameters
+    ----------
+    stim_amps: list of stimulus amplitudes
+    decimals: int of decimals to keep
 
-    if len(amp_diff_no_zero) == 0:
-        amp_delta = 0
-    elif len(amp_diff_no_zero) != 1:
-        raise ft.FeatureError("Long square sweeps must have even amplitude step differences")
-    else:
-        amp_delta = amp_diff_no_zero[0]
+    Returns
+    -------
+    subthresh_min_amp: float min amplitude
+    min_amp_delta: min increment in the stimulus amplitude
+    """
 
-    subthresh_min_amp = SUBTHRESHOLD_LONG_SQUARE_MIN_AMPS.get(amp_delta, None)
+    amps_diff = np.round(np.diff(sorted(stim_amps)), decimals=decimals)
+
+    amps_diff = amps_diff[amps_diff > 0]    # remove zeros, repeats are okay
+    amp_deltas = np.unique(amps_diff)   # unique nonzero deltas
+
+    if len(amp_deltas) == 0:
+        raise IndexError("All stimuli have identical amplitudes")
+
+    min_amp_delta = np.min(amp_deltas)
+
+    if len(amp_deltas) != 1:
+        logging.warning(
+            "Found multiple coarse long square amplitude step differences: %s.  Using: %f" % (str(amp_deltas), min_amp_delta))
+
+    subthresh_min_amp = SUBTHRESHOLD_LONG_SQUARE_MIN_AMPS.get(min_amp_delta, None)
 
     if subthresh_min_amp is None:
-        raise ft.FeatureError("Unknown coarse long square amplitude delta: %f" % amp_delta)
+        raise ft.FeatureError("Unknown coarse long square amplitude delta: %f" % min_amp_delta)
 
-    return subthresh_min_amp, amp_delta
+    return subthresh_min_amp, min_amp_delta
+
+
+
+
+
+
+
 
 def build_cell_feature_record(cell_features, sweep_features):
     ephys_features = {}
