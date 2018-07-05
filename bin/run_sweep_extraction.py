@@ -6,6 +6,7 @@ import allensdk.core.json_utilities as ju
 
 import argschema as ags
 from allensdk.ipfx._schemas import SweepExtractionParameters
+from allensdk.ipfx.aibs_data_set import AibsDataSet
 
 # manual keys are values that can be passed in through input.json.
 # these values are used if the particular value cannot be computed.
@@ -23,7 +24,8 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
             manual_values[mk] = input_manual_values[mk]
 
     ont = StimulusOntology(ju.read(stimulus_ontology_file))
-    ds = MiesDataSet(input_nwb_file, input_h5_file, ontology=ont)
+#    ds = MiesDataSet(input_nwb_file, input_h5_file, ontology=ont)
+    ds = AibsDataSet([],input_nwb_file, input_h5_file, ontology=ont)
     cell_features, cell_tags = qcf.cell_qc_features(ds, manual_values)
     sweep_features = qcf.sweep_qc_features(ds)
 

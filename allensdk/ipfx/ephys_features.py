@@ -818,7 +818,7 @@ def fit_membrane_time_constant(t, v, start, end, rmse_max_tol = 1e-4):
 
     pred = _exp_curve(t_window, *popt)
 
-    rmse = np.sqrt(np.mean(pred - v_window)**2)
+    rmse = np.sqrt(np.mean((pred - v_window)**2))
 
     if rmse > rmse_max_tol:
         logging.debug("Curve fit for membrane time constant exceeded the maximum tolerance of %f" % rmse_max_tol)
@@ -1149,117 +1149,6 @@ def estimate_adjusted_detection_parameters(v_set, t_set, interval_start, interva
 
     return new_dv_cutoff, new_thresh_frac
 
-def find_stim_start(stim, idx0=0):
-    """
-    Find the index of the first nonzero positive or negative jump in an array.
-
-    Parameters
-    ----------
-    stim: np.ndarray
-        Array to be searched
-
-    idx0: int
-        Start searching with this index (default: 0).
-
-    Returns
-    -------
-    int
-    """
-
-    di = np.diff(stim)
-    idxs = np.flatnonzero(di)
-    idxs = idxs[idxs >= idx0]
-
-    if len(idxs) == 0:
-        return -1
-
-    return idxs[0]+1
-
-def find_stim_window(stim, idx0=0):
-    """
-    Find the index of the first nonzero positive or negative jump in an array and the number of timesteps until the last such jump.
-
-    Parameters
-    ----------
-    stim: np.ndarray
-        Array to be searched
-
-    idx0: int
-        Start searching with this index (default: 0).
-
-    Returns
-    -------
-    start_index, duration
-    """
-
-    di = np.diff(stim)
-    idxs = np.flatnonzero(di)
-    idxs = idxs[idxs >= idx0]
-
-    if len(idxs) == 0:
-        return -1, 0
-
-    stim_start = idxs[0]+1
-
-    if len(idxs) == 1:
-        return stim_start, len(stim)-stim_start
-
-    stim_end = idxs[-1]+1
-
-    return stim_start, stim_end - stim_start
-
-def find_stim_amplitude_and_duration(idx0, stim, hz):
-    stim=np.array(stim)
-    if len(stim) < idx0:
-        idx0 = 0
-
-    stim = stim[idx0:]
-
-    peak_high = max(stim)
-    peak_low = min(stim)
-
-    # measure stimulus length
-    # find index of first non-zero value, and last return to zero
-    nzero = np.where(stim!=0)[0]
-    if len(nzero) > 0:
-        start = nzero[0]
-        end = nzero[-1]+1
-        dur = (end - start) / hz
-    else:
-        dur = 0
-
-    dur = float(dur)
-
-    if abs(peak_high) > abs(peak_low):
-        amp = float(peak_high)
-    else:
-        amp = float(peak_low)
-
-    return amp, dur / hz
-
-def find_stim_interval(idx0, stim, hz):
-    stim = np.array(stim)[idx0:]
-
-    # indices where is the stimulus off
-    zero_idxs = np.where(stim == 0)[0]
-
-    # derivative of off indices.  when greater than one, indicates on period
-    dzero_idxs = np.diff(zero_idxs)
-    dzero_break_idxs = np.where(dzero_idxs[:] > 1)[0]
-
-    # duration of breaks
-    break_durs = dzero_idxs[dzero_break_idxs]
-
-    # indices of breaks
-    break_idxs = zero_idxs[dzero_break_idxs] + 1
-
-    # time between break onsets
-    dbreaks = np.diff(break_idxs)
-
-    if len(np.unique(break_durs)) == 1 and len(np.unique(dbreaks)) == 1:
-        return dbreaks[0] / hz
-
-    return None
 
 def _score_burst_set(bursts, isis, delta_t, c_n=0.1, c_tx=0.01):
     in_burst = np.zeros_like(isis, dtype=bool)

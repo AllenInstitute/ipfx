@@ -115,7 +115,8 @@
     [
       "code",
       "EXTPCllATT",
-      "EXTPCllATT141203"
+      "EXTPCllATT141203",
+      "EXTPCllATT180424"
     ],
     [
       "name",
@@ -229,7 +230,8 @@
     [
       "code",
       "EXTPINBATH",
-      "EXTPINBATH141203"
+      "EXTPINBATH141203",
+	  "EXTPINBATH180424"
     ],
     [
       "name",
@@ -622,7 +624,7 @@
     ],
     [
       "name",
-      "Ramp"
+      "Ramp to Rheobase"
     ]
   ],
   [
@@ -1192,5 +1194,146 @@
       "core",
       "Core 1"
     ]
+  ],
+  [
+    [
+      "code",
+      "PS_SubThresh",
+      "X1PS_SubThresh"
+    ],
+    [
+      "name",
+      "Long Square SubThreshold"
+    ],
+    [
+      "core",
+      "Core 1"
+    ]
+  ],
+  [
+    [
+      "code",
+      "EXTPEXPEND180424",
+      "EXTPEXPEND"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "EXTPBREAKN180424",
+      "EXTPBREAKN"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Ramp",
+      "X7Ramp"
+    ],
+    [
+      "name",
+      "Ramp to Rheobase"
+    ],
+    [
+      "core",
+      "Core 1"
+    ]
+  ],
+  [
+    [
+      "code",
+      "SP_Rheo",
+      "X6SP_Rheo"
+    ],
+    [
+      "name",
+      "Ramp to Rheobase"
+    ],
+    [
+      "core",
+      "Core 2"
+    ]
+  ],
+  [
+    [
+      "code",
+      "X5SP_Search",
+      "SP_Search"
+    ],
+    [
+      "name",
+      "Short Square Threshold Search"
+    ]
+  ],
+  [
+    [
+      "code",
+      "LP_Search",
+      "X2LP_Search"
+    ],
+    [
+      "name",
+      "Long Square Threshold Search"
+    ]
+  ],
+  [
+    [
+      "code",
+      "LP_Rheo",
+      "X3LP_Rheo"
+    ],
+    [
+      "name",
+      "Long Square Threshold"
+    ]
+  ],
+  [
+    [
+      "code",
+      "EXTPGGAEND180424",
+      "EXTPGGAEND"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "X4PS_SupraThresh",
+      "PS_SupraThresh",
+      "EXTPGGAEND"
+    ],
+    [
+      "name",
+      "Long Square SupraThreshold"
+    ],
+    [
+      "core",
+      "Core 1"
+    ]
+
+  ],
+  [
+    [
+      "code",
+      "EXTPSMOKET180424",
+      "EXTPSMOKET"
+    ],
+    [
+      "name",
+      "Test"
+    ]
   ]
+
+
 ]

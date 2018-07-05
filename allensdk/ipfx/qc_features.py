@@ -2,46 +2,20 @@ import os, json
 from . import ephys_features as ft
 import logging
 import numpy as np
+import stim_features as st
 
-DEFAULT_QC_CRITERIA_FILE = os.path.join(os.path.dirname(__file__), 'qc_criteria.json')
 
-def load_default_qc_criteria():
-    logging.debug("loading default qc criteria file: %s", DEFAULT_QC_CRITERIA_FILE)
-    with open(DEFAULT_QC_CRITERIA_FILE,"r") as f:
-        return json.load(f)
-
-def get_last_vm_epoch(idx1, stim, hz):
-    return idx1-int(0.500 * hz), idx1
-
-def get_first_vm_noise_epoch(idx0, stim, hz):
-    t0 = idx0
-    t1 = t0 + int(0.0015 * hz)
-    return t0, t1
-
-def get_last_vm_noise_epoch(idx1, stim, hz):
-    return idx1-int(0.0015 * hz), idx1
-
-#def get_stability_vm_epoch(idx0, stim, hz):
-def get_stability_vm_epoch(idx0, stim_start, hz):
-    dur = int(0.500 * hz)
-    #stim_start = find_stim_start(idx0, stim)
-    if dur > stim_start-1:
-        dur = stim_start-1
-    elif dur <= 0:
-        return 0, 0
-    return stim_start-1-dur, stim_start-1
-
-########################################################################
-# experiment-level metrics
 
 def measure_blowout(v, idx0):
     return 1e3 * np.mean(v[idx0:])
+
 
 def measure_electrode_0(curr, hz, t=0.005):
     n_time_steps = int(t * hz)
     # electrode 0 is the average current reading with zero voltage input
     # (ie, the equivalent of resting potential in current-clamp mode)
     return 1e12 * np.mean(curr[0:n_time_steps])
+
 
 def measure_seal(v, curr, hz):
     t = np.arange(len(v)) / hz
@@ -86,6 +60,8 @@ def get_r_from_stable_pulse_response(v, i, t):
     dv = np.diff(v)
     up_idx = np.flatnonzero(dv > 0)
     down_idx = np.flatnonzero(dv < 0)
+
+    assert len(up_idx) == len(down_idx), "incomplete TTL pulse"
 
     dt = t[1] - t[0]
     one_ms = int(0.001 / dt)
@@ -138,16 +114,25 @@ def get_r_from_peak_pulse_response(v, i, t):
     return np.mean(r)
 
 
-def get_sweep_number_by_stimulus_names(data_set, stimulus_names):
+def sweep_completion_check(i,v,hz):
 
-    sweeps = data_set.filtered_sweep_table(stimuli=stimulus_names).sort_values(by='sweep_number')
-    if len(sweeps) > 1:
-        logging.warning("Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimulus_names))
 
-    if len(sweeps) == 0:
-        raise IndexError
+    POST_STIM_STABILITY_INTERVAL = 0.5
+    LONG_RESPONSE_DURATION = 5 # this will count long ramps as completed
 
-    return sweeps.sweep_number.values[-1]
+    stimulus_end_ix = np.nonzero(i)[0][-1]  # last non-zero index along the only dimension=0
+    response_end_ix = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0
+
+    post_stim_stability_interval = (response_end_ix + POST_STIM_STABILITY_INTERVAL*hz > stimulus_end_ix)
+
+    long_response = response_end_ix/hz>LONG_RESPONSE_DURATION
+
+    if post_stim_stability_interval or long_response:
+        completed = True
+    else:
+        completed = False
+
+    return completed
 
 
 def cell_qc_features(data_set, manual_values=None):
@@ -177,7 +162,7 @@ def cell_qc_features(data_set, manual_values=None):
 
     # measure blowout voltage
     try:
-        blowout_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.blowout_names)
+        blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
         blowout_mv = measure_blowout(blowout_data.v*1e-3,
                                      int(blowout_data.expt_start*blowout_data.sampling_rate))
@@ -191,7 +176,7 @@ def cell_qc_features(data_set, manual_values=None):
 
     # measure "electrode 0"
     try:
-        bath_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.bath_names)
+        bath_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.bath_names)
         bath_data = data_set.sweep(bath_sweep_number)
         e0 = measure_electrode_0(bath_data.v*1e-3,
                                  bath_data.sampling_rate)
@@ -205,7 +190,7 @@ def cell_qc_features(data_set, manual_values=None):
 
     # measure clamp seal
     try:
-        seal_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.seal_names)
+        seal_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.seal_names)
         seal_data = data_set.sweep(seal_sweep_number)
         seal_gohm = measure_seal(seal_data.i*1e-12,
                                  seal_data.v*1e-3,
@@ -236,7 +221,7 @@ def cell_qc_features(data_set, manual_values=None):
     # if the value is unavailable then check to see if it was set manually
     breakin_data = None
     try:
-        breakin_sweep_number = get_sweep_number_by_stimulus_names(data_set, data_set.breakin_names)
+        breakin_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.breakin_names)
         breakin_data = data_set.sweep(breakin_sweep_number)
     except IndexError as e:
         logging.warning("Error reading breakin sweep.")
@@ -299,6 +284,7 @@ def cell_qc_features(data_set, manual_values=None):
 
 ##############################
 
+
 def sweep_qc_features(data_set):
     """Compute QC features for iclamp sweeps in the dataset
 
@@ -314,10 +300,11 @@ def sweep_qc_features(data_set):
 
     """
     sweep_features = []
-    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
+#    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
+    qc_sweeps = data_set.query_sweep_table(stimulus_name=data_set.qc_sweeps_names)
 
-    cnt = 0
-    for sweep_info in iclamp_sweeps.to_dict(orient='records'):
+    for sweep_info in qc_sweeps.to_dict(orient='records'):
+#    for sweep_info in iclamp_sweeps.to_dict(orient='records'):
         sweep_num = sweep_info['sweep_number']
 
         try:
@@ -328,14 +315,19 @@ def sweep_qc_features(data_set):
 
         sweep = {}
 
-        volts = sweep_data.v*1e-3
+        voltage = sweep_data.v*1e-3
         current = sweep_data.i*1e-12
         hz = sweep_data.sampling_rate
-        idx_start, idx_stop = int(sweep_data.expt_start*sweep_data.sampling_rate), int(sweep_data.expt_end*sweep_data.sampling_rate)
+        expt_start_idx, expt_end_idx = int(sweep_data.expt_start*hz), int(sweep_data.expt_end*hz)
+
+
+        stim_start_ix = st.find_stim_start(current, expt_start_idx)
 
         # measure Vm and noise before stimulus
-        idx0, idx1 = get_first_vm_noise_epoch(idx_start, current, hz)
-        _, rms0 = measure_vm(1e3 * volts[idx0:idx1])
+        idx0, idx1 = st.get_first_vm_noise_epoch(expt_start_idx, hz) # count from the beginning of the experiment
+#        idx0, idx1 = st.get_first_vm_noise_epoch_alt(stim_start_ix, hz) # counts from the end of the stimulus
+
+        _, rms0 = measure_vm(1e3 * voltage[idx0:idx1])
 
         sweep["pre_noise_rms_mv"] = float(rms0)
 
@@ -343,32 +335,34 @@ def sweep_qc_features(data_set):
         # only do so if acquisition not truncated
         # do not check for ramps, because they do not have enough time to recover
         mean1 = None
-        sweep_not_truncated = ( idx_stop == len(current) - 1 )
 
-        if sweep_not_truncated and not data_set.ontology.stimulus_has_any_tags(sweep_info['stimulus_code'], data_set.ramp_names):
-            idx0, idx1 = get_last_vm_epoch(idx_stop, current, hz)
-            mean1, _ = measure_vm(1e3 * volts[idx0:idx1])
-            idx0, idx1 = get_last_vm_noise_epoch(idx_stop, current, hz)
-            _, rms1 = measure_vm(1e3 * volts[idx0:idx1])
+        is_ramp = data_set.ontology.stimulus_has_any_tags(sweep_info['stimulus_code'], data_set.ramp_names)
+
+        sweep["completed"] = sweep_completion_check(current, voltage, hz)
+
+        if sweep["completed"] and not is_ramp:
+            idx0, idx1 = st.get_last_vm_epoch(expt_end_idx, hz)
+
+            mean1, _ = measure_vm(1e3 * voltage[idx0:idx1])
+            idx0, idx1 = st.get_last_vm_noise_epoch(expt_end_idx, hz)
+            _, rms1 = measure_vm(1e3 * voltage[idx0:idx1])
             sweep["post_vm_mv"] = float(mean1)
             sweep["post_noise_rms_mv"] = float(rms1)
         else:
             sweep["post_noise_rms_mv"] = None
 
         # measure Vm and noise over extended interval, to check stability
-        stim_start = ft.find_stim_start(current, idx_start)
-        sweep['stimulus_start_time'] = stim_start / sweep_data.sampling_rate
+        sweep['stimulus_start_time'] = stim_start_ix / sweep_data.sampling_rate
+        idx0, idx1 = st.get_stability_vm_epoch(stim_start_ix, hz)
+        mean2, rms2 = measure_vm(1e3 * voltage[idx0:idx1])
 
-        idx0, idx1 = get_stability_vm_epoch(idx_start, stim_start, hz)
-        mean2, rms2 = measure_vm(1e3 * volts[idx0:idx1])
-
-        slow_noise = float(rms2)
         sweep["slow_vm_mv"] = float(mean2)
         sweep["slow_noise_rms_mv"] = float(rms2)
 
         # for now (mid-feb 15), make vm_mv the same for pre and slow
         mean0 = mean2
         sweep["pre_vm_mv"] = float(mean0)
+
         if mean1 is not None:
             delta = abs(mean0 - mean1)
             sweep["vm_delta_mv"] = float(delta)
@@ -377,275 +371,22 @@ def sweep_qc_features(data_set):
             sweep["vm_delta_mv"] = None
 
         # compute stimulus duration, amplitude, interal
-        stim_amp, stim_dur = ft.find_stim_amplitude_and_duration(idx_start, current, hz)
-        stim_int = ft.find_stim_interval(idx_start, current, hz)
+        stim_amp, stim_dur = st.find_stim_amplitude_and_duration(expt_start_idx, current, hz)
+        stim_int = st.find_stim_interval(expt_start_idx, current, hz)
 
         sweep['stimulus_amplitude'] = stim_amp * 1e12
         sweep['stimulus_duration'] = stim_dur
         sweep['stimulus_interval'] = stim_int
+
         sweep.update(sweep_info)
 
         sweep_features.append(sweep)
 
     return sweep_features
 
-def evaluate_blowout(blowout_mv, blowout_mv_min, blowout_mv_max, fail_tags):
-    if blowout_mv is None or np.isnan(blowout_mv):
-        fail_tags.append("Missing blowout value (%s)" % str(blowout_mv))
-        return True
-
-    if blowout_mv < blowout_mv_min or blowout_mv > blowout_mv_max:
-        fail_tags.append("blowout outside of range")
-        return True
-
-    return False
-
-def evaluate_electrode_0(electrode_0_pa, electrode_0_pa_max, fail_tags):
-    if electrode_0_pa is None or np.isnan(electrode_0_pa):
-        fail_tags.append("electrode_0_pa missing value")
-        return True
-
-    if abs(electrode_0_pa) > electrode_0_pa_max:
-        fail_tags.append("electrode_0_pa %f exceeds max %f" % (electrode_0_pa, electrode_0_pa_max))
-        return True
-
-    return False
-
-def evaluate_seal(seal_gohm, seal_gohm_min, fail_tags):
-    if seal_gohm is None or np.isnan(seal_gohm):
-        fail_tags.append("Invalid seal (%s)" % str(seal_gohm))
-        return True
-
-    if seal_gohm < seal_gohm_min:
-        fail_tags.append("seal %f below min %f" % (seal_gohm, seal_gohm_min))
-        return True
-
-    return False
-
-def evaluate_input_and_access_resistance(input_access_resistance_ratio,
-                                         input_vs_access_resistance_max,
-                                         initial_access_resistance_mohm,
-                                         access_resistance_mohm_min,
-                                         access_resistance_mohm_max,
-                                         fail_tags):
-
-    failed_bad_rs = False
-
-    sr_fail_tags = []
-    if input_access_resistance_ratio is None:
-        failed_bad_rs = True
-        sr_fail_tags.append("Resistance ratio not available")
-
-    if initial_access_resistance_mohm is None:
-        failed_bad_rs = True
-        sr_fail_tags.append("Initial access resistance not available")
-
-    if not failed_bad_rs:
-        if initial_access_resistance_mohm < access_resistance_mohm_min:
-            failed_bad_rs = True
-            sr_fail_tags.append("initial_access_resistance_mohm %f below min %f" % (initial_access_resistance_mohm, access_resistance_mohm_min))
-        elif initial_access_resistance_mohm > access_resistance_mohm_max:
-            failed_bad_rs = True
-            sr_fail_tags.append("initial_access_resistance_mohm %f exceeds max %f" % (initial_access_resistance_mohm, access_resistance_mohm_max))
-
-            #
-        if input_access_resistance_ratio > input_vs_access_resistance_max:
-            failed_bad_rs = True
-            sr_fail_tags.append("input_access_resistance_ratio %f above max %f" % (input_access_resistance_ratio, input_vs_access_resistance_max))
-
-    fail_tags += sr_fail_tags
-
-    return failed_bad_rs
 
 
-def qc_experiment(data_set, cell_data, sweep_data, qc_criteria=None):
-
-    """
-
-    Parameters
-    ----------
-    data_set : MiesDataSet object
-        dataset
-    cell_data : dict
-        cell features
-    sweep_data: list of dicts
-        sweep features
-    qc_criteria : dict
-        qc criteria
-
-    Returns
-    -------
-        cell_state : list
-        sweep_states : list
-    """
-    if qc_criteria is None:
-        qc_criteria = load_default_qc_criteria()
-
-    cell_state = qc_cell(data_set, cell_data, sweep_data, qc_criteria)
-
-    sweep_data_index = { sweep['sweep_number']:sweep for sweep in sweep_data }
-
-    sweep_states = []
-    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
-
-    for sweep_num in iclamp_sweeps.sweep_number:
-        sweep = sweep_data_index[sweep_num]
-
-        failed, fail_tags = qc_current_clamp_sweep(data_set, sweep, qc_criteria)
-        sweep_state = { 'sweep_number': sweep_num, 'passed': not failed, 'reasons': fail_tags }
-        sweep_states.append(sweep_state)
-
-    return cell_state, sweep_states
 
 
-def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
-    """QC for the current-clamp sweeps
-
-    Parameters
-    ----------
-    data_set : MiesDataSet
-        data set
-    sweep : dict
-        features of a sweep
-    qc_criteria : dict
-        qc criteria
-
-    Returns
-    -------
-        fails   : int
-            number of fails
-        fail_tags : list of str
-            tags of the failed sweeps
-
-    """
-    if qc_criteria is None:
-        qc_criteria = load_default_qc_criteria()
-
-    # keep track of failures
-    fail_tags = []
-
-    sweep_num = sweep["sweep_number"]
-    stim_code = sweep["stimulus_code"]
-    unit = sweep["stimulus_units"]
-
-    if unit not in data_set.current_clamp_units:
-        return {}
-
-    # TODO: verify expected clamp modes
-    # if stim in jin["voltage_clamp_stimuli"]:
-    #     if unit not in [ "Volts", "mV" ]:
-    #        msg = "%s (%s) in wrong mode -- expected voltage clamp" % (name, stim)
-    #        fail_tags.append(msg)
-    #elif stim_short in jin["current_clamp_stimuli"]:
-    #    if unit not in [ "Amps", "pA" ]:
-    #        msg = "%s (%s) in wrong mode -- expected current clamp" % (name, stim)
-    #        fail_tags.append(msg)
-
-    # pull data streams from file (this is for detecting truncated sweeps)
-    sweep_data = data_set.sweep(sweep_num)
-    volts = sweep_data.v*1e-3
-    current = sweep_data.i*1e-12
-    hz = sweep_data.sampling_rate
-    idx_start, idx_stop = int(sweep_data.expt_start*hz), int(sweep_data.expt_end*hz)
-
-    if sweep["pre_noise_rms_mv"] > qc_criteria["pre_noise_rms_mv_max"]:
-        fail_tags.append("pre-noise exceeded qc threshold")
-
-    # check Vm and noise at end of recording
-    # only do so if acquisition not truncated
-    # do not check for ramps, because they do not have
-    #   enough time to recover
-    is_ramp = data_set.ontology.stimulus_has_any_tags(sweep["stimulus_code"], data_set.ramp_names)
-
-    if is_ramp:
-        logging.info("sweep %d skipping vrest criteria on ramp", sweep_num)
-    else:
-        # measure post-stimulus noise
-        sweep_not_truncated = ( idx_stop == len(current) - 1 )
-        if sweep_not_truncated:
-            if sweep["post_noise_rms_mv"] > qc_criteria["post_noise_rms_mv_max"]:
-                fail_tags.append("post-noise exceeded qc threshold")
-        else:
-            fail_tags.append("truncated sweep")
-
-    if sweep["slow_noise_rms_mv"] > qc_criteria["slow_noise_rms_mv_max"]:
-        fail_tags.append("slow noise above threshold")
-
-    if sweep["vm_delta_mv"] is not None and sweep["vm_delta_mv"] > qc_criteria["vm_delta_mv_max"]:
-        fail_tags.append("Vm delta above threshold")
-
-    # fail sweeps if stimulus duration is zero
-    # Uncomment out hte following 3 lines to have sweeps without stimulus
-    #   faile QC
-    if sweep["stimulus_duration"] <= 0 and not data_set.ontology.stimulus_has_any_tags(stim_code, data_set.extp_names):
-        fail_tags.append("No stimulus detected")
-
-    return len(fail_tags) > 0, fail_tags
 
 
-def qc_cell(data_set, cell_data, sweep_data, qc_criteria=None):
-    """Evaluate cell state across different types of stimuli
-
-    Parameters
-    ----------
-    data_set : MiesDataSet
-        data set
-    cell_data : dict
-        cell features
-    sweep_data : list of dicts
-        sweep features
-    qc_criteria : dict
-        qc criteria
-
-    Returns
-    -------
-        dict
-            cell state
-    """
-
-    if qc_criteria is None:
-        qc_criteria = load_default_qc_criteria()
-
-    # PBS-333
-    # C1NSSEED stimuli have many instances, but these instances aren't
-    #   stored with the sweep. Ie, the sweep stores the stimulus value
-    #   C1NSSEED while the stimulus table stores C1NSSEED_2150112.
-    # To address this, check the stimulus table for any instance of
-    #   C1NSSEED, and if it exists, append a plain-jane "C1NSSEED" stimulus
-    #   so later checks work
-    #
-    #for name in jin["current_clamp_stimuli"]:
-    #    if name.startswith("C1NSSEED_"):
-    #        jin["current_clamp_stimuli"].append("C1NSSEED")
-    cell_fail_tags = []
-
-    cell_state = {}
-
-    # blowout voltage
-    cell_state["failed_blowout"] = evaluate_blowout(cell_data.get('blowout_mv', None),
-                                                    qc_criteria['blowout_mv_min'],
-                                                    qc_criteria['blowout_mv_max'],
-                                                    cell_fail_tags)
-
-    # "electrode 0"
-    cell_state["failed_electrode_0"] = evaluate_electrode_0(cell_data.get('electrode_0_pa', None),
-                                                            qc_criteria['electrode_0_pa_max'],
-                                                            cell_fail_tags)
-
-    # measure clamp seal
-    cell_state["failed_seal"] = evaluate_seal(cell_data.get('seal_gohm', None),
-                                              qc_criteria['seal_gohm_min'],
-                                              cell_fail_tags)
-
-    # input and access resistance
-    cell_state["failed_input_access_resistance"] = \
-        evaluate_input_and_access_resistance(cell_data.get("input_access_resistance_ratio", None),
-                                             qc_criteria["input_vs_access_resistance_max"],
-                                             cell_data.get("initial_access_resistance_mohm", None),
-                                             qc_criteria["access_resistance_mohm_min"],
-                                             qc_criteria["access_resistance_mohm_max"],
-                                             cell_fail_tags)
-
-    cell_state["fail_tags"] = cell_fail_tags
-
-    return cell_state

@@ -4,7 +4,6 @@ import sys
 import os
 import logging
 
-
 def nullisclose(a, b):
     if a is None or b is None:
         return a is None and b is None
@@ -12,6 +11,7 @@ def nullisclose(a, b):
         return np.isclose(a, b)
 
 def validate_feature_set(features, d1, d2):
+
     for f in features:
         v1 = d1[f]
         v2 = d2[f]
@@ -25,16 +25,13 @@ def validate_feature_set(features, d1, d2):
 
 def get_pipeline_output_json(storage_dir,err_id):
     """Return the name of the output file giving preference to the newer version
-
     Parameters
     ----------
     storage_dir: str of storage directory
     err_id: str err_id
-
     Returns
     -------
     pipeline_output_json: str filename
-
     """
 
     pipeline_output_v2_json = os.path.join(storage_dir, "EPHYS_FEATURE_EXTRACTION_V2_QUEUE_%s_output.json" % err_id)
@@ -52,24 +49,18 @@ def get_pipeline_output_json(storage_dir,err_id):
 
 def validate_run_completion(pipeline_input_json, pipeline_output_json):
     """Check if the pipeline output was generated as way of confirming that the run completed
-
     Parameters
     ----------
     pipeline_input_json
     pipeline_output_json
-
     Returns
     -------
-
     """
 
     pipeline_input = ju.read(pipeline_input_json)
     if os.path.isfile(pipeline_output_json):
-#        logging.info("run completed for specimen_id: %d " % pipeline_input["specimen_id"])
-#        print "run completed for specimen_id: %d " % pipeline_input["specimen_id"]
         logging.info("run completed")
     else:
-#        logging.info("run failed for specimen_id: %d " % pipeline_input["specimen_id"])
         logging.info("run failed")
 
 
@@ -121,6 +112,7 @@ def validate_cell_features(err, ephys_features, cell_record):
 
     validate_feature_set(ef_features, ephys_features, cell_record)
 
+
 def validate_fx(test_output_json="test/fx_output.json"):
     print("**** FX")
     pipeline_output_json = "/allen/programs/celltypes/production/humancelltypes/prod242/Ephys_Roi_Result_642966460/EPHYS_FEATURE_EXTRACTION_V2_QUEUE_642966460_output.json"
@@ -142,6 +134,4 @@ def main():
     validate_pipeline(pij, poj)
 
 if __name__ == "__main__": main()
-
-
 
