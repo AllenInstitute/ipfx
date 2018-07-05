@@ -1042,8 +1042,6 @@ def fit_prespike_time_constant(t, v, start, spike_time, dv_limit=-0.001, tau_lim
     y = -v_slice + y0
     y = np.log(y)
 
-    print len(y), len(t_slice), start, spike_time
-
     dy = calculate_dvdt(y, t_slice, filter=1.0)
 
     # End the fit interval if the voltage starts dropping
