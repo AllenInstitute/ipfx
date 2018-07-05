@@ -184,8 +184,6 @@ def extract_cell_features(data_set,
 
     return cell_features
 
-
-
 def get_stim_characteristics(i, t, no_test_pulse=False):
     '''
     Identify the start time, duration, amplitude, start index, and
@@ -412,7 +410,6 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     # extract sweep-level features
 #    logging.debug("Computing sweep features")
 #    print data_set.sweep_table
-    data_set.sweep_table.to_csv("sweep_table_pass.csv", sep=" ", index=False)
 
     # for logging purposes
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
@@ -427,11 +424,11 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
 
 
     lsq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.long_square_names)
+
     ssq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.short_square_names)
     ramp_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.ramp_names)
 
     clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=data_set.coarse_long_square_names)
-#    print clsq_sweeps
 
     lsq_sweep_numbers = lsq_sweeps['sweep_number'].sort_values().values
     clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values
@@ -444,6 +441,10 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     logging.debug("coarse long square sweeps: %s", str(clsq_sweep_numbers))
     logging.debug("short square sweeps: %s", str(ssq_sweep_numbers))
     logging.debug("ramp sweeps: %s", str(ramp_sweep_numbers))
+
+
+    print "clsq:", clsq_sweep_numbers
+    print "ramps:", ramp_sweep_numbers
 
     if subthresh_min_amp is None:
         subthresh_min_amp, clsq_amp_delta = select_subthreshold_min_amplitude(clsq_sweeps['stimulus_amplitude'])

@@ -15,8 +15,8 @@ out = []
 # only Coarse Long Squares
 # ont.has_all(stim, ('Long Square', 'Coarse'))
 
-# 
-# 
+#
+#
 stims =  [ { k.decode("UTF-8"):v for k,v in stim.items() } for stim in stims   ]
 
 NAME = 'name'
@@ -45,13 +45,13 @@ for stim in stims:
         tags.add((CORE, 'Core 1'))
     elif scode.startswith('C2'):
         tags.add((CORE, 'Core 2'))
-    
+
     # resolution tags
     if 'FINE' in scode:
         tags.add((RES, 'Fine'))
     elif 'COARSE' in scode:
         tags.add((RES, 'Coarse'))
-    
+
     # name tags
     if 'C1NS' in scode:
         tags.add((NAME, 'Noise', sname))
@@ -79,4 +79,4 @@ out.append([ (CODE, 'C1NSSEED'), (NAME, 'Noise', 'Noise 1'), (CORE, 'Core 1') ])
 for o in out:
     print(o)
 
-ju.write('stimulus_ontology.json', out)
+ju.write('stimulus_ontology_patchseq.json', out)

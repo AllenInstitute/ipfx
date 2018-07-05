@@ -24,7 +24,7 @@ def assign_sweep_states(manual_sweep_states, qc_sweep_states, out_sweep_data):
             sweep["passed"] = sweep_states[sn]
         else:
             logging.warning("could not find QC state for sweep number %d", sn)
-                               
+
 def run_pipeline(input_nwb_file,
                  input_h5_file,
                  output_nwb_file,
@@ -37,6 +37,8 @@ def run_pipeline(input_nwb_file,
                                      input_h5_file,
                                      stimulus_ontology_file)
 
+    logging.info("Computed QC features")
+
     qc_output = run_qc(input_nwb_file,
                        input_h5_file,
                        stimulus_ontology_file,
@@ -44,10 +46,14 @@ def run_pipeline(input_nwb_file,
                        se_output["sweep_data"],
                        qc_criteria)
 
-    assign_sweep_states(manual_sweep_states, 
-                        qc_output["sweep_states"], 
+    logging.info("QC completed checks")
+    print "qc finished"
+    assign_sweep_states(manual_sweep_states,
+                        qc_output["sweep_states"],
                         se_output["sweep_data"])
-    
+
+    logging.info("assigned sweep state")
+
     fx_output = run_feature_extraction(input_nwb_file,
                                        stimulus_ontology_file,
                                        output_nwb_file,

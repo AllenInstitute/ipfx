@@ -1,6 +1,6 @@
 import h5py
-import logging
 import pandas as pd
+import logging
 
 from allensdk.ipfx.aibs_data_set import AibsDataSet
 import allensdk.ipfx.mies_nwb.lab_notebook_reader as lab_notebook_reader
@@ -13,11 +13,8 @@ class MiesDataSet(AibsDataSet):
         self.h5_file = h5_file
         self.sweep_table = self.build_sweep_table()
 
-
         st = self.sweep_table
         st.to_csv("sweep_table.csv", sep=" ",index=False)
-
-
 
     def build_sweep_table(self):
         """
@@ -37,29 +34,20 @@ class MiesDataSet(AibsDataSet):
         # TODO: figure this out for multipatch
         for sweep_name in nwbf["acquisition/timeseries"]:
             sweep_record = {}
-
             sweep_ts = nwbf["acquisition/timeseries"][sweep_name]
 
             ancestry = sweep_ts.attrs["ancestry"]
             sweep_record['clamp_mode'] = ancestry[-1]
-
-            sweep_num = int(sweep_name.split('_')[-1])
+#            sweep_num = self.get_sweep_number(sweep_name)
+            sweep_num = self.nwb_data.get_sweep_number(sweep_name)
             sweep_record['sweep_number'] = sweep_num
 
-            # look for the stimulus description
-            if "aibs_stimulus_description" in sweep_ts.keys():
-                logging.debug("reading stim code from nwb")
-                stim_code = sweep_ts["aibs_stimulus_description"].value[0]
-                if len(stim_code) == 1:
-                    stim_code = sweep_ts["aibs_stimulus_description"].value
-            else:
-                # fetch stim description from lab notebook
-                logging.debug("reading stim code from lab notebook")
+            stim_code = self.nwb_data.get_stim_code(sweep_name)
+            if not stim_code:
                 stim_code = notebook.get_value("Stim Wave Name", sweep_num, "")
+                logging.debug("Reading stim_code from Labnotebook")
                 if len(stim_code) == 0:
                     raise Exception("Could not read stimulus wave name from lab notebook")
-
-            stim_code = stim_code.split('_')[0]
 
             # stim units are based on timeseries type
             ancestry = sweep_ts.attrs["ancestry"]
@@ -101,7 +89,6 @@ class MiesDataSet(AibsDataSet):
                 # make sure we can find all of our stimuli in the ontology
                 stim = self.ontology.find_one(stim_code, tag_type='code')
                 sweep_record["stimulus_name"] = stim.tags(tag_type='name')[0][-1]
-
 
             sweep_data.append(sweep_record)
 

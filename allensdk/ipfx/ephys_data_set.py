@@ -97,9 +97,9 @@ class EphysDataSet(object):
 
         self.ontology = ontology
 
-        self.ramp_names = ( "Ramp", )
+        self.ramp_names = ( "Ramp", "Ramp to Rheobase",)
 
-        self.long_square_names = ( "Long Square", )
+        self.long_square_names = ( "Long Square", "Long Square Threshold", "Long Square SupraThreshold", "Long Square SubThreshold" )
         self.coarse_long_square_names = ( "C1LSCOARSE",  )
         self.short_square_triple_names = ( "Short Square - Triple", )
 
@@ -117,6 +117,11 @@ class EphysDataSet(object):
 
         self.current_clamp_units = ( 'Amps', 'pA')
 
+        self.qc_sweeps_names = self.ramp_names + \
+                               self.long_square_names + \
+                               self.coarse_long_square_names + \
+                               self.short_square_triple_names + \
+                               self.short_square_names
 
     def filtered_sweep_table(self, current_clamp_only=False, passing_only=False, stimuli=None):
 
@@ -134,6 +139,41 @@ class EphysDataSet(object):
 
         return st
 
+    def get_sweep_number_by_stimulus_names(self, stimulus_names):
+
+        sweeps = self.filtered_sweep_table(stimuli=stimulus_names).sort_values(by='sweep_number')
+
+        if len(sweeps) > 1:
+            logging.warning("Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimulus_names))
+
+        if len(sweeps) == 0:
+            raise IndexError
+
+        return sweeps.sweep_number.values[-1]
+
+    def query_sweep_table(self, **kwargs):
+        """Query sweep table
+
+        Parameters
+        ----------
+        kwargs: dict of column_name:value(s) that could be tuple, list or a single value
+
+        Returns
+        -------
+        st: pandas df
+        """
+        st = self.sweep_table
+
+        for k, v in kwargs.items():
+            if (type(v) is list) or (type(v) is tuple):
+                mask = st[k].isin(v)
+                st = st[mask]
+            else:
+                mask = st[k] == v
+                st = st[mask]
+
+        return st
+
     def sweep(self, sweep_number):
         """ returns a dictionary with properties: i (in pA), v (in mV), t (in sec), start, end"""
         raise NotImplementedError
@@ -145,11 +185,11 @@ class EphysDataSet(object):
         pass
 
 class Sweep(object):
-    def __init__(self, t, v, i, expt_start=None, expt_end=None, sampling_rate=None):
+    def __init__(self, t, v, i, index_range, expt_start=None, expt_end=None, sampling_rate=None):
         self.t = t
         self.v = v
         self.i = i
-
+        self.index_range = index_range
         self.expt_start = expt_start if expt_start else 0
         self.expt_end = expt_end if expt_end else self.t_end
         self.sampling_rate = sampling_rate
@@ -157,6 +197,11 @@ class Sweep(object):
     @property
     def t_end(self):
         return self.t[-1]
+
+# ds = DataSet()
+# ss = ds.sweep_set(...)
+# ss.t # [ s[0].t, s[1].t, ..., s[n].t ]
+# ss.i # [ s[0].i, s[1].i, ..., s[n].i ]
 
 
 class SweepSet(object):

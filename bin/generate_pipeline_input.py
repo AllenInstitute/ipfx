@@ -5,6 +5,7 @@ import sys
 
 import allensdk.ipfx.ephys_data_set as eds
 import allensdk.ipfx.qc_features as qcf
+import allensdk.ipfx.qc_protocol as qcp
 import allensdk.core.json_utilities as ju
 import os.path
 
@@ -81,7 +82,7 @@ d['input_nwb_file'] = res['nwb_file']
 d['output_nwb_file'] = os.path.join(cell_dir, "output.nwb")
 d['qc_fig_dir'] = os.path.join(cell_dir,"qc_figs")
 d['stimulus_ontology_file'] = stimulus_ontology_file
-d['qc_criteria'] = ju.read(qcf.DEFAULT_QC_CRITERIA_FILE)
+d['qc_criteria'] = ju.read(qcp.DEFAULT_QC_CRITERIA_FILE)
 d['manual_sweep_states'] = get_sweep_states_from_lims(specimen_id)
 
 
