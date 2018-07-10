@@ -14,7 +14,6 @@ class MiesDataSet(AibsDataSet):
         self.sweep_table = self.build_sweep_table()
 
         st = self.sweep_table
-        st.to_csv("sweep_table.csv", sep=" ",index=False)
 
     def build_sweep_table(self):
         """
@@ -38,7 +37,6 @@ class MiesDataSet(AibsDataSet):
 
             ancestry = sweep_ts.attrs["ancestry"]
             sweep_record['clamp_mode'] = ancestry[-1]
-#            sweep_num = self.get_sweep_number(sweep_name)
             sweep_num = self.nwb_data.get_sweep_number(sweep_name)
             sweep_record['sweep_number'] = sweep_num
 

@@ -24,8 +24,10 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
             manual_values[mk] = input_manual_values[mk]
 
     ont = StimulusOntology(ju.read(stimulus_ontology_file))
-#    ds = MiesDataSet(input_nwb_file, input_h5_file, ontology=ont)
-    ds = AibsDataSet([],input_nwb_file, input_h5_file, ontology=ont)
+    ds = AibsDataSet(nwb_file=input_nwb_file,
+                     h5_file=input_h5_file,
+                     ontology=ont)
+
     cell_features, cell_tags = qcf.cell_qc_features(ds, manual_values)
     sweep_features = qcf.sweep_qc_features(ds)
 

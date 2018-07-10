@@ -39,7 +39,6 @@ def get_last_vm_noise_epoch(idx1, hz):
 
 
 def get_stability_vm_epoch(stim_start, hz):
-
     num_steps = int(PRESTIM_STABILITY_EPOCH * hz)
     if num_steps > stim_start-1:
         num_steps = stim_start-1
@@ -77,7 +76,7 @@ def find_stim_start(stim, idx0=0):
     return idxs[0]+1
 
 
-def get_experiment_epoch(i,v):
+def get_experiment_epoch(i,v,hz):
     """
     Find index range for the experiment epoch. The start is defined as stim start- PRESTIM_DURATION*sampling_rate
     The end is defined by the last nonzero response. Is this right?
@@ -88,6 +87,7 @@ def get_experiment_epoch(i,v):
     ----------
     i : stimulus
     v : response
+    hz: sampling rate
 
     Returns
     -------
