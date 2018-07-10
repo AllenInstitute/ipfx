@@ -47,7 +47,11 @@ def run_qc(input_nwb_file, input_h5_file, stimulus_ontology_file, cell_features,
 
     logging.debug("stimulus ontology file: %s", stimulus_ontology_file)
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else None
-    ds = AibsDataSet([], input_nwb_file, input_h5_file, ont)
+
+    ds = AibsDataSet(nwb_file=input_nwb_file,
+                     h5_file=input_h5_file,
+                     ontology=ont)
+
 
     cell_state, sweep_states = qcp.qc_experiment(ds,
                                                  cell_features,

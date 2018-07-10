@@ -47,7 +47,6 @@ def run_pipeline(input_nwb_file,
                        qc_criteria)
 
     logging.info("QC completed checks")
-    print "qc finished"
     assign_sweep_states(manual_sweep_states,
                         qc_output["sweep_states"],
                         se_output["sweep_data"])

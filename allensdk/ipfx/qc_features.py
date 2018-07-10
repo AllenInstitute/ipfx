@@ -4,6 +4,8 @@ import logging
 import numpy as np
 import stim_features as st
 
+POST_STIM_STABILITY_INTERVAL = 0.5
+LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
 
 
 def measure_blowout(v, idx0):
@@ -116,10 +118,6 @@ def get_r_from_peak_pulse_response(v, i, t):
 
 def sweep_completion_check(i,v,hz):
 
-
-    POST_STIM_STABILITY_INTERVAL = 0.5
-    LONG_RESPONSE_DURATION = 5 # this will count long ramps as completed
-
     stimulus_end_ix = np.nonzero(i)[0][-1]  # last non-zero index along the only dimension=0
     response_end_ix = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0
 
@@ -164,8 +162,7 @@ def cell_qc_features(data_set, manual_values=None):
     try:
         blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
-        blowout_mv = measure_blowout(blowout_data.v*1e-3,
-                                     int(blowout_data.expt_start*blowout_data.sampling_rate))
+        blowout_mv = measure_blowout(blowout_data.v*1e-3, blowout_data.expt_idx_range[0])
         output_data['blowout_mv'] = blowout_mv
     except IndexError as e:
         msg = "Blowout is not available"
@@ -300,11 +297,9 @@ def sweep_qc_features(data_set):
 
     """
     sweep_features = []
-#    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
-    qc_sweeps = data_set.query_sweep_table(stimulus_name=data_set.qc_sweeps_names)
+    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,exclude_auxiliary=True)
 
-    for sweep_info in qc_sweeps.to_dict(orient='records'):
-#    for sweep_info in iclamp_sweeps.to_dict(orient='records'):
+    for sweep_info in iclamp_sweeps.to_dict(orient='records'):
         sweep_num = sweep_info['sweep_number']
 
         try:
@@ -318,9 +313,7 @@ def sweep_qc_features(data_set):
         voltage = sweep_data.v*1e-3
         current = sweep_data.i*1e-12
         hz = sweep_data.sampling_rate
-        expt_start_idx, expt_end_idx = int(sweep_data.expt_start*hz), int(sweep_data.expt_end*hz)
-
-
+        expt_start_idx, expt_end_idx = sweep_data.expt_idx_range
         stim_start_ix = st.find_stim_start(current, expt_start_idx)
 
         # measure Vm and noise before stimulus
@@ -370,7 +363,7 @@ def sweep_qc_features(data_set):
             # Use None as 'nan' still breaks the ruby strategies
             sweep["vm_delta_mv"] = None
 
-        # compute stimulus duration, amplitude, interal
+        # compute stimulus duration, amplitude, interval
         stim_amp, stim_dur = st.find_stim_amplitude_and_duration(expt_start_idx, current, hz)
         stim_int = st.find_stim_interval(expt_start_idx, current, hz)
 

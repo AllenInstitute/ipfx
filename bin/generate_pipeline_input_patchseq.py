@@ -32,7 +32,7 @@ def get_sweep_states_from_lims(specimen_id):
 
 specimen_name = sys.argv[1]
 
-stimulus_ontology_file = eds.DEFAULT_STIMULUS_ONTOLOGY_FILEgit
+stimulus_ontology_file = eds.DEFAULT_STIMULUS_ONTOLOGY_FILE
 
 
 d = {}

@@ -116,7 +116,7 @@
       "code",
       "EXTPCllATT",
       "EXTPCllATT141203",
-      "EXTPCllATT180424"
+      "EXTPCllATT180424_DA_0"
     ],
     [
       "name",
@@ -231,7 +231,7 @@
       "code",
       "EXTPINBATH",
       "EXTPINBATH141203",
-	  "EXTPINBATH180424"
+	  "EXTPINBATH180424_DA_0"
     ],
     [
       "name",
@@ -624,7 +624,7 @@
     ],
     [
       "name",
-      "Ramp to Rheobase"
+      "Ramp"
     ]
   ],
   [
@@ -1198,8 +1198,8 @@
   [
     [
       "code",
-      "PS_SubThresh",
-      "X1PS_SubThresh"
+      "PS_SubThresh_DA_0",
+      "X1PS_SubThresh_DA_0"
     ],
     [
       "name",
@@ -1213,7 +1213,7 @@
   [
     [
       "code",
-      "EXTPEXPEND180424",
+      "EXTPEXPEND180424_DA_0",
       "EXTPEXPEND"
     ],
     [
@@ -1224,7 +1224,7 @@
   [
     [
       "code",
-      "EXTPBREAKN180424",
+      "EXTPBREAKN180424_DA_0",
       "EXTPBREAKN"
     ],
     [
@@ -1235,12 +1235,12 @@
   [
     [
       "code",
-      "Ramp",
-      "X7Ramp"
+      "Ramp_DA_0",
+      "X7Ramp_DA_0"
     ],
     [
       "name",
-      "Ramp to Rheobase"
+      "Ramp"
     ],
     [
       "core",
@@ -1250,12 +1250,12 @@
   [
     [
       "code",
-      "SP_Rheo",
-      "X6SP_Rheo"
+      "SP_Rheo_DA_0",
+      "X6SP_Rheo_DA_0"
     ],
     [
       "name",
-      "Ramp to Rheobase"
+      "Ramp"
     ],
     [
       "core",
@@ -1265,30 +1265,30 @@
   [
     [
       "code",
-      "X5SP_Search",
-      "SP_Search"
+      "X5SP_Search_DA_0",
+      "SP_Search_DA_0"
     ],
     [
       "name",
-      "Short Square Threshold Search"
+      "Search"
     ]
   ],
   [
     [
       "code",
-      "LP_Search",
-      "X2LP_Search"
+      "LP_Search_DA_0",
+      "X2LP_Search_DA_0"
     ],
     [
       "name",
-      "Long Square Threshold Search"
+      "Search"
     ]
   ],
   [
     [
       "code",
-      "LP_Rheo",
-      "X3LP_Rheo"
+      "LP_Rheo_DA_0",
+      "X3LP_Rheo_DA_0"
     ],
     [
       "name",
@@ -1298,7 +1298,7 @@
   [
     [
       "code",
-      "EXTPGGAEND180424",
+      "EXTPGGAEND180424_DA_0",
       "EXTPGGAEND"
     ],
     [
@@ -1309,8 +1309,8 @@
   [
     [
       "code",
-      "X4PS_SupraThresh",
-      "PS_SupraThresh",
+      "X4PS_SupraThresh_DA_0",
+      "PS_SupraThresh_DA_0",
       "EXTPGGAEND"
     ],
     [
@@ -1326,7 +1326,7 @@
   [
     [
       "code",
-      "EXTPSMOKET180424",
+      "EXTPSMOKET180424_DA_0",
       "EXTPSMOKET"
     ],
     [

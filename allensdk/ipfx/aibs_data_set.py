@@ -11,7 +11,7 @@ import allensdk.ipfx.nwb_data_reader as nwb_data_reader
 
 
 class AibsDataSet(EphysDataSet):
-    def __init__(self, sweep_list, nwb_file, h5_file, ontology=None, api_sweeps=True):
+    def __init__(self, sweep_list=[], nwb_file=None, h5_file=None, ontology=None, api_sweeps=True):
         super(AibsDataSet, self).__init__(ontology)
         self.data_set = NwbDataSet(nwb_file)
         self.nwb_file = nwb_file
@@ -19,13 +19,14 @@ class AibsDataSet(EphysDataSet):
         self.nwb_data = nwb_data_reader.create_nwb_data_reader(nwb_file)
 
         if sweep_list:
+
             self.sweep_list = self.modify_api_sweep_list(sweep_list) if api_sweeps else sweep_list
             self.sweep_table = pd.DataFrame.from_records(self.sweep_list)
+#            self.sweep_table.to_csv("sweep_table_pass.csv", sep=" ", index=False) # for debugging
 
         else:
             self.sweep_table = self.build_sweep_table()
-
-        self.sweep_table.to_csv("sweep_table_pass.csv", sep=" ", index=False)
+#            self.sweep_table.to_csv("sweep_table.csv", sep=" ", index=False) # for debugging
 
     def build_sweep_table(self):
         """
@@ -120,11 +121,6 @@ class AibsDataSet(EphysDataSet):
         sweep_data = self.nwb_data.get_sweep_data(sweep_number)
         hz = sweep_data['sampling_rate']
         dt = 1. / hz
-        s, e = dt * np.array(sweep_data['index_range'])
-
-        sweep_data['expt_start_time'] = s
-        sweep_data['expt_end_time'] = e
-
         sweep_data['time'] = np.arange(0, len(sweep_data['response'])) * dt
 
         assert len(sweep_data['response']) == len(sweep_data['stimulus']), "Stimulus and response have different duration"
@@ -132,7 +128,6 @@ class AibsDataSet(EphysDataSet):
         return Sweep(t = sweep_data['time'],
                      v = sweep_data['response'], # mV
                      i = sweep_data['stimulus'], # pA
-                     expt_start = sweep_data['expt_start_time'],
-                     expt_end = sweep_data['expt_end_time'],
                      sampling_rate = sweep_data['sampling_rate'],
-                     index_range=sweep_data['index_range'])
+                     expt_idx_range = sweep_data['index_range'],
+                     )

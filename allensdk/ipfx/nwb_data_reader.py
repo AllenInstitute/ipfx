@@ -75,7 +75,7 @@ class NWBDataReaderPatchSeq(NWBDataReader):
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
             sweep_stimulus = f['stimulus']['presentation']["data_%05d_DA0" % sweep_number]
             i = sweep_stimulus["data"].value
-            index_range = sf.get_experiment_epoch(i, v)
+            index_range = sf.get_experiment_epoch(i, v, hz)
 
         return {"stimulus": i,
                 "response": v,
@@ -105,7 +105,7 @@ class NWBDataReaderPatchSeq(NWBDataReader):
                 else:
                     raise IndexError
 
-                stim_code = "_".join(stim_code.split("_")[:-2])
+#                stim_code = "_".join(stim_code.split("_")[:-2])
 
         return stim_code
 

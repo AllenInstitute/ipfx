@@ -1,6 +1,7 @@
 import json
 import os
 import logging
+import numpy as np
 
 DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(os.path.dirname(__file__), 'stimulus_ontology.json')
 
@@ -42,8 +43,7 @@ class StimulusOntology(object):
 
         Parameters
         ----------
-            stimuli: nested list
-                Stimuli ontology
+            stimuli: nested list  of stimuli ontology properties
 
         """
 
@@ -97,9 +97,13 @@ class EphysDataSet(object):
 
         self.ontology = ontology
 
-        self.ramp_names = ( "Ramp", "Ramp to Rheobase",)
+        self.ramp_names = ( "Ramp",)
 
-        self.long_square_names = ( "Long Square", "Long Square Threshold", "Long Square SupraThreshold", "Long Square SubThreshold" )
+        self.long_square_names = ( "Long Square",
+                                   "Long Square Threshold",
+                                   "Long Square SupraThreshold",
+                                   "Long Square SubThreshold" )
+
         self.coarse_long_square_names = ( "C1LSCOARSE",  )
         self.short_square_triple_names = ( "Short Square - Triple", )
 
@@ -108,22 +112,21 @@ class EphysDataSet(object):
                                     "Short Square - Hold -70mV",
                                     "Short Square - Hold -80mV" )
 
+        self.excluded_current_clamps_names = ("Search",
+                                              "Test", )
         self.blowout_names = ( 'EXTPBLWOUT', )
         self.bath_names = ( 'EXTPINBATH', )
         self.seal_names = ( 'EXTPCllATT', )
         self.breakin_names = ( 'EXTPBREAKN', )
         self.extp_names = ( 'EXTP', )
 
-
         self.current_clamp_units = ( 'Amps', 'pA')
 
-        self.qc_sweeps_names = self.ramp_names + \
-                               self.long_square_names + \
-                               self.coarse_long_square_names + \
-                               self.short_square_triple_names + \
-                               self.short_square_names
-
-    def filtered_sweep_table(self, current_clamp_only=False, passing_only=False, stimuli=None):
+    def filtered_sweep_table(self,
+                             current_clamp_only=False,
+                             passing_only=False,
+                             stimuli=None,
+                             exclude_auxiliary=False):
 
         st = self.sweep_table
 
@@ -135,6 +138,10 @@ class EphysDataSet(object):
 
         if stimuli:
             mask = st[self.STIMULUS_CODE].apply(self.ontology.stimulus_has_any_tags, args=(stimuli,))
+            st = st[mask]
+
+        if exclude_auxiliary:
+            mask = ~st[self.STIMULUS_NAME].isin(self.excluded_current_clamps_names)
             st = st[mask]
 
         return st
@@ -151,29 +158,6 @@ class EphysDataSet(object):
 
         return sweeps.sweep_number.values[-1]
 
-    def query_sweep_table(self, **kwargs):
-        """Query sweep table
-
-        Parameters
-        ----------
-        kwargs: dict of column_name:value(s) that could be tuple, list or a single value
-
-        Returns
-        -------
-        st: pandas df
-        """
-        st = self.sweep_table
-
-        for k, v in kwargs.items():
-            if (type(v) is list) or (type(v) is tuple):
-                mask = st[k].isin(v)
-                st = st[mask]
-            else:
-                mask = st[k] == v
-                st = st[mask]
-
-        return st
-
     def sweep(self, sweep_number):
         """ returns a dictionary with properties: i (in pA), v (in mV), t (in sec), start, end"""
         raise NotImplementedError
@@ -184,24 +168,23 @@ class EphysDataSet(object):
     def aligned_sweeps(self, sweep_numbers, stim_onset_delta):
         pass
 
+
 class Sweep(object):
-    def __init__(self, t, v, i, index_range, expt_start=None, expt_end=None, sampling_rate=None):
+    def __init__(self, t, v, i, expt_idx_range, sampling_rate=None):
         self.t = t
         self.v = v
         self.i = i
-        self.index_range = index_range
-        self.expt_start = expt_start if expt_start else 0
-        self.expt_end = expt_end if expt_end else self.t_end
+        self.expt_idx_range = expt_idx_range
         self.sampling_rate = sampling_rate
 
     @property
     def t_end(self):
         return self.t[-1]
 
-# ds = DataSet()
-# ss = ds.sweep_set(...)
-# ss.t # [ s[0].t, s[1].t, ..., s[n].t ]
-# ss.i # [ s[0].i, s[1].i, ..., s[n].i ]
+    @property
+    def expt_t_range(self):
+        dt = 1. / self.sampling_rate
+        return dt * np.array(self.expt_idx_range)
 
 
 class SweepSet(object):

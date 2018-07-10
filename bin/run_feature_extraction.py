@@ -57,7 +57,10 @@ def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_fi
 
 #    ont = StimulusOntology(ju.read(stimulus_ontology_file))
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else None
-    data_set = AibsDataSet(sweep_list, input_nwb_file, ont, api_sweeps=False)
+    data_set = AibsDataSet(sweep_list=sweep_list,
+                           nwb_file=input_nwb_file,
+                           ontology=ont,
+                           api_sweeps=False)
 
     cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
 
