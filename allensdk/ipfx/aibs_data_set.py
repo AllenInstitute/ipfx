@@ -122,7 +122,6 @@ class AibsDataSet(EphysDataSet):
         hz = sweep_data['sampling_rate']
         dt = 1. / hz
         sweep_data['time'] = np.arange(0, len(sweep_data['response'])) * dt
-
         assert len(sweep_data['response']) == len(sweep_data['stimulus']), "Stimulus and response have different duration"
 
         return Sweep(t = sweep_data['time'],
