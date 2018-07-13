@@ -1,5 +1,5 @@
 CELL=$1
-CELL_DIR=/local1/ephys/ivscc/specimen_$CELL
+CELL_DIR=/local1/ephys/ivscc/specimens/$CELL
 INPUT_JSON=$CELL_DIR/pipeline_input.json
 OUTPUT_JSON=$CELL_DIR/pipeline_output.json
 LOG_FILE=$CELL_DIR/log.txt
