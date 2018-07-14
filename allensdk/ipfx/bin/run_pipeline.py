@@ -10,7 +10,6 @@ import allensdk.core.json_utilities as ju
 
 import logging
 
-
 def assign_sweep_states(manual_sweep_states, qc_sweep_states, out_sweep_data):
     sweep_states = { s["sweep_number"]:s["passed"] for s in qc_sweep_states }
 
@@ -25,7 +24,6 @@ def assign_sweep_states(manual_sweep_states, qc_sweep_states, out_sweep_data):
             sweep["passed"] = sweep_states[sn]
         else:
             logging.warning("could not find QC state for sweep number %d", sn)
-
 
 def run_pipeline(input_nwb_file,
                  input_h5_file,
