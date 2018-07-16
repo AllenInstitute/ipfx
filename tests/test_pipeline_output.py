@@ -14,12 +14,24 @@ test_specimens = pd.read_csv(TEST_SPECIMENS_FILE, sep=" ")
 test_specimens_params = [tuple(sp) for sp in test_specimens.values]
 
 
-def check_json_files_are_equal(benchmark_json,test_json):
+def check_json_files_are_equal(json1, json2):
+    """
+    Compare dicts read from json
 
-    benchmark_pipeline_output = ju.read(benchmark_json)
-    test_pipeline_output = ju.read(test_json)
+    Parameters
+    ----------
+    json1
+    json2
 
-    return benchmark_pipeline_output == test_pipeline_output
+    Returns
+    -------
+    bool: True if equal
+    """
+
+    d1 = ju.read(json1)
+    d2 = ju.read(json2)
+
+    return d1 == d2
 
 
 @pytest.mark.parametrize('specimen,benchmark_pipeline_input_json,benchmark_pipeline_output_json', test_specimens_params)
@@ -42,26 +54,25 @@ def test_pipeline_output(specimen, benchmark_pipeline_input_json, benchmark_pipe
 
     print (specimen,benchmark_pipeline_input_json,benchmark_pipeline_output_json)
 
-    bpi = ju.read(benchmark_pipeline_input_json)
+    pipeline_input = ju.read(benchmark_pipeline_input_json)
     test_dir = str(tmpdir_factory.mktemp("%s" % specimen))
 
-    tpi = dict(bpi)
-    tpi["output_nwb_file"] = os.path.join(test_dir,"output.nwb")
-    tpi["qc_figs_dir"] = os.path.join(test_dir,"qc_figs")
+    pipeline_input["output_nwb_file"] = os.path.join(test_dir,"output.nwb")  # Modify path for the test output
+    pipeline_input["qc_figs_dir"] = os.path.join(test_dir,"qc_figs")
 
-    test_pipeline_output = run_pipeline(tpi["input_nwb_file"],
-                          tpi.get("input_h5_file", None),
-                          tpi["output_nwb_file"],
-                          tpi["stimulus_ontology_file"],
-                          tpi["qc_figs_dir"],
-                          tpi["qc_criteria"],
-                          tpi["manual_sweep_states"])
+    test_pipeline_output = run_pipeline(pipeline_input["input_nwb_file"],
+                                        pipeline_input.get("input_h5_file", None),
+                                        pipeline_input["output_nwb_file"],
+                                        pipeline_input["stimulus_ontology_file"],
+                                        pipeline_input["qc_figs_dir"],
+                                        pipeline_input["qc_criteria"],
+                                        pipeline_input["manual_sweep_states"])
 
     test_pipeline_output_json = os.path.join(test_dir,'pipeline_output.json')
     test_pipeline_input_json = os.path.join(test_dir,'pipeline_input.json')
 
     ju.write(test_pipeline_output_json, test_pipeline_output)
-    ju.write(test_pipeline_input_json, tpi)
+    ju.write(test_pipeline_input_json, pipeline_input)
 
     assert check_json_files_are_equal(benchmark_pipeline_output_json, test_pipeline_output_json)
 
