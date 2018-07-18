@@ -49,7 +49,6 @@ class StimulusProtocolAnalysis(object):
     def suprathreshold_sweeps(self, sweep_features=None):
         if sweep_features is None:
             sweep_features = self.all_sweep_features()
-
         return sweep_features["avg_rate"] > 0
 
     def all_sweep_features(self):
@@ -69,8 +68,14 @@ class StimulusProtocolAnalysis(object):
 
     def analyze_basic_features(self, sweep_set, extra_sweep_features=None):
         logging.info("analysing basic features:")
-        self._spikes_set = [ self.spx.process(sweep.t, sweep.v, sweep.i)
-                             for sweep in sweep_set.sweeps ]
+
+        self._spikes_set = []
+        for sweep in sweep_set.sweeps:
+            logging.info("sweep_id: %d" % sweep.id)
+            self._spikes_set.append(self.spx.process(sweep.t, sweep.v, sweep.i))
+
+        # self._spikes_set = [ self.spx.process(sweep.t, sweep.v, sweep.i)
+        #                      for sweep in sweep_set.sweeps ]
 
         self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features)
                                               for sweep, spikes in zip(sweep_set.sweeps, self._spikes_set) ])
@@ -141,7 +146,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         features = {}
         spiking_sweeps = self.suprathreshold_sweeps()
 
-        if len(spiking_sweeps) == 0:
+        if (spiking_sweeps == False).all():
             raise ft.FeatureError("No spiking long square sweeps, cannot compute cell features.")
 
         spiking_features = self._sweep_features[spiking_sweeps]
@@ -189,11 +194,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         calc_subthresh_features = subthresh_features[ (subthresh_features["stim_amp"] < self.SUBTHRESH_MAX_AMP) & \
                                                       (subthresh_features["stim_amp"] > self.subthresh_min_amp) ].copy()
-
         logging.debug("calc_subthresh_sweeps: %d", len(calc_subthresh_features))
 
         calc_subthresh_ss = SweepSet([sweep_set.sweeps[i] for i in calc_subthresh_features.index.values])
         taus = [ ft.time_constant(s.t, s.v, s.i, self.spx.start, self.spx.end, self.tau_frac, self.sptx.baseline_interval) for s in calc_subthresh_ss.sweeps ]
+
         calc_subthresh_features['tau'] = taus
 
         features["subthreshold_membrane_property_sweeps"] = calc_subthresh_features

@@ -329,8 +329,13 @@ def check_thresholds_and_peaks(v, t, spike_indexes, peak_indexes, upstroke_index
     # voltage - otherwise, drop it
     clipped = np.zeros_like(spike_indexes, dtype=bool)
     end_index = find_time_index(t, end)
-    if len(spike_indexes) > 0 and not np.any(v[peak_indexes[-1]:end_index + 1] <= v[spike_indexes[-1]] + tol):
-        logging.debug("Failed to return to threshold voltage + tolerance (%.2f) after last spike (min %.2f) - marking last spike as clipped", v[spike_indexes[-1]] + tol, v[peak_indexes[-1]:end_index + 1].min())
+
+    vtail = v[peak_indexes[-1]:end_index + 1]
+
+    if len(spike_indexes) > 0 and not np.any(vtail <= v[spike_indexes[-1]] + tol):
+        print "check tol:", np.min(vtail),np.max(vtail), v[spike_indexes[-1]], tol, t[peak_indexes[-1]], t[end_index]
+
+        logging.debug("Failed to return to threshold voltage + tolerance (%.2f) after last spike (min %.2f) - marking last spike as clipped", v[spike_indexes[-1]] + tol, vtail.min())
         clipped[-1] = True
 
     return spike_indexes, peak_indexes, upstroke_indexes, clipped
@@ -821,8 +826,10 @@ def fit_membrane_time_constant(t, v, start, end, rmse_max_tol = 1e-4):
     rmse = np.sqrt(np.mean((pred - v_window)**2))
 
     if rmse > rmse_max_tol:
-        logging.debug("Curve fit for membrane time constant exceeded the maximum tolerance of %f" % rmse_max_tol)
+        logging.debug("RMSE %f for the Curve fit for membrane time constant exceeded the maximum tolerance of %f" % (rmse,rmse_max_tol))
         return np.nan, np.nan, np.nan
+    else:
+        logging.debug("RMSE is smaller than the tolerance")
 
     return popt
 
@@ -1261,7 +1268,6 @@ def time_constant(t, v, i, start, end, frac=0.1, baseline_interval=0.1):
     -------
     tau : membrane time constant in seconds
     """
-
     # Assumes this is being done on a hyperpolarizing step
     v_peak, peak_index = voltage_deflection(t, v, i, start, end, "min")
     v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)

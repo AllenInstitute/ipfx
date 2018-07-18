@@ -44,12 +44,23 @@ from . import stimulus_protocol_analysis as spa
 
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
+# DETECTION_PARAMETERS = {
+#     eds.EphysDataSet.SHORT_SQUARE: { 'est_window': (1.02, 1.021), 'thresh_frac_floor': 0.1 },
+#     eds.EphysDataSet.SHORT_SQUARE_TRIPLE: { 'est_window': (2.02, 2.021), 'thresh_frac_floor': 0.1 },
+#     eds.EphysDataSet.RAMP: { 'start': 1.02 },
+#     eds.EphysDataSet.LONG_SQUARE: { 'start': 1.02, 'end': 2.02 }
+# }
+
 DETECTION_PARAMETERS = {
-    eds.EphysDataSet.SHORT_SQUARE: { 'est_window': (1.02, 1.021), 'thresh_frac_floor': 0.1 },
-    eds.EphysDataSet.SHORT_SQUARE_TRIPLE: { 'est_window': (2.02, 2.021), 'thresh_frac_floor': 0.1 },
-    eds.EphysDataSet.RAMP: { 'start': 1.02 },
-    eds.EphysDataSet.LONG_SQUARE: { 'start': 1.02, 'end': 2.02 }
+    eds.EphysDataSet.SHORT_SQUARE: { 'thresh_frac_floor': 0.1 },
+    eds.EphysDataSet.SHORT_SQUARE_TRIPLE: { 'thresh_frac_floor': 0.1 },
+    eds.EphysDataSet.RAMP: { },
+    eds.EphysDataSet.LONG_SQUARE: { }
 }
+
+
+
+
 
 SUBTHRESHOLD_LONG_SQUARE_MIN_AMPS = {
     20.0: -100.0,
@@ -146,9 +157,12 @@ def extract_cell_features(data_set,
 
     lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
     lsq_start, lsq_dur, _, _, _ = get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
-    logging.info("Long square stim %f, duration %f", lsq_start, lsq_dur)
+    logging.info("Long square stim start: %f, duration: %f", lsq_start, lsq_dur)
 
-    lsq_spx, lsq_spfx = extractors_for_sweeps(lsq_sweeps, **detection_parameters(data_set.LONG_SQUARE))
+    lsq_spx, lsq_spfx = extractors_for_sweeps(lsq_sweeps,
+                                              start = lsq_start,
+                                              end = lsq_start+lsq_dur,
+                                              **detection_parameters(data_set.LONG_SQUARE))
     lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=subthresh_min_amp)
     lsq_features = lsq_an.analyze(lsq_sweeps)
     cell_features["long_squares"] = lsq_an.as_dict(lsq_features, [ dict(id=sn) for sn in long_square_sweep_numbers ])
@@ -162,9 +176,10 @@ def extract_cell_features(data_set,
 
     ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
     ssq_start, ssq_dur, _, _, _ = get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
-    logging.info("Short square stim %f, %f", ssq_start, ssq_dur)
-
-    ssq_spx, ssq_spfx = extractors_for_sweeps(ssq_sweeps, **detection_parameters(data_set.SHORT_SQUARE))
+    logging.info("Short square stim start: %f, duration: %f", ssq_start, ssq_dur)
+    print "short_square:",ssq_start, ssq_dur
+    ssq_spx, ssq_spfx = extractors_for_sweeps(ssq_sweeps,
+                                              **detection_parameters(data_set.SHORT_SQUARE))
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
     ssq_features = ssq_an.analyze(ssq_sweeps)
     cell_features["short_squares"] = ssq_an.as_dict(ssq_features, [ dict(id=sn) for sn in short_square_sweep_numbers ])
@@ -177,7 +192,10 @@ def extract_cell_features(data_set,
     ramp_start, ramp_dur, _, _, _ = get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
     logging.info("Ramp stim %f, %f", ramp_start, ramp_dur)
 
-    ramp_spx, ramp_spfx = extractors_for_sweeps(ramp_sweeps, **detection_parameters(data_set.RAMP))
+    ramp_spx, ramp_spfx = extractors_for_sweeps(ramp_sweeps,
+                                                start = ramp_start,
+                                                end = ramp_start+ramp_dur,
+                                                **detection_parameters(data_set.RAMP))
     ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
     ramp_features = ramp_an.analyze(ramp_sweeps)
     cell_features["ramps"] = ramp_an.as_dict(ramp_features, [ dict(id=sn) for sn in ramp_sweep_numbers ])
@@ -185,11 +203,11 @@ def extract_cell_features(data_set,
     return cell_features
 
 def get_stim_characteristics(i, t, no_test_pulse=False):
-    '''
+    """
     Identify the start time, duration, amplitude, start index, and
     end index of a general stimulus.
     This assumes that there is a test pulse followed by the stimulus square.
-    '''
+    """
 
     di = np.diff(i)
     diff_idx = np.flatnonzero(di)# != 0)
@@ -245,9 +263,6 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
         raise ft.FeatureError("Unknown coarse long square amplitude delta: %f" % min_amp_delta)
 
     return subthresh_min_amp, min_amp_delta
-
-
-
 
 
 
@@ -422,13 +437,11 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     # extract cell-level features
     logging.info("Computing cell features")
 
-
     lsq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.long_square_names)
-
     ssq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.short_square_names)
     ramp_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.ramp_names)
-
     clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=data_set.coarse_long_square_names)
+
 
     lsq_sweep_numbers = lsq_sweeps['sweep_number'].sort_values().values
     clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values
@@ -436,19 +449,17 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     ramp_sweep_numbers = ramp_sweeps['sweep_number'].sort_values().values
 
     logging.debug("long square sweeps: %s", str(lsq_sweep_numbers))
-
-
     logging.debug("coarse long square sweeps: %s", str(clsq_sweep_numbers))
     logging.debug("short square sweeps: %s", str(ssq_sweep_numbers))
     logging.debug("ramp sweeps: %s", str(ramp_sweep_numbers))
 
-
-    print "clsq:", clsq_sweep_numbers
-    print "ramps:", ramp_sweep_numbers
-
     if subthresh_min_amp is None:
-        subthresh_min_amp, clsq_amp_delta = select_subthreshold_min_amplitude(clsq_sweeps['stimulus_amplitude'])
-        logging.info("Long squares using %fpA step size.  Using subthreshold minimum amplitude of %f.", clsq_amp_delta, subthresh_min_amp)
+        if len(clsq_sweep_numbers)>0:
+            subthresh_min_amp, clsq_amp_delta = select_subthreshold_min_amplitude(clsq_sweeps['stimulus_amplitude'])
+            logging.info("Coarse long squares: %f pA step size.  Using subthreshold minimum amplitude of %f.", clsq_amp_delta, subthresh_min_amp)
+        else:
+            subthresh_min_amp = -100
+            logging.info("Assigned subthreshold minimum amplitude of %f.", subthresh_min_amp)
 
     cell_features = extract_cell_features(data_set,
                                           ramp_sweep_numbers,
@@ -458,8 +469,7 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
 
     # compute sweep features
     logging.info("Computing sweep features")
-    sweep_features = extract_sweep_features(data_set,
-                                            iclamp_sweeps)
+    sweep_features = extract_sweep_features(data_set, iclamp_sweeps)
 
     # shuffle peak deflection for the subthreshold long squares
     for s in cell_features["long_squares"]["subthreshold_sweeps"]:

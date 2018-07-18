@@ -51,7 +51,7 @@ def run_pipeline(input_nwb_file,
                         qc_output["sweep_states"],
                         se_output["sweep_data"])
 
-    logging.info("assigned sweep state")
+    logging.info("Assigned sweep state")
 
     fx_output = run_feature_extraction(input_nwb_file,
                                        stimulus_ontology_file,
@@ -59,6 +59,7 @@ def run_pipeline(input_nwb_file,
                                        qc_fig_dir,
                                        se_output['sweep_data'],
                                        se_output['cell_features'])
+    logging.info("Extracted features!")
 
     return dict( sweep_extraction=se_output,
                  qc=qc_output,

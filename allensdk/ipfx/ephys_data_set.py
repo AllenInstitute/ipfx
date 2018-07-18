@@ -104,10 +104,11 @@ class EphysDataSet(object):
                                    "Long Square SupraThreshold",
                                    "Long Square SubThreshold" )
 
-        self.coarse_long_square_names = ( "C1LSCOARSE",  )
+        self.coarse_long_square_names = ( "C1LSCOARSE",)
         self.short_square_triple_names = ( "Short Square - Triple", )
 
         self.short_square_names = ( "Short Square",
+                                    "Short Square Threshold",
                                     "Short Square - Hold -60mV",
                                     "Short Square - Hold -70mV",
                                     "Short Square - Hold -80mV" )
@@ -170,12 +171,13 @@ class EphysDataSet(object):
 
 
 class Sweep(object):
-    def __init__(self, t, v, i, expt_idx_range, sampling_rate=None):
+    def __init__(self, t, v, i, expt_idx_range, sampling_rate=None, id=None):
         self.t = t
         self.v = v
         self.i = i
         self.expt_idx_range = expt_idx_range
         self.sampling_rate = sampling_rate
+        self.id = id
 
     @property
     def t_end(self):
@@ -217,3 +219,7 @@ class SweepSet(object):
     @property
     def t_end(self):
         return self._prop('t_end')
+
+    @property
+    def id(self):
+        return self._prop('id')

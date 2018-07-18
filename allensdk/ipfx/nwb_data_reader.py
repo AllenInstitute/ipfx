@@ -15,6 +15,7 @@ class NWBDataReader(object):
     def get_sweep_number(self):
         raise NotImplementedError
 
+
 class NWBDataReaderIvscc(NWBDataReader):
 
     def __init__(self, nwb_file):
@@ -47,16 +48,18 @@ class NWBDataReaderIvscc(NWBDataReader):
 
     def get_stim_code(self, sweep_name):
 
+        stimulus_description_name = "aibs_stimulus_description"
+
         with h5py.File(self.nwb_file, 'r') as f:
 
             sweep_ts = f["acquisition/timeseries"][sweep_name]
             # look for the stimulus description
-            if "aibs_stimulus_description" in sweep_ts.keys():
-                stim_code = sweep_ts["aibs_stimulus_description"].value[0]
+            if stimulus_description_name in sweep_ts.keys():
+                stim_code = sweep_ts[stimulus_description_name].value[0]
                 if len(stim_code) == 1:
-                    stim_code = sweep_ts["aibs_stimulus_description"].value
-
-            stim_code = stim_code.split('_')[0]
+                    stim_code = sweep_ts[stimulus_description_name].value
+                else:
+                    raise IndexError
 
         return stim_code
 
@@ -83,29 +86,25 @@ class NWBDataReaderPatchSeq(NWBDataReader):
                 "index_range": index_range
                 }
 
-
     def get_sweep_number(self,sweep_name):
 
         sweep_number = int(sweep_name.split('_')[1])
 
         return sweep_number
 
-
-
     def get_stim_code(self, sweep_name):
 
-        with h5py.File(self.nwb_file, 'r') as f:
+        stimulus_description_name = "stimulus_description"
 
+        with h5py.File(self.nwb_file, 'r') as f:
             sweep_ts = f["acquisition/timeseries"][sweep_name]
             # look for the stimulus description
-            if "stimulus_description" in sweep_ts.keys():
-                stim_code = sweep_ts["stimulus_description"].value
+            if stimulus_description_name in sweep_ts.keys():
+                stim_code = sweep_ts[stimulus_description_name].value
                 if len(stim_code) == 1:
-                    stim_code = sweep_ts["stimulus_description"].value[0]
+                    stim_code = sweep_ts[stimulus_description_name].value[0]
                 else:
                     raise IndexError
-
-#                stim_code = "_".join(stim_code.split("_")[:-2])
 
         return stim_code
 
