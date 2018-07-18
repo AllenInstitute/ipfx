@@ -129,4 +129,5 @@ class AibsDataSet(EphysDataSet):
                      i = sweep_data['stimulus'], # pA
                      sampling_rate = sweep_data['sampling_rate'],
                      expt_idx_range = sweep_data['index_range'],
+                     id = sweep_number,
                      )
