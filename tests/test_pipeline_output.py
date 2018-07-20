@@ -63,7 +63,7 @@ def test_pipeline_output(specimen, benchmark_pipeline_input_json, benchmark_pipe
     test_pipeline_output = run_pipeline(pipeline_input["input_nwb_file"],
                                         pipeline_input.get("input_h5_file", None),
                                         pipeline_input["output_nwb_file"],
-                                        pipeline_input["stimulus_ontology_file"],
+                                        pipeline_input.get("stimulus_ontology_file", None),
                                         pipeline_input["qc_figs_dir"],
                                         pipeline_input["qc_criteria"],
                                         pipeline_input["manual_sweep_states"])
