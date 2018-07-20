@@ -73,7 +73,7 @@ def main():
     output = run_pipeline(module.args["input_nwb_file"],
                           module.args.get("input_h5_file", None),
                           module.args["output_nwb_file"],
-                          module.args["stimulus_ontology_file"],
+                          module.args.get("stimulus_ontology_file", None),
                           module.args["qc_fig_dir"],
                           module.args["qc_criteria"],
                           module.args["manual_sweep_states"])

@@ -23,7 +23,7 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
         if mk in input_manual_values:
             manual_values[mk] = input_manual_values[mk]
 
-    ont = StimulusOntology(ju.read(stimulus_ontology_file))
+    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else None
     ds = AibsDataSet(nwb_file=input_nwb_file,
                      h5_file=input_h5_file,
                      ontology=ont)
