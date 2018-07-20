@@ -52,8 +52,8 @@ DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 # }
 
 DETECTION_PARAMETERS = {
-    eds.EphysDataSet.SHORT_SQUARE: { 'thresh_frac_floor': 0.1 },
-    eds.EphysDataSet.SHORT_SQUARE_TRIPLE: { 'thresh_frac_floor': 0.1 },
+    eds.EphysDataSet.SHORT_SQUARE: { 'est_window': (1.02, 1.021), 'thresh_frac_floor': 0.1 },
+    eds.EphysDataSet.SHORT_SQUARE_TRIPLE: { 'est_window': (2.02, 2.021), 'thresh_frac_floor': 0.1 },
     eds.EphysDataSet.RAMP: { },
     eds.EphysDataSet.LONG_SQUARE: { }
 }
@@ -194,7 +194,6 @@ def extract_cell_features(data_set,
 
     ramp_spx, ramp_spfx = extractors_for_sweeps(ramp_sweeps,
                                                 start = ramp_start,
-                                                end = ramp_start+ramp_dur,
                                                 **detection_parameters(data_set.RAMP))
     ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
     ramp_features = ramp_an.analyze(ramp_sweeps)
