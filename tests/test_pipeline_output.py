@@ -79,8 +79,6 @@ def test_pipeline_output(specimen, benchmark_pipeline_input_json, benchmark_pipe
     d1 = ju.read(benchmark_pipeline_output_json)
     d2 = ju.read(test_pipeline_output_json)
 
-#    assert d1 == d2
     result = list(diff(d1, d2, tolerance=0.001))
     assert len(result) == 0
-#    assert check_json_files_are_equal(benchmark_pipeline_output_json, test_pipeline_output_json)
 
