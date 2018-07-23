@@ -102,7 +102,12 @@ class NWBDataReaderPatchSeq(NWBDataReader):
             if stimulus_description_name in sweep_ts.keys():
                 stim_code = sweep_ts[stimulus_description_name].value
                 if len(stim_code) == 1:
-                    stim_code = sweep_ts[stimulus_description_name].value[0]
+                    stim_code_raw = sweep_ts[stimulus_description_name].value[0]
+
+                    if stim_code_raw[-5:] == "_DA_0":
+                        stim_code = stim_code_raw[:-5]
+                    else:
+                        stim_code = stim_code_raw
                 else:
                     raise IndexError
 

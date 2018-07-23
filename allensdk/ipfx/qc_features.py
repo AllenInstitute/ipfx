@@ -160,6 +160,7 @@ def cell_qc_features(data_set, manual_values=None):
 
     # measure blowout voltage
     try:
+        print "blowout names:", data_set.blowout_names
         blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
         blowout_mv = measure_blowout(blowout_data.v*1e-3, blowout_data.expt_idx_range[0])
@@ -329,7 +330,8 @@ def sweep_qc_features(data_set):
         # do not check for ramps, because they do not have enough time to recover
         mean1 = None
 
-        is_ramp = data_set.ontology.stimulus_has_any_tags(sweep_info['stimulus_code'], data_set.ramp_names)
+#        is_ramp = data_set.ontology.stimulus_has_any_tags(sweep_info['stimulus_code'], data_set.ramp_names)
+        is_ramp = sweep_info['stimulus_name'] in data_set.ramp_names
 
         sweep["completed"] = sweep_completion_check(current, voltage, hz)
 

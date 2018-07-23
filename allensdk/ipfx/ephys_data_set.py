@@ -138,9 +138,8 @@ class EphysDataSet(object):
             st = st[st[self.PASSED]]
 
         if stimuli:
-            mask = st[self.STIMULUS_CODE].apply(self.ontology.stimulus_has_any_tags, args=(stimuli,))
+            mask = st[self.STIMULUS_CODE].apply(self.ontology.stimulus_has_any_tags, args=(stimuli,), tag_type="code")
             st = st[mask]
-
         if exclude_auxiliary:
             mask = ~st[self.STIMULUS_NAME].isin(self.excluded_current_clamps_names)
             st = st[mask]

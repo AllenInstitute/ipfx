@@ -177,7 +177,6 @@ def extract_cell_features(data_set,
     ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
     ssq_start, ssq_dur, _, _, _ = get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
     logging.info("Short square stim start: %f, duration: %f", ssq_start, ssq_dur)
-    print "short_square:",ssq_start, ssq_dur
     ssq_spx, ssq_spfx = extractors_for_sweeps(ssq_sweeps,
                                               **detection_parameters(data_set.SHORT_SQUARE))
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)

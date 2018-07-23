@@ -101,10 +101,10 @@ class AibsDataSet(EphysDataSet):
                 # make sure we can find all of our stimuli in the ontology
                 stim = self.ontology.find_one(stim_code, tag_type='code')
                 sweep_record["stimulus_name"] = stim.tags(tag_type='name')[0][-1]
-
             sweep_data.append(sweep_record)
 
         nwbf.close()
+
         return pd.DataFrame.from_records(sweep_data)
 
     def modify_api_sweep_list(self, sweep_list):

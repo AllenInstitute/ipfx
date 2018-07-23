@@ -116,7 +116,7 @@
       "code",
       "EXTPCllATT",
       "EXTPCllATT141203",
-      "EXTPCllATT180424_DA_0"
+      "EXTPCllATT180424"
     ],
     [
       "name",
@@ -231,7 +231,7 @@
       "code",
       "EXTPINBATH",
       "EXTPINBATH141203",
-	  "EXTPINBATH180424_DA_0"
+	  "EXTPINBATH180424"
     ],
     [
       "name",
@@ -1198,8 +1198,8 @@
   [
     [
       "code",
-      "PS_SubThresh_DA_0",
-      "X1PS_SubThresh_DA_0"
+      "PS_SubThresh",
+      "X1PS_SubThresh"
     ],
     [
       "name",
@@ -1213,7 +1213,7 @@
   [
     [
       "code",
-      "EXTPEXPEND180424_DA_0",
+      "EXTPEXPEND180424",
       "EXTPEXPEND"
     ],
     [
@@ -1224,7 +1224,7 @@
   [
     [
       "code",
-      "EXTPBREAKN180424_DA_0",
+      "EXTPBREAKN180424",
       "EXTPBREAKN"
     ],
     [
@@ -1235,8 +1235,7 @@
   [
     [
       "code",
-      "Ramp_DA_0",
-      "X7Ramp_DA_0"
+      "Ramp"
     ],
     [
       "name",
@@ -1250,8 +1249,22 @@
   [
     [
       "code",
-      "SP_Rheo_DA_0",
-      "X6SP_Rheo_DA_0"
+      "X7Ramp"
+    ],
+    [
+      "name",
+      "Ramp"
+    ],
+    [
+      "core",
+      "Core 1"
+    ]
+  ],
+  [
+    [
+      "code",
+      "SP_Rheo",
+      "X6SP_Rheo"
     ],
     [
       "name",
@@ -1265,8 +1278,8 @@
   [
     [
       "code",
-      "X5SP_Search_DA_0",
-      "SP_Search_DA_0"
+      "X5SP_Search",
+      "SP_Search"
     ],
     [
       "name",
@@ -1276,8 +1289,8 @@
   [
     [
       "code",
-      "LP_Search_DA_0",
-      "X2LP_Search_DA_0"
+      "LP_Search",
+      "X2LP_Search"
     ],
     [
       "name",
@@ -1287,8 +1300,8 @@
   [
     [
       "code",
-      "LP_Rheo_DA_0",
-      "X3LP_Rheo_DA_0"
+      "LP_Rheo",
+      "X3LP_Rheo"
     ],
     [
       "name",
@@ -1298,7 +1311,7 @@
   [
     [
       "code",
-      "EXTPGGAEND180424_DA_0",
+      "EXTPGGAEND180424",
       "EXTPGGAEND"
     ],
     [
@@ -1309,8 +1322,8 @@
   [
     [
       "code",
-      "X4PS_SupraThresh_DA_0",
-      "PS_SupraThresh_DA_0",
+      "X4PS_SupraThresh",
+      "PS_SupraThresh",
       "EXTPGGAEND"
     ],
     [
@@ -1326,7 +1339,7 @@
   [
     [
       "code",
-      "EXTPSMOKET180424_DA_0",
+      "EXTPSMOKET180424",
       "EXTPSMOKET"
     ],
     [
