@@ -333,8 +333,6 @@ def check_thresholds_and_peaks(v, t, spike_indexes, peak_indexes, upstroke_index
     vtail = v[peak_indexes[-1]:end_index + 1]
 
     if len(spike_indexes) > 0 and not np.any(vtail <= v[spike_indexes[-1]] + tol):
-        print "check tol:", np.min(vtail),np.max(vtail), v[spike_indexes[-1]], tol, t[peak_indexes[-1]], t[end_index]
-
         logging.debug("Failed to return to threshold voltage + tolerance (%.2f) after last spike (min %.2f) - marking last spike as clipped", v[spike_indexes[-1]] + tol, vtail.min())
         clipped[-1] = True
 

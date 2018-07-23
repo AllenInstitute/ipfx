@@ -169,7 +169,8 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
     # only do so if acquisition not truncated
     # do not check for ramps, because they do not have
     #   enough time to recover
-    is_ramp = data_set.ontology.stimulus_has_any_tags(sweep["stimulus_code"], data_set.ramp_names)
+#    is_ramp = data_set.ontology.stimulus_has_any_tags(sweep["stimulus_code"], data_set.ramp_names)
+    is_ramp = sweep['stimulus_name'] in data_set.ramp_names
 
     if sweep["completed"]:
         if is_ramp:
