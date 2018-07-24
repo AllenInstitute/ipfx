@@ -67,12 +67,18 @@ class StimulusOntology(object):
         return matching_stims[0]
 
     def stimulus_has_any_tags(self, stim, tags, tag_type=None):
-        matching_stim = self.find_one(stim, tag_type)
-        return any(matching_stim.has_tag(t) for t in tags)
+        matching_stim = self.find(stim, tag_type)
 
-    def stimulus_has_all_tags(self, stim, tags, tag_type=None):
-        matching_stim = self.find_one(stim, tag_type)
-        return all(matching_stim.has_tag(t) for t in tags)
+        if len(matching_stim) > 1:
+            logging.warning("Found multiple stimuli with the tag: %s" % stim)
+
+        matching_tags = []
+
+        for st in matching_stim:
+            for t in tags:
+                matching_tags.append(st.has_tag(t))
+
+        return any(matching_tags)
 
 
 class EphysDataSet(object):
