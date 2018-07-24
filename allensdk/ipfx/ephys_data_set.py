@@ -68,7 +68,19 @@ class StimulusOntology(object):
 
     def stimulus_has_any_tags(self, stim, tags, tag_type=None):
         matching_stim = self.find_one(stim, tag_type)
+
         return any(matching_stim.has_tag(t) for t in tags)
+
+    def stimulus_has_any_tags_multi(self, stim, tags, tag_type=None):
+        matching_stim = self.find(stim, tag_type)
+
+        matching_tags = []
+
+        for st in matching_stim:
+            for t in tags:
+                matching_tags.append(st.has_tag(t))
+
+        return any(matching_tags)
 
     def stimulus_has_all_tags(self, stim, tags, tag_type=None):
         matching_stim = self.find_one(stim, tag_type)
@@ -138,7 +150,8 @@ class EphysDataSet(object):
             st = st[st[self.PASSED]]
 
         if stimuli:
-            mask = st[self.STIMULUS_CODE].apply(self.ontology.stimulus_has_any_tags, args=(stimuli,), tag_type="code")
+            mask = st[self.STIMULUS_CODE].apply(self.ontology.stimulus_has_any_tags_multi, args=(stimuli,))
+#            mask = st[self.STIMULUS_CODE].apply(self.ontology.stimulus_has_any_tags, args=(stimuli,))
             st = st[mask]
         if exclude_auxiliary:
             mask = ~st[self.STIMULUS_NAME].isin(self.excluded_current_clamps_names)
