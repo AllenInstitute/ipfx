@@ -160,6 +160,7 @@ def cell_qc_features(data_set, manual_values=None):
 
     # measure blowout voltage
     try:
+        print "blowout names:", data_set.blowout_names
         blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
         blowout_mv = measure_blowout(blowout_data.v*1e-3, blowout_data.expt_idx_range[0])
