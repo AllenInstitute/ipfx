@@ -1,3 +1,5 @@
 specimen test_pipeline_input_json benchmark_pipeline_output_json
 384990.06.02.01-compressed /allen/aibs/informatics/module_test_data/ipfx/test_specimens/384990.06.02.01-compressed/pipeline_input.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/384990.06.02.01-compressed/pipeline_output.json
+Sst-IRES-Cre;Ai14-391341.03.01.01-compressed /allen/aibs/informatics/module_test_data/ipfx/test_specimens/Sst-IRES-Cre;Ai14-391341.03.01.01-compressed/pipeline_input.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/Sst-IRES-Cre;Ai14-391341.03.01.01-compressed/pipeline_output.json
 500844783 /allen/aibs/informatics/module_test_data/ipfx/test_specimens/500844783/pipeline_input.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/500844783/pipeline_output.json
+509604672 /allen/aibs/informatics/module_test_data/ipfx/test_specimens/509604672/pipeline_input.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/509604672/pipeline_output.json

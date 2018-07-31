@@ -296,13 +296,13 @@ def sweep_qc_features(data_set):
 
     """
     sweep_features = []
-    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
+    qc_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
                                                   exclude_test=True,
                                                   exclude_search=True)
 
-    for sweep_info in iclamp_sweeps.to_dict(orient='records'):
+    for sweep_info in qc_sweeps.to_dict(orient='records'):
         sweep_num = sweep_info['sweep_number']
-        sweep_data = data_set.sweep(sweep_num,full_sweep=True)
+        sweep_data = data_set.sweep(sweep_num)
 
         sweep = {}
 
@@ -324,12 +324,9 @@ def sweep_qc_features(data_set):
         # do not check for ramps, because they do not have enough time to recover
         mean1 = None
 
-#        is_ramp = data_set.ontology.stimulus_has_any_tags(sweep_info['stimulus_code'], data_set.ramp_names)
         is_ramp = sweep_info['stimulus_name'] in data_set.ramp_names
 
-        sweep["completed"] = sweep_completion_check(current, voltage, hz)
-        print sweep_num, sweep["completed"]
-        if sweep["completed"] and not is_ramp:
+        if not is_ramp:
             idx0, idx1 = st.get_last_vm_epoch(expt_end_idx, hz)
 
             mean1, _ = measure_vm(1e3 * voltage[idx0:idx1])

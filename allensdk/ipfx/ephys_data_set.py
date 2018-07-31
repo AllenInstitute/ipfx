@@ -162,9 +162,9 @@ class EphysDataSet(object):
             mask = ~st[self.STIMULUS_NAME].isin(self.test_names)
             st = st[mask]
 
-        # if exclude_truncated:
-        #     mask = ~(st["truncated"] == True)
-        #     st = st[mask]
+        if exclude_truncated:
+            mask = ~(st["truncated"] == True)
+            st = st[mask]
 
         return st
 

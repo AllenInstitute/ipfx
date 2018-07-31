@@ -173,14 +173,14 @@ def qc_current_clamp_sweep(data_set, sweep, qc_criteria=None):
 #    is_ramp = data_set.ontology.stimulus_has_any_tags(sweep["stimulus_code"], data_set.ramp_names)
     is_ramp = sweep['stimulus_name'] in data_set.ramp_names
 
-    if sweep["completed"]:
-        if is_ramp:
-            logging.info("sweep %d skipping vrest criteria on ramp", sweep_num)
-        else:
-            if sweep["post_noise_rms_mv"] > qc_criteria["post_noise_rms_mv_max"]:
-                fail_tags.append("post-noise: %.3f exceeded qc threshold: %.3f" % (sweep["post_noise_rms_mv"],qc_criteria["post_noise_rms_mv_max"]))
+#    if sweep["completed"]:
+    if is_ramp:
+        logging.info("sweep %d skipping vrest criteria on ramp", sweep_num)
     else:
-        fail_tags.append("truncated sweep")
+        if sweep["post_noise_rms_mv"] > qc_criteria["post_noise_rms_mv_max"]:
+            fail_tags.append("post-noise: %.3f exceeded qc threshold: %.3f" % (sweep["post_noise_rms_mv"],qc_criteria["post_noise_rms_mv_max"]))
+#   else:
+#        fail_tags.append("truncated sweep")
 
     if sweep["slow_noise_rms_mv"] > qc_criteria["slow_noise_rms_mv_max"]:
         fail_tags.append("slow noise: %.3f above threshold: %.3f" % (sweep["slow_noise_rms_mv"], qc_criteria["slow_noise_rms_mv_max"]) )
