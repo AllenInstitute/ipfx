@@ -1,56 +1,49 @@
 import pandas as pd
 import numpy as np
 import re
-import h5py
 import logging
 
 from .ephys_data_set import EphysDataSet, Sweep
-from allensdk.core.nwb_data_set import NwbDataSet
 import allensdk.ipfx.mies_nwb.lab_notebook_reader as lab_notebook_reader
-import allensdk.ipfx.nwb_data_reader as nwb_data_reader
+import allensdk.ipfx.nwb_reader as nwb_reader
 
+import allensdk.ipfx.stim_features as st
 
 class AibsDataSet(EphysDataSet):
-    def __init__(self, sweep_list=[], nwb_file=None, h5_file=None, ontology=None, api_sweeps=True):
+    def __init__(self, sweep_props=[], nwb_file=None, h5_file=None, ontology=None, api_sweeps=True):
         super(AibsDataSet, self).__init__(ontology)
-        self.data_set = NwbDataSet(nwb_file)
         self.nwb_file = nwb_file
         self.h5_file = h5_file
-        self.nwb_data = nwb_data_reader.create_nwb_data_reader(nwb_file)
+        self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
 
-        if sweep_list:
-
-            self.sweep_list = self.modify_api_sweep_list(sweep_list) if api_sweeps else sweep_list
-            self.sweep_table = pd.DataFrame.from_records(self.sweep_list)
-#            self.sweep_table.to_csv("sweep_table_pass.csv", sep=" ", index=False) # for debugging
-
+        if sweep_props:
+            sweep_props = self.modify_api_sweep_props(sweep_props) if api_sweeps else sweep_props
+            self.sweep_table = pd.DataFrame.from_records(sweep_props)
         else:
-            self.sweep_table = self.build_sweep_table()
-#            self.sweep_table.to_csv("sweep_table.csv", sep=" ", index=False) # for debugging
+            sweep_props = self.extract_sweep_props()
+            self.sweep_table = pd.DataFrame.from_records(sweep_props)
+            self.sweep_table.to_csv("sweep_table_with_completed.csv", sep=" ", index=False,na_rep="NA")
 
-    def build_sweep_table(self):
+    def extract_sweep_props(self):
         """
         :parameter:
 
         :return:
-            Data Frame of sweeps data
+            dict of sweep properties
         """
         notebook = lab_notebook_reader.create_lab_notebook_reader(self.nwb_file, self.h5_file)
 
-        nwbf = h5py.File(self.nwb_file, 'r')
-
-        sweep_data = []
+        sweep_props = []
+        logging.debug("*************Building sweep properties tables***********************")
 
         # use same output strategy as h5-nwb converter
         # pick the sampling rate from the first iclamp sweep
         # TODO: figure this out for multipatch
-        for sweep_name in nwbf["acquisition/timeseries"]:
+        for sweep_name in self.nwb_data.get_sweep_names():
             sweep_record = {}
-            sweep_ts = nwbf["acquisition/timeseries"][sweep_name]
-
-            ancestry = sweep_ts.attrs["ancestry"]
+            attrs = self.nwb_data.get_sweep_attrs(sweep_name)
+            ancestry = attrs["ancestry"]
             sweep_record['clamp_mode'] = ancestry[-1]
-            #            sweep_num = self.get_sweep_number(sweep_name)
             sweep_num = self.nwb_data.get_sweep_number(sweep_name)
             sweep_record['sweep_number'] = sweep_num
 
@@ -62,7 +55,6 @@ class AibsDataSet(EphysDataSet):
                     raise Exception("Could not read stimulus wave name from lab notebook")
 
             # stim units are based on timeseries type
-            ancestry = sweep_ts.attrs["ancestry"]
             if "CurrentClamp" in ancestry[-1]:
                 sweep_record['stimulus_units'] = 'pA'
                 sweep_record['clamp_mode'] = 'CurrentClamp'
@@ -101,11 +93,22 @@ class AibsDataSet(EphysDataSet):
                 # make sure we can find all of our stimuli in the ontology
                 stim = self.ontology.find_one(stim_code, tag_type='code')
                 sweep_record["stimulus_name"] = stim.tags(tag_type='name')[0][-1]
-            sweep_data.append(sweep_record)
 
-        nwbf.close()
+            # if (sweep_record["clamp_mode"] =='CurrentClamp') and (sweep_record["stimulus_name"] not in (self.search_names+self.test_names)):
+            #
+            #         sweep_data = self.nwb_data.get_sweep_data(sweep_record["sweep_number"])
+            #
+            #         i = sweep_data["stimulus"]
+            #         v = sweep_data["response"]
+            #         hz = sweep_data["sampling_rate"]
+            #
+            #         sweep_record["truncated"] = not(st.sweep_completion_check(i, v, hz))
+            # else:
+            #     sweep_record["truncated"] = None
 
-        return pd.DataFrame.from_records(sweep_data)
+            sweep_props.append(sweep_record)
+
+        return sweep_props
 
     def modify_api_sweep_list(self, sweep_list):
 
@@ -116,7 +119,18 @@ class AibsDataSet(EphysDataSet):
                    AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
                    AibsDataSet.PASSED: True } for s in sweep_list ]
 
-    def sweep(self, sweep_number):
+    def sweep(self, sweep_number, full_sweep = False):
+        """
+
+        Parameters
+        ----------
+        sweep_number
+        full_sweep
+
+        Returns
+        -------
+
+        """
 
         sweep_data = self.nwb_data.get_sweep_data(sweep_number)
         hz = sweep_data['sampling_rate']
@@ -124,10 +138,22 @@ class AibsDataSet(EphysDataSet):
         sweep_data['time'] = np.arange(0, len(sweep_data['response'])) * dt
         assert len(sweep_data['response']) == len(sweep_data['stimulus']), "Stimulus and response have different duration"
 
-        return Sweep(t = sweep_data['time'],
-                     v = sweep_data['response'], # mV
-                     i = sweep_data['stimulus'], # pA
-                     sampling_rate = sweep_data['sampling_rate'],
-                     expt_idx_range = sweep_data['index_range'],
-                     id = sweep_number,
-                     )
+        if full_sweep:
+            end_ix = len(sweep_data['response'])
+        else:
+            end_ix = sweep_data['index_range'][1]   # cut off at the end of the experiment epoch
+
+        try:
+            sweep = Sweep(t = sweep_data['time'][0:end_ix],
+                          v = sweep_data['response'][0:end_ix], # mV
+                          i = sweep_data['stimulus'][0:end_ix], # pA
+                          sampling_rate = sweep_data['sampling_rate'],
+                          expt_idx_range = sweep_data['index_range'],
+                          id = sweep_number,
+                          )
+
+        except Exception as e:
+            logging.warning("Error reading sweep %d" % sweep_num)
+            raise
+
+        return sweep

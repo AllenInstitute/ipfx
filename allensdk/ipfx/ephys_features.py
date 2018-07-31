@@ -39,6 +39,8 @@ import numpy as np
 import scipy.signal as signal
 from scipy.optimize import curve_fit
 from functools import partial
+import stim_features as st
+
 
 def detect_putative_spikes(v, t, start=None, end=None, filter=10., dv_cutoff=20.):
     """Perform initial detection of spikes and return their indexes.
@@ -331,10 +333,11 @@ def check_thresholds_and_peaks(v, t, spike_indexes, peak_indexes, upstroke_index
     end_index = find_time_index(t, end)
 
     vtail = v[peak_indexes[-1]:end_index + 1]
-
+#    print "peak values:", v[peak_indexes]
     if len(spike_indexes) > 0 and not np.any(vtail <= v[spike_indexes[-1]] + tol):
         logging.debug("Failed to return to threshold voltage + tolerance (%.2f) after last spike (min %.2f) - marking last spike as clipped", v[spike_indexes[-1]] + tol, vtail.min())
         clipped[-1] = True
+        logging.debug("max %f, min %f, t(end_index):%f, end:%d" %(np.max(vtail),np.min(vtail), t[end_index],end))
 
     return spike_indexes, peak_indexes, upstroke_indexes, clipped
 
@@ -789,7 +792,7 @@ def has_fixed_dt(t):
     return np.allclose(dt, np.ones_like(dt) * dt[0])
 
 
-def fit_membrane_time_constant(t, v, start, end, rmse_max_tol = 1e-4):
+def fit_membrane_time_constant(t, v, start, end, rmse_max_tol = 1.0):
     """Fit an exponential to estimate membrane time constant between start and end
 
     Parameters

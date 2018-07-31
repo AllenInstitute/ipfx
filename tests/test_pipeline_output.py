@@ -80,5 +80,6 @@ def test_pipeline_output(specimen, benchmark_pipeline_input_json, benchmark_pipe
     d2 = ju.read(test_pipeline_output_json)
 
     result = list(diff(d1, d2, tolerance=0.001))
+    print result
     assert len(result) == 0
 

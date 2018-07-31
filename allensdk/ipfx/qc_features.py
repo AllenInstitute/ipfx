@@ -122,7 +122,6 @@ def sweep_completion_check(i,v,hz):
     response_end_ix = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0
 
     post_stim_stability_interval = (response_end_ix + POST_STIM_STABILITY_INTERVAL*hz > stimulus_end_ix)
-
     long_response = response_end_ix/hz>LONG_RESPONSE_DURATION
 
     if post_stim_stability_interval or long_response:
@@ -160,7 +159,6 @@ def cell_qc_features(data_set, manual_values=None):
 
     # measure blowout voltage
     try:
-        print "blowout names:", data_set.blowout_names
         blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
         blowout_mv = measure_blowout(blowout_data.v*1e-3, blowout_data.expt_idx_range[0])
@@ -224,7 +222,7 @@ def cell_qc_features(data_set, manual_values=None):
     except IndexError as e:
         logging.warning("Error reading breakin sweep.")
         tag_list.append("Breakin sweep not found")
-        raise
+#        raise
 
     ir = None   # input resistance
     sr = None   # series resistance
@@ -238,7 +236,7 @@ def cell_qc_features(data_set, manual_values=None):
 
         except Exception as e:
             logging.warning("Error reading input resistance.")
-            raise
+#            raise
 
         # apply manual value if it's available
         if ir is None:
@@ -288,7 +286,7 @@ def sweep_qc_features(data_set):
 
     Parameters
     ----------
-    data_set : MiesDataSet
+    data_set : AibsDataSet
         dataset
 
     Returns
@@ -298,16 +296,13 @@ def sweep_qc_features(data_set):
 
     """
     sweep_features = []
-    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,exclude_auxiliary=True)
+    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
+                                                  exclude_test=True,
+                                                  exclude_search=True)
 
     for sweep_info in iclamp_sweeps.to_dict(orient='records'):
         sweep_num = sweep_info['sweep_number']
-
-        try:
-            sweep_data = data_set.sweep(sweep_num)
-        except Exception as e:
-            logging.warning("Error reading sweep %d" % sweep_num)
-            raise
+        sweep_data = data_set.sweep(sweep_num,full_sweep=True)
 
         sweep = {}
 
@@ -319,7 +314,6 @@ def sweep_qc_features(data_set):
 
         # measure Vm and noise before stimulus
         idx0, idx1 = st.get_first_vm_noise_epoch(expt_start_idx, hz) # count from the beginning of the experiment
-#        idx0, idx1 = st.get_first_vm_noise_epoch_alt(stim_start_ix, hz) # counts from the end of the stimulus
 
         _, rms0 = measure_vm(1e3 * voltage[idx0:idx1])
 
@@ -334,7 +328,7 @@ def sweep_qc_features(data_set):
         is_ramp = sweep_info['stimulus_name'] in data_set.ramp_names
 
         sweep["completed"] = sweep_completion_check(current, voltage, hz)
-
+        print sweep_num, sweep["completed"]
         if sweep["completed"] and not is_ramp:
             idx0, idx1 = st.get_last_vm_epoch(expt_end_idx, hz)
 

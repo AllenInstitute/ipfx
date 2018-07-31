@@ -7,10 +7,11 @@ from run_qc import run_qc
 from run_feature_extraction import run_feature_extraction
 
 import allensdk.core.json_utilities as ju
-
+import pandas as pd
 import logging
 
-def assign_sweep_states(manual_sweep_states, qc_sweep_states, out_sweep_data):
+
+def assign_sweep_states(manual_sweep_states, qc_sweep_states, out_sweep_props):
     sweep_states = { s["sweep_number"]:s["passed"] for s in qc_sweep_states }
 
     for mss in manual_sweep_states:
@@ -18,7 +19,7 @@ def assign_sweep_states(manual_sweep_states, qc_sweep_states, out_sweep_data):
         logging.debug("overriding sweep state for sweep number %d from %s to %s", sn, str(sweep_states[sn]), mss["passed"])
         sweep_states[sn] = mss["passed"]
 
-    for sweep in out_sweep_data:
+    for sweep in out_sweep_props:
         sn = sweep["sweep_number"]
         if sn in sweep_states:
             sweep["passed"] = sweep_states[sn]
@@ -42,14 +43,16 @@ def run_pipeline(input_nwb_file,
     qc_output = run_qc(input_nwb_file,
                        input_h5_file,
                        stimulus_ontology_file,
-                       se_output["cell_features"],
-                       se_output["sweep_data"],
+                       se_output["cell_props"],
+                       se_output["sweep_props"],
                        qc_criteria)
 
-    logging.info("QC completed checks")
+    logging.info("QC checks completed")
     assign_sweep_states(manual_sweep_states,
                         qc_output["sweep_states"],
-                        se_output["sweep_data"])
+                        se_output["sweep_props"]
+                        )
+
 
     logging.info("Assigned sweep state")
 
@@ -57,9 +60,14 @@ def run_pipeline(input_nwb_file,
                                        stimulus_ontology_file,
                                        output_nwb_file,
                                        qc_fig_dir,
-                                       se_output['sweep_data'],
-                                       se_output['cell_features'])
+                                       se_output['sweep_props'],
+                                       se_output['cell_props'])
     logging.info("Extracted features!")
+
+# this is for backward compatibility only
+
+    se_output['sweep_data'] = se_output.pop('sweep_props')
+    se_output['cell_features'] = se_output.pop('cell_props')
 
     return dict( sweep_extraction=se_output,
                  qc=qc_output,

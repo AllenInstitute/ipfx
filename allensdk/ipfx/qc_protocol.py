@@ -40,13 +40,14 @@ def qc_experiment(data_set, cell_qc_features, sweep_qc_features, qc_criteria=Non
     sweep_data_index = { sweep['sweep_number']:sweep for sweep in sweep_qc_features }
 
     sweep_states = []
-    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,exclude_auxiliary=True)
+    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
+                                                  exclude_test=True,
+                                                  exclude_search=True)
+
 
     for sweep_num in iclamp_sweeps.sweep_number:
         sweep = sweep_data_index[sweep_num]
-
         failed, fail_tags = qc_current_clamp_sweep(data_set, sweep, qc_criteria)
-#        print sweep_num,sweep["stimulus_code"], failed,fail_tags
         sweep_state = { 'sweep_number': sweep_num, 'passed': not failed, 'reasons': fail_tags }
         sweep_states.append(sweep_state)
 

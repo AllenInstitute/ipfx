@@ -1,2 +1,3 @@
 specimen test_pipeline_input_json benchmark_pipeline_output_json
+384990.06.02.01-compressed /allen/aibs/informatics/module_test_data/ipfx/test_specimens/384990.06.02.01-compressed/pipeline_input.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/384990.06.02.01-compressed/pipeline_output.json
 500844783 /allen/aibs/informatics/module_test_data/ipfx/test_specimens/500844783/pipeline_input.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/500844783/pipeline_output.json
