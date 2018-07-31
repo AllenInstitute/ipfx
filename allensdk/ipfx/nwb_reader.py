@@ -3,7 +3,8 @@ import logging
 from allensdk.core.nwb_data_set import NwbDataSet
 import stim_features as sf
 
-class NWBDataReader(object):
+
+class NWBReader(object):
 
     def __init__(self,nwb_file):
 
@@ -15,13 +16,27 @@ class NWBDataReader(object):
     def get_sweep_number(self):
         raise NotImplementedError
 
+    def get_sweep_attrs(self,sweep_name):
 
-class NWBDataReaderIvscc(NWBDataReader):
+        with h5py.File(self.nwb_file, 'r') as f:
+            sweep_ts = f["acquisition/timeseries"][sweep_name]
+            attrs = dict(sweep_ts.attrs)
 
+        return attrs
+
+    def get_sweep_names(self):
+
+        with h5py.File(self.nwb_file, 'r') as f:
+            sweep_names = [e for e in f["acquisition/timeseries"].keys()]
+
+        return sweep_names
+
+
+class NWB1_0_2Reader(NWBReader):
+    """Class for handling NWB version: 1.0.5"""
     def __init__(self, nwb_file):
-        NWBDataReader.__init__(self, nwb_file)
+        NWBReader.__init__(self, nwb_file)
 
-        self.data_set = NwbDataSet(nwb_file)
 
     def get_sweep_data(self, sweep_number):
         """Get sweep data
@@ -34,7 +49,9 @@ class NWBDataReaderIvscc(NWBDataReader):
         -------
         data: dict of sweep data
         """
-        data = self.data_set.get_sweep(sweep_number)
+        nwb_data = NwbDataSet(self.nwb_file)
+
+        data = nwb_data.get_sweep(sweep_number)
 
         data['response'] *= 1e3,  # mV
         data['stimulus'] *= 1e12,  # pA
@@ -45,6 +62,7 @@ class NWBDataReaderIvscc(NWBDataReader):
 
         sweep_number = int(sweep_name.split('_')[-1])
         return sweep_number
+
 
     def get_stim_code(self, sweep_name):
 
@@ -64,10 +82,10 @@ class NWBDataReaderIvscc(NWBDataReader):
         return stim_code
 
 
-class NWBDataReaderPatchSeq(NWBDataReader):
-
+class NWB1_0_5Reader(NWBReader):
+    """Class for handling NWB version: 1.0.5"""
     def __init__(self, nwb_file):
-        NWBDataReader.__init__(self, nwb_file)
+        NWBReader.__init__(self, nwb_file)
 
     def get_sweep_data(self, sweep_number):
 
@@ -92,6 +110,8 @@ class NWBDataReaderPatchSeq(NWBDataReader):
 
         return sweep_number
 
+
+
     def get_stim_code(self, sweep_name):
 
         stimulus_description_name = "stimulus_description"
@@ -114,8 +134,8 @@ class NWBDataReaderPatchSeq(NWBDataReader):
         return stim_code
 
 
-def create_nwb_data_reader(nwb_file):
-    """Create an appropriate data reader of the nwb_file
+def create_nwb_reader(nwb_file):
+    """Create an appropriate reader of the nwb_file
 
     Parameters
     ----------
@@ -130,10 +150,10 @@ def create_nwb_data_reader(nwb_file):
         nwb_version = f['nwb_version'].value
 
     if nwb_version == "NWB-1.0.2":
-        return NWBDataReaderIvscc(nwb_file)
+        return NWB1_0_2Reader(nwb_file)
 
     elif nwb_version == "NWB-1.0.5":
-        return NWBDataReaderPatchSeq(nwb_file)
+        return NWB1_0_5Reader(nwb_file)
 
     else:
         raise ValueError("Unsupported version of the nwb file")

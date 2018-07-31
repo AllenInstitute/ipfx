@@ -41,6 +41,7 @@ from . import ephys_extractor as efex
 from . import ephys_features as ft
 from . import ephys_data_set as eds
 from . import stimulus_protocol_analysis as spa
+import stim_features as st
 
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
@@ -52,8 +53,8 @@ DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 # }
 
 DETECTION_PARAMETERS = {
-    eds.EphysDataSet.SHORT_SQUARE: { 'est_window': (1.02, 1.021), 'thresh_frac_floor': 0.1 },
-    eds.EphysDataSet.SHORT_SQUARE_TRIPLE: { 'est_window': (2.02, 2.021), 'thresh_frac_floor': 0.1 },
+    eds.EphysDataSet.SHORT_SQUARE: {'thresh_frac_floor': 0.1 },
+#    eds.EphysDataSet.SHORT_SQUARE_TRIPLE: { 'est_window': (2.02, 2.021), 'thresh_frac_floor': 0.1 },
     eds.EphysDataSet.RAMP: { },
     eds.EphysDataSet.LONG_SQUARE: { }
 }
@@ -68,7 +69,6 @@ SUBTHRESHOLD_LONG_SQUARE_MIN_AMPS = {
     }
 
 TEST_PULSE_DURATION_SEC = 0.4
-
 
 def detection_parameters(stimulus_name):
     return DETECTION_PARAMETERS.get(stimulus_name, {})
@@ -113,6 +113,7 @@ def extractors_for_sweeps(sweep_set,
 
     spx = efex.SpikeExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac, start=start, end=end)
     spfx = efex.SpikeTrainFeatureExtractor(start, end)
+
     return spx, spfx
 
 
@@ -156,7 +157,8 @@ def extract_cell_features(data_set,
         raise ft.FeatureError("no long_square sweep numbers provided")
 
     lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
-    lsq_start, lsq_dur, _, _, _ = get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
+    lsq_start, lsq_dur, _, _, _ = st.get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
+    logging.info("Analyzing Long Square")
     logging.info("Long square stim start: %f, duration: %f", lsq_start, lsq_dur)
 
     lsq_spx, lsq_spfx = extractors_for_sweeps(lsq_sweeps,
@@ -171,24 +173,29 @@ def extract_cell_features(data_set,
         raise ft.FeatureError("Could not find hero sweep.")
 
     # short squares
+    logging.info("Analyzing Short Square")
     if len(short_square_sweep_numbers) == 0:
         raise ft.FeatureError("no short square sweep numbers provided")
 
     ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
-    ssq_start, ssq_dur, _, _, _ = get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
+
+    ssq_start, ssq_dur, _, _, _ = st.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
     logging.info("Short square stim start: %f, duration: %f", ssq_start, ssq_dur)
     ssq_spx, ssq_spfx = extractors_for_sweeps(ssq_sweeps,
+                                              est_window = [ssq_start,ssq_start+0.001],
                                               **detection_parameters(data_set.SHORT_SQUARE))
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
     ssq_features = ssq_an.analyze(ssq_sweeps)
     cell_features["short_squares"] = ssq_an.as_dict(ssq_features, [ dict(id=sn) for sn in short_square_sweep_numbers ])
 
     # ramps
+    logging.info("Analyzing Ramps")
     if len(ramp_sweep_numbers) == 0:
         raise ft.FeatureError("no ramp sweep numbers provided")
 
     ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
-    ramp_start, ramp_dur, _, _, _ = get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
+
+    ramp_start, ramp_dur, _, _, _ = st.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
     logging.info("Ramp stim %f, %f", ramp_start, ramp_dur)
 
     ramp_spx, ramp_spfx = extractors_for_sweeps(ramp_sweeps,
@@ -199,32 +206,6 @@ def extract_cell_features(data_set,
     cell_features["ramps"] = ramp_an.as_dict(ramp_features, [ dict(id=sn) for sn in ramp_sweep_numbers ])
 
     return cell_features
-
-def get_stim_characteristics(i, t, no_test_pulse=False):
-    """
-    Identify the start time, duration, amplitude, start index, and
-    end index of a general stimulus.
-    This assumes that there is a test pulse followed by the stimulus square.
-    """
-
-    di = np.diff(i)
-    diff_idx = np.flatnonzero(di)# != 0)
-
-    if len(diff_idx) == 0:
-        return (None, None, 0.0, None, None)
-
-    # skip the first up/down
-    idx = 0 if no_test_pulse else 2
-
-    # shift by one to compensate for diff()
-    start_idx = diff_idx[idx] + 1
-    end_idx = diff_idx[-1] + 1
-
-    stim_start = float(t[start_idx])
-    stim_dur = float(t[end_idx] - t[start_idx])
-    stim_amp = float(i[start_idx])
-
-    return (stim_start, stim_dur, stim_amp, start_idx, end_idx)
 
 
 def select_subthreshold_min_amplitude(stim_amps, decimals=0):
@@ -439,7 +420,6 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     ssq_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.short_square_names)
     ramp_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.ramp_names)
     clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=data_set.coarse_long_square_names)
-
 
     lsq_sweep_numbers = lsq_sweeps['sweep_number'].sort_values().values
     clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values

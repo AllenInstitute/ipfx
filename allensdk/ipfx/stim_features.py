@@ -12,6 +12,9 @@ NOISE_EPOCH = 0.0015
 PRESTIM_EPOCH = 0.5
 
 
+POST_STIM_STABILITY_INTERVAL = 0.5
+LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
+
 def get_last_vm_epoch(idx1, hz):
     """
     Get epoch lasting LAST_STABILITY_EPOCH before the end of recording
@@ -75,6 +78,10 @@ def find_stim_start(stim, idx0=0):
 
     return idxs[0]+1
 
+def get_recording_end_idx(v):
+
+    end_idx = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0.
+    return end_idx
 
 def get_experiment_epoch(i,v,hz):
     """
@@ -103,7 +110,7 @@ def get_experiment_epoch(i,v,hz):
 
     idx = 2  # skip the first up/down assuming that there is a test pulse
     stim_start_idx = diff_idx[idx] + 1  # shift by one to compensate for diff()
-    # TODO: move PRESTIM_DURATION into configuration file
+    # TODO: move PRESTIM_EPOCH into configuration file
     expt_start_idx = stim_start_idx - int(PRESTIM_EPOCH * hz)
     #       Recording ends when zeros start
     expt_end_idx = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0.
@@ -201,3 +208,44 @@ def find_stim_interval(idx0, stim, hz):
 
     return None
 
+def get_stim_characteristics(i, t, no_test_pulse=False):
+    """
+    Identify the start time, duration, amplitude, start index, and
+    end index of a general stimulus.
+    This assumes that there is a test pulse followed by the stimulus square.
+    """
+
+    di = np.diff(i)
+    diff_idx = np.flatnonzero(di)# != 0)
+
+    if len(diff_idx) == 0:
+        return (None, None, 0.0, None, None)
+
+    # skip the first up/down
+    idx = 0 if no_test_pulse else 2
+
+    # shift by one to compensate for diff()
+    start_idx = diff_idx[idx] + 1
+    end_idx = diff_idx[-1] + 1
+
+    stim_start = float(t[start_idx])
+    stim_dur = float(t[end_idx] - t[start_idx])
+    stim_amp = float(i[start_idx])
+
+    return (stim_start, stim_dur, stim_amp, start_idx, end_idx)
+
+
+def sweep_completion_check(i,v,hz):
+
+    stimulus_end_ix = np.nonzero(i)[0][-1]  # last non-zero index along the only dimension=0
+    response_end_ix = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0
+
+    post_stim_stability_interval = (response_end_ix + POST_STIM_STABILITY_INTERVAL*hz > stimulus_end_ix)
+    long_response = response_end_ix/hz>LONG_RESPONSE_DURATION
+
+    if post_stim_stability_interval or long_response:
+        completed = True
+    else:
+        completed = False
+
+    return completed

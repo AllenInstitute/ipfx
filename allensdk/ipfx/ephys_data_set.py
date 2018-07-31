@@ -80,6 +80,10 @@ class StimulusOntology(object):
 
         return any(matching_tags)
 
+    def stimulus_has_all_tags(self, stim, tags, tag_type=None):
+        matching_stim = self.find_one(stim, tag_type)
+        return all(matching_stim.has_tag(t) for t in tags)
+
 
 class EphysDataSet(object):
     STIMULUS_UNITS = 'stimulus_units'
@@ -119,8 +123,8 @@ class EphysDataSet(object):
                                     "Short Square - Hold -70mV",
                                     "Short Square - Hold -80mV" )
 
-        self.excluded_current_clamps_names = ("Search",
-                                              "Test", )
+        self.search_names = ("Search",)
+        self.test_names = ("Test",)
         self.blowout_names = ( 'EXTPBLWOUT', )
         self.bath_names = ( 'EXTPINBATH', )
         self.seal_names = ( 'EXTPCllATT', )
@@ -133,7 +137,10 @@ class EphysDataSet(object):
                              current_clamp_only=False,
                              passing_only=False,
                              stimuli=None,
-                             exclude_auxiliary=False):
+                             exclude_search=False,
+                             exclude_test=False,
+                             exclude_truncated=True,
+                             ):
 
         st = self.sweep_table
 
@@ -146,9 +153,18 @@ class EphysDataSet(object):
         if stimuli:
             mask = st[self.STIMULUS_CODE].apply(self.ontology.stimulus_has_any_tags, args=(stimuli,), tag_type="code")
             st = st[mask]
-        if exclude_auxiliary:
-            mask = ~st[self.STIMULUS_NAME].isin(self.excluded_current_clamps_names)
+
+        if exclude_search:
+            mask = ~st[self.STIMULUS_NAME].isin(self.search_names)
             st = st[mask]
+
+        if exclude_test:
+            mask = ~st[self.STIMULUS_NAME].isin(self.test_names)
+            st = st[mask]
+
+        # if exclude_truncated:
+        #     mask = ~(st["truncated"] == True)
+        #     st = st[mask]
 
         return st
 
@@ -220,6 +236,10 @@ class SweepSet(object):
     @property
     def expt_end(self):
         return self._prop('expt_end')
+
+    @property
+    def expt_t_range(self):
+        return self._prop('expt_t_range')
 
     @property
     def t_end(self):

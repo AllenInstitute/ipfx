@@ -36,7 +36,7 @@ class FeatureExtractionParameters(ArgSchema):
     stimulus_ontology_file = InputFile(description="stimulus ontology JSON", required=False)
     output_nwb_file = OutputFile(description="output nwb file", required=True)
     qc_fig_dir = OutputFile(description="output qc figure directory", required=True)
-    sweep_list = Nested(FxSweepFeatures, many=True)
+    sweep_props = Nested(FxSweepFeatures, many=True)
     cell_features = Nested(CellFeatures, required=True)
 
 class SweepExtractionParameters(ArgSchema):

@@ -37,6 +37,7 @@ import numpy as np
 from pandas import DataFrame
 import warnings
 import logging
+import stim_features as st
 
 from . import ephys_features as ft
 import six
@@ -84,6 +85,7 @@ class SpikeExtractor(object):
         dvdt = ft.calculate_dvdt(v, t, self.filter)
 
         # Basic features of spikes
+
         putative_spikes = ft.detect_putative_spikes(v, t, self.start, self.end,
                                                     self.filter, self.dv_cutoff)
         peaks = ft.find_peak_indexes(v, t, putative_spikes, self.end)
@@ -97,6 +99,7 @@ class SpikeExtractor(object):
         upstrokes = ft.find_upstroke_indexes(v, t, putative_spikes, peaks, self.filter, dvdt)
         thresholds = ft.refine_threshold_indexes(v, t, upstrokes, self.thresh_frac,
                                                  self.filter, dvdt)
+
         thresholds, peaks, upstrokes, clipped = ft.check_thresholds_and_peaks(v, t, thresholds, peaks,
                                                                      upstrokes, self.end, self.max_interval)
         if not thresholds.size:

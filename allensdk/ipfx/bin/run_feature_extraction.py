@@ -51,20 +51,18 @@ def save_qc_figures(qc_fig_dir, data_set, feature_data, plot_cell_figures):
     plotqc.make_cell_page(data_set, feature_data, qc_fig_dir, save_cell_plots=plot_cell_figures)
 
 
-def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_file, qc_fig_dir, sweep_list, cell_features):
-
-    input_cell_features = cell_features
+def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_file, qc_fig_dir, sweep_props, cell_props):
 
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else None
-    data_set = AibsDataSet(sweep_list=sweep_list,
+    data_set = AibsDataSet(sweep_props=sweep_props,
                            nwb_file=input_nwb_file,
                            ontology=ont,
                            api_sweeps=False)
 
     cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
 
-    if input_cell_features:
-        cell_record.update(input_cell_features)
+    if cell_props:
+        cell_record.update(cell_props)
 
     feature_data = { 'cell_features': cell_features,
                      'sweep_features': sweep_features,
@@ -84,7 +82,7 @@ def main():
                                           module.args.get("stimulus_ontology_file", None),
                                           module.args["output_nwb_file"],
                                           module.args["qc_fig_dir"],
-                                          module.args["sweep_list"],
+                                          module.args["sweep_props"],
                                           module.args["cell_features"])
 
     ju.write(module.args["output_json"], feature_data)

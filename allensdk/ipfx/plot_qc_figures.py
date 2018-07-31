@@ -5,6 +5,7 @@ import logging
 
 import allensdk.ipfx.ephys_features as ft
 import allensdk.ipfx.data_set_features as dsft
+import allensdk.ipfx.stim_features as st
 
 import os
 import numpy as np
@@ -36,7 +37,7 @@ def get_features(sweep_features, sweep_number):
 def load_sweep(data_set, sweep_number):
     sweep = data_set.sweep(sweep_number)
     dt = sweep.t[1] - sweep.t[0]
-    r = int(sweep.expt_start / dt), int(sweep.expt_end / dt)
+    r = sweep.expt_idx_range
     return (sweep.v, sweep.i, sweep.t, r, dt)
 
 def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features, cell_features, type_name):
@@ -44,9 +45,9 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
 
     v, i, t, r, dt = load_sweep(data_set, sweep_numbers[0])
     if type_name == "short_square" or type_name == "long_square":
-        stim_start, stim_dur, stim_amp, start_idx, end_idx = dsft.get_stim_characteristics(i, t)
+        stim_start, stim_dur, stim_amp, start_idx, end_idx = st.get_stim_characteristics(i, t)
     elif type_name == "ramp":
-        stim_start, _, _, start_idx, _ = dsft.get_stim_characteristics(i, t)
+        stim_start, _, _, start_idx, _ = st.get_stim_characteristics(i, t)
 
     gen_features = ["threshold", "peak", "trough", "fast_trough", "slow_trough"]
     voltage_features = ["threshold_v", "peak_v", "trough_v", "fast_trough_v", "slow_trough_v"]
@@ -366,7 +367,7 @@ def plot_subthreshold_long_square_figures(data_set, cell_features, lims_features
             if max_y < ylims[1]:
                 max_y = ylims[1]
 
-        stim_start, stim_dur, stim_amp, start_idx, end_idx = dsft.get_stim_characteristics(i, t)
+        stim_start, stim_dur, stim_amp, start_idx, end_idx = st.get_stim_characteristics(i, t)
         plt.xlim(stim_start - 0.05, stim_start + stim_dur + 0.05)
         peak_idx = subthresh_dict[s]['peak_deflect'][1]
         peak_t = peak_idx*dt
@@ -425,7 +426,7 @@ def plot_instantaneous_threshold_thumbnail(data_set, sweep_numbers, cell_feature
     ax.set_ylabel('')
 
     v, i, t, r, dt = load_sweep(data_set, sn)
-    stim_start, stim_dur, stim_amp, start_idx, end_idx = dsft.get_stim_characteristics(i, t)
+    stim_start, stim_dur, stim_amp, start_idx, end_idx = st.get_stim_characteristics(i, t)
 
     tstart = stim_start - 0.002
     tend = stim_start + stim_dur + 0.005
@@ -461,7 +462,7 @@ def plot_hero_figures(data_set, cell_features, lims_features, sweep_features, im
     fig = plt.figure()
     v, i, t, r, dt = load_sweep(data_set, int(lims_features["thumbnail_sweep_num"]))
     plt.plot(t, v, color='black')
-    stim_start, stim_dur, stim_amp, start_idx, end_idx = dsft.get_stim_characteristics(i, t)
+    stim_start, stim_dur, stim_amp, start_idx, end_idx = st.get_stim_characteristics(i, t)
     plt.xlim(stim_start - 0.05, stim_start + stim_dur + 0.05)
     plt.ylim(-110, 50)
     spike_times = [spk['threshold_t'] for spk in get_spikes(sweep_features, lims_features["thumbnail_sweep_num"])]
@@ -511,7 +512,7 @@ def plot_fi_curve_figures(data_set, cell_features, lims_features, sweep_features
     rheo_hero_x = []
     for s in rheo_hero_sweeps:
         v, i, t, r, dt = load_sweep(data_set, s)
-        stim_start, stim_dur, stim_amp, start_idx, end_idx = dsft.get_stim_characteristics(i, t)
+        stim_start, stim_dur, stim_amp, start_idx, end_idx = st.get_stim_characteristics(i, t)
         rheo_hero_x.append(stim_amp)
     rheo_hero_y = [ len(get_spikes(sweep_features, s)) for s in rheo_hero_sweeps ]
     plt.scatter(rheo_hero_x, rheo_hero_y, zorder=20)
@@ -524,7 +525,7 @@ def plot_sag_figures(data_set, cell_features, lims_features, sweep_features, ima
     for d in cell_features["long_squares"]["subthreshold_sweeps"]:
         if d['peak_deflect'][0] == lims_features["vm_for_sag"]:
             v, i, t, r, dt = load_sweep(data_set, int(d['id']))
-            stim_start, stim_dur, stim_amp, start_idx, end_idx = dsft.get_stim_characteristics(i, t)
+            stim_start, stim_dur, stim_amp, start_idx, end_idx = st.get_stim_characteristics(i, t)
             plt.plot(t, v, color='black')
             plt.scatter(d['peak_deflect'][1], d['peak_deflect'][0], color='red', zorder=10)
             #plt.plot([stim_start + stim_dur - 0.1, stim_start + stim_dur], [d['steady'], d['steady']], color='red', zorder=10)
@@ -626,7 +627,7 @@ def plot_sweep_set_summary(data_set, highlight_sweep_number, sweep_numbers,
 
     v, i, t, r, dt = load_sweep(data_set, highlight_sweep_number)
     plt.plot(t, v, linewidth=1, color=highlight_color)
-    stim_start, stim_dur, stim_amp, start_idx, end_idx = dsft.get_stim_characteristics(i, t)
+    stim_start, stim_dur, stim_amp, start_idx, end_idx = st.get_stim_characteristics(i, t)
 
     tstart = stim_start - 0.05
     tend = stim_start + stim_dur + 0.25
