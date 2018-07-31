@@ -34,7 +34,6 @@ class AibsDataSet(EphysDataSet):
         notebook = lab_notebook_reader.create_lab_notebook_reader(self.nwb_file, self.h5_file)
 
         sweep_props = []
-        logging.debug("*************Building sweep properties tables***********************")
 
         # use same output strategy as h5-nwb converter
         # pick the sampling rate from the first iclamp sweep
@@ -94,19 +93,20 @@ class AibsDataSet(EphysDataSet):
                 stim = self.ontology.find_one(stim_code, tag_type='code')
                 sweep_record["stimulus_name"] = stim.tags(tag_type='name')[0][-1]
 
-            # if (sweep_record["clamp_mode"] =='CurrentClamp') and (sweep_record["stimulus_name"] not in (self.search_names+self.test_names)):
-            #
-            #         sweep_data = self.nwb_data.get_sweep_data(sweep_record["sweep_number"])
-            #
-            #         i = sweep_data["stimulus"]
-            #         v = sweep_data["response"]
-            #         hz = sweep_data["sampling_rate"]
-            #
-            #         sweep_record["truncated"] = not(st.sweep_completion_check(i, v, hz))
-            # else:
-            #     sweep_record["truncated"] = None
+            if (sweep_record["clamp_mode"] =='CurrentClamp') and (sweep_record["stimulus_name"] not in (self.search_names+self.test_names)):
+
+                    sweep_data = self.nwb_data.get_sweep_data(sweep_record["sweep_number"])
+
+                    i = sweep_data["stimulus"]
+                    v = sweep_data["response"]
+                    hz = sweep_data["sampling_rate"]
+
+                    sweep_record["truncated"] = not(st.sweep_completion_check(i, v, hz))
+            else:
+                sweep_record["truncated"] = None
 
             sweep_props.append(sweep_record)
+        logging.debug("Built sweep properties table.")
 
         return sweep_props
 
@@ -119,17 +119,16 @@ class AibsDataSet(EphysDataSet):
                    AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
                    AibsDataSet.PASSED: True } for s in sweep_list ]
 
-    def sweep(self, sweep_number, full_sweep = False):
+    def sweep(self, sweep_number):
         """
 
         Parameters
         ----------
         sweep_number
-        full_sweep
 
         Returns
         -------
-
+        Sweep object
         """
 
         sweep_data = self.nwb_data.get_sweep_data(sweep_number)
@@ -138,10 +137,7 @@ class AibsDataSet(EphysDataSet):
         sweep_data['time'] = np.arange(0, len(sweep_data['response'])) * dt
         assert len(sweep_data['response']) == len(sweep_data['stimulus']), "Stimulus and response have different duration"
 
-        if full_sweep:
-            end_ix = len(sweep_data['response'])
-        else:
-            end_ix = sweep_data['index_range'][1]   # cut off at the end of the experiment epoch
+        end_ix = sweep_data['index_range'][1]   # cut off at the end of the experiment epoch
 
         try:
             sweep = Sweep(t = sweep_data['time'][0:end_ix],
