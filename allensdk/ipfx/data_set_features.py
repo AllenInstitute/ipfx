@@ -154,7 +154,7 @@ def extract_cell_features(data_set,
 
     # long squares
     if len(long_square_sweep_numbers) == 0:
-        raise ft.FeatureError("no long_square sweep numbers provided")
+        raise ft.FeatureError("No long_square sweeps available for feature extraction")
 
     lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
     lsq_start, lsq_dur, _, _, _ = st.get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
@@ -175,7 +175,7 @@ def extract_cell_features(data_set,
     # short squares
     logging.info("Analyzing Short Square")
     if len(short_square_sweep_numbers) == 0:
-        raise ft.FeatureError("no short square sweep numbers provided")
+        raise ft.FeatureError("No short square sweeps available for feature extraction")
 
     ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
 
@@ -191,7 +191,7 @@ def extract_cell_features(data_set,
     # ramps
     logging.info("Analyzing Ramps")
     if len(ramp_sweep_numbers) == 0:
-        raise ft.FeatureError("no ramp sweep numbers provided")
+        raise ft.FeatureError("No ramp sweeps available for feature extraction")
 
     ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
 

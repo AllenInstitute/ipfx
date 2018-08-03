@@ -53,6 +53,7 @@ class AibsDataSet(EphysDataSet):
                 if len(stim_code) == 0:
                     raise Exception("Could not read stimulus wave name from lab notebook")
 
+
             # stim units are based on timeseries type
             if "CurrentClamp" in ancestry[-1]:
                 sweep_record['stimulus_units'] = 'pA'
@@ -94,17 +95,15 @@ class AibsDataSet(EphysDataSet):
                 sweep_record["stimulus_name"] = stim.tags(tag_type='name')[0][-1]
 
             if (sweep_record["clamp_mode"] =='CurrentClamp') and (sweep_record["stimulus_name"] not in (self.search_names+self.test_names)):
-
                     sweep_data = self.nwb_data.get_sweep_data(sweep_record["sweep_number"])
 
                     i = sweep_data["stimulus"]
                     v = sweep_data["response"]
                     hz = sweep_data["sampling_rate"]
 
-                    sweep_record["truncated"] = not(st.sweep_completion_check(i, v, hz))
+                    sweep_record["truncated"] = st.sweep_truncation_check(i, v, hz)
             else:
                 sweep_record["truncated"] = None
-
             sweep_props.append(sweep_record)
         logging.debug("Built sweep properties table.")
 

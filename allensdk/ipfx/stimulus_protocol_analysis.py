@@ -230,8 +230,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         hero_features = spiking_features[(spiking_features["stim_amp"] > hero_min) & (spiking_features["stim_amp"] < hero_max)]
 
         if len(hero_features) == 0:
-#            return None
-            raise ValueError
+            raise ValueError, "Cannot find hero sweep in the range of stim amplitudes: [%f,%f] pA" % (hero_min, hero_max)
         else:
             return hero_features.iloc[0]
 

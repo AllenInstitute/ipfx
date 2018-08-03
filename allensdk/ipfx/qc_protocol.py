@@ -49,6 +49,7 @@ def qc_experiment(data_set, cell_qc_features, sweep_qc_features, qc_criteria=Non
         sweep = sweep_data_index[sweep_num]
         failed, fail_tags = qc_current_clamp_sweep(data_set, sweep, qc_criteria)
         sweep_state = { 'sweep_number': sweep_num, 'passed': not failed, 'reasons': fail_tags }
+        print sweep_num, sweep["stimulus_name"], fail_tags
         sweep_states.append(sweep_state)
 
     return cell_state, sweep_states
