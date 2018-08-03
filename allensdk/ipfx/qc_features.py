@@ -23,10 +23,6 @@ def measure_seal(v, curr, hz):
     t = np.arange(len(v)) / hz
     return 1e-9 * get_r_from_stable_pulse_response(v, curr, t)
 
-# def measure_input_resistance(v, curr, hz):
-#     t = np.arange(len(v)) / hz
-#     return 1e-6 * get_r_from_stable_pulse_response(v, curr, t)
-
 def measure_input_resistance(v, curr, t):
 #    t = np.arange(len(v)) / hz
     return 1e-6 * get_r_from_stable_pulse_response(v, curr, t)
@@ -62,9 +58,7 @@ def get_r_from_stable_pulse_response(v, i, t):
     dv = np.diff(v)
     up_idx = np.flatnonzero(dv > 0)
     down_idx = np.flatnonzero(dv < 0)
-
-    assert len(up_idx) == len(down_idx), "incomplete TTL pulse"
-
+    assert len(up_idx) == len(down_idx), "Truncated breakin sweep, truncated response to a square pulse"
     dt = t[1] - t[0]
     one_ms = int(0.001 / dt)
 
@@ -95,6 +89,8 @@ def get_r_from_peak_pulse_response(v, i, t):
     dv = np.diff(v)
     up_idx = np.flatnonzero(dv > 0)
     down_idx = np.flatnonzero(dv < 0)
+    assert len(up_idx) == len(down_idx), "Truncated breakin sweep, truncated response to a square pulse"
+
     dt = t[1] - t[0]
     one_ms = int(0.001 / dt)
     r = []
@@ -115,21 +111,6 @@ def get_r_from_peak_pulse_response(v, i, t):
 
     return np.mean(r)
 
-
-def sweep_completion_check(i,v,hz):
-
-    stimulus_end_ix = np.nonzero(i)[0][-1]  # last non-zero index along the only dimension=0
-    response_end_ix = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0
-
-    post_stim_stability_interval = (response_end_ix + POST_STIM_STABILITY_INTERVAL*hz > stimulus_end_ix)
-    long_response = response_end_ix/hz>LONG_RESPONSE_DURATION
-
-    if post_stim_stability_interval or long_response:
-        completed = True
-    else:
-        completed = False
-
-    return completed
 
 
 def cell_qc_features(data_set, manual_values=None):
@@ -236,7 +217,7 @@ def cell_qc_features(data_set, manual_values=None):
 
         except Exception as e:
             logging.warning("Error reading input resistance.")
-#            raise
+            raise
 
         # apply manual value if it's available
         if ir is None:
@@ -308,6 +289,7 @@ def sweep_qc_features(data_set):
 
         voltage = sweep_data.v*1e-3
         current = sweep_data.i*1e-12
+        t = sweep_data.t
         hz = sweep_data.sampling_rate
         expt_start_idx, expt_end_idx = sweep_data.expt_idx_range
         stim_start_ix = st.find_stim_start(current, expt_start_idx)
@@ -322,17 +304,16 @@ def sweep_qc_features(data_set):
         # measure Vm and noise at end of recording
         # only do so if acquisition not truncated
         # do not check for ramps, because they do not have enough time to recover
-        mean1 = None
+        mean_last_vm_epoch = None
 
         is_ramp = sweep_info['stimulus_name'] in data_set.ramp_names
 
         if not is_ramp:
             idx0, idx1 = st.get_last_vm_epoch(expt_end_idx, hz)
-
-            mean1, _ = measure_vm(1e3 * voltage[idx0:idx1])
+            mean_last_vm_epoch, _ = measure_vm(1e3 * voltage[idx0:idx1])
             idx0, idx1 = st.get_last_vm_noise_epoch(expt_end_idx, hz)
             _, rms1 = measure_vm(1e3 * voltage[idx0:idx1])
-            sweep["post_vm_mv"] = float(mean1)
+            sweep["post_vm_mv"] = float(mean_last_vm_epoch)
             sweep["post_noise_rms_mv"] = float(rms1)
         else:
             sweep["post_noise_rms_mv"] = None
@@ -349,8 +330,8 @@ def sweep_qc_features(data_set):
         mean0 = mean2
         sweep["pre_vm_mv"] = float(mean0)
 
-        if mean1 is not None:
-            delta = abs(mean0 - mean1)
+        if mean_last_vm_epoch is not None:
+            delta = abs(mean0 - mean_last_vm_epoch)
             sweep["vm_delta_mv"] = float(delta)
         else:
             # Use None as 'nan' still breaks the ruby strategies

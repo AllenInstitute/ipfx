@@ -86,8 +86,7 @@ def get_recording_end_idx(v):
 def get_experiment_epoch(i,v,hz):
     """
     Find index range for the experiment epoch. The start is defined as stim start- PRESTIM_DURATION*sampling_rate
-    The end is defined by the last nonzero response. Is this right?
-    Perhaps we should end it with the end of the stimulus + some buffer
+    The end is defined by the last nonzero response.
 
 
     Parameters
@@ -108,13 +107,15 @@ def get_experiment_epoch(i,v,hz):
     if len(diff_idx) == 0:
         raise ValueError("Empty stimulus trace")
 
+    if len(diff_idx) < 4:
+        raise ValueError("Stimulus traces is missing either a test pulse or a stimulation pulse.")
+
     idx = 2  # skip the first up/down assuming that there is a test pulse
     stim_start_idx = diff_idx[idx] + 1  # shift by one to compensate for diff()
-    # TODO: move PRESTIM_EPOCH into configuration file
     expt_start_idx = stim_start_idx - int(PRESTIM_EPOCH * hz)
     #       Recording ends when zeros start
     expt_end_idx = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0.
-    assert expt_end_idx > expt_start_idx, "start index cannot be larger than the end index"
+    assert expt_end_idx > expt_start_idx, "Start index cannot be larger than the end index"
 
     return expt_start_idx,expt_end_idx
 
@@ -235,17 +236,21 @@ def get_stim_characteristics(i, t, no_test_pulse=False):
     return (stim_start, stim_dur, stim_amp, start_idx, end_idx)
 
 
-def sweep_completion_check(i,v,hz):
+def sweep_truncation_check(i,v,hz):
 
     stimulus_end_ix = np.nonzero(i)[0][-1]  # last non-zero index along the only dimension=0
     response_end_ix = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0
 
-    post_stim_stability_interval = (response_end_ix + POST_STIM_STABILITY_INTERVAL*hz > stimulus_end_ix)
+    post_stim_response_duration = (response_end_ix - stimulus_end_ix) / hz
+    completed_expt_epoch = post_stim_response_duration > POST_STIM_STABILITY_INTERVAL
+
+#    completed_expt_epoch = (response_end_ix + POST_STIM_STABILITY_INTERVAL*hz > stimulus_end_ix)
     long_response = response_end_ix/hz>LONG_RESPONSE_DURATION
 
-    if post_stim_stability_interval or long_response:
-        completed = True
-    else:
-        completed = False
 
-    return completed
+    if completed_expt_epoch or long_response:
+        sweep_truncated = False
+    else:
+        sweep_truncated = True
+
+    return sweep_truncated
