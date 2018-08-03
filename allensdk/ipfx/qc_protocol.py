@@ -12,17 +12,17 @@ def load_default_qc_criteria():
         return json.load(f)
 
 
-def qc_experiment(data_set, cell_qc_features, sweep_qc_features, qc_criteria=None):
+def qc_experiment(data_set, cell_features, sweep_features, qc_criteria=None):
 
     """
 
     Parameters
     ----------
-    data_set : MiesDataSet object
+    data_set : AibsDataSet object
         dataset
-    cell_qc_features : dict
+    cell_features : dict
         cell features
-    sweep_data: list of dicts
+    sweep_features: list of dicts
         sweep features
     qc_criteria : dict
         qc criteria
@@ -35,21 +35,21 @@ def qc_experiment(data_set, cell_qc_features, sweep_qc_features, qc_criteria=Non
     if qc_criteria is None:
         qc_criteria = load_default_qc_criteria()
 
-    cell_state = qc_cell(cell_qc_features, qc_criteria)
+    cell_state = qc_cell(cell_features, qc_criteria)
 
-    sweep_data_index = { sweep['sweep_number']:sweep for sweep in sweep_qc_features }
+    sweep_data_index = { sweep['sweep_number']:sweep for sweep in sweep_features }
 
     sweep_states = []
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
                                                   exclude_test=True,
                                                   exclude_search=True)
 
-
     for sweep_num in iclamp_sweeps.sweep_number:
         sweep = sweep_data_index[sweep_num]
         failed, fail_tags = qc_current_clamp_sweep(data_set, sweep, qc_criteria)
         sweep_state = { 'sweep_number': sweep_num, 'passed': not failed, 'reasons': fail_tags }
-        print sweep_num, sweep["stimulus_name"], fail_tags
+        if failed:
+            print (sweep_num, sweep["stimulus_name"], fail_tags)
         sweep_states.append(sweep_state)
 
     return cell_state, sweep_states

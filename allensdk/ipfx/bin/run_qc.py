@@ -21,7 +21,7 @@ from allensdk.ipfx._schemas import QcParameters
 import allensdk.core.json_utilities as ju
 
 
-def run_qc(input_nwb_file, input_h5_file, stimulus_ontology_file, cell_features, sweep_data, qc_criteria):
+def run_qc(input_nwb_file, input_h5_file, stimulus_ontology_file, cell_features, sweep_features, qc_criteria):
     """
 
     Parameters
@@ -49,13 +49,17 @@ def run_qc(input_nwb_file, input_h5_file, stimulus_ontology_file, cell_features,
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else None
 
     ds = AibsDataSet(nwb_file=input_nwb_file,
-                     h5_file=input_h5_file,
-                     ontology=ont)
+#                     h5_file=input_h5_file,
+                     ontology=ont,
+                     sweep_info = sweep_features,
+                     api_sweeps=False
+
+                     )
 
 
     cell_state, sweep_states = qcp.qc_experiment(ds,
                                                  cell_features,
-                                                 sweep_data,
+                                                 sweep_features,
                                                  qc_criteria)
 
     return dict(cell_state=cell_state, sweep_states=sweep_states)

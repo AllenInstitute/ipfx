@@ -31,9 +31,9 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
     cell_features, cell_tags = qcf.cell_qc_features(ds, manual_values)
     sweep_features = qcf.sweep_qc_features(ds)
 
-    return dict(cell_props=cell_features,
+    return dict(cell_features=cell_features,
                 cell_tags=cell_tags,
-                sweep_props=sweep_features,
+                sweep_features=sweep_features,
                 )
 
 def main():

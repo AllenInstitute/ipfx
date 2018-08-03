@@ -10,21 +10,20 @@ import allensdk.ipfx.nwb_reader as nwb_reader
 import allensdk.ipfx.stim_features as st
 
 class AibsDataSet(EphysDataSet):
-    def __init__(self, sweep_props=[], nwb_file=None, h5_file=None, ontology=None, api_sweeps=True):
+    def __init__(self, sweep_info=[], nwb_file=None, h5_file=None, ontology=None, api_sweeps=True):
         super(AibsDataSet, self).__init__(ontology)
         self.nwb_file = nwb_file
         self.h5_file = h5_file
         self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
 
-        if sweep_props:
-            sweep_props = self.modify_api_sweep_props(sweep_props) if api_sweeps else sweep_props
-            self.sweep_table = pd.DataFrame.from_records(sweep_props)
+        if sweep_info:
+            sweep_info = self.modify_api_sweep_info(sweep_info) if api_sweeps else sweep_info
+            self.sweep_table = pd.DataFrame.from_records(sweep_info)
         else:
-            sweep_props = self.extract_sweep_props()
-            self.sweep_table = pd.DataFrame.from_records(sweep_props)
-            self.sweep_table.to_csv("sweep_table_with_completed.csv", sep=" ", index=False,na_rep="NA")
+            sweep_info = self.extract_sweep_info()
+            self.sweep_table = pd.DataFrame.from_records(sweep_info)
 
-    def extract_sweep_props(self):
+    def extract_sweep_info(self):
         """
         :parameter:
 
@@ -34,7 +33,6 @@ class AibsDataSet(EphysDataSet):
         notebook = lab_notebook_reader.create_lab_notebook_reader(self.nwb_file, self.h5_file)
 
         sweep_props = []
-
         # use same output strategy as h5-nwb converter
         # pick the sampling rate from the first iclamp sweep
         # TODO: figure this out for multipatch
@@ -109,7 +107,7 @@ class AibsDataSet(EphysDataSet):
 
         return sweep_props
 
-    def modify_api_sweep_list(self, sweep_list):
+    def modify_api_sweep_info(self, sweep_list):
 
         return [ { AibsDataSet.SWEEP_NUMBER: s['sweep_number'],
                    AibsDataSet.STIMULUS_UNITS: s['stimulus_units'],
