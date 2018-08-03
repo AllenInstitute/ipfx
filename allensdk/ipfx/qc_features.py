@@ -276,12 +276,15 @@ def sweep_qc_features(data_set):
         sweep features
 
     """
+
     sweep_features = []
-    qc_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
+    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
                                                   exclude_test=True,
                                                   exclude_search=True)
+    if len(iclamp_sweeps.index)==0:
+        raise ValueError("No current clamp sweeps available for QC.")
 
-    for sweep_info in qc_sweeps.to_dict(orient='records'):
+    for sweep_info in iclamp_sweeps.to_dict(orient='records'):
         sweep_num = sweep_info['sweep_number']
         sweep_data = data_set.sweep(sweep_num)
 

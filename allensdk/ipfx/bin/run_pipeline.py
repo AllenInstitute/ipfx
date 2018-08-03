@@ -43,16 +43,17 @@ def run_pipeline(input_nwb_file,
     qc_output = run_qc(input_nwb_file,
                        input_h5_file,
                        stimulus_ontology_file,
-                       se_output["cell_props"],
-                       se_output["sweep_props"],
+                       se_output["cell_features"],
+                       se_output["sweep_features"],
                        qc_criteria)
 
     logging.info("QC checks completed")
     assign_sweep_states(manual_sweep_states,
                         qc_output["sweep_states"],
-                        se_output["sweep_props"]
+                        se_output["sweep_features"]
                         )
 
+    print qc_output["sweep_states"]
 
     logging.info("Assigned sweep state")
 
@@ -60,14 +61,14 @@ def run_pipeline(input_nwb_file,
                                        stimulus_ontology_file,
                                        output_nwb_file,
                                        qc_fig_dir,
-                                       se_output['sweep_props'],
-                                       se_output['cell_props'])
+                                       se_output['sweep_features'],
+                                       se_output['cell_features'])
     logging.info("Extracted features!")
 
 # this is for backward compatibility only
 
-    se_output['sweep_data'] = se_output.pop('sweep_props')
-    se_output['cell_features'] = se_output.pop('cell_props')
+    se_output['sweep_data'] = se_output.pop('sweep_features')
+    se_output['cell_features'] = se_output.pop('cell_features')
 
     return dict( sweep_extraction=se_output,
                  qc=qc_output,

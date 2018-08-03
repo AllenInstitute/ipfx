@@ -1,10 +1,6 @@
 #!/usr/bin/python
-import sys, logging
+import logging
 import os
-import json
-import shutil
-import copy
-import numpy as np
 import shutil
 import pandas as pd
 
@@ -51,18 +47,20 @@ def save_qc_figures(qc_fig_dir, data_set, feature_data, plot_cell_figures):
     plotqc.make_cell_page(data_set, feature_data, qc_fig_dir, save_cell_plots=plot_cell_figures)
 
 
-def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_file, qc_fig_dir, sweep_props, cell_props):
+def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_file, qc_fig_dir, sweep_info, cell_info):
 
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else None
-    data_set = AibsDataSet(sweep_props=sweep_props,
+    data_set = AibsDataSet(sweep_info=sweep_info,
                            nwb_file=input_nwb_file,
                            ontology=ont,
                            api_sweeps=False)
 
+
+
     cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
 
-    if cell_props:
-        cell_record.update(cell_props)
+    if cell_info:
+        cell_record.update(cell_info)
 
     feature_data = { 'cell_features': cell_features,
                      'sweep_features': sweep_features,

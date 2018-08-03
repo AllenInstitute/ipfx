@@ -1,19 +1,14 @@
-import json
-import logging
 import numpy as np
 
 
 # global constants
 #TODO: read them from the config file
 
-LAST_STABILITY_EPOCH = 0.5
-PRESTIM_STABILITY_EPOCH = 0.5
 NOISE_EPOCH = 0.0015
-PRESTIM_EPOCH = 0.5
-
-
-POST_STIM_STABILITY_INTERVAL = 0.5
+PRESTIM_STABILITY_EPOCH = 0.5
+POSTSTIM_STABILITY_EPOCH = 0.5
 LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
+
 
 def get_last_vm_epoch(idx1, hz):
     """
@@ -28,7 +23,7 @@ def get_last_vm_epoch(idx1, hz):
     -------
 
     """
-    return idx1-int(LAST_STABILITY_EPOCH * hz), idx1
+    return idx1-int(POSTSTIM_STABILITY_EPOCH * hz), idx1
 
 
 def get_first_vm_noise_epoch(idx, hz):
@@ -78,10 +73,12 @@ def find_stim_start(stim, idx0=0):
 
     return idxs[0]+1
 
+
 def get_recording_end_idx(v):
 
     end_idx = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0.
     return end_idx
+
 
 def get_experiment_epoch(i,v,hz):
     """
@@ -108,17 +105,15 @@ def get_experiment_epoch(i,v,hz):
         raise ValueError("Empty stimulus trace")
 
     if len(diff_idx) < 4:
-        raise ValueError("Stimulus traces is missing either a test pulse or a stimulation pulse.")
+        raise ValueError("Stimulus trace is missing either a test pulse or a stimulation pulse.")
 
     idx = 2  # skip the first up/down assuming that there is a test pulse
     stim_start_idx = diff_idx[idx] + 1  # shift by one to compensate for diff()
-    expt_start_idx = stim_start_idx - int(PRESTIM_EPOCH * hz)
+    expt_start_idx = stim_start_idx - int(PRESTIM_STABILITY_EPOCH * hz)
     #       Recording ends when zeros start
     expt_end_idx = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0.
-    assert expt_end_idx > expt_start_idx, "Start index cannot be larger than the end index"
 
     return expt_start_idx,expt_end_idx
-
 
 
 def find_stim_window(stim, idx0=0):
@@ -242,11 +237,9 @@ def sweep_truncation_check(i,v,hz):
     response_end_ix = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0
 
     post_stim_response_duration = (response_end_ix - stimulus_end_ix) / hz
-    completed_expt_epoch = post_stim_response_duration > POST_STIM_STABILITY_INTERVAL
+    completed_expt_epoch = post_stim_response_duration > POSTSTIM_STABILITY_EPOCH
 
-#    completed_expt_epoch = (response_end_ix + POST_STIM_STABILITY_INTERVAL*hz > stimulus_end_ix)
     long_response = response_end_ix/hz>LONG_RESPONSE_DURATION
-
 
     if completed_expt_epoch or long_response:
         sweep_truncated = False
