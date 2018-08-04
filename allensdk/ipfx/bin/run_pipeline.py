@@ -53,8 +53,6 @@ def run_pipeline(input_nwb_file,
                         se_output["sweep_features"]
                         )
 
-    print qc_output["sweep_states"]
-
     logging.info("Assigned sweep state")
 
     fx_output = run_feature_extraction(input_nwb_file,
