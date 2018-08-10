@@ -18,10 +18,10 @@ class AibsDataSet(EphysDataSet):
 
         if sweep_info:
             sweep_info = self.modify_api_sweep_info(sweep_info) if api_sweeps else sweep_info
-            self.sweep_table = pd.DataFrame.from_records(sweep_info)
         else:
             sweep_info = self.extract_sweep_info()
-            self.sweep_table = pd.DataFrame.from_records(sweep_info)
+
+        self.sweep_table = pd.DataFrame.from_records(sweep_info)
 
     def extract_sweep_info(self):
         """
@@ -134,16 +134,20 @@ class AibsDataSet(EphysDataSet):
         sweep_data['time'] = np.arange(0, len(sweep_data['response'])) * dt
         assert len(sweep_data['response']) == len(sweep_data['stimulus']), "Stimulus and response have different duration"
 
-        end_ix = sweep_data['index_range'][1]   # cut off at the end of the experiment epoch
+        if "index_range" not in sweep_data:
+            sweep_data['index_range'] = st.get_experiment_epoch(sweep_data['stimulus'],sweep_data['response'],hz)
+
+        end_ix = sweep_data['index_range'][1]
 
         try:
-            sweep = Sweep(t = sweep_data['time'][0:end_ix],
-                          v = sweep_data['response'][0:end_ix], # mV
-                          i = sweep_data['stimulus'][0:end_ix], # pA
+            sweep = Sweep(t = sweep_data['time'][0:end_ix+1],
+                          v = sweep_data['response'][0:end_ix+1], # mV
+                          i = sweep_data['stimulus'][0:end_ix+1], # pA
                           sampling_rate = sweep_data['sampling_rate'],
                           expt_idx_range = sweep_data['index_range'],
                           id = sweep_number,
                           )
+
 
         except Exception as e:
             logging.warning("Error reading sweep %d" % sweep_num)
