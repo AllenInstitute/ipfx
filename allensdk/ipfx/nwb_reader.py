@@ -1,8 +1,8 @@
 import h5py
 import logging
+import numpy as np
 from allensdk.core.nwb_data_set import NwbDataSet
 import stim_features as sf
-
 
 class NWBReader(object):
 
@@ -96,12 +96,10 @@ class NWB1_0_5Reader(NWBReader):
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
             sweep_stimulus = f['stimulus']['presentation']["data_%05d_DA0" % sweep_number]
             i = sweep_stimulus["data"].value
-            index_range = sf.get_experiment_epoch(i, v, hz)
 
         return {"stimulus": i,
                 "response": v,
                 "sampling_rate": hz,
-                "index_range": index_range
                 }
 
     def get_sweep_number(self,sweep_name):

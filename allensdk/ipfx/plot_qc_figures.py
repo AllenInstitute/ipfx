@@ -156,19 +156,13 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
 
     return figs
 
-def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
+
+def plot_sweep_figures(data_set, image_dir, sizes):
+
     iclamp_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True, passing_only=False)['sweep_number'].values
     iclamp_sweep_numbers.sort()
-
     image_file_sets = {}
 
-    tp_set = []
-    exp_set = []
-
-    prev_sweep_number = None
-
-    tp_len = 0.035
-    tp_steps = int(tp_len * 200000)
 
     b, a = sg.bessel(4, 0.1, "low")
 
@@ -177,11 +171,11 @@ def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
         if i == 0:
             v_init, i_init, t_init, r_init, dt_init = load_sweep(data_set, sweep_number)
 
+            tp_steps = r_init[0]
+            tp_len = tp_steps*dt_init
             tp_fig = plt.figure()
             axTP = plt.gca()
-            axTP.set_yticklabels([])
-            axTP.set_xticklabels([])
-            axTP.set_xlabel(str(sweep_number))
+            axTP.set_title(str(sweep_number))
             axTP.set_ylabel('')
             xTP = t_init[0:tp_steps]
             yTP = v_init[0:tp_steps]
@@ -191,9 +185,7 @@ def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
 
             exp_fig = plt.figure()
             axDP = plt.gca()
-            axDP.set_yticklabels([])
-            axDP.set_xticklabels([])
-            axDP.set_xlabel(str(sweep_number))
+            axDP.set_title(str(sweep_number))
             axDP.set_ylabel('')
             v_exp = v_init[r_init[0]:]
             t_exp = t_init[r_init[0]:]
@@ -212,11 +204,14 @@ def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
         else:
             v, i, t, r, dt = load_sweep(data_set, sweep_number)
 
+            tp_steps = r[0]
+            tp_len = tp_steps*dt
+
             tp_fig = plt.figure()
             axTP = plt.gca()
-            axTP.set_yticklabels([])
-            axTP.set_xticklabels([])
-            axTP.set_xlabel(str(sweep_number))
+#            axTP.set_yticklabels([])
+#            axTP.set_xticklabels([])
+            axTP.set_title(str(sweep_number))
             axTP.set_ylabel('')
             yTP = v[:tp_steps]
             xTP = t[:tp_steps]
@@ -228,17 +223,21 @@ def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
             yTPi = v_init[:tp_steps]
             TPiBL = np.mean(yTPi[0:100])
             yTPiN = yTPi - TPiBL
-            axTP.plot(xTP, yTPiN, linewidth=1)
-            axTP.plot(xTP, yTPpN, linewidth=1)
-            axTP.plot(xTP, yTPN, linewidth=1)
+
+            axTP.plot(xTP, yTPiN, linewidth=1, label="init")
+            axTP.plot(xTP, yTPpN, linewidth=1, label="prev")
+            axTP.plot(xTP, yTPN, linewidth=1, label="this")
             axTP.set_xlim(0, tp_len)
+
+
+
 #            sns.despine()
 
             exp_fig = plt.figure()
             axDP = plt.gca()
-            axDP.set_yticklabels([])
-            axDP.set_xticklabels([])
-            axDP.set_xlabel(str(sweep_number))
+#            axDP.set_yticklabels([])
+#            axDP.set_xticklabels([])
+            axDP.set_title(str(sweep_number))
             axDP.set_ylabel('')
             v_exp = v[r[0]:]
             t_exp = t[r[0]:]
@@ -247,10 +246,14 @@ def plot_sweep_figures(data_set, feature_data, image_dir, sizes):
             baseline = yDP[5000:9000]
             baselineMean = np.mean(baseline)
             baselineV = (np.ones(len(xDP))) * baselineMean
-            axDP.plot(xDP, yDP, linewidth=1)
-            axDP.plot(xDP, baselineV, linewidth=1)
+            axDP.plot(xDP, yDP, linewidth=1, label="response")
+            axDP.plot(xDP, baselineV, linewidth=1, label="baseline")
             axDP.set_xlim(t_exp[0], t_exp[-1])
 #            sns.despine()
+
+            if sweep_number == iclamp_sweep_numbers[-1]:
+                axTP.legend()
+                axDP.legend()
 
             v_prev, i_prev, t_prev, r_prev = v, i, t, r
 
@@ -279,11 +282,11 @@ def save_figure(fig, image_name, image_set_name, image_dir, sizes, image_sets, s
     plt.close()
 
 
-def plot_images(input_image_dir, output_image_dir, sizes, image_sets):
+def plot_images(image_dir, sizes, image_sets):
     image_set_name = "images"
     image_sets[image_set_name] = { size_name: [] for size_name in sizes }
 
-    paths = glob.glob(input_image_dir + "/*.tif")
+    paths = glob.glob(image_dir + "/*.tif")
     for i, path in enumerate(paths):
         image_data = plt.imread(path)
         image_data = np.array(image_data, dtype=np.float32)
@@ -303,8 +306,8 @@ def plot_images(input_image_dir, output_image_dir, sizes, image_sets):
 
 
             filename = os.path.join(image_dir, "image_%d_%s.jpg" % (i, size_name))
-            scipy.misc.imsave(filename, sdata)
 
+            scipy.misc.imsave(filename, sdata)
             image_sets['images'][size_name].append(filename)
 
 
@@ -637,7 +640,7 @@ def plot_sweep_set_summary(data_set, highlight_sweep_number, sweep_numbers,
 
     return fig
 
-def make_sweep_html(sweep_files, file_name):
+def make_sweep_html(sweep_files, file_name, img_sub_dir):
     html = "<html><body>"
     html += "<a href='index.html'>Cell QC Figures</a>"
 
@@ -647,16 +650,16 @@ def make_sweep_html(sweep_files, file_name):
     if 'test_pulses' in sweep_files:
         for small_img, large_img in zip(sweep_files['test_pulses']['small'],
                                         sweep_files['test_pulses']['large']):
-            html += "<a href='%s' target='_blank'><img src='%s'></img></a>" % ( os.path.basename(large_img),
-                                                                                os.path.basename(small_img) )
+            html += "<a href='./%s/%s' target='_blank'><img src='./%s/%s'></img></a>" % ( img_sub_dir, os.path.basename(large_img),
+                                                                                          img_sub_dir, os.path.basename(small_img) )
     html += "</div>"
 
     html += "<div style='position:absolute;width:50%;right:0;top:40'>"
     if 'experiments' in sweep_files:
         for small_img, large_img in zip(sweep_files['experiments']['small'],
                                         sweep_files['experiments']['large']):
-            html += "<a href='%s' target='_blank'><img src='%s'></img></a>" % ( os.path.basename(large_img),
-                                                                                os.path.basename(small_img) )
+            html += "<a href='./%s/%s' target='_blank'><img src='./%s/%s'></img></a>" % ( img_sub_dir, os.path.basename(large_img),
+                                                                                          img_sub_dir, os.path.basename(small_img) )
     html += "</div>"
 
     html += "</body></html>"
@@ -664,7 +667,7 @@ def make_sweep_html(sweep_files, file_name):
     with open(file_name, 'w') as f:
         f.write(html)
 
-def make_cell_html(image_files, metadata, file_name, required_fields=( 'electrode_0_pa',
+def make_cell_html(image_files, metadata, file_name, img_sub_dir, required_fields=( 'electrode_0_pa',
                                                                        'seal_gohm',
                                                                        'initial_access_resistance_mohm',
                                                                        'input_resistance_mohm' )):
@@ -688,35 +691,39 @@ def make_cell_html(image_files, metadata, file_name, required_fields=( 'electrod
         image_set_files = image_files[image_file_set_name]
 
         for small_img, large_img in zip(image_set_files['small'], image_set_files['large']):
-            html += "<a href='%s' target='_blank'><img src='%s'></img></a>" % ( os.path.basename(large_img),
-                                                                                os.path.basename(small_img) )
+            html += "<a href='./%s/%s' target='_blank'><img src='./%s/%s'></img></a>" % ( img_sub_dir, os.path.basename(large_img),
+                                                                                          img_sub_dir, os.path.basename(small_img) )
     html += ("</body></html>")
 
     with open(file_name, 'w') as f:
         f.write(html)
 
-def make_sweep_page(data_set, feature_data, working_dir):
+
+def make_sweep_page(data_set, working_dir):
     sizes = { 'small': 2.0, 'large': 6.0 }
-
-    sweep_files = plot_sweep_figures(data_set, feature_data, working_dir, sizes)
+    img_sub_dir = "img"
+    image_dir = os.path.join(working_dir,img_sub_dir)
+    sweep_files = plot_sweep_figures(data_set, image_dir, sizes)
     sweep_page = os.path.join(working_dir, 'sweep.html')
-    make_sweep_html(sweep_files, sweep_page)
+    make_sweep_html(sweep_files, sweep_page, img_sub_dir)
 
-    return sweep_page
 
-def make_cell_page(data_set, feature_data, working_dir, image_dir=".", save_cell_plots=True):
+def make_cell_page(data_set, feature_data, working_dir, save_cell_plots=True):
+    img_sub_dir = "img"
+    image_dir = os.path.join(working_dir,img_sub_dir)
+
     if save_cell_plots:
         sizes = { 'small': 2.0, 'large': 6.0 }
-        cell_files = plot_cell_figures(data_set, feature_data, working_dir, sizes)
+        cell_files = plot_cell_figures(data_set, feature_data, image_dir, sizes)
     else:
         cell_files = {}
 
-    logging.info("saving images")
+    logging.info("Saving cell images")
     sizes = { 'small': 200, 'large': None }
-    plot_images(image_dir, working_dir, sizes, cell_files)
+    plot_images(image_dir, sizes, cell_files)
 
     cell_page = os.path.join(working_dir, 'index.html')
-    make_cell_html(cell_files, feature_data['cell_record'], cell_page)
+    make_cell_html(cell_files, feature_data['cell_record'], cell_page, img_sub_dir)
 
     return cell_page
 

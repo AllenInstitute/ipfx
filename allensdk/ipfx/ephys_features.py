@@ -829,8 +829,6 @@ def fit_membrane_time_constant(t, v, start, end, rmse_max_tol = 1.0):
     if rmse > rmse_max_tol:
         logging.debug("RMSE %f for the Curve fit for membrane time constant exceeded the maximum tolerance of %f" % (rmse,rmse_max_tol))
         return np.nan, np.nan, np.nan
-    else:
-        logging.debug("RMSE is smaller than the tolerance")
 
     return popt
 

@@ -35,15 +35,18 @@ def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
         raise e
 
 
-def save_qc_figures(qc_fig_dir, data_set, feature_data, plot_cell_figures):
+def display_features(qc_fig_dir, data_set, feature_data, plot_sweep_figures=True, plot_cell_figures=True):
     if os.path.exists(qc_fig_dir):
-        logging.warning("removing existing qc figures directory: %s", qc_fig_dir)
+        logging.warning("Removing existing qc figures directory: %s", qc_fig_dir)
         shutil.rmtree(qc_fig_dir)
 
+    image_dir = os.path.join(qc_fig_dir,"img")
     Manifest.safe_mkdir(qc_fig_dir)
+    Manifest.safe_mkdir(image_dir)
 
-    logging.debug("saving qc plot figures")
-    sweep_page = plotqc.make_sweep_page(data_set, feature_data, qc_fig_dir)
+    logging.debug("Saving qc plot figures")
+    if plot_sweep_figures:
+        plotqc.make_sweep_page(data_set, qc_fig_dir)
     plotqc.make_cell_page(data_set, feature_data, qc_fig_dir, save_cell_plots=plot_cell_figures)
 
 
@@ -68,7 +71,7 @@ def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_fi
                      'sweep_records': sweep_records }
 
     embed_spike_times(input_nwb_file, output_nwb_file, sweep_features)
-#    save_qc_figures(qc_fig_dir, data_set, feature_data, True)
+#    display_features(qc_fig_dir, data_set, feature_data, plot_sweep_figures=True, plot_cell_figures=False)
 
     return feature_data
 
