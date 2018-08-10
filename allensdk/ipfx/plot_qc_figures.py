@@ -168,6 +168,8 @@ def plot_sweep_figures(data_set, image_dir, sizes):
 
     for i, sweep_number in enumerate(iclamp_sweep_numbers):
         logging.info("plotting sweep %d" %  sweep_number)
+
+
         if i == 0:
             v_init, i_init, t_init, r_init, dt_init = load_sweep(data_set, sweep_number)
 
@@ -642,9 +644,9 @@ def plot_sweep_set_summary(data_set, highlight_sweep_number, sweep_numbers,
 
 def make_sweep_html(sweep_files, file_name, img_sub_dir):
     html = "<html><body>"
-    html += "<a href='index.html'>Cell QC Figures</a>"
-
     html += "<p>page created at: %s</p>" % get_time_string()
+
+    html += "<p><a href='index.html' target='_blank'>Cell QC Figures</a></p>"
 
     html += "<div style='position:absolute;width:50%;left:0;top:40'>"
     if 'test_pulses' in sweep_files:
@@ -680,7 +682,7 @@ def make_cell_html(image_files, metadata, file_name, img_sub_dir, required_field
 
     fields = set(required_fields) | set(metadata.keys())
 
-    html += "<table>"
+    html += "<table border='1'>"
     for field in sorted(fields):
         html += "<tr><td>%s</td><td>%s</td></tr>" % (field, metadata.get(field,None))
     html += "</table>"

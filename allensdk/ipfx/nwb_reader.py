@@ -47,7 +47,7 @@ class NWB1_0_2Reader(NWBReader):
 
         Returns
         -------
-        data: dict of sweep data
+        data: dict of sweep data in response (mV) and stimulus (pA)
         """
         nwb_data = NwbDataSet(self.nwb_file)
 
@@ -55,7 +55,6 @@ class NWB1_0_2Reader(NWBReader):
 
         data['response'] *= 1e3,  # mV
         data['stimulus'] *= 1e12,  # pA
-
         return data
 
     def get_sweep_number(self, sweep_name):
@@ -92,13 +91,13 @@ class NWB1_0_5Reader(NWBReader):
         with h5py.File(self.nwb_file, 'r') as f:
 
             sweep_response = f['acquisition']['timeseries']["data_%05d_AD0" % sweep_number]
-            v = sweep_response["data"].value
+            response = sweep_response["data"].value
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
             sweep_stimulus = f['stimulus']['presentation']["data_%05d_DA0" % sweep_number]
-            i = sweep_stimulus["data"].value
+            stimulus = sweep_stimulus["data"].value
 
-        return {"stimulus": i,
-                "response": v,
+        return {"stimulus": stimulus,
+                "response": response,
                 "sampling_rate": hz,
                 }
 

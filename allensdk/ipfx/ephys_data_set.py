@@ -180,6 +180,16 @@ class EphysDataSet(object):
 
         return sweeps.sweep_number.values[-1]
 
+    def get_sweep_info_by_sweep_number(self, sweep_number):
+
+        st = self.sweep_table
+        mask = st[self.SWEEP_NUMBER] == sweep_number
+        st = st[mask]
+
+        return st
+
+
+
     def sweep(self, sweep_number):
         """ returns a dictionary with properties: i (in pA), v (in mV), t (in sec), start, end"""
         raise NotImplementedError
