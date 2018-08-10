@@ -1,18 +1,14 @@
 #!/usr/bin/python
 import logging
-import os
 import shutil
-import pandas as pd
 
 import argschema as ags
 
 import allensdk.ipfx.data_set_features as dsft
 from allensdk.ipfx.ephys_data_set import EphysDataSet, StimulusOntology
 from allensdk.ipfx._schemas import FeatureExtractionParameters
-import allensdk.ipfx.plot_qc_figures as plotqc
 from allensdk.ipfx.aibs_data_set import AibsDataSet
 
-from allensdk.config.manifest import Manifest
 import allensdk.core.json_utilities as ju
 from allensdk.core.nwb_data_set import NwbDataSet
 
@@ -35,19 +31,6 @@ def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
         raise e
 
 
-def display_features(qc_fig_dir, data_set, feature_data, plot_sweep_figures=True, plot_cell_figures=True):
-    if os.path.exists(qc_fig_dir):
-        logging.warning("Removing existing qc figures directory: %s", qc_fig_dir)
-        shutil.rmtree(qc_fig_dir)
-
-    image_dir = os.path.join(qc_fig_dir,"img")
-    Manifest.safe_mkdir(qc_fig_dir)
-    Manifest.safe_mkdir(image_dir)
-
-    logging.debug("Saving qc plot figures")
-    if plot_sweep_figures:
-        plotqc.make_sweep_page(data_set, qc_fig_dir)
-    plotqc.make_cell_page(data_set, feature_data, qc_fig_dir, save_cell_plots=plot_cell_figures)
 
 
 def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_file, qc_fig_dir, sweep_info, cell_info):

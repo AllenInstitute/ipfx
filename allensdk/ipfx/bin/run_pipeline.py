@@ -5,9 +5,9 @@ from allensdk.ipfx._schemas import PipelineParameters
 from run_sweep_extraction import run_sweep_extraction
 from run_qc import run_qc
 from run_feature_extraction import run_feature_extraction
+from run_visualization import run_visualization
 
 import allensdk.core.json_utilities as ju
-import pandas as pd
 import logging
 
 
@@ -37,7 +37,6 @@ def run_pipeline(input_nwb_file,
     se_output = run_sweep_extraction(input_nwb_file,
                                      input_h5_file,
                                      stimulus_ontology_file)
-
     logging.info("Computed QC features")
 
     qc_output = run_qc(input_nwb_file,
@@ -46,13 +45,12 @@ def run_pipeline(input_nwb_file,
                        se_output["cell_features"],
                        se_output["sweep_features"],
                        qc_criteria)
-
     logging.info("QC checks completed")
+
     assign_sweep_states(manual_sweep_states,
                         qc_output["sweep_states"],
                         se_output["sweep_features"]
                         )
-
     logging.info("Assigned sweep state")
 
     fx_output = run_feature_extraction(input_nwb_file,
@@ -63,10 +61,14 @@ def run_pipeline(input_nwb_file,
                                        se_output['cell_features'])
     logging.info("Extracted features!")
 
-# this is for backward compatibility only
+    run_visualization(input_nwb_file,
+                      stimulus_ontology_file,
+                      qc_fig_dir,
+                      se_output["sweep_features"],
+                      fx_output)
+    logging.info("Visualized results!")
 
-    se_output['sweep_data'] = se_output.pop('sweep_features')
-    se_output['cell_features'] = se_output.pop('cell_features')
+    se_output['sweep_data'] = se_output.pop('sweep_features') # for backward compatibility only
 
     return dict( sweep_extraction=se_output,
                  qc=qc_output,

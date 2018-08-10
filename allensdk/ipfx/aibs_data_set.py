@@ -22,6 +22,9 @@ class AibsDataSet(EphysDataSet):
             sweep_info = self.extract_sweep_info()
 
         self.sweep_table = pd.DataFrame.from_records(sweep_info)
+#        self.sweep_table.sort_values(by="sweep_number",inplace=True) # sorting table fails tests
+
+#        self.sweep_table.to_csv("sweep_table.csv", sep=" ", index=False, na_rep="NA")
 
     def extract_sweep_info(self):
         """
