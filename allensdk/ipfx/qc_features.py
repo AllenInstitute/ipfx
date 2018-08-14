@@ -155,8 +155,8 @@ def cell_qc_features(data_set, manual_values=None):
     try:
         bath_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.bath_names)
         bath_data = data_set.sweep(bath_sweep_number)
-        e0 = measure_electrode_0(bath_data.v*1e-3,
-                                 bath_data.sampling_rate)
+
+        e0 = measure_electrode_0(bath_data.i*1e-12, bath_data.sampling_rate)
         output_data['electrode_0_pa'] = e0
     except IndexError as e:
         msg = "Electrode 0 is not available"
@@ -169,9 +169,11 @@ def cell_qc_features(data_set, manual_values=None):
     try:
         seal_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.seal_names)
         seal_data = data_set.sweep(seal_sweep_number)
-        seal_gohm = measure_seal(seal_data.i*1e-12,
-                                 seal_data.v*1e-3,
+
+        seal_gohm = measure_seal(seal_data.v*1e-3,
+                                 seal_data.i*1e-12,
                                  seal_data.sampling_rate)
+
 
         # error may arise in computing seal, which falls through to
         #   exception handler. if seal computation didn't fail but
@@ -211,8 +213,8 @@ def cell_qc_features(data_set, manual_values=None):
         ###########################
         # input resistance
         try:
-            ir = measure_input_resistance(breakin_data.i*1e-12,
-                                          breakin_data.v*1e-3,
+            ir = measure_input_resistance(breakin_data.v*1e-3,
+                                          breakin_data.i*1e-12,
                                           breakin_data.t)
 
         except Exception as e:
@@ -230,9 +232,10 @@ def cell_qc_features(data_set, manual_values=None):
         ###########################
         # initial access resistance
         try:
-            sr = measure_initial_access_resistance(breakin_data.i*1e-12,
-                                                   breakin_data.v*1e-3,
+            sr = measure_initial_access_resistance(breakin_data.v*1e-3,
+                                                   breakin_data.i*1e-12,
                                                    breakin_data.sampling_rate)
+
         except Exception as e:
             logging.warning("Error reading initial access resistance.")
             raise

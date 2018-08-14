@@ -22,9 +22,6 @@ class AibsDataSet(EphysDataSet):
             sweep_info = self.extract_sweep_info()
 
         self.sweep_table = pd.DataFrame.from_records(sweep_info)
-#        self.sweep_table.sort_values(by="sweep_number",inplace=True) # sorting table fails tests
-
-#        self.sweep_table.to_csv("sweep_table.csv", sep=" ", index=False, na_rep="NA")
 
     def extract_sweep_info(self):
         """
@@ -33,6 +30,8 @@ class AibsDataSet(EphysDataSet):
         :return:
             dict of sweep properties
         """
+        logging.debug("Build sweep table")
+
         notebook = lab_notebook_reader.create_lab_notebook_reader(self.nwb_file, self.h5_file)
 
         sweep_props = []
@@ -106,7 +105,6 @@ class AibsDataSet(EphysDataSet):
             else:
                 sweep_record["truncated"] = None
             sweep_props.append(sweep_record)
-        logging.debug("Built sweep properties table.")
 
         return sweep_props
 
@@ -135,17 +133,31 @@ class AibsDataSet(EphysDataSet):
         hz = sweep_data['sampling_rate']
         dt = 1. / hz
         sweep_data['time'] = np.arange(0, len(sweep_data['response'])) * dt
-        assert len(sweep_data['response']) == len(sweep_data['stimulus']), "Stimulus and response have different duration"
 
         if "index_range" not in sweep_data:
             sweep_data['index_range'] = st.get_experiment_epoch(sweep_data['stimulus'],sweep_data['response'],hz)
 
         end_ix = sweep_data['index_range'][1]
 
+        t = sweep_data['time'][0:end_ix+1]
+        response = sweep_data['response'][0:end_ix + 1]
+        stimulus = sweep_data['stimulus'][0:end_ix+1]
+
+        sweep_info = self.get_sweep_info_by_sweep_number(sweep_number)
+
+        if sweep_info['clamp_mode'] == "VoltageClamp":  # voltage clamp
+            v = stimulus
+            i = response
+        elif sweep_info['clamp_mode'] == "CurrentClamp":  # Current clamp
+            v = response
+            i = stimulus
+        else:
+            raise ValueError("Incorrect stimulus unit")
+
         try:
-            sweep = Sweep(t = sweep_data['time'][0:end_ix+1],
-                          v = sweep_data['response'][0:end_ix+1], # mV
-                          i = sweep_data['stimulus'][0:end_ix+1], # pA
+            sweep = Sweep(t = t,
+                          v = v,
+                          i = i,
                           sampling_rate = sweep_data['sampling_rate'],
                           expt_idx_range = sweep_data['index_range'],
                           id = sweep_number,
@@ -153,7 +165,7 @@ class AibsDataSet(EphysDataSet):
 
 
         except Exception as e:
-            logging.warning("Error reading sweep %d" % sweep_num)
+            logging.warning("Error reading sweep %d" % sweep_number)
             raise
 
         return sweep
