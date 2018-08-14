@@ -181,12 +181,21 @@ class EphysDataSet(object):
         return sweeps.sweep_number.values[-1]
 
     def get_sweep_info_by_sweep_number(self, sweep_number):
+        """
 
+        Parameters
+        ----------
+        sweep_number: int sweep number
+
+        Returns
+        -------
+        sweep_info: dict of sweep properties
+        """
         st = self.sweep_table
         mask = st[self.SWEEP_NUMBER] == sweep_number
         st = st[mask]
 
-        return st
+        return st.to_dict(orient='records')[0]
 
 
 

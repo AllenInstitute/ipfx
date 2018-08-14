@@ -33,16 +33,17 @@ def get_sweep_states_from_lims(specimen_id):
 
 specimen_id = int(sys.argv[1])
 cell_dir = sys.argv[2]
+print specimen_id, cell_dir
 
-res = lu.query("""
+query="""
 select err.storage_directory||'EPHYS_FEATURE_EXTRACTION_V2_QUEUE_'||err.id||'_input.json' as input_v2_json,
        err.storage_directory||'EPHYS_FEATURE_EXTRACTION_QUEUE_'||err.id||'_input.json' as input_v1_json,
        err.storage_directory||err.id||'.nwb' as nwb_file
 from specimens sp
 join ephys_roi_results err on err.id = sp.ephys_roi_result_id
 where sp.id = %d
-""" % specimen_id)[0]
-
+""" % specimen_id
+res = lu.query(query)[0]
 res = { k.decode('UTF-8'):v for k,v in res.items() }
 
 # query for the h5 file
@@ -53,10 +54,9 @@ join specimens sp on sp.ephys_roi_result_id = err.id
 join well_known_files wkf on wkf.attachable_id = err.id 
 where sp.id = %d 
 and wkf.well_known_file_type_id = 306905526
-""" % specimen_id)[0]
+""" % specimen_id)
 
-
-h5_file_name = os.path.join(h5_res['storage_directory'], h5_res['filename']) if len(h5_res) else None
+h5_file_name = os.path.join(h5_res[0]['storage_directory'], h5_res[0]['filename']) if len(h5_res) else None
 
 # if the input_v2_json does not exist, then use input_v1_json instead:
 if os.path.isfile(res["input_v2_json"]):

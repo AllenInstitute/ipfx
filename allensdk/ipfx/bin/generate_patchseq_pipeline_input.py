@@ -13,6 +13,7 @@ output_dir = sys.argv[2]
 
 d = {}
 
+print("output_dir: %s" %output_dir)
 d['input_nwb_file'] = input_nwb_file
 d['output_nwb_file'] = os.path.join(output_dir, "output.nwb")
 d['qc_fig_dir'] = os.path.join(output_dir,"qc_figs")

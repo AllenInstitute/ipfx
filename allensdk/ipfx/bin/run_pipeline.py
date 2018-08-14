@@ -61,12 +61,12 @@ def run_pipeline(input_nwb_file,
                                        se_output['cell_features'])
     logging.info("Extracted features!")
 
-    run_visualization(input_nwb_file,
-                      stimulus_ontology_file,
-                      qc_fig_dir,
-                      se_output["sweep_features"],
-                      fx_output)
-    logging.info("Visualized results!")
+    # run_visualization(input_nwb_file,
+    #                   stimulus_ontology_file,
+    #                   qc_fig_dir,
+    #                   se_output["sweep_features"],
+    #                   fx_output)
+    # logging.info("Visualized results!")
 
     se_output['sweep_data'] = se_output.pop('sweep_features') # for backward compatibility only
 
