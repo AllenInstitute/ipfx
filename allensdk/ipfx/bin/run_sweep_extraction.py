@@ -29,7 +29,6 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
                      ontology=ont)
 
     cell_features, cell_tags = qcf.cell_qc_features(ds, manual_values)
-    print cell_features
     sweep_features = qcf.sweep_qc_features(ds)
 
     return dict(cell_features=cell_features,

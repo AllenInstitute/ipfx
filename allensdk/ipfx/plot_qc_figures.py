@@ -40,6 +40,7 @@ def load_sweep(data_set, sweep_number):
     r = sweep.expt_idx_range
     return (sweep.v, sweep.i, sweep.t, r, dt)
 
+
 def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features, cell_features, type_name):
     figs = [ plt.figure() for f in range(3+len(sweep_numbers)) ]
 
@@ -113,27 +114,23 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
         plt.title(str(sn))
 
         spikes = get_spikes(sweep_features, sn)
-
         nspikes = len(spikes)
 
-        if type_name != "long_square" and nspikes:
-            if nspikes == 0:
-                logging.warning("no spikes in sweep %d" % sn)
-                continue
-
-            voltages = [spikes[0][f] for f in voltage_features]
-            times = [spikes[0][f] for f in time_features]
-        else:
-            rheo_sn = cell_features["long_squares"]["rheobase_sweep"]["id"]
-            rheo_spike = get_spikes(sweep_features, rheo_sn)[0]
-            voltages = [ rheo_spike[f] for f in voltage_features ]
-            times = [ rheo_spike[f] for f in time_features ]
-
-        plt.scatter(times, voltages, color='red', zorder=20)
-
-
         delta_v = 5.0
+
         if nspikes:
+            if type_name != "long_square" and nspikes:
+
+                voltages = [spikes[0][f] for f in voltage_features]
+                times = [spikes[0][f] for f in time_features]
+            else:
+                rheo_sn = cell_features["long_squares"]["rheobase_sweep"]["id"]
+                rheo_spike = get_spikes(sweep_features, rheo_sn)[0]
+                voltages = [rheo_spike[f] for f in voltage_features]
+                times = [rheo_spike[f] for f in time_features]
+
+            plt.scatter(times, voltages, color='red', zorder=20)
+
             plt.plot([spikes[0]['upstroke_t'] - 1e-3 * (delta_v / spikes[0]['upstroke']),
                       spikes[0]['upstroke_t'] + 1e-3 * (delta_v / spikes[0]['upstroke'])],
                      [spikes[0]['upstroke_v'] - delta_v, spikes[0]['upstroke_v'] + delta_v], color='red')
@@ -507,9 +504,9 @@ def plot_fi_curve_figures(data_set, cell_features, lims_features, sweep_features
     fi_sorted = sorted(cell_features["long_squares"]["spiking_sweeps"], key=lambda s:s['stim_amp'])
     x = [d['stim_amp'] for d in fi_sorted]
     y = [d['avg_rate'] for d in fi_sorted]
-    last_zero_idx = np.nonzero(y)[0][0] - 1
+    first_nonzero_idx = np.nonzero(y)[0][0]
     plt.scatter(x, y, color='black')
-    plt.plot(x[last_zero_idx:], cell_features["long_squares"]["fi_fit_slope"] * (np.array(x[last_zero_idx:]) - x[last_zero_idx]), color='red')
+    plt.plot(x[first_nonzero_idx:], cell_features["long_squares"]["fi_fit_slope"] * (np.array(x[first_nonzero_idx:]) - x[first_nonzero_idx]), color='red',linewidth=2)
     plt.xlabel("pA")
     plt.ylabel("spikes/sec")
     plt.title("slope = {:.3g}".format(lims_features["f_i_curve_slope"]))
@@ -520,10 +517,11 @@ def plot_fi_curve_figures(data_set, cell_features, lims_features, sweep_features
         stim_start, stim_dur, stim_amp, start_idx, end_idx = st.get_stim_characteristics(i, t)
         rheo_hero_x.append(stim_amp)
     rheo_hero_y = [ len(get_spikes(sweep_features, s)) for s in rheo_hero_sweeps ]
-    plt.scatter(rheo_hero_x, rheo_hero_y, zorder=20)
+    plt.scatter(rheo_hero_x, rheo_hero_y, zorder=20, color="blue")
     plt.tight_layout()
 
     save_figure(fig, 'fi_curve', 'fi_curve', image_dir, sizes, cell_image_files, scalew=2)
+
 
 def plot_sag_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     fig = plt.figure()
