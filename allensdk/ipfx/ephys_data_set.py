@@ -211,13 +211,14 @@ class EphysDataSet(object):
 
 
 class Sweep(object):
-    def __init__(self, t, v, i, expt_idx_range, sampling_rate=None, id=None):
+    def __init__(self, t, v, i, expt_idx_range, sampling_rate=None, id=None, clamp_mode=None):
         self.t = t
         self.v = v
         self.i = i
         self.expt_idx_range = expt_idx_range
         self.sampling_rate = sampling_rate
         self.id = id
+        self.clamp_mode = clamp_mode
 
     @property
     def t_end(self):

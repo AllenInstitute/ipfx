@@ -164,16 +164,20 @@ def create_nwb_reader(nwb_file):
 
     Returns
     -------
-        reader object
+    reader object
     """
 
     with h5py.File(nwb_file, 'r') as f:
-        epochs = f["epochs"].keys()
+        sweep_names = [e for e in f["acquisition/timeseries"].keys()]
+        sweep_naming_convention = sweep_names[0].split('_')[0]
 
-    if epochs:
+    if sweep_naming_convention =="data":
+        return NWB_Raw(nwb_file)
+    elif sweep_naming_convention=="Sweep":
         return NWB_Processed(nwb_file)
     else:
-        return NWB_Raw(nwb_file)
+        raise ValueError("Unknown sweep naming convention")
+
 
 
 
