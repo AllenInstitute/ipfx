@@ -35,4 +35,4 @@ def run_visualization(input_nwb_file, stimulus_ontology_file, qc_fig_dir, sweep_
                            api_sweeps=False)
 
 
-    display_features(qc_fig_dir, data_set, feature_data, plot_sweep_figures=False, plot_cell_figures=True)
+    display_features(qc_fig_dir, data_set, feature_data, plot_sweep_figures=True, plot_cell_figures=True)
