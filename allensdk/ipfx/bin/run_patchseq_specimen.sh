@@ -1,4 +1,4 @@
-OUTPUT_DIR=/allen/aibs/technology/sergeyg/ephys_pipeline/patch_seq_recent_experiments/
+OUTPUT_DIR=/local1/ephys/patchseq/recspecimens
 
 INPUT_NWB_FILE_FULL_PATH=$1
 INPUT_NWB_FILE=${INPUT_NWB_FILE_FULL_PATH##*/}
@@ -9,7 +9,7 @@ INPUT_JSON=$CELL_DIR/pipeline_input.json
 OUTPUT_JSON=$CELL_DIR/pipeline_output.json
 LOG_FILE=$CELL_DIR/log.txt
 
-mkdir -p $OUTPUT_DIR
+mkdir -p $CELL_DIR
 
 python generate_patchseq_pipeline_input.py "${INPUT_NWB_FILE_FULL_PATH}" "${CELL_DIR}"
 python run_pipeline.py --input_json $INPUT_JSON --output_json $OUTPUT_JSON --log_level DEBUG |& tee $LOG_FILE
