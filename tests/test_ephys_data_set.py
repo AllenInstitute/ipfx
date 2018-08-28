@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from allensdk.ipfx.ephys_data_set import load_default_stimulus_ontology, StimulusOntology
+from allensdk.ipfx.stimulus import load_default_stimulus_ontology, StimulusOntology
 from allensdk.ipfx.ephys_data_set import EphysDataSet
 
 

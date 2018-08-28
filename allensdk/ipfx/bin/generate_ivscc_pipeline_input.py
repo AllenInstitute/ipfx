@@ -1,10 +1,8 @@
 import json
-import os
 import allensdk.internal.core.lims_utilities as lu
 import sys
 
-import allensdk.ipfx.ephys_data_set as eds
-import allensdk.ipfx.qc_features as qcf
+import allensdk.ipfx.stimulus as stm
 import allensdk.ipfx.qc_protocol as qcp
 import allensdk.core.json_utilities as ju
 import os.path
@@ -68,7 +66,7 @@ else:
 with open(res['input_json'], 'r') as f:
     d = json.load(f)
 
-stimulus_ontology_file = eds.DEFAULT_STIMULUS_ONTOLOGY_FILE
+stimulus_ontology_file = stm.DEFAULT_STIMULUS_ONTOLOGY_FILE
 
 if not os.path.exists(cell_dir):
     os.makedirs(cell_dir)

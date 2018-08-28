@@ -1,7 +1,7 @@
 import json
 import sys
 import logging
-import allensdk.ipfx.ephys_data_set as eds
+import allensdk.ipfx.stimulus as stm
 import allensdk.ipfx.qc_protocol as qcp
 import allensdk.core.json_utilities as ju
 import os.path

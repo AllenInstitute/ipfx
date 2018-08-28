@@ -4,10 +4,11 @@ import re
 import logging
 
 from .ephys_data_set import EphysDataSet, Sweep
-import allensdk.ipfx.mies_nwb.lab_notebook_reader as lab_notebook_reader
+import allensdk.ipfx.lab_notebook_reader as lab_notebook_reader
 import allensdk.ipfx.nwb_reader as nwb_reader
 
 import allensdk.ipfx.stim_features as st
+
 
 class AibsDataSet(EphysDataSet):
     def __init__(self, sweep_info=[], nwb_file=None, h5_file=None, ontology=None, api_sweeps=True):
@@ -22,6 +23,7 @@ class AibsDataSet(EphysDataSet):
             sweep_info = self.extract_sweep_info()
 
         self.sweep_table = pd.DataFrame.from_records(sweep_info)
+
 
     def extract_sweep_info(self):
         """
@@ -133,17 +135,13 @@ class AibsDataSet(EphysDataSet):
         hz = sweep_data['sampling_rate']
         dt = 1. / hz
         sweep_data['time'] = np.arange(0, len(sweep_data['response'])) * dt
+        sweep_info = self.get_sweep_info_by_sweep_number(sweep_number)
 
-        if "index_range" not in sweep_data:
-            sweep_data['index_range'] = st.get_experiment_epoch(sweep_data['stimulus'],sweep_data['response'],hz)
-
-        end_ix = sweep_data['index_range'][1]
+        start_ix, end_ix = sweep_data['index_range']
 
         t = sweep_data['time'][0:end_ix+1]
-        response = sweep_data['response'][0:end_ix + 1]
+        response = sweep_data['response'][0:end_ix+1]
         stimulus = sweep_data['stimulus'][0:end_ix+1]
-
-        sweep_info = self.get_sweep_info_by_sweep_number(sweep_number)
 
         if sweep_info['clamp_mode'] == "VoltageClamp":  # voltage clamp
             v = stimulus
