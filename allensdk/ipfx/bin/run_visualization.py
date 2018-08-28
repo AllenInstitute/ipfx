@@ -3,7 +3,7 @@ import logging
 import shutil
 
 import allensdk.ipfx.plot_qc_figures as plotqc
-from allensdk.ipfx.ephys_data_set import StimulusOntology
+from allensdk.ipfx.stimulus import StimulusOntology
 from allensdk.ipfx.aibs_data_set import AibsDataSet
 
 from allensdk.config.manifest import Manifest
@@ -27,12 +27,10 @@ def display_features(qc_fig_dir, data_set, feature_data, plot_sweep_figures=True
 
 def run_visualization(input_nwb_file, stimulus_ontology_file, qc_fig_dir, sweep_info, feature_data):
 
-
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else None
     data_set = AibsDataSet(sweep_info=sweep_info,
                            nwb_file=input_nwb_file,
                            ontology=ont,
                            api_sweeps=False)
-
 
     display_features(qc_fig_dir, data_set, feature_data, plot_sweep_figures=True, plot_cell_figures=True)

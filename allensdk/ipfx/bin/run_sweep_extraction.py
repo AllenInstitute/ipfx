@@ -1,5 +1,4 @@
-from allensdk.ipfx.ephys_data_set import StimulusOntology
-from allensdk.ipfx.mies_nwb.mies_data_set import MiesDataSet
+from allensdk.ipfx.stimulus import StimulusOntology
 
 import allensdk.ipfx.qc_features as qcf
 import allensdk.core.json_utilities as ju

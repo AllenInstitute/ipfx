@@ -1,18 +1,8 @@
 #!/usr/bin/python
 import logging
-import sys
-import math
-import os
-import re
-import copy
-import json
-import numpy as np
-import argparse
-import h5py
 
-from allensdk.ipfx.mies_nwb.mies_data_set import MiesDataSet
 from allensdk.ipfx.aibs_data_set import AibsDataSet
-from allensdk.ipfx.ephys_data_set import StimulusOntology
+from allensdk.ipfx.stimulus import StimulusOntology
 
 import allensdk.ipfx.qc_protocol as qcp
 

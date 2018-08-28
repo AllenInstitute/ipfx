@@ -5,7 +5,7 @@ import shutil
 import argschema as ags
 
 import allensdk.ipfx.data_set_features as dsft
-from allensdk.ipfx.ephys_data_set import EphysDataSet, StimulusOntology
+from allensdk.ipfx.stimulus import StimulusOntology
 from allensdk.ipfx._schemas import FeatureExtractionParameters
 from allensdk.ipfx.aibs_data_set import AibsDataSet
 
