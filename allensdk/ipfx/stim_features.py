@@ -109,10 +109,11 @@ def get_experiment_epoch(i,v,hz):
     if len(diff_idx) == 0:
         raise ValueError("Empty stimulus trace")
 
-    if len(diff_idx) < 4:
-        raise ValueError("Stimulus trace is missing either a test pulse or a stimulation pulse.")
+    if len(diff_idx) >= 4:
+        idx = 2  # skip the first up/down assuming that there is a test pulse
+    else:
+        idx = 0
 
-    idx = 2  # skip the first up/down assuming that there is a test pulse
     stim_start_idx = diff_idx[idx] + 1  # shift by one to compensate for diff()
     expt_start_idx = stim_start_idx - int(PRESTIM_STABILITY_EPOCH * hz)
     #       Recording ends when zeros start
@@ -181,8 +182,7 @@ def find_stim_amplitude_and_duration(idx0, stim, hz):
         amp = float(peak_high)
     else:
         amp = float(peak_low)
-
-    return amp, dur / hz
+    return amp, dur
 
 
 def find_stim_interval(idx0, stim, hz):
@@ -203,11 +203,11 @@ def find_stim_interval(idx0, stim, hz):
 
     # time between break onsets
     dbreaks = np.diff(break_idxs)
-
     if len(np.unique(break_durs)) == 1 and len(np.unique(dbreaks)) == 1:
         return dbreaks[0] / hz
 
     return None
+
 
 def get_stim_characteristics(i, t, no_test_pulse=False):
     """

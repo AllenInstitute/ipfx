@@ -179,7 +179,7 @@ def plot_sweep_figures(data_set, image_dir, sizes):
             xTP = t_init[0:tp_steps]
             yTP = v_init[0:tp_steps]
             axTP.plot(xTP, yTP, linewidth=1)
-            axTP.set_xlim(0, tp_len)
+            axTP.set_xlim(xTP[0], xTP[-1])
 #            sns.despine()
 
             exp_fig = plt.figure()
@@ -226,11 +226,7 @@ def plot_sweep_figures(data_set, image_dir, sizes):
             axTP.plot(xTP, yTPiN, linewidth=1, label="init")
             axTP.plot(xTP, yTPpN, linewidth=1, label="prev")
             axTP.plot(xTP, yTPN, linewidth=1, label="this")
-            axTP.set_xlim(0, tp_len)
-
-
-
-#            sns.despine()
+            axTP.set_xlim(xTP[0], xTP[-1])
 
             exp_fig = plt.figure()
             axDP = plt.gca()
@@ -372,11 +368,12 @@ def plot_subthreshold_long_square_figures(data_set, cell_features, lims_features
         stim_start, stim_dur, stim_amp, start_idx, end_idx = st.get_stim_characteristics(i, t)
         plt.xlim(stim_start - 0.05, stim_start + stim_dur + 0.05)
         peak_idx = subthresh_dict[s]['peak_deflect'][1]
-        peak_t = peak_idx*dt
+        peak_t = t[peak_idx]
         plt.scatter([peak_t], [subthresh_dict[s]['peak_deflect'][0]], color='red', zorder=10)
         popt = ft.fit_membrane_time_constant(t, v, stim_start, peak_t)
         plt.title(str(s))
         plt.plot(t[start_idx:peak_idx], exp_curve(t[start_idx:peak_idx] - t[start_idx], *popt), color='blue')
+        plt.xlabel("s")
 
 
     for index, s in enumerate(tau_sweeps):

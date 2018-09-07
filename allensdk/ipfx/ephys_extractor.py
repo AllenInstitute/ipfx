@@ -258,6 +258,9 @@ class SpikeTrainFeatureExtractor(object):
     def process(self, t, v, i, spikes_df, extra_features=None):
         features = basic_spike_train_features(t, spikes_df, self.start, self.end)
 
+        if self.start is None:
+            self.start = t[0]
+
         if extra_features is None:
             extra_features = []
 

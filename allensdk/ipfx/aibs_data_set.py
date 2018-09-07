@@ -121,6 +121,8 @@ class AibsDataSet(EphysDataSet):
 
     def sweep(self, sweep_number):
         """
+        Create an instance of the Sweep object from a data set sweep
+        Time t=0 is set to the start of the experiment epoch
 
         Parameters
         ----------
@@ -134,12 +136,12 @@ class AibsDataSet(EphysDataSet):
         sweep_data = self.nwb_data.get_sweep_data(sweep_number)
         hz = sweep_data['sampling_rate']
         dt = 1. / hz
-        sweep_data['time'] = np.arange(0, len(sweep_data['response'])) * dt
         sweep_info = self.get_sweep_info_by_sweep_number(sweep_number)
 
         start_ix, end_ix = sweep_data['index_range']
 
-        t = sweep_data['time'][0:end_ix+1]
+        t = np.arange(0,end_ix+1)*dt - start_ix*dt
+
         response = sweep_data['response'][0:end_ix+1]
         stimulus = sweep_data['stimulus'][0:end_ix+1]
 

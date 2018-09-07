@@ -36,6 +36,8 @@ def check_json_files_are_equal(json1, json2):
     return d1 == d2
 
 
+
+
 @pytest.mark.parametrize('specimen,benchmark_pipeline_input_json,benchmark_pipeline_output_json', test_specimens_params)
 def test_pipeline_output(specimen, benchmark_pipeline_input_json, benchmark_pipeline_output_json, tmpdir_factory):
     """
