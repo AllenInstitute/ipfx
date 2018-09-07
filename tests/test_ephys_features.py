@@ -64,7 +64,7 @@ def test_find_time_out_of_bounds():
     t = np.array([0, 1, 2])
     t_0 = 4
 
-    with pytest.raises(ft.FeatureError):
+    with pytest.raises(AssertionError):
         ft.find_time_index(t, t_0)
 
 

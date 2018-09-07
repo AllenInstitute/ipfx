@@ -158,6 +158,9 @@ def extract_cell_features(data_set,
 
     lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
     lsq_start, lsq_dur, _, _, _ = st.get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
+
+
+
     logging.info("Analyzing Long Square")
     logging.info("Long square stim start: %f, duration: %f", lsq_start, lsq_dur)
 
@@ -453,6 +456,7 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
         else:
             subthresh_min_amp = -100
             logging.info("Assigned subthreshold minimum amplitude of %f.", subthresh_min_amp)
+
 
     cell_features = extract_cell_features(data_set,
                                           ramp_sweep_numbers,

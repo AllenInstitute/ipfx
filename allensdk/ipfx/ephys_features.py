@@ -633,13 +633,22 @@ def analyze_trough_details(v, t, spike_indexes, peak_indexes, clipped=None, end=
 
 
 def find_time_index(t, t_0):
-    """Find the index value of a given time (t_0) in a time series (t)."""
+    """ Find the index value of a given time (t_0) in a time series (t).
 
-    t_gte = np.flatnonzero(t >= t_0)
-    if not t_gte.size:
-        raise FeatureError("Could not find given time in time vector")
 
-    return t_gte[0]
+    Parameters
+    ----------
+    t   : time array
+    t_0 : time point to find an index
+
+    Returns
+    -------
+    idx: index of t closest to t_0
+    """
+    assert t[0] <= t_0 <= t[-1], "Given time is outside of time range"
+
+    idx = np.argmin(abs(t - t_0))
+    return idx
 
 
 def calculate_dvdt(v, t, filter=None):
@@ -1284,6 +1293,7 @@ def time_constant(t, v, i, start, end, frac=0.1, baseline_interval=0.1):
 
     return 1. / inv_tau
 
+
 def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     """Calculate the sag in a hyperpolarizing voltage response.
 
@@ -1301,7 +1311,9 @@ def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
     v_steady = average_voltage(v, t, start=end - baseline_interval, end=end)
     sag = (v_peak_avg - v_steady) / (v_peak_avg - v_baseline)
+
     return sag
+
 
 def input_resistance(t_set, i_set, v_set, start, end, baseline_interval=0.1):
     """Estimate input resistance in MOhms, assuming all sweeps in passed extractor

@@ -9,28 +9,31 @@ LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
 
 
 def measure_blowout(v, idx0):
-    return 1e3 * np.mean(v[idx0:])
+
+    return 1e3 * np.mean(v[idx0:]*1e-3)
 
 
 def measure_electrode_0(curr, hz, t=0.005):
+
     n_time_steps = int(t * hz)
     # electrode 0 is the average current reading with zero voltage input
     # (ie, the equivalent of resting potential in current-clamp mode)
-    return 1e12 * np.mean(curr[0:n_time_steps])
+    return 1e12 * np.mean(curr[0:n_time_steps]*1e-12)
 
 
-def measure_seal(v, curr, hz):
-    t = np.arange(len(v)) / hz
-    return 1e-9 * get_r_from_stable_pulse_response(v, curr, t)
+def measure_seal(v, curr, t):
+
+    return 1e-9 * get_r_from_stable_pulse_response(v*1e-3, curr*1e-12, t)
+
 
 def measure_input_resistance(v, curr, t):
-#    t = np.arange(len(v)) / hz
-    return 1e-6 * get_r_from_stable_pulse_response(v, curr, t)
+
+    return 1e-6 * get_r_from_stable_pulse_response(v*1e-3, curr*1e-12, t)
 
 
-def measure_initial_access_resistance(v, curr, hz):
-    t = np.arange(len(v)) / hz
-    return 1e-6 * get_r_from_peak_pulse_response(v, curr, t)
+def measure_initial_access_resistance(v, curr, t):
+    return 1e-6 * get_r_from_peak_pulse_response(v*1e-3, curr*1e-12, t)
+
 
 def measure_vm(vals):
     if len(vals) < 1:
@@ -46,14 +49,15 @@ def get_r_from_stable_pulse_response(v, i, t):
 
     Parameters
     ----------
-    v : float membrane voltage
-    i : float input current
+    v : float membrane voltage (V)
+    i : float input current (A)
     t : time (s)
 
     Returns
     -------
     ir: float input resistance
     """
+
 
     dv = np.diff(v)
     up_idx = np.flatnonzero(dv > 0)
@@ -142,7 +146,7 @@ def cell_qc_features(data_set, manual_values=None):
     try:
         blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
-        blowout_mv = measure_blowout(blowout_data.v*1e-3, blowout_data.expt_idx_range[0])
+        blowout_mv = measure_blowout(blowout_data.v, blowout_data.expt_idx_range[0])
         output_data['blowout_mv'] = blowout_mv
     except IndexError as e:
         msg = "Blowout is not available"
@@ -156,7 +160,7 @@ def cell_qc_features(data_set, manual_values=None):
         bath_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.bath_names)
         bath_data = data_set.sweep(bath_sweep_number)
 
-        e0 = measure_electrode_0(bath_data.i*1e-12, bath_data.sampling_rate)
+        e0 = measure_electrode_0(bath_data.i, bath_data.sampling_rate)
         output_data['electrode_0_pa'] = e0
     except IndexError as e:
         msg = "Electrode 0 is not available"
@@ -170,9 +174,9 @@ def cell_qc_features(data_set, manual_values=None):
         seal_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.seal_names)
         seal_data = data_set.sweep(seal_sweep_number)
 
-        seal_gohm = measure_seal(seal_data.v*1e-3,
-                                 seal_data.i*1e-12,
-                                 seal_data.sampling_rate)
+        seal_gohm = measure_seal(seal_data.v,
+                                 seal_data.i,
+                                 seal_data.t)
 
 
         # error may arise in computing seal, which falls through to
@@ -213,8 +217,8 @@ def cell_qc_features(data_set, manual_values=None):
         ###########################
         # input resistance
         try:
-            ir = measure_input_resistance(breakin_data.v*1e-3,
-                                          breakin_data.i*1e-12,
+            ir = measure_input_resistance(breakin_data.v,
+                                          breakin_data.i,
                                           breakin_data.t)
 
         except Exception as e:
@@ -232,9 +236,9 @@ def cell_qc_features(data_set, manual_values=None):
         ###########################
         # initial access resistance
         try:
-            sr = measure_initial_access_resistance(breakin_data.v*1e-3,
-                                                   breakin_data.i*1e-12,
-                                                   breakin_data.sampling_rate)
+            sr = measure_initial_access_resistance(breakin_data.v,
+                                                   breakin_data.i,
+                                                   breakin_data.t)
 
         except Exception as e:
             logging.warning("Error reading initial access resistance.")
@@ -293,17 +297,16 @@ def sweep_qc_features(data_set):
 
         sweep = {}
 
-        voltage = sweep_data.v*1e-3
-        current = sweep_data.i*1e-12
+        voltage = sweep_data.v
+        current = sweep_data.i
         t = sweep_data.t
         hz = sweep_data.sampling_rate
         expt_start_idx, expt_end_idx = sweep_data.expt_idx_range
-        stim_start_ix = st.find_stim_start(current, expt_start_idx)
 
         # measure Vm and noise before stimulus
         idx0, idx1 = st.get_first_vm_noise_epoch(expt_start_idx, hz) # count from the beginning of the experiment
 
-        _, rms0 = measure_vm(1e3 * voltage[idx0:idx1])
+        _, rms0 = measure_vm(voltage[idx0:idx1])
 
         sweep["pre_noise_rms_mv"] = float(rms0)
 
@@ -316,18 +319,20 @@ def sweep_qc_features(data_set):
 
         if not is_ramp:
             idx0, idx1 = st.get_last_vm_epoch(expt_end_idx, hz)
-            mean_last_vm_epoch, _ = measure_vm(1e3 * voltage[idx0:idx1])
+            mean_last_vm_epoch, _ = measure_vm(voltage[idx0:idx1])
             idx0, idx1 = st.get_last_vm_noise_epoch(expt_end_idx, hz)
-            _, rms1 = measure_vm(1e3 * voltage[idx0:idx1])
+            _, rms1 = measure_vm(voltage[idx0:idx1])
             sweep["post_vm_mv"] = float(mean_last_vm_epoch)
             sweep["post_noise_rms_mv"] = float(rms1)
         else:
             sweep["post_noise_rms_mv"] = None
 
         # measure Vm and noise over extended interval, to check stability
-        sweep['stimulus_start_time'] = stim_start_ix / sweep_data.sampling_rate
+
+        stim_start_ix = st.find_stim_start(current, expt_start_idx)
+        sweep['stimulus_start_time'] = t[stim_start_ix]
         idx0, idx1 = st.get_stability_vm_epoch(stim_start_ix, hz)
-        mean2, rms2 = measure_vm(1e3 * voltage[idx0:idx1])
+        mean2, rms2 = measure_vm(voltage[idx0:idx1])
 
         sweep["slow_vm_mv"] = float(mean2)
         sweep["slow_noise_rms_mv"] = float(rms2)
@@ -347,7 +352,7 @@ def sweep_qc_features(data_set):
         stim_amp, stim_dur = st.find_stim_amplitude_and_duration(expt_start_idx, current, hz)
         stim_int = st.find_stim_interval(expt_start_idx, current, hz)
 
-        sweep['stimulus_amplitude'] = stim_amp * 1e12
+        sweep['stimulus_amplitude'] = stim_amp
         sweep['stimulus_duration'] = stim_dur
         sweep['stimulus_interval'] = stim_int
 
