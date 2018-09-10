@@ -313,6 +313,7 @@ class ABFConverter:
                     gain = abf._adcSection.fADCProgrammableGain[channel]
                     resolution = np.nan
                     starting_time = self._calculateStartingTime(abf)
+                    stimulus_description = abf.protocol
                     rate = float(abf.dataRate)
                     source = PLACEHOLDER
                     description = json.dumps({"protocol": abf.protocol,
@@ -349,6 +350,7 @@ class ABFConverter:
                                                       resistance_comp_correction=resistance_comp_correction,
                                                       resistance_comp_bandwidth=resistance_comp_bandwidth,
                                                       resistance_comp_prediction=resistance_comp_prediction,
+                                                      stimulus_description=stimulus_description,
                                                       whole_cell_capacitance_comp=whole_cell_capacitance_comp,
                                                       whole_cell_series_resistance_comp=whole_cell_series_resistance_comp)  # noqa: E501
 
@@ -369,6 +371,7 @@ class ABFConverter:
                                                       description=description,
                                                       bias_current=bias_current,
                                                       bridge_balance=bridge_balance,
+                                                      stimulus_description=stimulus_description,
                                                       capacitance_compensation=capacitance_compensation)
                     else:
                         raise ValueError(f"Unsupported clamp mode {clampMode}.")
