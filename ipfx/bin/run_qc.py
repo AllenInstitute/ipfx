@@ -1,13 +1,13 @@
 #!/usr/bin/python
 import logging
 
-from allensdk.ipfx.aibs_data_set import AibsDataSet
-from allensdk.ipfx.stimulus import StimulusOntology
+from ipfx.aibs_data_set import AibsDataSet
+from ipfx.stimulus import StimulusOntology
 
-import allensdk.ipfx.qc_protocol as qcp
+import ipfx.qc_protocol as qcp
 
 import argschema as ags
-from allensdk.ipfx._schemas import QcParameters
+from ipfx._schemas import QcParameters
 import allensdk.core.json_utilities as ju
 
 

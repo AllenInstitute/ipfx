@@ -1,6 +1,6 @@
 import os
 import argschema as ags
-from allensdk.ipfx._schemas import PipelineParameters
+from ipfx._schemas import PipelineParameters
 
 from run_sweep_extraction import run_sweep_extraction
 from run_qc import run_qc
@@ -61,12 +61,12 @@ def run_pipeline(input_nwb_file,
                                        se_output['cell_features'])
     logging.info("Extracted features!")
 
-    # run_visualization(input_nwb_file,
-    #                   stimulus_ontology_file,
-    #                   qc_fig_dir,
-    #                   se_output["sweep_features"],
-    #                   fx_output)
-    # logging.info("Visualized results!")
+    run_visualization(input_nwb_file,
+                      stimulus_ontology_file,
+                      qc_fig_dir,
+                      se_output["sweep_features"],
+                      fx_output)
+    logging.info("Visualized results!")
 
     se_output['sweep_data'] = se_output.pop('sweep_features') # for backward compatibility only
     # On Windows int64 keys of sweep numbers cannot be converted to str by json.dump when serializing. Thus, we are converting here:

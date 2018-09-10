@@ -35,9 +35,7 @@
 #
 import pytest
 import numpy as np
-import allensdk.ipfx.ephys_extractor as efex
-import allensdk.ipfx.ephys_data_set as eds
-import os
+import ipfx.ephys_extractor as efex
 
 def test_extractors_no_values():
     efex.SpikeExtractor()

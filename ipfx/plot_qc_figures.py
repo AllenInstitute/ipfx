@@ -2,13 +2,11 @@ import matplotlib
 matplotlib.use('agg')
 
 import logging
-
-import allensdk.ipfx.ephys_features as ft
-import allensdk.ipfx.data_set_features as dsft
-import allensdk.ipfx.stim_features as st
-
 import os
 import numpy as np
+import ipfx.ephys_features as ft
+import ipfx.stim_features as st
+
 
 from scipy.optimize import curve_fit
 import scipy.signal as sg

@@ -1,13 +1,13 @@
 import json
 import sys
 import logging
-import allensdk.ipfx.stimulus as stm
-import allensdk.ipfx.qc_protocol as qcp
+import ipfx.stimulus as stm
+import ipfx.qc_protocol as qcp
 import allensdk.core.json_utilities as ju
 import os.path
 from run_pipeline import run_pipeline
 
-stimulus_ontology_file = eds.DEFAULT_STIMULUS_ONTOLOGY_FILE
+stimulus_ontology_file = stm.DEFAULT_STIMULUS_ONTOLOGY_FILE
 
 input_nwb_file = sys.argv[1]
 output_dir = sys.argv[2]

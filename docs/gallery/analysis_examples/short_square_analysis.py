@@ -8,10 +8,10 @@ Detect short square features
 import os
 import matplotlib.pyplot as plt
 from allensdk.api.queries.cell_types_api import CellTypesApi
-from allensdk.ipfx.aibs_data_set import AibsDataSet
-from allensdk.ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
-from allensdk.ipfx.stimulus_protocol_analysis import ShortSquareAnalysis
-import allensdk.ipfx.ephys_features as ft
+from ipfx.aibs_data_set import AibsDataSet
+from ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
+from ipfx.stimulus_protocol_analysis import ShortSquareAnalysis
+import ipfx.ephys_features as ft
 
 # Download and access the experimental data
 ct = CellTypesApi()

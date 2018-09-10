@@ -1,6 +1,6 @@
 default_context:
   project_name: ipfx
-  repo_url: https://github.com/AllenInstitute/allensdk.ipfx
+  repo_url: https://github.com/AllenInstitute/ipfx
   project_slug: ipfx
   user_name: dyf
   project_short_description: intrinsic physiology feature extractor

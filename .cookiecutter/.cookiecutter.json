@@ -1,15 +1,15 @@
 {
     "_copy_without_render": [
         "docs/aibs_sphinx"
-    ], 
-    "_template": "https://github.com/AllenInstitute/pyproject_template", 
-    "email": "davidf@alleninstitute.org", 
-    "full_name": "David Feng", 
-    "project_name": "ipfx", 
-    "project_namespace": "allensdk", 
-    "project_short_description": "intrinsic physiology feature extractor", 
-    "project_slug": "ipfx", 
-    "repo_url": "https://github.com/AllenInstitute/allensdk.ipfx", 
-    "user_name": "dyf", 
+    ],
+    "_template": "https://github.com/AllenInstitute/pyproject_template",
+    "email": "davidf@alleninstitute.org",
+    "full_name": "David Feng",
+    "project_name": "ipfx",
+    "project_namespace": "allensdk",
+    "project_short_description": "intrinsic physiology feature extractor",
+    "project_slug": "ipfx",
+    "repo_url": "https://github.com/AllenInstitute/ipfx",
+    "user_name": "dyf",
     "version": "0.1.0"
 }

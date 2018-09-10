@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from allensdk.api.queries.cell_types_api import CellTypesApi
-from allensdk.ipfx.aibs_data_set import AibsDataSet
-from allensdk.ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
-from allensdk.ipfx.stimulus_protocol_analysis import RampAnalysis
+from ipfx.aibs_data_set import AibsDataSet
+from ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
+from ipfx.stimulus_protocol_analysis import RampAnalysis
 
 # Download and access the experimental data
 ct = CellTypesApi()

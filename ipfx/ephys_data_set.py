@@ -1,7 +1,7 @@
 import json
 import os
 import logging
-import allensdk.ipfx.stimulus as stm
+import ipfx.stimulus as stm
 
 
 class EphysDataSet(object):

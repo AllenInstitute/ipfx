@@ -3,6 +3,7 @@ import allensdk.core.json_utilities as ju
 import os
 import sys
 import allensdk.internal.core.lims_utilities as lu
+import ipfx.stimulus as stm
 
 specimen_id = int(sys.argv[1])
 
@@ -23,7 +24,6 @@ with open(res['input_json'], 'r') as f:
 
 
 
-import allensdk.ipfx.stimulus as stm
 stimulus_ontology_file = stm.DEFAULT_STIMULUS_ONTOLOGY_FILE
 test_dir = "specimen_%d" % specimen_id
 if not os.path.exists(test_dir):

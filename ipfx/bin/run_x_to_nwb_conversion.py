@@ -6,7 +6,7 @@ import argparse
 
 import pyabf
 
-from allensdk.ipfx.x_to_nwb.ABFConverter import ABFConverter
+from ipfx.x_to_nwb.ABFConverter import ABFConverter
 
 
 def convert(inFileOrFolder, overwrite=False, fileType=None):

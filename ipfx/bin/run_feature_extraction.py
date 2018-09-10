@@ -4,10 +4,10 @@ import shutil
 
 import argschema as ags
 
-import allensdk.ipfx.data_set_features as dsft
-from allensdk.ipfx.stimulus import StimulusOntology
-from allensdk.ipfx._schemas import FeatureExtractionParameters
-from allensdk.ipfx.aibs_data_set import AibsDataSet
+import ipfx.data_set_features as dsft
+from ipfx.stimulus import StimulusOntology
+from ipfx._schemas import FeatureExtractionParameters
+from ipfx.aibs_data_set import AibsDataSet
 
 import allensdk.core.json_utilities as ju
 from allensdk.core.nwb_data_set import NwbDataSet

@@ -5,9 +5,9 @@ Estimate Spike Detection Parameters
 Estimate spike detection parameters
 """
 
-from allensdk.ipfx.aibs_data_set import AibsDataSet
-import allensdk.ipfx.ephys_features as ft
-import allensdk.ipfx.ephys_extractor as fx
+from ipfx.aibs_data_set import AibsDataSet
+import ipfx.ephys_features as ft
+import ipfx.ephys_extractor as fx
 
 from allensdk.api.queries.cell_types_api import CellTypesApi
 

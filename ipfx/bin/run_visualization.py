@@ -2,9 +2,9 @@ import os
 import logging
 import shutil
 
-import allensdk.ipfx.plot_qc_figures as plotqc
-from allensdk.ipfx.stimulus import StimulusOntology
-from allensdk.ipfx.aibs_data_set import AibsDataSet
+import ipfx.plot_qc_figures as plotqc
+from ipfx.stimulus import StimulusOntology
+from ipfx.aibs_data_set import AibsDataSet
 
 from allensdk.config.manifest import Manifest
 import allensdk.core.json_utilities as ju
