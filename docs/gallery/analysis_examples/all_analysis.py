@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from allensdk.api.queries.cell_types_api import CellTypesApi
-from allensdk.ipfx.aibs_data_set import AibsDataSet
-from allensdk.ipfx.data_set_features import extract_data_set_features
+from ipfx.aibs_data_set import AibsDataSet
+from ipfx.data_set_features import extract_data_set_features
 
 # Download and access the experimental data
 ct = CellTypesApi()

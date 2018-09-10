@@ -1,11 +1,11 @@
-from allensdk.ipfx.stimulus import StimulusOntology
+from ipfx.stimulus import StimulusOntology
 
-import allensdk.ipfx.qc_features as qcf
+import ipfx.qc_features as qcf
 import allensdk.core.json_utilities as ju
 
 import argschema as ags
-from allensdk.ipfx._schemas import SweepExtractionParameters
-from allensdk.ipfx.aibs_data_set import AibsDataSet
+from ipfx._schemas import SweepExtractionParameters
+from ipfx.aibs_data_set import AibsDataSet
 
 # manual keys are values that can be passed in through input.json.
 # these values are used if the particular value cannot be computed.

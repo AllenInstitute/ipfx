@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
-from allensdk.ipfx.stimulus import load_default_stimulus_ontology, StimulusOntology
-from allensdk.ipfx.ephys_data_set import EphysDataSet
+from ipfx.stimulus import load_default_stimulus_ontology, StimulusOntology
+from ipfx.ephys_data_set import EphysDataSet
 
 
 @pytest.fixture()

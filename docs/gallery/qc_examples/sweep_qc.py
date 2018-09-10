@@ -7,8 +7,8 @@ Estimate sweep QC features
 
 import os
 import pandas as pd
-from allensdk.ipfx.aibs_data_set import AibsDataSet
-import allensdk.ipfx.qc_features as qcf
+from ipfx.aibs_data_set import AibsDataSet
+import ipfx.qc_features as qcf
 from allensdk.api.queries.cell_types_api import CellTypesApi
 
 

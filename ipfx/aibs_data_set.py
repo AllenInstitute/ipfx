@@ -4,10 +4,9 @@ import re
 import logging
 
 from .ephys_data_set import EphysDataSet, Sweep
-import allensdk.ipfx.lab_notebook_reader as lab_notebook_reader
-import allensdk.ipfx.nwb_reader as nwb_reader
-
-import allensdk.ipfx.stim_features as st
+import ipfx.lab_notebook_reader as lab_notebook_reader
+import ipfx.nwb_reader as nwb_reader
+import ipfx.stim_features as st
 
 
 class AibsDataSet(EphysDataSet):

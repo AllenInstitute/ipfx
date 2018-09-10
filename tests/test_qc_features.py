@@ -1,4 +1,4 @@
-import allensdk.ipfx.qc_features as qcf
+import ipfx.qc_features as qcf
 import numpy as np
 
 

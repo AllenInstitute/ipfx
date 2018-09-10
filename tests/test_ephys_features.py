@@ -34,8 +34,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 import pytest
-import allensdk.ipfx.ephys_features as ft
-import allensdk.ipfx.stim_features as st
+import ipfx.ephys_features as ft
+import ipfx.stim_features as st
 import numpy as np
 import os
 

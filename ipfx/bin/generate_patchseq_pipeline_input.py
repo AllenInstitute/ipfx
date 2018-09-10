@@ -1,8 +1,8 @@
 import json
 import sys
 
-import allensdk.ipfx.stimulus as stm
-import allensdk.ipfx.qc_protocol as qcp
+import ipfx.stimulus as stm
+import ipfx.qc_protocol as qcp
 import allensdk.core.json_utilities as ju
 import os.path
 

@@ -1,6 +1,6 @@
 import h5py
 import numpy as np
-import allensdk.ipfx.stim_features as st
+import ipfx.stim_features as st
 
 
 class NwbReader(object):

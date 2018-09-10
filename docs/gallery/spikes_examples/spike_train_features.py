@@ -7,8 +7,8 @@ Detect spike train features
 
 import os
 from allensdk.api.queries.cell_types_api import CellTypesApi
-from allensdk.ipfx.aibs_data_set import AibsDataSet
-from allensdk.ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
+from ipfx.aibs_data_set import AibsDataSet
+from ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
 
 # Download and access the experimental data
 ct = CellTypesApi()

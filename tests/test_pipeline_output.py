@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import os
 import allensdk.core.json_utilities as ju
-from allensdk.ipfx.bin.run_pipeline import run_pipeline
+from ipfx.bin.run_pipeline import run_pipeline
 from pkg_resources import resource_filename
 from dictdiffer import diff
 

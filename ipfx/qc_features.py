@@ -1,4 +1,3 @@
-import os, json
 from . import ephys_features as ft
 import logging
 import numpy as np
