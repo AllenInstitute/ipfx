@@ -8,5 +8,5 @@ pillow
 argschema
 allensdk
 dictdiffer
-pyabf>=2.0.18
+pyabf==2.0.18
 pynwb # unreleased development version actually
