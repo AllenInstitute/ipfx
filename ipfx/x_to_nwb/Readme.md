@@ -2,6 +2,12 @@
 
 The script `run_x_to_nwb_conversion.py` allows to convert ABF files to NeurodataWithoutBorders v2 files.
 
+As of 9/2018 PClamp/Clampex does not record all required amplifier settings.
+To workaround that issue we've developed `mcc_get_settings.py` which gathers
+all amplifier settings from all active amplifiers and writes them to a file in
+JSON output. This file can then, in a future `run_x_to_nwb_conversion.py`
+version, be used to provide the missing amplifier settings.
+
 #### Required input files
 
 - ABF files acquired with Clampex/pCLAMP.
