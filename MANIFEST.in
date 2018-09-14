@@ -11,4 +11,4 @@ recursive-exclude * *.py[co]
 
 recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
 
-recursive-include allensdk/ipfx *.json
+recursive-include ipfx *.json
