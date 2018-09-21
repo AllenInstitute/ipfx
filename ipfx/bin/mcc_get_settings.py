@@ -199,6 +199,19 @@ class MultiClampControl:
     def __exit__(self, exc_type, exc_value, traceback):
         self.cleanup()
 
+    def _clearError(self):
+        """
+        Clear error flag and return the now cleared error.
+        """
+
+        err = self._pnError
+        self._pnError = ct.byref(ct.c_int(6000))
+
+        return err
+
+    def _hasError(self):
+        return val(self._pnError, c_int_p) != 6000
+
     def _handleError(self):
         """
         Return a tuple with the error state (T/F), the error value and the error message
@@ -212,13 +225,17 @@ class MultiClampControl:
                    6005: 'MCCMSG_ERROR_MSGTIMEOUT',
                    6006: 'MCCMSG_ERROR_MCCCOMMANDFAIL'}
 
-        errval = val(self._pnError, c_int_p)
-
-        if errval != 6000:
-            self._pnError = ct.byref(ct.c_int(6000))
+        if self._hasError():
+            errval = self._clearError()
             return True, errval, errdict[errval]
 
-        return False, errval, ""
+        return False, 6000, ""
+
+    def _extractValue(self, ptr, ptype):
+        if self._hasError():
+            return float('nan')
+
+        return val(ptr, ptype)
 
     def _getDLL(self, dllPath):
         olddir = os.getcwd()
