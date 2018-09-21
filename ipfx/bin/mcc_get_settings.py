@@ -77,7 +77,8 @@ class DataGatherer():
                    "GetSlowCompCap",
                    "GetFastCompTau",
                    "GetSlowCompTau",
-                   "GetSlowCompTauX20Enable"]
+                   "GetSlowCompTauX20Enable",
+                   "GetZapDuration"]
 
         ICfuncs = ["GetBuzzDuration",
                    "GetHoldingEnable",
@@ -107,7 +108,6 @@ class DataGatherer():
                  "GetLeakSubResist",
                  "GetPulseAmplitude",
                  "GetPulseDuration",
-                 "GetZapDuration",
                  "GetMeterResistEnable",
                  "GetMeterIrmsEnable"]
 
