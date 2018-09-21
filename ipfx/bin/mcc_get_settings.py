@@ -321,6 +321,7 @@ class MultiClampControl:
 # General funcs
     def SetTimeOut(self, u):
         uValue = ct.c_uint(u)
+        self._clearError()
         self.aDLL.MCCMSG_SetTimeOut(self.hMCCmsg, uValue, self._pnError)
         return self._handleError()
 
@@ -335,6 +336,8 @@ class MultiClampControl:
         puCOMPortID = ct.byref(ct.c_uint(0))
         puDeviceID = ct.byref(ct.c_uint(0))
         puChannelID = ct.byref(ct.c_uint(0))  # head stage
+
+        self._clearError()
 
         if self.aDLL.MCCMSG_FindFirstMultiClamp(self.hMCCmsg, puModel, pszSerialNum,
                                                 uBufSize, puCOMPortID, puDeviceID,
@@ -358,6 +361,8 @@ class MultiClampControl:
         puDeviceID = ct.byref(ct.c_uint(0))
         puChannelID = ct.byref(ct.c_uint(0))  # head stage
 
+        self._clearError()
+
         if self.aDLL.MCCMSG_FindNextMultiClamp(self.hMCCmsg, puModel, pszSerialNum,
                                                uBufSize, puCOMPortID, puDeviceID,
                                                puChannelID, self._pnError):
@@ -369,16 +374,19 @@ class MultiClampControl:
         return None
 
     def SelectMultiClamp(self, uModel, _pszSerialNum, uCOMPortID, uDeviceID, uChannelID):
+        self._clearError()
         self.aDLL.MCCMSG_SelectMultiClamp(self.hMCCmsg, uModel, _pszSerialNum,
                                           uCOMPortID, uDeviceID, uChannelID, self._pnError)
         return self._handleError()
 
     def CheckAPIVersion(self):
+        self._clearError()
         queryVersion = ct.c_char_p(API_VERSION_STR)
         self.aDLL.MCCMSG_CheckAPIVersion(queryVersion, self._pnError)
         return self._handleError()
 
     def BuildErrorText(self):
+        self._clearError()
         errval = val(self._pnError, c_int_p)
         txtBufLen = 256
         txtBuf = ct.c_char_p(b' ' * txtBufLen)
@@ -388,504 +396,613 @@ class MultiClampControl:
 
 # MCC mode funcs
     def SetMode(self, u):
+        self._clearError()
         uValue = ct.c_uint(u)
         self.aDLL.MCCMSG_SetMode(self.hMCCmsg, uValue, self._pnError)
         return self._handleError()
 
     def GetMode(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetMode(self.hMCCmsg, self._puPointer, self._pnError)
-        return val(self._puPointer, c_uint_p)
+        return self._extractValue(self._puPointer, c_uint_p)
 
     def SetModeSwitchEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetModeSwitchEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetModeSwitchEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetModeSwitchEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
 # MCC holding funcs
     def SetHoldingEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetHoldingEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetHoldingEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetHoldingEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def SetHolding(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetHolding(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetHolding(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetHolding(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
 # MCC seal test and tuning funcs
     def SetTestSignalEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetTestSignalEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetTestSignalEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetTestSignalEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def SetTestSignalAmplitude(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetTestSignalAmplitude(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetTestSignalAmplitude(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetTestSignalAmplitude(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetTestSignalFrequency(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetTestSignalFrequency(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetTestSignalFrequency(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetTestSignalFrequency(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
 # MCC pipette offset funcs
     def AutoPipetteOffset(self):
+        self._clearError()
         self.aDLL.MCCMSG_AutoPipetteOffset(self.hMCCmsg, self._pnError)
         return self._handleError()
 
     def SetPipetteOffset(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetPipetteOffset(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetPipetteOffset(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetPipetteOffset(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
 # IC ONLY MCC inject slow current
     def SetSlowCurrentInjEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetSlowCurrentInjEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetSlowCurrentInjEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetSlowCurrentInjEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def SetSlowCurrentInjLevel(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetSlowCurrentInjLevel(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetSlowCurrentInjLevel(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetSlowCurrentInjLevel(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetSlowCurrentInjSettlingTime(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetSlowCurrentInjSettlingTime(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetSlowCurrentInjSettlingTime(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetSlowCurrentInjSettlingTime(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
 # VC ONLY MCC compensation funcs
     def SetFastCompCap(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetFastCompCap(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetFastCompCap(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetFastCompCap(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetSlowCompCap(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetSlowCompCap(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetSlowCompCap(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetSlowCompCap(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetFastCompTau(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetFastCompTau(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetFastCompTau(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetFastCompTau(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetSlowCompTau(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetSlowCompTau(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetSlowCompTau(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetSlowCompTau(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetSlowCompTauX20Enable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetSlowCompTauX20Enable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetSlowCompTauX20Enable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetSlowCompTauX20Enable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def AutoFastComp(self):
+        self._clearError()
         self.aDLL.MCCMSG_AutoFastComp(self.hMCCmsg, self._pnError)
         return self._handleError()
 
     def AutoSlowComp(self):
+        self._clearError()
         self.aDLL.MCCMSG_AutoSlowComp(self.hMCCmsg, self._pnError)
         return self._handleError()
 
 # IC ONLY MCC pipette capacitance neutralization funcs
     def SetNeutralizationEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetNeutralizationEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetNeutralizationEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetNeutralizationEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def SetNeutralizationCap(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetNeutralizationCap(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetNeutralizationCap(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetNeutralizationCap(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
 # VC ONLY MCC whole cell funcs
     def SetWholeCellCompEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetWholeCellCompEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetWholeCellCompEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetWholeCellCompEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def SetWholeCellCompCap(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetWholeCellCompCap(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetWholeCellCompCap(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetWholeCellCompCap(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetWholeCellCompResist(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetWholeCellCompResist(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetWholeCellCompResist(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetWholeCellCompResist(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def AutoWholeCellComp(self):
+        self._clearError()
         self.aDLL.MCCMSG_AutoWholeCellComp(self.hMCCmsg, self._pnError)
         return self._handleError()
 
 # VC ONLY MCC rs compensation funcs
     def SetRsCompEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetRsCompEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetRsCompEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetRsCompEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def SetRsCompBandwidth(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetRsCompBandwidth(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetRsCompBandwidth(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetRsCompBandwidth(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetRsCompCorrection(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetRsCompCorrection(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetRsCompCorrection(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetRsCompCorrection(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetRsCompPrediction(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetRsCompPrediction(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetRsCompPrediction(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetRsCompPrediction(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
 # MCC oscillation killer funcs
     def SetOscKillerEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetOscKillerEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetOscKillerEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetOscKillerEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
 # MCC primary (or scaled) signal funcs
     def SetPrimarySignal(self, u):
+        self._clearError()
         uValue = ct.c_uint(u)
         self.aDLL.MCCMSG_SetPrimarySignal(self.hMCCmsg, uValue, self._pnError)
         return self._handleError()
 
     def GetPrimarySignal(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetPrimarySignal(self.hMCCmsg, self._puPointer, self._pnError)
-        return val(self._puPointer, c_uint_p)
+        return self._extractValue(self._puPointer, c_uint_p)
 
     def SetPrimarySignalGain(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetPrimarySignalGain(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetPrimarySignalGain(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetPrimarySignalGain(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetPrimarySignalLPF(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetPrimarySignalLPF(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetPrimarySignalLPF(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetPrimarySignalLPF(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetPrimarySignalHPF(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetPrimarySignalHPF(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetPrimarySignalHPF(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetPrimarySignalHPF(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
 # MCC scope signal funcs
     def SetScopeSignalLPF(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetScopeSignalLPF(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetScopeSignalLPF(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetScopeSignalLPF(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
 # MCC secondary (or raw) signal funcs
     def SetSecondarySignal(self, u):
+        self._clearError()
         uValue = ct.c_uint(u)
         self.aDLL.MCCMSG_SetSecondarySignal(self.hMCCmsg, uValue, self._pnError)
         return self._handleError()
 
     def GetSecondarySignal(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetSecondarySignal(self.hMCCmsg, self._puPointer, self._pnError)
-        return val(self._puPointer, c_uint_p)
+        return self._extractValue(self._puPointer, c_uint_p)
 
     def SetSecondarySignalGain(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetSecondarySignalGain(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetSecondarySignalGain(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetSecondarySignalGain(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetSecondarySignalLPF(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetSecondarySignalLPF(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetSecondarySignalLPF(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetSecondarySignalLPF(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
 # MCC output zero funcs
     def SetOutputZeroEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetOutputZeroEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetOutputZeroEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetOutputZeroEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def SetOutputZeroAmplitude(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetOutputZeroAmplitude(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetOutputZeroAmplitude(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetOutputZeroAmplitude(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def AutoOutputZero(self):
+        self._clearError()
         self.aDLL.MCCMSG_AutoOutputZero(self.hMCCmsg, self._pnError)
         return self._handleError()
 
 # VC ONLY MCC leak subtraction funcs
     def SetLeakSubEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetLeakSubEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetLeakSubEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetLeakSubEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def SetLeakSubResist(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetLeakSubResist(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetLeakSubResist(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetLeakSubResist(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def AutoLeakSub(self):
+        self._clearError()
         self.aDLL.MCCMSG_AutoLeakSub(self.hMCCmsg, self._pnError)
         return self._handleError()
 
 # IC ONLY MCC bridge balance funcs
     def SetBridgeBalEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetBridgeBalEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetBridgeBalEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetBridgeBalEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def SetBridgeBalResist(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetBridgeBalResist(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetBridgeBalResist(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetBridgeBalResist(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def AutoBridgeBal(self):
+        self._clearError()
         self.aDLL.MCCMSG_AutoBridgeBal(self.hMCCmsg, self._pnError)
         return self._handleError()
 
 # IC ONLY MCC clear funcs
     def ClearPlus(self):
+        self._clearError()
         self.aDLL.MCCMSG_ClearPlus(self.hMCCmsg, self._pnError)
         return self._handleError()
 
     def ClearMinus(self):
+        self._clearError()
         self.aDLL.MCCMSG_ClearMinus(self.hMCCmsg, self._pnError)
         return self._handleError()
 
 # MCC pulse zap buzz!
     def Pulse(self):
+        self._clearError()
         self.aDLL.MCCMSG_Pulse(self.hMCCmsg, self._pnError)
         return self._handleError()
 
     def SetPulseAmplitude(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetPulseAmplitude(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetPulseAmplitude(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetPulseAmplitude(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def SetPulseDuration(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetPulseDuration(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetPulseDuration(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetPulseDuration(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def Zap(self):
+        self._clearError()
         self.aDLL.MCCMSG_Zap(self.hMCCmsg, self._pnError)
         return self._handleError()
 
     def SetZapDuration(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetZapDuration(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetZapDuration(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetZapDuration(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
     def Buzz(self):
+        self._clearError()
         self.aDLL.MCCMSG_Buzz(self.hMCCmsg, self._pnError)
         return self._handleError()
 
     def SetBuzzDuration(self, d):
+        self._clearError()
         dValue = ct.c_double(d)
         self.aDLL.MCCMSG_SetBuzzDuration(self.hMCCmsg, dValue, self._pnError)
         return self._handleError()
 
     def GetBuzzDuration(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetBuzzDuration(self.hMCCmsg, self._pdPointer, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
 # MCC meter funcs
     def SetMeterResistEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetMeterResistEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetMeterResistEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetMeterResistEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def SetMeterIrmsEnable(self, b):
+        self._clearError()
         bValue = ct.c_bool(b)
         self.aDLL.MCCMSG_SetMeterIrmsEnable(self.hMCCmsg, bValue, self._pnError)
         return self._handleError()
 
     def GetMeterIrmsEnable(self):
+        self._clearError()
         self.aDLL.MCCMSG_GetMeterIrmsEnable(self.hMCCmsg, self._pbPointer, self._pnError)
-        return val(self._pbPointer, c_bool_p)
+        return self._extractValue(self._pbPointer, c_bool_p)
 
     def GetMeterValue(self, u):
+        self._clearError()
         uValue = ct.c_uint(u)
         self.aDLL.MCCMSG_GetMeterValue(self.hMCCmsg, self._pdPointer, uValue, self._pnError)
-        return val(self._pdPointer, c_double_p)
+        return self._extractValue(self._pdPointer, c_double_p)
 
 # MCC toolbar funcs
     def Reset(self):
+        self._clearError()
         self.aDLL.MCCMSG_Reset(self.hMCCmsg, self._pnError)
         return self._handleError()
 
     def ToggleAlwaysOnTop(self):
+        self._clearError()
         self.aDLL.MCCMSG_ToggleAlwaysOnTop(self.hMCCmsg, self._pnError)
         return self._handleError()
 
     def ToggleResize(self):
+        self._clearError()
         self.aDLL.MCCMSG_ToggleResize(self.hMCCmsg, self._pnError)
         return self._handleError()
 
     def QuickSelectButton(self, u):
+        self._clearError()
         uValue = ct.c_uint(u)
         self.aDLL.MCCMSG_QuickSelectButton(self.hMCCmsg, uValue, self._pnError)
         return self._handleError()
