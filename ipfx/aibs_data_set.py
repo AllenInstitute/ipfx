@@ -19,21 +19,19 @@ class AibsDataSet(EphysDataSet):
         if sweep_info:
             sweep_info = self.modify_api_sweep_info(sweep_info) if api_sweeps else sweep_info
             self.sweep_table = pd.DataFrame.from_records(sweep_info)
-            self.sweep_table.to_csv("sweep_table_info.csv", sep=" ", index=False, na_rep="NA")
         else:
             sweep_info = self.extract_sweep_info()
             self.sweep_table = pd.DataFrame.from_records(sweep_info)
-            self.sweep_table.to_csv("sweep_table.csv", sep=" ", index=False, na_rep="NA")
 
-#        self.sweep_table = pd.DataFrame.from_records(sweep_info)
-
+        self.sweep_table = pd.DataFrame.from_records(sweep_info)
 
     def extract_sweep_info(self):
         """
-        :parameter:
 
-        :return:
-            dict of sweep properties
+        Returns
+        -------
+        sweep_props: list of dicts
+            where each dict includes sweep properties
         """
         logging.debug("Build sweep table")
 

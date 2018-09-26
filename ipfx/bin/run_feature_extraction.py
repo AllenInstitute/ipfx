@@ -5,7 +5,7 @@ import shutil
 import argschema as ags
 
 import ipfx.data_set_features as dsft
-from ipfx.stimulus import StimulusOntology
+from ipfx.stimulus import StimulusOntology,load_default_stimulus_ontology
 from ipfx._schemas import FeatureExtractionParameters
 from ipfx.aibs_data_set import AibsDataSet
 
@@ -31,17 +31,13 @@ def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
         raise e
 
 
+def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_file, sweep_info, cell_info):
 
-
-def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_file, qc_fig_dir, sweep_info, cell_info):
-
-    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else None
+    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else load_default_stimulus_ontology()
     data_set = AibsDataSet(sweep_info=sweep_info,
                            nwb_file=input_nwb_file,
                            ontology=ont,
                            api_sweeps=False)
-
-
 
     cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
 
@@ -54,7 +50,6 @@ def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_fi
                      'sweep_records': sweep_records }
 
     embed_spike_times(input_nwb_file, output_nwb_file, sweep_features)
-#    display_features(qc_fig_dir, data_set, feature_data, plot_sweep_figures=True, plot_cell_figures=False)
 
     return feature_data
 

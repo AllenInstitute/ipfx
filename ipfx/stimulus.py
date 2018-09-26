@@ -35,7 +35,7 @@ class StimulusOntology(object):
     Creates stimuli based on stimulus ontology
     """
 
-    def __init__(self, stimuli):
+    def __init__(self, stimuli_props):
 
         """
 
@@ -72,10 +72,9 @@ class StimulusOntology(object):
 
 
 
-        self.stimuli = list(Stimulus(s) for s in stimuli)
+        self.stimuli = list(Stimulus(s) for s in stimuli_props)
 
     def find(self, tag, tag_type=None):
-
         matching_stims = [ s for s in self.stimuli if s.has_tag(tag, tag_type=tag_type) ]
 
         if not matching_stims:

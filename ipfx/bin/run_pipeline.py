@@ -55,7 +55,6 @@ def run_pipeline(input_nwb_file,
     fx_output = run_feature_extraction(input_nwb_file,
                                        stimulus_ontology_file,
                                        output_nwb_file,
-                                       qc_fig_dir,
                                        se_output['sweep_features'],
                                        se_output['cell_features'])
     logging.info("Extracted features!")

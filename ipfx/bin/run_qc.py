@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import logging
 
-from ipfx.stimulus import StimulusOntology
+from ipfx.stimulus import StimulusOntology,load_default_stimulus_ontology
 
 import ipfx.qc_protocol as qcp
 import ipfx.stimulus as stm
@@ -32,7 +32,7 @@ def run_qc(stimulus_ontology_file, cell_features, sweep_features, qc_criteria):
     """
 
     logging.debug("stimulus ontology file: %s", stimulus_ontology_file)
-    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else stm.load_default_stimulus_ontology()
+    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else load_default_stimulus_ontology()
 
     cell_state, sweep_states = qcp.qc_experiment(ont,
                                                  cell_features,
