@@ -26,6 +26,7 @@ def assign_sweep_states(manual_sweep_states, qc_sweep_states, out_sweep_props):
         else:
             logging.warning("could not find QC state for sweep number %d", sn)
 
+
 def run_pipeline(input_nwb_file,
                  input_h5_file,
                  output_nwb_file,
@@ -39,9 +40,7 @@ def run_pipeline(input_nwb_file,
                                      stimulus_ontology_file)
     logging.info("Computed QC features")
 
-    qc_output = run_qc(input_nwb_file,
-                       input_h5_file,
-                       stimulus_ontology_file,
+    qc_output = run_qc(stimulus_ontology_file,
                        se_output["cell_features"],
                        se_output["sweep_features"],
                        qc_criteria)
@@ -51,7 +50,7 @@ def run_pipeline(input_nwb_file,
                         qc_output["sweep_states"],
                         se_output["sweep_features"]
                         )
-    logging.info("Assigned sweep state")
+    logging.info("Assigned sweep states")
 
     fx_output = run_feature_extraction(input_nwb_file,
                                        stimulus_ontology_file,
@@ -61,15 +60,16 @@ def run_pipeline(input_nwb_file,
                                        se_output['cell_features'])
     logging.info("Extracted features!")
 
-    run_visualization(input_nwb_file,
-                      stimulus_ontology_file,
-                      qc_fig_dir,
-                      se_output["sweep_features"],
-                      fx_output)
-    logging.info("Visualized results!")
+    # run_visualization(input_nwb_file,
+    #                   stimulus_ontology_file,
+    #                   qc_fig_dir,
+    #                   se_output["sweep_features"],
+    #                   fx_output)
+    # logging.info("Visualized results!")
 
     se_output['sweep_data'] = se_output.pop('sweep_features') # for backward compatibility only
-    # On Windows int64 keys of sweep numbers cannot be converted to str by json.dump when serializing. Thus, we are converting here:
+    # On Windows int64 keys of sweep numbers cannot be converted to str by json.dump when serializing.
+    # Thus, we are converting them here:
     fx_output["sweep_features"] = {str(k): v for k, v in fx_output["sweep_features"].items()}
 
     return dict( sweep_extraction=se_output,

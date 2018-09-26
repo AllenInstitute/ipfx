@@ -18,10 +18,14 @@ class AibsDataSet(EphysDataSet):
 
         if sweep_info:
             sweep_info = self.modify_api_sweep_info(sweep_info) if api_sweeps else sweep_info
+            self.sweep_table = pd.DataFrame.from_records(sweep_info)
+            self.sweep_table.to_csv("sweep_table_info.csv", sep=" ", index=False, na_rep="NA")
         else:
             sweep_info = self.extract_sweep_info()
+            self.sweep_table = pd.DataFrame.from_records(sweep_info)
+            self.sweep_table.to_csv("sweep_table.csv", sep=" ", index=False, na_rep="NA")
 
-        self.sweep_table = pd.DataFrame.from_records(sweep_info)
+#        self.sweep_table = pd.DataFrame.from_records(sweep_info)
 
 
     def extract_sweep_info(self):
@@ -53,7 +57,6 @@ class AibsDataSet(EphysDataSet):
                 logging.debug("Reading stim_code from Labnotebook")
                 if len(stim_code) == 0:
                     raise Exception("Could not read stimulus wave name from lab notebook")
-
 
             # stim units are based on timeseries type
             if "CurrentClamp" in ancestry[-1]:
@@ -95,7 +98,8 @@ class AibsDataSet(EphysDataSet):
                 stim = self.ontology.find_one(stim_code, tag_type='code')
                 sweep_record["stimulus_name"] = stim.tags(tag_type='name')[0][-1]
 
-            if (sweep_record["clamp_mode"] =='CurrentClamp') and (sweep_record["stimulus_name"] not in (self.search_names+self.test_names)):
+            if sweep_record["clamp_mode"] == 'CurrentClamp':
+                if sweep_record["stimulus_name"] not in (self.ontology.search_names+self.ontology.test_names):
                     sweep_data = self.nwb_data.get_sweep_data(sweep_record["sweep_number"])
 
                     i = sweep_data["stimulus"]

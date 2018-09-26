@@ -140,10 +140,10 @@ def cell_qc_features(data_set, manual_values=None):
 
     output_data = {}
     tag_list = []
-
+    ontology = data_set.ontology
     # measure blowout voltage
     try:
-        blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.blowout_names)
+        blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
         blowout_mv = measure_blowout(blowout_data.v, blowout_data.expt_idx_range[0])
         output_data['blowout_mv'] = blowout_mv
@@ -156,7 +156,7 @@ def cell_qc_features(data_set, manual_values=None):
 
     # measure "electrode 0"
     try:
-        bath_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.bath_names)
+        bath_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.bath_names)
         bath_data = data_set.sweep(bath_sweep_number)
 
         e0 = measure_electrode_0(bath_data.i, bath_data.sampling_rate)
@@ -170,7 +170,7 @@ def cell_qc_features(data_set, manual_values=None):
 
     # measure clamp seal
     try:
-        seal_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.seal_names)
+        seal_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.seal_names)
         seal_data = data_set.sweep(seal_sweep_number)
 
         seal_gohm = measure_seal(seal_data.v,
@@ -203,7 +203,7 @@ def cell_qc_features(data_set, manual_values=None):
     # if the value is unavailable then check to see if it was set manually
     breakin_data = None
     try:
-        breakin_sweep_number = data_set.get_sweep_number_by_stimulus_names(data_set.breakin_names)
+        breakin_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.breakin_names)
         breakin_data = data_set.sweep(breakin_sweep_number)
     except IndexError as e:
         logging.warning("Error reading breakin sweep.")
@@ -278,11 +278,11 @@ def sweep_qc_features(data_set):
 
     Returns
     -------
-    sweep_features : dict
-        sweep features
+    sweep_features : list of dicts
+        each dict includes features of a sweep
 
     """
-
+    ontology = data_set.ontology
     sweep_features = []
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
                                                   exclude_test=True,
@@ -314,7 +314,7 @@ def sweep_qc_features(data_set):
         # do not check for ramps, because they do not have enough time to recover
         mean_last_vm_epoch = None
 
-        is_ramp = sweep_info['stimulus_name'] in data_set.ramp_names
+        is_ramp = sweep_info['stimulus_name'] in ontology.ramp_names
 
         if not is_ramp:
             idx0, idx1 = st.get_last_vm_epoch(expt_end_idx, hz)

@@ -44,6 +44,33 @@ class StimulusOntology(object):
         stimuli: nested list  of stimuli ontology properties
 
         """
+        self.ramp_names = ( "Ramp",)
+
+        self.long_square_names = ( "Long Square",
+                                   "Long Square Threshold",
+                                   "Long Square SupraThreshold",
+                                   "Long Square SubThreshold" )
+
+        self.coarse_long_square_names = ( "C1LSCOARSE",)
+        self.short_square_triple_names = ( "Short Square - Triple", )
+
+        self.short_square_names = ( "Short Square",
+                                    "Short Square Threshold",
+                                    "Short Square - Hold -60mV",
+                                    "Short Square - Hold -70mV",
+                                    "Short Square - Hold -80mV" )
+
+        self.search_names = ("Search",)
+        self.test_names = ("Test",)
+        self.blowout_names = ( 'EXTPBLWOUT', )
+        self.bath_names = ( 'EXTPINBATH', )
+        self.seal_names = ( 'EXTPCllATT', )
+        self.breakin_names = ( 'EXTPBREAKN', )
+        self.extp_names = ( 'EXTP', )
+
+        self.current_clamp_units = ( 'Amps', 'pA')
+
+
 
         self.stimuli = list(Stimulus(s) for s in stimuli)
 
