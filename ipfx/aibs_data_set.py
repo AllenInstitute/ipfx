@@ -18,10 +18,8 @@ class AibsDataSet(EphysDataSet):
 
         if sweep_info:
             sweep_info = self.modify_api_sweep_info(sweep_info) if api_sweeps else sweep_info
-            self.sweep_table = pd.DataFrame.from_records(sweep_info)
         else:
             sweep_info = self.extract_sweep_info()
-            self.sweep_table = pd.DataFrame.from_records(sweep_info)
 
         self.sweep_table = pd.DataFrame.from_records(sweep_info)
 
