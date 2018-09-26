@@ -32,7 +32,6 @@ def test_find_one(ontology):
         stims = ontology.find_one('noise')
 
 
-
 def test_has(ontology):
     assert ontology.stimulus_has_any_tags('C1NS1', ('noise',))
     assert ontology.stimulus_has_any_tags('C1NS1', ('noise','noise 2'))
@@ -56,7 +55,8 @@ def test_filtered_sweep_table():
     df = pd.DataFrame(d)
 
     stimulus_names = ['EXTPBREAKN']
-    ds = EphysDataSet()
+    default_ontology = load_default_stimulus_ontology()
+    ds = EphysDataSet(default_ontology)
     ds.sweep_table = df
     sweeps = ds.filtered_sweep_table(stimuli=stimulus_names)
 

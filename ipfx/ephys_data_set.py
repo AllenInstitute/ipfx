@@ -1,7 +1,4 @@
-import json
-import os
 import logging
-import ipfx.stimulus as stm
 
 
 class EphysDataSet(object):
@@ -18,11 +15,8 @@ class EphysDataSet(object):
     SHORT_SQUARE= 'short_square'
     RAMP = 'ramp'
 
-    def __init__(self, ontology=None):
+    def __init__(self, ontology):
         self.sweep_table = None
-
-        if ontology is None:
-            ontology = stm.load_default_stimulus_ontology()
 
         self.ontology = ontology
 
