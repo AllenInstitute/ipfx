@@ -26,32 +26,6 @@ class EphysDataSet(object):
 
         self.ontology = ontology
 
-        self.ramp_names = ( "Ramp",)
-
-        self.long_square_names = ( "Long Square",
-                                   "Long Square Threshold",
-                                   "Long Square SupraThreshold",
-                                   "Long Square SubThreshold" )
-
-        self.coarse_long_square_names = ( "C1LSCOARSE",)
-        self.short_square_triple_names = ( "Short Square - Triple", )
-
-        self.short_square_names = ( "Short Square",
-                                    "Short Square Threshold",
-                                    "Short Square - Hold -60mV",
-                                    "Short Square - Hold -70mV",
-                                    "Short Square - Hold -80mV" )
-
-        self.search_names = ("Search",)
-        self.test_names = ("Test",)
-        self.blowout_names = ( 'EXTPBLWOUT', )
-        self.bath_names = ( 'EXTPINBATH', )
-        self.seal_names = ( 'EXTPCllATT', )
-        self.breakin_names = ( 'EXTPBREAKN', )
-        self.extp_names = ( 'EXTP', )
-
-        self.current_clamp_units = ( 'Amps', 'pA')
-
     def filtered_sweep_table(self,
                              current_clamp_only=False,
                              passing_only=False,
@@ -64,7 +38,7 @@ class EphysDataSet(object):
         st = self.sweep_table
 
         if current_clamp_only:
-            st = st[st[self.STIMULUS_UNITS].isin(self.current_clamp_units)]
+            st = st[st[self.STIMULUS_UNITS].isin(self.ontology.current_clamp_units)]
 
         if passing_only:
             st = st[st[self.PASSED]]
@@ -74,11 +48,11 @@ class EphysDataSet(object):
             st = st[mask]
 
         if exclude_search:
-            mask = ~st[self.STIMULUS_NAME].isin(self.search_names)
+            mask = ~st[self.STIMULUS_NAME].isin(self.ontology.search_names)
             st = st[mask]
 
         if exclude_test:
-            mask = ~st[self.STIMULUS_NAME].isin(self.test_names)
+            mask = ~st[self.STIMULUS_NAME].isin(self.ontology.test_names)
             st = st[mask]
 
         if exclude_truncated:

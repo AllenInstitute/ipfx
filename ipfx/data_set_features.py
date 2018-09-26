@@ -430,7 +430,7 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     sweep_records :
 
     """
-
+    ontology = data_set.ontology
     # for logging purposes
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
     passed_iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, passing_only=True)
@@ -442,12 +442,12 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     # extract cell-level features
     logging.info("Computing cell features")
 
-    clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=data_set.coarse_long_square_names)
+    clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=ontology.coarse_long_square_names)
     clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values
 
-    lsq_sweep_numbers = categorize_iclamp_sweeps(data_set, data_set.long_square_names)
-    ssq_sweep_numbers = categorize_iclamp_sweeps(data_set, data_set.short_square_names)
-    ramp_sweep_numbers = categorize_iclamp_sweeps(data_set, data_set.ramp_names)
+    lsq_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.long_square_names)
+    ssq_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.short_square_names)
+    ramp_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.ramp_names)
 
     if subthresh_min_amp is None:
         if len(clsq_sweep_numbers)>0:
