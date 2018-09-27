@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from ipfx.stimulus import load_default_stimulus_ontology, StimulusOntology
+from ipfx.stimulus import StimulusOntology
 from ipfx.ephys_data_set import EphysDataSet
 
 
@@ -14,8 +14,8 @@ def ontology():
                                 ('code', 'C1NS2') ] ])
 
 
-def test_load_default():
-    load_default_stimulus_ontology()
+def test_load_default_ontology():
+    StimulusOntology()
 
 def test_find(ontology):
     stims = ontology.find('C1NS1')
@@ -55,7 +55,7 @@ def test_filtered_sweep_table():
     df = pd.DataFrame(d)
 
     stimulus_names = ['EXTPBREAKN']
-    default_ontology = load_default_stimulus_ontology()
+    default_ontology = StimulusOntology()
     ds = EphysDataSet(default_ontology)
     ds.sweep_table = df
     sweeps = ds.filtered_sweep_table(stimuli=stimulus_names)

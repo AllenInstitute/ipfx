@@ -1,14 +1,9 @@
 import json
 import os
 import logging
+import allensdk.core.json_utilities as ju
 
 DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(os.path.dirname(__file__), 'stimulus_ontology.json')
-
-
-def load_default_stimulus_ontology():
-    logging.debug("loading default stimulus ontology: %s", DEFAULT_STIMULUS_ONTOLOGY_FILE)
-    with open(DEFAULT_STIMULUS_ONTOLOGY_FILE) as f:
-        return StimulusOntology(json.load(f))
 
 
 class Stimulus(object):
@@ -35,15 +30,22 @@ class StimulusOntology(object):
     Creates stimuli based on stimulus ontology
     """
 
-    def __init__(self, stimuli_props):
+    def __init__(self, stimuli_props=None):
 
         """
 
         Parameters
         ----------
-        stimuli: nested list  of stimuli ontology properties
+        stimuli_props: nested list  of stimuli ontology properties
 
         """
+
+        if stimuli_props is None:
+            logging.debug("loading default stimulus ontology: %s", DEFAULT_STIMULUS_ONTOLOGY_FILE)
+            stimuli_props = ju.read(DEFAULT_STIMULUS_ONTOLOGY_FILE)
+
+        self.stimuli = list(Stimulus(s) for s in stimuli_props)
+
         self.ramp_names = ( "Ramp",)
 
         self.long_square_names = ( "Long Square",
@@ -69,10 +71,6 @@ class StimulusOntology(object):
         self.extp_names = ( 'EXTP', )
 
         self.current_clamp_units = ( 'Amps', 'pA')
-
-
-
-        self.stimuli = list(Stimulus(s) for s in stimuli_props)
 
     def find(self, tag, tag_type=None):
         matching_stims = [ s for s in self.stimuli if s.has_tag(tag, tag_type=tag_type) ]

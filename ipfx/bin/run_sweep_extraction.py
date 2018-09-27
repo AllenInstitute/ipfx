@@ -1,5 +1,4 @@
-from ipfx.stimulus import StimulusOntology, load_default_stimulus_ontology
-
+from ipfx.stimulus import StimulusOntology
 import ipfx.qc_features as qcf
 import allensdk.core.json_utilities as ju
 
@@ -22,7 +21,7 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
         if mk in input_manual_values:
             manual_values[mk] = input_manual_values[mk]
 
-    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else load_default_stimulus_ontology()
+    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
     ds = AibsDataSet(nwb_file=input_nwb_file,
                      h5_file=input_h5_file,
                      ontology=ont)
