@@ -27,7 +27,7 @@ def display_features(qc_fig_dir, data_set, feature_data, plot_sweep_figures=True
 
 def run_visualization(input_nwb_file, stimulus_ontology_file, qc_fig_dir, sweep_info, feature_data):
 
-    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else None
+    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
     data_set = AibsDataSet(sweep_info=sweep_info,
                            nwb_file=input_nwb_file,
                            ontology=ont,

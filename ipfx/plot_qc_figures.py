@@ -438,7 +438,10 @@ def plot_instantaneous_threshold_thumbnail(data_set, sweep_numbers, cell_feature
 
 
 def plot_ramp_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
-    ramps_sweeps = data_set.filtered_sweep_table(passing_only=True, current_clamp_only=True, stimuli=data_set.ramp_names)
+
+    ramps_sweeps = data_set.filtered_sweep_table(passing_only=True,
+                                                 current_clamp_only=True,
+                                                 stimuli=data_set.ontology.ramp_names)
     ramps_sweeps = np.sort(ramps_sweeps['sweep_number'].values)
 
     figs = []
@@ -448,12 +451,14 @@ def plot_ramp_figures(data_set, cell_features, lims_features, sweep_features, im
         for index, fig in enumerate(figs):
             save_figure(fig, 'ramps_%d' % index, 'ramps', image_dir, sizes, cell_image_files)
 
+
 def plot_rheo_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     rheo_sweeps = [ lims_features["rheobase_sweep_num"] ]
     figs = plot_single_ap_values(data_set, rheo_sweeps, lims_features, sweep_features, cell_features, "long_square")
 
     for index, fig in enumerate(figs):
         save_figure(fig, 'rheo_%d' % index, 'rheo', image_dir, sizes, cell_image_files)
+
 
 def plot_hero_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
     fig = plt.figure()
@@ -480,11 +485,11 @@ def plot_hero_figures(data_set, cell_features, lims_features, sweep_features, im
     plt.tight_layout()
     save_figure(fig, 'thumbnail_1', 'thumbnail', image_dir, sizes, cell_image_files)
 
-    summary_fig = plot_long_square_summary(data_set, cell_features, lims_features, sweep_features)
+    summary_fig = plot_long_square_summary(data_set, cell_features, lims_features)
     save_figure(summary_fig, 'ephys_summary', 'thumbnail', image_dir, sizes, cell_image_files, scalew=2)
 
 
-def plot_long_square_summary(data_set, cell_features, lims_features, sweep_features):
+def plot_long_square_summary(data_set, cell_features, lims_features):
     long_square_sweeps = cell_features['long_squares']['sweeps']
     long_square_sweep_numbers = [ int(s['id']) for s in long_square_sweeps ]
 
