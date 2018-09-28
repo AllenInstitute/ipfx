@@ -4,9 +4,11 @@ from argschema.fields import Nested, InputFile, OutputFile, Integer, Boolean, St
 
 class SweepFeatures(DefaultSchema):
     stimulus_code = String(description="stimulus code", required=True)
+    stimulus_name = String(description="stimulus name", required=True)
     sweep_number = Integer(description="index of sweep in order of presentation", required=True)
     stimulus_amplitude = Float(description="amplitude of stimulus", required=True, allow_none=True)
     stimulus_units = String(desription="stimulus units", required=True)
+    clamp_mode = String(desription="current or voltage clamp", required=True)
     id = Integer(description="id of sweep", allow_none=True)
     bridge_balance_mohm = Float(description="bridge balance", allow_none=True)
     pre_vm_mv = Float(allow_none=True)
@@ -22,7 +24,7 @@ class CellFeatures(DefaultSchema):
 
 class FxSweepFeatures(SweepFeatures):
     passed = Boolean(description="qc passed or failed", required=True)
-    stimulus_name = String(description="stimulus name", required=True)
+    truncated = Boolean(description="truncated true or false", required=True)
 
 class QcSweepFeatures(SweepFeatures):
     pre_noise_rms_mv = Float(description="blah", required=True)
@@ -35,13 +37,13 @@ class FeatureExtractionParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
     stimulus_ontology_file = InputFile(description="stimulus ontology JSON", required=False)
     output_nwb_file = OutputFile(description="output nwb file", required=True)
-    qc_fig_dir = OutputFile(description="output qc figure directory", required=True)
-    sweep_props = Nested(FxSweepFeatures, many=True)
+    qc_fig_dir = OutputFile(description="output qc figure directory", required=False)
+    sweep_features = Nested(FxSweepFeatures, many=True)
     cell_features = Nested(CellFeatures, required=True)
 
 class SweepExtractionParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
-    input_h5_file = InputFile(description="input h5 file", required=True)
+    input_h5_file = InputFile(description="input h5 file", required=False)
     stimulus_ontology_file = InputFile(description="stimulus ontology JSON", required=False)
     manual_seal_gohm = Float(description="blah")
     manual_initial_access_resistance_mohm = Float(description="blah")
@@ -61,11 +63,9 @@ class QcCriteria(DefaultSchema):
     access_resistance_mohm_max = Float(description="blash")
 
 class QcParameters(ArgSchema):
-    input_nwb_file = InputFile(description="input nwb file", required=True)
-    input_h5_file = InputFile(description="input h5 file", required=True)
     stimulus_ontology_file = InputFile(description="blash", required=False)
     qc_criteria = Nested(QcCriteria, required=True)
-    sweep_data = Nested(QcSweepFeatures, many=True, required=True)
+    sweep_features = Nested(QcSweepFeatures, many=True, required=True)
     cell_features = Nested(CellFeatures)
 
 class ManualSweepState(DefaultSchema):
@@ -77,7 +77,7 @@ class PipelineParameters(ArgSchema):
     stimulus_ontology_file = InputFile(description="blash", required=False)
     input_h5_file = InputFile(desription="input h5 file", required=False)
     output_nwb_file = OutputFile(description="output nwb file", required=True)
-    qc_fig_dir = OutputFile(description="output qc figure directory", required=True)
+    qc_fig_dir = OutputFile(description="output qc figure directory", required=False)
     qc_criteria = Nested(QcCriteria, required=True)
     manual_sweep_states = Nested(ManualSweepState, required=False, many=True)
 

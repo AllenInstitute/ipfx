@@ -8,7 +8,7 @@ import ipfx.stimulus as stm
 specimen_id = int(sys.argv[1])
 
 res = lu.query("""
-select err.storage_directory||'EPHYS_FEATURE_EXTRACTION_V2_QUEUE_'||err.id||'_input.json' as input_json,
+select err.storage_directory||'EPHYS_FEATURE_EXTRACTION_QUEUE_'||err.id||'_input.json' as input_json,
        err.storage_directory||err.id||'.nwb' as nwb_file,
        err.storage_directory||sp.name||'.h5' as h5_file
 from specimens sp
@@ -16,7 +16,6 @@ join ephys_roi_results err on err.id = sp.ephys_roi_result_id
 where sp.id = %d
 """ % specimen_id)[0]
 #
-# /allen/programs/celltypes/production/humancelltypes/prod242/Ephys_Roi_Result_642966460/EPHYS_FEATURE_EXTRACTION_V2_QUEUE_642966460_input.json
 res = { k.decode('UTF-8'):v for k,v in res.items() }
 print(res)
 with open(res['input_json'], 'r') as f:
@@ -25,8 +24,8 @@ with open(res['input_json'], 'r') as f:
 
 
 stimulus_ontology_file = stm.DEFAULT_STIMULUS_ONTOLOGY_FILE
-test_dir = "specimen_%d" % specimen_id
-if not os.path.exists(test_dir):
+test_dir = "%d" % specimen_id
+if not os.path.exists("module_io",test_dir):
     os.makedirs(test_dir)
 
 d = {}

@@ -64,10 +64,13 @@ target/
 # pyenv python configuration file
 .python-version
 
-# ide specific 
+# ide specific
 .idea/
 .history/
 .vscode/
 
 # emacs
 *~
+
+# Development
+sandbox/
