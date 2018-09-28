@@ -34,11 +34,14 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
                 sweep_features=sweep_features,
                 )
 
+
 def main():
 
     module = ags.ArgSchemaParser(schema_type=SweepExtractionParameters)
     output = run_sweep_extraction(module.args["input_nwb_file"],
-                                  module.args.get("input_h5_file"),
-                                  module.args["stimulus_ontology_file"])
+                                  module.args.get("input_h5_file",None),
+                                  module.args.get("stimulus_ontology_file", None))
+
     ju.write(module.args["output_json"], output)
+
 if __name__ == "__main__": main()

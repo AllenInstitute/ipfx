@@ -3,12 +3,10 @@ matplotlib.use('agg')
 
 import logging
 import os
+import shutil
 import numpy as np
 import ipfx.ephys_features as ft
 import ipfx.stim_features as st
-
-
-from scipy.optimize import curve_fit
 import scipy.signal as sg
 import scipy.misc
 
@@ -16,7 +14,7 @@ import datetime
 import matplotlib.pyplot as plt
 import glob
 #import seaborn as sns
-
+from allensdk.config.manifest import Manifest
 
 AXIS_Y_RANGE = [ -110, 60 ]
 
@@ -713,12 +711,13 @@ def make_cell_page(data_set, feature_data, working_dir, save_cell_plots=True):
     image_dir = os.path.join(working_dir,img_sub_dir)
 
     if save_cell_plots:
+        logging.info("Saving cell images")
+
         sizes = { 'small': 2.0, 'large': 6.0 }
         cell_files = plot_cell_figures(data_set, feature_data, image_dir, sizes)
     else:
         cell_files = {}
 
-    logging.info("Saving cell images")
     sizes = { 'small': 200, 'large': None }
     plot_images(image_dir, sizes, cell_files)
 
@@ -731,4 +730,31 @@ def exp_curve(x, a, inv_tau, y0):
     ''' Function used for tau curve fitting '''
     return y0 + a * np.exp(-inv_tau * x)
 
+
+def display_features(qc_fig_dir, data_set, feature_data):
+    """
+
+    Parameters
+    ----------
+    qc_fig_dir: str
+        directory name for storing html pages
+    data_set: NWB data set
+    feature_data: dict
+        cell and sweep features
+
+    Returns
+    -------
+
+    """
+    if os.path.exists(qc_fig_dir):
+        logging.warning("Removing existing qc figures directory: %s", qc_fig_dir)
+        shutil.rmtree(qc_fig_dir)
+
+    image_dir = os.path.join(qc_fig_dir,"img")
+    Manifest.safe_mkdir(qc_fig_dir)
+    Manifest.safe_mkdir(image_dir)
+
+    logging.info("Saving figures")
+    make_sweep_page(data_set, qc_fig_dir)
+    make_cell_page(data_set, feature_data, qc_fig_dir)
 

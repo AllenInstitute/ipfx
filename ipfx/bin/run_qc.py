@@ -45,7 +45,7 @@ def main():
 
     output = run_qc(module.args.get("stimulus_ontology_file", None),
                     module.args["cell_features"],
-                    module.args["sweep_data"],
+                    module.args["sweep_features"],
                     module.args["qc_criteria"])
 
     ju.write(module.args["output_json"], output)

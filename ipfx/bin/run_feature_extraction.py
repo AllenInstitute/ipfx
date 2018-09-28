@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import logging
 import shutil
-
 import argschema as ags
 
 import ipfx.data_set_features as dsft
@@ -11,6 +10,8 @@ from ipfx.aibs_data_set import AibsDataSet
 
 import allensdk.core.json_utilities as ju
 from allensdk.core.nwb_data_set import NwbDataSet
+
+import ipfx.plot_qc_figures as plotqc
 
 
 def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
@@ -31,9 +32,15 @@ def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
         raise e
 
 
-def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_file, sweep_info, cell_info):
+def run_feature_extraction(input_nwb_file,
+                           stimulus_ontology_file,
+                           output_nwb_file,
+                           qc_fig_dir,
+                           sweep_info,
+                           cell_info):
 
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
+
     data_set = AibsDataSet(sweep_info=sweep_info,
                            nwb_file=input_nwb_file,
                            ontology=ont,
@@ -51,6 +58,11 @@ def run_feature_extraction(input_nwb_file, stimulus_ontology_file, output_nwb_fi
 
     embed_spike_times(input_nwb_file, output_nwb_file, sweep_features)
 
+    if qc_fig_dir is None:
+        logging.info("qc_fig_dir is not provided, will not save figures")
+    else:
+        plotqc.display_features(qc_fig_dir, data_set, feature_data)
+
     return feature_data
 
 
@@ -60,8 +72,8 @@ def main():
     feature_data = run_feature_extraction(module.args["input_nwb_file"],
                                           module.args.get("stimulus_ontology_file", None),
                                           module.args["output_nwb_file"],
-                                          module.args["qc_fig_dir"],
-                                          module.args["sweep_props"],
+                                          module.args.get("qc_fig_dir", None),
+                                          module.args["sweep_features"],
                                           module.args["cell_features"])
 
     ju.write(module.args["output_json"], feature_data)
