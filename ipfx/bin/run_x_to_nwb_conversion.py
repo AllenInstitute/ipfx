@@ -6,6 +6,7 @@ import argparse
 import pyabf
 
 from ipfx.x_to_nwb.ABFConverter import ABFConverter
+from ipfx.x_to_nwb.DatConverter import DatConverter
 
 
 def convert(inFileOrFolder, overwrite=False, fileType=None):
@@ -14,6 +15,7 @@ def convert(inFileOrFolder, overwrite=False, fileType=None):
 
     Supported fileformats:
         - ABF v2 files created by Clampex
+        - DAT files create by Patchmaster v2x90
     """
 
     if not os.path.exists(inFileOrFolder):
@@ -40,6 +42,8 @@ def convert(inFileOrFolder, overwrite=False, fileType=None):
 
     if ext == ".abf":
         ABFConverter(inFileOrFolder, outFile)
+    if ext == ".dat":
+        DatConverter(inFileOrFolder, outFile)
     else:
         raise ValueError(f"The extension {ext} is currently not supported.")
 
