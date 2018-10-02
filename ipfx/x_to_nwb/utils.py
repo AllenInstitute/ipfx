@@ -17,8 +17,12 @@ def parseUnit(unitString):
 
     if unitString == "pA":
         return 1e-12, "A"
+    elif unitString == "A":
+        return 1.0, "A"
     elif unitString == "mV":
         return 1e-3, "V"
+    elif unitString == "V":
+        return 1.0, "V"
     else:
         raise ValueError(f"Unsupported unit string {unitString}.")
 
