@@ -1,7 +1,6 @@
 #!/bin/env python
 
 import os
-import sys
 import argparse
 
 import pyabf
@@ -28,7 +27,8 @@ def convert(inFileOrFolder, overwrite=False, fileType=None):
 
         inFileOrFolder = os.path.normpath(inFileOrFolder)
         ext = fileType
-        root = os.path.join(inFileOrFolder, "..", os.path.basename(inFileOrFolder))
+        root = os.path.join(inFileOrFolder, "..",
+                            os.path.basename(inFileOrFolder))
 
     outFile = root + ".nwb"
 
@@ -50,10 +50,13 @@ def main():
     parser.add_argument("--overwrite", action="store_true", default=False,
                         help="Overwrite the output NWB file")
     parser.add_argument("--protocolDir", type=str,
-                        help="Disc location where custom waveforms in ATF format are stored.")
+                        help=("Disc location where custom waveforms "
+                              "in ATF format are stored."))
     parser.add_argument("--fileType", type=str, default=None, choices=[".abf"],
-                        help="Type of the files to convert (only required if passing folders).")
-    parser.add_argument("filesOrFolders", nargs="+", help="List of ABF files/folders to convert.")
+                        help=("Type of the files to convert (only required "
+                              "if passing folders)."))
+    parser.add_argument("filesOrFolders", nargs="+",
+                        help="List of ABF files/folders to convert.")
 
     args = parser.parse_args()
 
