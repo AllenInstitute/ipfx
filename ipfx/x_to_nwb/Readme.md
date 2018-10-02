@@ -1,6 +1,8 @@
-### Converting ABF files to NWB
+## Converting ABF/DAT files to NWB
 
-The script `run_x_to_nwb_conversion.py` allows to convert ABF files to NeurodataWithoutBorders v2 files.
+The script `run_x_to_nwb_conversion.py` allows to convert ABF/DAT files to NeurodataWithoutBorders v2 files.
+
+### ABF specialities
 
 As of 9/2018 PClamp/Clampex does not record all required amplifier settings.
 To workaround that issue we've developed `mcc_get_settings.py` which gathers
@@ -39,4 +41,18 @@ The following command converts all ABF files which reside in `someFolder` to a s
 
 ```sh
 run_x_to_nwb_conversion.py --fileType ".abf" --overwrite someFolder 2018_03_20_0000.abf
+```
+
+### DAT specialities
+
+#### Required input files
+
+- DAT files acquired with Patchmaster version 2x90.
+
+#### Examples
+
+##### Convert a single file
+
+```sh
+run_x_to_nwb_conversion.py H18.28.015.11.12.dat
 ```
