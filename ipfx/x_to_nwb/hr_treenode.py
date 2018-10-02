@@ -60,7 +60,7 @@ class TreeNode(Struct):
     def __str__(self, indent=0):
         # Return a string describing this structure
         ind = '    '*indent
-        srep = Struct.__repr__(self, indent)[:-1]  # exclude final parentheses
+        srep = Struct.__str__(self, indent)[:-1]  # exclude final parentheses
         srep += ind
         srep += '    children = %d,\n' % len(self)
         srep += ind
