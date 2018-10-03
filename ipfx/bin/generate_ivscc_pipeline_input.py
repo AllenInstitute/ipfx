@@ -78,7 +78,7 @@ if h5_file_name and os.path.exists(h5_file_name):
 
 d['input_nwb_file'] = res['nwb_file']
 d['output_nwb_file'] = os.path.join(cell_dir, "output.nwb")
-d['qc_fig_dir'] = os.path.join(cell_dir,"qc_figs")
+#d['qc_fig_dir'] = os.path.join(cell_dir,"qc_figs")
 #d['stimulus_ontology_file'] = stimulus_ontology_file
 d['qc_criteria'] = ju.read(qcp.DEFAULT_QC_CRITERIA_FILE)
 d['manual_sweep_states'] = get_sweep_states_from_lims(specimen_id)

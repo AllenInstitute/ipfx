@@ -4,7 +4,6 @@ from argschema.fields import Nested, InputFile, OutputFile, Integer, Boolean, St
 
 class SweepFeatures(DefaultSchema):
     stimulus_code = String(description="stimulus code", required=True)
-    stimulus_name = String(description="stimulus name", required=True)
     sweep_number = Integer(description="index of sweep in order of presentation", required=True)
     stimulus_amplitude = Float(description="amplitude of stimulus", required=True, allow_none=True)
     stimulus_units = String(desription="stimulus units", required=True)
