@@ -19,11 +19,11 @@ class AibsDataSet(EphysDataSet):
         if sweep_info:
             sweep_info = self.modify_api_sweep_info(sweep_info) if api_sweeps else sweep_info
         else:
-            sweep_info = self.extract_sweep_info()
+            sweep_info = self.extract_sweep_meta_data()
 
         self.sweep_table = pd.DataFrame.from_records(sweep_info)
 
-    def extract_sweep_info(self):
+    def extract_sweep_meta_data(self):
         """
 
         Returns
@@ -113,8 +113,8 @@ class AibsDataSet(EphysDataSet):
 
         return [ { AibsDataSet.SWEEP_NUMBER: s['sweep_number'],
                    AibsDataSet.STIMULUS_UNITS: s['stimulus_units'],
-                   AibsDataSet.STIMULUS_AMPLITUDE: s['stimulus_absolute_amplitude'],
-                   AibsDataSet.STIMULUS_CODE: re.sub("\[\d+\]", "", s['stimulus_description']),
+                   AibsDataSet.STIMULUS_AMPLITUDE: s['stimulus_amplitude'],
+                   AibsDataSet.STIMULUS_CODE: re.sub("\[\d+\]", "", s['stimulus_code']),
                    AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
                    AibsDataSet.PASSED: True } for s in sweep_list ]
 
