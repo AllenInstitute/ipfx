@@ -13,7 +13,8 @@ from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import IntracellularElectrode
 
 from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
-     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset
+     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset, \
+     getPackageInfo
 
 ABF_TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 
@@ -201,6 +202,8 @@ class ABFConverter:
         creatorName = self.refabf._stringsIndexed.uCreatorName
         creatorVersion = formatVersion(self.refabf.creatorVersion)
         experiment_description = (f"{creatorName} v{creatorVersion}")
+        source_script_file_name = "run_x_to_nwb_conversion.py"
+        source_script = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
         session_id = PLACEHOLDER
 
         return NWBFile(source=source,
@@ -210,7 +213,9 @@ class ABFConverter:
                        session_start_time=session_start_time,
                        experimenter=None,
                        experiment_description=experiment_description,
-                       session_id=session_id)
+                       session_id=session_id,
+                       source_script_file_name=source_script_file_name,
+                       source_script=source_script)
 
     def _createDevice(self):
         """
