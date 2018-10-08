@@ -1,4 +1,5 @@
 import sys
+import warnings
 
 from ipfx.x_to_nwb.hr_nodes import (Pulsed, StimulusTemplate, AmplifierFile,
                                     ProtocolMethod, Solutions, Marker,
@@ -46,6 +47,10 @@ class Bundle():
                 item.instance = None
                 ext = item.Extension
                 self.catalog[ext] = item
+
+            if not self.header.Version.startswith("v2x90.1"):
+                warnings.warn(f"The DAT file version '{self.header.Version}' of '{file_name}' might "
+                              "be incompatible and therefore read/interpretation errors are possible.")
 
         return
 
