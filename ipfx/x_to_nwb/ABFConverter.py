@@ -18,9 +18,6 @@ from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
 
 ABF_TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 
-# TODO
-# add abstract base class
-
 
 class ABFConverter:
 
