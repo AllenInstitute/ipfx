@@ -42,7 +42,7 @@ def convert(inFileOrFolder, overwrite=False, fileType=None):
 
     if ext == ".abf":
         ABFConverter(inFileOrFolder, outFile)
-    if ext == ".dat":
+    elif ext == ".dat":
         DatConverter(inFileOrFolder, outFile)
     else:
         raise ValueError(f"The extension {ext} is currently not supported.")
