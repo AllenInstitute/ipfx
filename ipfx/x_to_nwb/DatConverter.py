@@ -1,6 +1,7 @@
 from hashlib import sha256
 from datetime import datetime
 import os
+import json
 
 import numpy as np
 
@@ -12,7 +13,8 @@ from ipfx.x_to_nwb.hr_bundle import Bundle
 from ipfx.x_to_nwb.hr_nodes import TraceRecord, ChannelRecordStimulus
 from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
 from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
-     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset
+     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset, \
+     getPackageInfo
 
 
 class DatConverter:
@@ -195,6 +197,8 @@ class DatConverter:
         creatorName = "PatchMaster"
         creatorVersion = self.bundle.header.Version
         experiment_description = f"{creatorName} {creatorVersion}"
+        source_script_file_name = "run_x_to_nwb_conversion.py"
+        source_script = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
         session_id = PLACEHOLDER
 
         return NWBFile(source=source,
@@ -204,7 +208,9 @@ class DatConverter:
                        session_start_time=self.session_start_time,
                        experimenter=None,
                        experiment_description=experiment_description,
-                       session_id=session_id)
+                       session_id=session_id,
+                       source_script=source_script,
+                       source_script_file_name=source_script_file_name)
 
     def _createDevice(self):
         """

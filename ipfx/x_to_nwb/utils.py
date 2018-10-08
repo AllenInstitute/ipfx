@@ -1,4 +1,7 @@
 import math
+from pkg_resources import get_distribution, DistributionNotFound
+import os
+from subprocess import Popen, PIPE
 
 from pynwb.icephys import CurrentClampStimulusSeries, VoltageClampStimulusSeries
 from pynwb.icephys import CurrentClampSeries, VoltageClampSeries
@@ -68,3 +71,47 @@ def createCompressedDataset(array):
     """
 
     return H5DataIO(data=array, compression=True, chunks=True, shuffle=True, fletcher32=True)
+
+
+def getPackageInfo():
+    """
+    Return a dictionary with version information for the allensdk package
+    """
+
+    def get_git_version():
+        """
+        Returns the project version as derived by git.
+        """
+
+        path = os.path.dirname(__file__)
+        branch = Popen(f'git -C "{path}" rev-parse --abbrev-ref HEAD', stdout=PIPE,
+                       shell=True).stdout.read().rstrip().decode('ascii')
+        rev = Popen(f'git -C "{path}" describe --always --tags', stdout=PIPE,
+                    shell=True).stdout.read().rstrip().decode('ascii')
+
+        if branch.startswith('fatal') or rev.startswith('fatal'):
+            raise ValueError("Could not determine git version")
+
+        return f"({branch}) {rev}"
+
+    try:
+        package_version = get_distribution('allensdk').version
+    except DistributionNotFound:  # not installed as a package
+        package_version = None
+
+    try:
+        git_version = get_git_version()
+    except ValueError:  # not in a git repostitory
+        git_version = None
+
+    version_info = {"repo": "https://github.com/AllenInstitute/ipfx",
+                    "package_version": "Unknown",
+                    "git_revision": "Unknown"}
+
+    if package_version:
+        version_info["package_version"] = package_version
+
+    if git_version:
+        version_info["git_revision"] = git_version
+
+    return version_info
