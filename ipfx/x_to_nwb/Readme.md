@@ -40,7 +40,7 @@ run_x_to_nwb_conversion.py --overwrite --protocolDir protocols 2018_03_20_0000.a
 The following command converts all ABF files which reside in `someFolder` to a single NWB file.
 
 ```sh
-run_x_to_nwb_conversion.py --fileType ".abf" --overwrite someFolder 2018_03_20_0000.abf
+run_x_to_nwb_conversion.py --fileType ".abf" --overwrite someFolder
 ```
 
 ### DAT specialities
