@@ -194,7 +194,7 @@ class DatConverter:
         self.session_start_time = self._convertTimestamp(self.bundle.header.Time)
         creatorName = "PatchMaster"
         creatorVersion = self.bundle.header.Version
-        experiment_description = (f"{creatorName} {creatorVersion}")
+        experiment_description = f"{creatorName} {creatorVersion}"
         session_id = PLACEHOLDER
 
         return NWBFile(source=source,
