@@ -145,7 +145,6 @@ class AibsDataSet(EphysDataSet):
 
         clamp_mode = sweep_info.get('clamp_mode', None)
         if clamp_mode is None:
-            print(self.ontology)
             clamp_mode = "CurrentClamp" if sweep_info['stimulus_units'] in self.ontology.current_clamp_units else "VoltageClamp"
 
         if clamp_mode == "VoltageClamp":  # voltage clamp
