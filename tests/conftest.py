@@ -24,3 +24,9 @@ def spike_test_var_dt():
 @pytest.fixture()
 def spike_test_high_init_dvdt():
     return load_array_from_zip_file("data/spike_test_high_init_dvdt.txt.zip", "spike_test_high_init_dvdt.txt")
+
+def pytest_addoption(parser):
+    parser.addoption("--do-x-nwb-tests",
+                     action="store_true",
+                     default=False,
+                     help="run file regression tests for conversion to NWBv2")
