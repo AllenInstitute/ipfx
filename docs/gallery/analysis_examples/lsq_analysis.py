@@ -30,8 +30,8 @@ lsq_table = data_set.filtered_sweep_table(stimuli=data_set.ontology.long_square_
 lsq_set = data_set.sweep_set(lsq_table.sweep_number)
 
 # build the extractors
-spx = efex.SpikeExtractor(start=1.02, end=2.02)
-spfx = efex.SpikeTrainFeatureExtractor(start=1.02, end=2.02)
+spx = efex.SpikeExtractor(start=0.27, end=1.27)
+spfx = efex.SpikeTrainFeatureExtractor(start=0.27, end=1.27)
 
 # run the analysis and print out a few of the features
 lsqa = spa.LongSquareAnalysis(spx, spfx, subthresh_min_amp=-100.0)
@@ -46,7 +46,6 @@ plt.plot(spiking_sweeps.stim_amp,
          spiking_sweeps.avg_rate)
 plt.xlabel('Stimulus amplitude (pA)')
 plt.ylabel('Average firing rate (Hz)')
-plt.show()
 
 
 
