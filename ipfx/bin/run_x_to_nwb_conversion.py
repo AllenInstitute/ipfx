@@ -15,7 +15,13 @@ def convert(inFileOrFolder, overwrite=False, fileType=None):
 
     Supported fileformats:
         - ABF v2 files created by Clampex
-        - DAT files create by Patchmaster v2x90
+        - DAT files created by Patchmaster v2x90
+
+    :param inFileOrFolder: path to a file or folder
+    :param overwrite: overwrite output file, defaults to `False`
+    :param fileType: file type to be converted, must be passed iff `inFileOrFolder` refers to a folder
+
+    :return: path of the created NWB file
     """
 
     if not os.path.exists(inFileOrFolder):
@@ -46,6 +52,8 @@ def convert(inFileOrFolder, overwrite=False, fileType=None):
         DatConverter(inFileOrFolder, outFile)
     else:
         raise ValueError(f"The extension {ext} is currently not supported.")
+
+    return outFile
 
 
 def main():
