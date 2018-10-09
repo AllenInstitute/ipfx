@@ -250,11 +250,12 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
         spiking_features = self._sweep_features[spiking_sweeps]
 
         # Need to count how many had spikes at each amplitude; find most; ties go to lower amplitude
-        if len(spiking_sweeps) == 0:
+        if sum(spiking_sweeps) == 0:
             raise ft.FeatureError("No spiking short square sweeps, cannot compute cell features.")
 
         most_common = Counter(spiking_features["stim_amp"].values).most_common()
         common_amp, common_count = most_common[0]
+
         for c in most_common[1:]:
             if c[1] < common_count:
                 break
