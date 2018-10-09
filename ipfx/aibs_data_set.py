@@ -10,13 +10,13 @@ import ipfx.stim_features as st
 
 
 class AibsDataSet(EphysDataSet):
-    def __init__(self, sweep_info=[], nwb_file=None, h5_file=None, ontology=None, api_sweeps=True):
+    def __init__(self, sweep_info=None, nwb_file=None, h5_file=None, ontology=None, api_sweeps=True):
         super(AibsDataSet, self).__init__(ontology)
         self.nwb_file = nwb_file
         self.h5_file = h5_file
         self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
 
-        if sweep_info:
+        if sweep_info is not None:
             sweep_info = self.modify_api_sweep_info(sweep_info) if api_sweeps else sweep_info
         else:
             sweep_info = self.extract_sweep_meta_data()
@@ -110,11 +110,10 @@ class AibsDataSet(EphysDataSet):
         return sweep_props
 
     def modify_api_sweep_info(self, sweep_list):
-
         return [ { AibsDataSet.SWEEP_NUMBER: s['sweep_number'],
                    AibsDataSet.STIMULUS_UNITS: s['stimulus_units'],
-                   AibsDataSet.STIMULUS_AMPLITUDE: s['stimulus_amplitude'],
-                   AibsDataSet.STIMULUS_CODE: re.sub("\[\d+\]", "", s['stimulus_code']),
+                   AibsDataSet.STIMULUS_AMPLITUDE: s['stimulus_absolute_amplitude'],
+                   AibsDataSet.STIMULUS_CODE: re.sub("\[\d+\]", "", s['stimulus_description']),
                    AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
                    AibsDataSet.PASSED: True } for s in sweep_list ]
 
@@ -144,10 +143,15 @@ class AibsDataSet(EphysDataSet):
         response = sweep_data['response'][0:end_ix+1]
         stimulus = sweep_data['stimulus'][0:end_ix+1]
 
-        if sweep_info['clamp_mode'] == "VoltageClamp":  # voltage clamp
+        clamp_mode = sweep_info.get('clamp_mode', None)
+        if clamp_mode is None:
+            print(self.ontology)
+            clamp_mode = "CurrentClamp" if sweep_info['stimulus_units'] in self.ontology.current_clamp_units else "VoltageClamp"
+
+        if clamp_mode == "VoltageClamp":  # voltage clamp
             v = stimulus
             i = response
-        elif sweep_info['clamp_mode'] == "CurrentClamp":  # Current clamp
+        elif clamp_mode == "CurrentClamp":  # Current clamp
             v = response
             i = stimulus
         else:
@@ -160,7 +164,7 @@ class AibsDataSet(EphysDataSet):
                           sampling_rate = sweep_data['sampling_rate'],
                           expt_idx_range = sweep_data['index_range'],
                           id = sweep_number,
-                          clamp_mode = sweep_info['clamp_mode']
+                          clamp_mode = clamp_mode
                           )
 
 

@@ -1,4 +1,5 @@
 import logging
+from ipfx.stimulus import StimulusOntology
 
 
 class EphysDataSet(object):
@@ -15,10 +16,9 @@ class EphysDataSet(object):
     SHORT_SQUARE= 'short_square'
     RAMP = 'ramp'
 
-    def __init__(self, ontology):
+    def __init__(self, ontology=None):
         self.sweep_table = None
-
-        self.ontology = ontology
+        self.ontology = ontology if ontology else StimulusOntology()
 
     def filtered_sweep_table(self,
                              current_clamp_only=False,
