@@ -9,6 +9,8 @@ class EphysDataSet(object):
     STIMULUS_NAME = 'stimulus_name'
     SWEEP_NUMBER = 'sweep_number'
     PASSED = 'passed'
+    CLAMP_MODE = 'clamp_mode'
+    TRUNCATED = 'truncated'
 
     LONG_SQUARE = 'long_square'
     COARSE_LONG_SQUARE = 'coarse_long_square'
