@@ -11,7 +11,17 @@
    history
 
 
-.. include:: ../README.md
+Welcome to Intrinsic Physiology Feature Extractor (ipfx)
+--------------------------------------------------------
+
+ipfx is a python 2/3 package for computing intrinsic cell features from electrophysiology data.  This includes:
+
+    * action potential detection (e.g. threshold time and voltage)
+    * cell quality control (e.g. resting potential stability)
+    * stimulus-specific cell features (e.g. input resistance)
+
+This software is designed for use in the Allen Institute for Brain Science electrophysiology data processing pipeline.
+
 
 Want to cut to the chase?  Take a look at our :ref:`examples-index`.  Otherwise, continue on for a high-level overview.
 
