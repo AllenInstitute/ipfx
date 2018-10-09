@@ -14,12 +14,14 @@ from ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
 ct = CellTypesApi()
 
 specimen_id = 595570553
-nwb_filename = "%d.nwb" % specimen_id
-if not os.path.exists(nwb_filename):
-    ct.save_ephys_data(specimen_id, nwb_filename)
+nwb_file = "%d.nwb" % specimen_id
+sweep_info = ct.get_ephys_sweeps(specimen_id)
+
+if not os.path.exists(nwb_file):
+    ct.save_ephys_data(specimen_id, nwb_file)
 
 # Get the data for the sweep into a format we can use
-dataset = AibsDataSet([], nwb_filename)
+dataset = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
 sweep_number = 39
 sweep = dataset.sweep(sweep_number)
 
