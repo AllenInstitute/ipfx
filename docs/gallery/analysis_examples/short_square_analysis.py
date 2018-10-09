@@ -27,12 +27,12 @@ data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
 shsq_table = data_set.filtered_sweep_table(stimuli=data_set.ontology.short_square_names)
 shsq_sweep_set = data_set.sweep_set(shsq_table.sweep_number)
 
-# Estimate the dv cutoff and threshold fraction
+# Estimate the dv cutoff and threshold fraction (we know stimulus starts at 0.27s)
 dv_cutoff, thresh_frac = ft.estimate_adjusted_detection_parameters(shsq_sweep_set.v,
                                                                    shsq_sweep_set.t,
-                                                                   1.02, 1.021)
-# Build the extractors (we know stimulus starts at 1.02 s)
-start = 1.02
+                                                                   0.27, 0.271)
+# Build the extractors 
+start = 0.27
 spx = SpikeExtractor(start=start, dv_cutoff=dv_cutoff, thresh_frac=thresh_frac)
 sptrx = SpikeTrainFeatureExtractor(start=start, end=None)
 
@@ -46,6 +46,7 @@ for i, swp in enumerate(shsq_sweep_set.sweeps):
         plt.plot(swp.t, swp.v, linewidth=0.5, color="steelblue")
 
 # Set the plot limits to highlight where spikes are and axis labels
-plt.xlim(1.015, 1.05)
+plt.xlim(0.265, 0.3)
 plt.xlabel("Time (s)")
 plt.ylabel("Membrane potential (mV)")
+plt.title("Lowest amplitude spiking sweeps")
