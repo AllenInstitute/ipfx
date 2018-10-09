@@ -14,17 +14,17 @@ from allensdk.api.queries.cell_types_api import CellTypesApi
 import os
 import matplotlib.pyplot as plt
 
-specimen_id = 595570553
-nwb_file = '%d.nwb' % specimen_id
-
-# download a specific experiment NWB file via AllenSDK
+# Download and access the experimental data
 ct = CellTypesApi()
+specimen_id = 595570553
+nwb_file = "%d.nwb" % specimen_id
+sweep_info = ct.get_ephys_sweeps(specimen_id)
+
 if not os.path.exists(nwb_file):
     ct.save_ephys_data(specimen_id, nwb_file)
-sweeps = ct.get_ephys_sweeps(specimen_id)
 
 # build a data set and find the short squares
-data_set = AibsDataSet(sweeps, nwb_file)
+data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
 ssq_table = data_set.filtered_sweep_table(stimuli=["Short Square"])
 ssq_set = data_set.sweep_set(ssq_table.sweep_number)
 
@@ -38,7 +38,6 @@ sweep_number = 16
 sweep = data_set.sweep(sweep_number)
 ext = fx.SpikeExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac)
 spikes = ext.process(t=sweep.t, v=sweep.v, i=sweep.i)
-
 
 # and plot them
 plt.plot(sweep.t, sweep.v)
