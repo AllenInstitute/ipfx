@@ -307,9 +307,10 @@ class DatConverter:
                     for trace in sweep:
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = createCompressedDataset(self.bundle.data[trace])
+                        ampState = series.AmplifierState
                         conversion, unit = parseUnit(trace.YUnit)
                         electrode = electrodes[self.electrodeDict[self._generateElectrodeKey(trace)]]
-                        gain = series.AmplifierState.Gain
+                        gain = ampState.Gain
                         resolution = np.nan
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / trace.XInterval
@@ -321,8 +322,6 @@ class DatConverter:
 
                         # TODO check amplifier settings mapping from Patchmaster to NWB
                         if clampMode == V_CLAMP_MODE:
-
-                            ampState = series.AmplifierState
 
                             if ampState.RsOn:
                                 resistance_comp_correction = ampState.RsFraction
