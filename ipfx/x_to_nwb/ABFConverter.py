@@ -255,8 +255,9 @@ class ABFConverter:
         series = []
         counter = 0
 
-        for abf in self.abfs:
+        for file_index, abf in enumerate(self.abfs):
             for sweep in range(abf.sweepCount):
+                cycle_id = f"{file_index}.{sweep}"
                 for channel in range(abf.channelCount):
 
                     if not abf._dacSection.nWaveformEnable[channel]:
@@ -272,7 +273,8 @@ class ABFConverter:
                     starting_time = self._calculateStartingTime(abf)
                     rate = float(abf.dataRate)
                     source = PLACEHOLDER
-                    description = json.dumps({"protocol": abf.protocol,
+                    description = json.dumps({"cycle_id": cycle_id,
+                                              "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
                                               "name": abf.dacNames[channel],
                                               "number": abf._dacSection.nDACNum[channel]},
@@ -304,8 +306,9 @@ class ABFConverter:
         series = []
         counter = 0
 
-        for abf in self.abfs:
+        for file_index, abf in enumerate(self.abfs):
             for sweep in range(abf.sweepCount):
+                cycle_id = f"{file_index}.{sweep}"
                 for channel in range(abf.channelCount):
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
@@ -318,7 +321,8 @@ class ABFConverter:
                     stimulus_description = abf.protocol
                     rate = float(abf.dataRate)
                     source = PLACEHOLDER
-                    description = json.dumps({"protocol": abf.protocol,
+                    description = json.dumps({"cycle_id": cycle_id,
+                                              "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
                                               "name": abf.adcNames[channel],
                                               "number": abf._adcSection.nADCNum[channel]},
