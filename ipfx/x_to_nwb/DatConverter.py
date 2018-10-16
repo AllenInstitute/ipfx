@@ -243,6 +243,7 @@ class DatConverter:
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
+                    cycle_id = f"{group.GroupCount}.{series.SeriesCount}.{sweep.SweepCount}"
                     for trace in sweep:
                         stimsetIndex = sweep.StimCount - 1
                         sweepIndex = sweep.SweepCount - 1
@@ -263,7 +264,7 @@ class DatConverter:
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / stimRec.SampleInterval
                         source = PLACEHOLDER
-                        description = PLACEHOLDER
+                        description = json.dumps({"cycle_id": cycle_id}, sort_keys=True, indent=4)
 
                         clampMode = self._getClampMode(stimRec[0])
 
@@ -302,6 +303,7 @@ class DatConverter:
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
+                    cycle_id = f"{group.GroupCount}.{series.SeriesCount}.{sweep.SweepCount}"
                     for trace in sweep:
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = createCompressedDataset(self.bundle.data[trace])
@@ -312,7 +314,7 @@ class DatConverter:
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / trace.XInterval
                         source = PLACEHOLDER
-                        description = PLACEHOLDER
+                        description = json.dumps({"cycle_id": cycle_id}, sort_keys=True, indent=4)
                         clampMode = self._getClampMode(trace)
                         seriesClass = getAcquiredSeriesClass(clampMode)
                         stimulus_description = series.Label
