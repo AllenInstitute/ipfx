@@ -195,7 +195,7 @@ class ABFConverter:
         source = PLACEHOLDER
         session_description = getFileComments(self.abfs)
         identifier = sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest()
-        session_start_time = self.refabf.abfDateTime
+        session_start_time = datetime.strptime(self.refabf.abfDateTime, ABF_TIMESTAMP_FORMAT)
         creatorName = self.refabf._stringsIndexed.uCreatorName
         creatorVersion = formatVersion(self.refabf.creatorVersion)
         experiment_description = (f"{creatorName} v{creatorVersion}")
@@ -205,7 +205,6 @@ class ABFConverter:
 
         return NWBFile(source=source,
                        session_description=session_description,
-                       file_create_date=datetime.utcnow().isoformat(),
                        identifier=identifier,
                        session_start_time=session_start_time,
                        experimenter=None,

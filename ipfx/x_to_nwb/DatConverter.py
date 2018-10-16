@@ -203,7 +203,6 @@ class DatConverter:
 
         return NWBFile(source=source,
                        session_description=session_description,
-                       file_create_date=datetime.utcnow().isoformat(),
                        identifier=identifier,
                        session_start_time=self.session_start_time,
                        experimenter=None,
