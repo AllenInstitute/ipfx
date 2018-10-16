@@ -262,7 +262,7 @@ class ABFConverter:
                         continue
 
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
-                    name, counter = createSeriesName("sweep", counter, total=self.totalSeriesCount)
+                    name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                     data = createCompressedDataset(abf.sweepC)
                     conversion, unit = parseUnit(abf.sweepUnitsC)
                     electrode = electrodes[channel]
@@ -307,7 +307,7 @@ class ABFConverter:
             for sweep in range(abf.sweepCount):
                 for channel in range(abf.channelCount):
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
-                    name, counter = createSeriesName("sweep", counter, total=self.totalSeriesCount)
+                    name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                     data = createCompressedDataset(abf.sweepY)
                     conversion, unit = parseUnit(abf.sweepUnitsY)
                     electrode = electrodes[channel]
