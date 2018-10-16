@@ -21,7 +21,7 @@ import pyabf
 
 from ipfx.x_to_nwb.ABFConverter import ABFConverter
 from ipfx.bin.run_x_to_nwb_conversion import convert
-from test_x_nwb_helper import fetch_and_extract_zip
+from .test_x_nwb_helper import fetch_and_extract_zip
 
 
 if not pytest.config.getoption("--do-x-nwb-tests"):
