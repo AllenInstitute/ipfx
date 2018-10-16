@@ -253,7 +253,7 @@ class DatConverter:
                             print(f"Can not yet recreate stimset {series.Label}")
                             continue
 
-                        name, counter = createSeriesName("stimset", counter, total=self.totalSeriesCount)
+                        name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = createCompressedDataset(stimset[sweepIndex])
                         stimRec = self.bundle.pgf[stimsetIndex]
                         assert len(stimRec) == 1, "Unsupported number of channels"
@@ -304,7 +304,7 @@ class DatConverter:
             for series in group:
                 for sweep in series:
                     for trace in sweep:
-                        name, counter = createSeriesName("sweep", counter, total=self.totalSeriesCount)
+                        name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = createCompressedDataset(self.bundle.data[trace])
                         conversion, unit = parseUnit(trace.YUnit)
                         electrode = electrodes[self.electrodeDict[self._generateElectrodeKey(trace)]]
