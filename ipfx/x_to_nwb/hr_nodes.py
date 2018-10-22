@@ -1128,6 +1128,15 @@ class RawData():
         self.bundle = bundle
 
     def __getitem__(self, *args):
+        """
+        Get a specific data block as numpy array.
+
+        :param args: Can be either a `TraceRecord` or a list holding four indizes
+                     (group, series, sweep, trace).
+
+        :return: 1D-numpy array
+        """
+
         if isinstance(args[0], TraceRecord):
             trace = args[0]
         else:
