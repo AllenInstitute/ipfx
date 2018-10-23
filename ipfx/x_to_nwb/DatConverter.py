@@ -145,6 +145,10 @@ class DatConverter:
 
         return datetime.fromtimestamp(secondsSinceUnixEpoch)
 
+    @staticmethod
+    def _isValidAmplifierState(ampState):
+        return len(ampState.StateVersion) > 0
+
     def _check(self):
         """
         Check that all prerequisites are met.
@@ -166,6 +170,11 @@ class DatConverter:
 
         for record in self.bundle.amp:
             for state in record:
+
+                # skip invalid entries
+                if not DatConverter._isValidAmplifierState(state.AmplifierState):
+                    continue
+
                 if deviceString != self._formatDeviceString(state):
                     raise ValueError(f"Device strings differ in tree structure.")
 
