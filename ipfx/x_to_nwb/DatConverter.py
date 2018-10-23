@@ -168,15 +168,17 @@ class DatConverter:
         # check that the used device is unique
         deviceString = self._formatDeviceString(self.bundle.amp[0][0])
 
-        for record in self.bundle.amp:
-            for state in record:
+        for series_index, series in enumerate(self.bundle.amp):
+            for state_index, state in enumerate(series):
 
                 # skip invalid entries
                 if not DatConverter._isValidAmplifierState(state.AmplifierState):
                     continue
 
                 if deviceString != self._formatDeviceString(state):
-                    raise ValueError(f"Device strings differ in tree structure.")
+                    raise ValueError(f"Device strings differ in tree structure " +
+                                     f"({deviceString} vs {self._formatDeviceString(state)} " +
+                                     f"at {series_index}.{state_index})")
 
         # check trace properties
         for group in self.bundle.pul:
