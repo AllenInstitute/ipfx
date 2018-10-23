@@ -311,17 +311,41 @@ class DatConverter:
         nwbSeries = []
         counter = 0
 
+        def getAmplifierState(bundle, series, trace_index):
+
+            ampState = series.AmplifierState
+
+            # try the default location first
+            if DatConverter._isValidAmplifierState(ampState):
+                return ampState
+
+            # newer Patchmaster versions store it in the Amplifier tree
+            ampState = bundle.amp[series.AmplStateSeries - 1][trace_index].AmplifierState
+
+            if DatConverter._isValidAmplifierState(ampState):
+                return ampState
+
+            # and sometimes we got nothing at all
+            return None
+
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
                     cycle_id = f"{group.GroupCount}.{series.SeriesCount}.{sweep.SweepCount}"
-                    for trace in sweep:
+                    for trace_index, trace in enumerate(sweep):
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = createCompressedDataset(self.bundle.data[trace])
-                        ampState = series.AmplifierState
+
+                        ampState = getAmplifierState(self.bundle, series, trace_index)
+
+                        if ampState:
+                            gain = ampState.Gain
+                        else:
+                            gain = np.nan
+
                         conversion, unit = parseUnit(trace.YUnit)
                         electrode = electrodes[self.electrodeDict[self._generateElectrodeKey(trace)]]
-                        gain = ampState.Gain
+
                         resolution = np.nan
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / trace.XInterval
@@ -334,7 +358,7 @@ class DatConverter:
                         # TODO check amplifier settings mapping from Patchmaster to NWB
                         if clampMode == V_CLAMP_MODE:
 
-                            if ampState.RsOn:
+                            if ampState and ampState.RsOn:
                                 resistance_comp_correction = ampState.RsFraction
                                 whole_cell_series_resistance_comp = ampState.RsValue
                             else:
@@ -345,13 +369,13 @@ class DatConverter:
                             resistance_comp_bandwidth = np.nan
                             resistance_comp_prediction = np.nan
 
-                            if ampState.AutoCFast or (ampState.CanCCFast and ampState.CCCFastOn):
+                            if ampState and (ampState.AutoCFast or (ampState.CanCCFast and ampState.CCCFastOn)):
                                 # stored in two doubles for enhanced precision
                                 capacitance_fast = ampState.CFastAmp1 + ampState.CFastAmp2
                             else:
                                 capacitance_fast = np.nan
 
-                            if ampState.AutoCSlow or (ampState.CanCCFast and not ampState.CCCFastOn):
+                            if ampState and (ampState.AutoCSlow or (ampState.CanCCFast and not ampState.CCCFastOn)):
                                 capacitance_slow = ampState.CSlow
                             else:
                                 capacitance_slow = np.nan
