@@ -63,3 +63,11 @@ run_x_to_nwb_conversion.py --fileType ".abf" --overwrite someFolder
 ```sh
 run_x_to_nwb_conversion.py H18.28.015.11.12.dat
 ```
+
+## Creating a PDF from an NWB file for preview purposes
+
+```sh
+nwb_to_pdf.py file1.nwb file2.nwb
+```
+
+This creates two PDFs named `file1.pdf` and `file2.pdf`.
