@@ -41,7 +41,7 @@ def get_raw_files():
     fetch_and_extract_zip("reference_abf_nwb.zip")
 
     fetch_and_extract_zip("reference_atf.zip")
-    ABFConverter.atfStorage = pyabf.ATFStorage("reference_atf")
+    ABFConverter.protocolStorageDir = "reference_atf"
 
     files = []
 

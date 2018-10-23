@@ -1,5 +1,4 @@
 from hashlib import sha256
-from datetime import datetime
 import json
 import os
 import glob
@@ -16,12 +15,10 @@ from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset, \
      getPackageInfo, createCycleID
 
-ABF_TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
-
 
 class ABFConverter:
 
-    atfStorage = None
+    protocolStorageDir = None
 
     def __init__(self, inFileOrFolder, outFile):
         """
@@ -43,9 +40,10 @@ class ABFConverter:
 
         self.abfs = []
 
+        pyabf.stimulus.Stimulus.protocolStorageDir = ABFConverter.protocolStorageDir
+
         for inFile in inFiles:
-            abf = pyabf.ABF(inFile, preLoadData=True, atfStorage=ABFConverter.atfStorage)
-            abf.baseline()  # turn off baseline subtraction
+            abf = pyabf.ABF(inFile, loadData=False)
             self.abfs.append(abf)
 
             # ensure that the input file matches our expectations
@@ -79,8 +77,8 @@ class ABFConverter:
         Check that all prerequisites are met.
         """
 
-        if abf.abfFileFormat != 2:
-            raise ValueError(f"Can not handle ABF file format version {abf.abfFileFormat} sweeps.")
+        if abf.abfVersion["major"] != 2:
+            raise ValueError(f"Can not handle ABF file format version {abf.abfVersion['major']} sweeps.")
         elif not (abf.sweepPointCount > 0):
             raise ValueError("The number of data points is not larger than zero.")
         elif not (abf.sweepCount > 0):
@@ -197,7 +195,7 @@ class ABFConverter:
             session_description = PLACEHOLDER
 
         identifier = sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest()
-        session_start_time = datetime.strptime(self.refabf.abfDateTime, ABF_TIMESTAMP_FORMAT)
+        session_start_time = self.refabf.abfDateTime
         creatorName = self.refabf._stringsIndexed.uCreatorName
         creatorVersion = formatVersion(self.refabf.creatorVersion)
         experiment_description = (f"{creatorName} v{creatorVersion}")
@@ -239,10 +237,7 @@ class ABFConverter:
         Calculate the starting time of the current sweep of `abf` relative to the reference ABF file.
         """
 
-        refTimestamp = datetime.strptime(self.refabf.abfDateTime, ABF_TIMESTAMP_FORMAT)
-        timestamp = datetime.strptime(abf.abfDateTime, ABF_TIMESTAMP_FORMAT)
-
-        delta = timestamp - refTimestamp
+        delta = abf.abfDateTime - self.refabf.abfDateTime
 
         return delta.total_seconds() + abf.sweepX[0]
 

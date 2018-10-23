@@ -3,8 +3,6 @@
 import os
 import argparse
 
-import pyabf
-
 from ipfx.x_to_nwb.ABFConverter import ABFConverter
 from ipfx.x_to_nwb.DatConverter import DatConverter
 
@@ -76,7 +74,7 @@ def main():
         if not os.path.exists(args.protocolDir):
             raise ValueError("Protocol directory does not exist")
 
-        ABFConverter.atfStorage = pyabf.ATFStorage(args.protocolDir)
+        ABFConverter.protocolStorageDir = args.protocolDir
 
     for fileOrFolder in args.filesOrFolders:
         print(f"Converting {fileOrFolder}")
