@@ -110,7 +110,7 @@ def create_files_for_upload(ext):
 
     if ext == "abf":
         fetch_and_extract_zip("reference_atf.zip")
-        ABFConverter.atfStorage = pyabf.ATFStorage("reference_atf")
+        ABFConverter.protocolStorageDir = "reference_atf"
 
     folder = f"reference_{ext}"
     basename = f"reference_{ext}"
