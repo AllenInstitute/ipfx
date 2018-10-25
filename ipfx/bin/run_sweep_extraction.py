@@ -13,6 +13,22 @@ MANUAL_KEYS = ['manual_seal_gohm', 'manual_initial_access_resistance_mohm', 'man
 
 
 def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, input_manual_values=None):
+    """
+    run example:
+    $python run_sweep_extraction.py --input_json ../../tests/module_io/se_input_patchseq.json --output_json ../../tests/module_io/se_output_patchseq.json
+
+
+    Parameters
+    ----------
+    input_nwb_file
+    input_h5_file
+    stimulus_ontology_file
+    input_manual_values
+
+    Returns
+    -------
+
+    """
     if input_manual_values is None:
         input_manual_values = {}
 

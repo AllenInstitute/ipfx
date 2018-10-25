@@ -32,7 +32,7 @@ def main():
     args = {}
     args['input_nwb_file'] = input_nwb_file
     args['output_nwb_file'] = os.path.join(cell_dir, "output.nwb")
-    args['qc_fig_dir'] = os.path.join(cell_dir,"qc_figs")
+#    args['qc_fig_dir'] = os.path.join(cell_dir,"qc_figs")
     args['qc_criteria'] = ju.read(qcp.DEFAULT_QC_CRITERIA_FILE)
     args['manual_sweep_states'] = []
 
@@ -43,7 +43,7 @@ def main():
                           args.get("input_h5_file", None),
                           args["output_nwb_file"],
                           args.get("stimulus_ontology_file", None),
-                          args["qc_fig_dir"],
+                          args.get("qc_fig_dir",None),
                           args["qc_criteria"],
                           args["manual_sweep_states"])
 

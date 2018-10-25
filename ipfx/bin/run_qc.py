@@ -11,6 +11,9 @@ import allensdk.core.json_utilities as ju
 
 def run_qc(stimulus_ontology_file, cell_features, sweep_features, qc_criteria):
     """
+    run_qc module run example:
+    python run_qc.py --input_json ../../tests/module_io/qc_input_ivscc.json --output_json ../../tests/module_io/qc_output_ivscc.json
+
 
     Parameters
     ----------

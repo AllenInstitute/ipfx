@@ -387,8 +387,6 @@ def categorize_iclamp_sweeps(data_set, stimuli_names):
 
     iclamp_st = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=stimuli_names)
 
-    iclamp_sweep_numbers = iclamp_st["sweep_number"].sort_values().values
-
     mask = iclamp_st["passed"]==False
     failed_qc_st = iclamp_st[mask]
     failed_qc_sweeep_numbers = failed_qc_st["sweep_number"].sort_values().values
