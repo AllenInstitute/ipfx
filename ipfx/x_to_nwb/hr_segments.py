@@ -57,9 +57,6 @@ class Segment(ABC):
         self.duration = segmentRec.Duration
         self.sampleInterval = stimRec.SampleInterval
 
-        if channelRec.StimToDacID["UseStimScale"] is not True or channelRec.StimToDacID["UseRelative"] is not True:
-            raise ValueError(f"Unsupported StimToDacID '{channelRec.StimToDacID}'")
-
     def __str__(self):
         return ("xDelta={}, yDelta={}, "
                 "duration={}, sampleInterval={}").format(self.xDelta, self.yDelta, self.duration, self.sampleInterval)
