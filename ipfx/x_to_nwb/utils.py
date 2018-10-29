@@ -115,3 +115,22 @@ def getPackageInfo():
         version_info["git_revision"] = git_version
 
     return version_info
+
+
+def getStimulusRecordIndex(sweep):
+    return sweep.StimCount - 1
+
+
+def getChannelRecordIndex(pgf, sweep, trace):
+    """
+    Given a pgf node, a SweepRecord and TraceRecord this returns the
+    corresponding `ChannelRecordStimulus` node as index.
+    """
+
+    stimRec = pgf[getStimulusRecordIndex(sweep)]
+
+    for idx, channelRec in enumerate(stimRec):
+        if channelRec.AdcChannel == trace.AdcChannel:
+            return idx
+
+    return None

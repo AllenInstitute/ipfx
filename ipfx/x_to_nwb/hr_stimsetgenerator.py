@@ -1,6 +1,7 @@
 import numpy as np
 
 from ipfx.x_to_nwb.hr_segments import getSegmentClass
+from ipfx.x_to_nwb.utils import getChannelRecordIndex, getStimulusRecordIndex
 
 
 class StimSetGenerator:
@@ -14,22 +15,15 @@ class StimSetGenerator:
         self.cache = {}
         pass
 
-    def fetch(self, idx):
+    def fetch(self, sweep, trace):
         """
         Fetch a stimulus set from the cache, generate it if it is not present.
 
-        Parameter: idx
-                This is the stimulus index in the DAT file (SweepRecord.StimCount, converted to 0-base)
+        :param sweep: SweepRecord node
+        :param trace: TraceRecord node
 
         Return: python list of numpy arrays, one array per sweep
         """
-
-        entry = self.cache.get(idx)
-
-        if entry:
-            return entry
-        elif entry is False:
-            return []
 
         # PGF hierarchy
         #
@@ -39,14 +33,29 @@ class StimSetGenerator:
         #    segmentRec
 
         try:
-            stimRec = self.bundle.pgf[idx]
 
-            if len(stimRec) > 1:
-                raise ValueError(f"Unsupported stimRec length {len(stimRec)} for index {idx}.")
-            elif stimRec.ActualAdcChannels != 1 or stimRec.ActualDacChannels != 1:
-                raise ValueError(f"Unsupported ActualAdcChannel/ActualDacChannels lengths for index {idx}.")
+            stimRec_idx = getStimulusRecordIndex(sweep)
+            key = None
+            channelRec_index = getChannelRecordIndex(self.bundle.pgf, sweep, trace)
 
-            channelRec = stimRec[0]
+            if channelRec_index is None:
+                raise ValueError(f"Could not find a ChannelRecord for the given trace.")
+
+            key = f"{stimRec_idx}.{channelRec_index}"
+            entry = self.cache.get(key)
+
+            if entry:
+                return entry
+            elif entry is False:
+                return []
+
+            stimRec = self.bundle.pgf[stimRec_idx]
+            channelRec = stimRec[channelRec_index]
+
+            if stimRec.ActualDacChannels != 1:
+                raise ValueError(f"Unsupported ActualDacChannels lengths for "
+                                 f"sweep index {stimRec_idx} and ChannelRecord index {channelRec_index}.")
+
             allSweeps = []
 
             for sweep in range(stimRec.NumberSweeps):
@@ -60,11 +69,12 @@ class StimSetGenerator:
 
                 allSweeps.append(stimset)
 
-            self.cache[idx] = allSweeps
+            self.cache[key] = allSweeps
 
         except (ValueError, IndexError) as e:
             print(e)
-            self.cache[idx] = False
+            if key:
+                self.cache[key] = False
             return []
 
-        return self.cache[idx]
+        return self.cache[key]
