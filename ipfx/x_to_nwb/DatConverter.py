@@ -14,7 +14,7 @@ from ipfx.x_to_nwb.hr_nodes import TraceRecord, ChannelRecordStimulus
 from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
 from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset, \
-     getPackageInfo
+     getPackageInfo, getChannelRecordIndex, getStimulusRecordIndex
 
 
 class DatConverter:
@@ -189,8 +189,6 @@ class DatConverter:
                             raise ValueError(f"Expected unit 's' for x-axis of the trace")
                         elif trace.AverageCount != 1:
                             raise ValueError(f"Unexpected average count of {trace.AverageCount}")
-                        elif trace.TraceCount != 1:
-                            raise ValueError(f"Unexpected count of {trace.TraceCount}")
                         elif trace.DataKind["IsLeak"]:
                             raise ValueError(f"Leak traces are not supported.")
                         elif trace.DataKind["IsVirtual"]:
@@ -255,19 +253,19 @@ class DatConverter:
             for series in group:
                 for sweep in series:
                     cycle_id = f"{group.GroupCount}.{series.SeriesCount}.{sweep.SweepCount}"
+                    stimRec = self.bundle.pgf[getStimulusRecordIndex(sweep)]
                     for trace in sweep:
-                        stimsetIndex = sweep.StimCount - 1
-                        sweepIndex = sweep.SweepCount - 1
-                        stimset = generator.fetch(stimsetIndex)
+                        stimset = generator.fetch(sweep, trace)
 
                         if not len(stimset):
                             print(f"Can not yet recreate stimset {series.Label}")
                             continue
 
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
+
+                        sweepIndex = sweep.SweepCount - 1
                         data = createCompressedDataset(stimset[sweepIndex])
-                        stimRec = self.bundle.pgf[stimsetIndex]
-                        assert len(stimRec) == 1, "Unsupported number of channels"
+
                         electrode = electrodes[self.electrodeDict[self._generateElectrodeKey(trace)]]
                         gain = 1.0
                         resolution = np.nan
@@ -277,7 +275,10 @@ class DatConverter:
                         source = PLACEHOLDER
                         description = json.dumps({"cycle_id": cycle_id}, sort_keys=True, indent=4)
 
-                        clampMode = self._getClampMode(stimRec[0])
+                        channelRec_index = getChannelRecordIndex(self.bundle.pgf, sweep, trace)
+                        assert channelRec_index is not None, "Unexpected channel record index"
+
+                        clampMode = self._getClampMode(stimRec[channelRec_index])
 
                         if clampMode == V_CLAMP_MODE:
                             conversion, unit = 1e-3, "V"
