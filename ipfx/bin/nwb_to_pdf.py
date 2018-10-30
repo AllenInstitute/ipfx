@@ -278,7 +278,7 @@ def plot_sweepdata(sweepdata, axes, addXTicks=False):
         axis.remove()
 
 
-def createPDF(nwbfile, outfile):
+def create_regular_pdf(nwbfile, outfile):
     '''
     convert a NeurodataWithoutBorders file to a PortableDocumentFile
     '''
@@ -323,7 +323,7 @@ def main():
     for nwbfile in args.nwbfiles:
         outfile = os.path.splitext(nwbfile)[0] + ".pdf"
         print(f"Creating PDF for {nwbfile}")
-        createPDF(nwbfile, outfile)
+        create_regular_pdf(nwbfile, outfile)
 
 
 if __name__ == "__main__":
