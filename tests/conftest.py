@@ -3,6 +3,7 @@ import zipfile
 import numpy as np
 import io
 import os
+import sys
 
 PATH = os.path.join(os.path.dirname(__file__))
 
@@ -30,3 +31,9 @@ def pytest_addoption(parser):
                      action="store_true",
                      default=False,
                      help="run file regression tests for conversion to NWBv2")
+
+
+collect_ignore = ["test_sweep_extraction.py"]
+if sys.version_info[0] < 3:
+    collect_ignore.append("test_x_nwb.py")
+    collect_ignore.append("test_x_nwb_helper.py")
