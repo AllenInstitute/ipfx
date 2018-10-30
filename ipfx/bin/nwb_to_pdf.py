@@ -2,6 +2,7 @@
 # vim: set fileencoding=utf-8 :
 import matplotlib.pyplot as plt
 import matplotlib.style as mplstyle
+import matplotlib.ticker as ticker
 from matplotlib.backends.backend_pdf import PdfPages
 
 import json
@@ -278,6 +279,104 @@ def plot_sweepdata(sweepdata, axes, addXTicks=False):
         axis.remove()
 
 
+def check_stimset_reconstruction(nwbfile, outfile):
+    '''
+    From a specially crafted NWB file this routine creates a PDF for checking
+    the stimset reconstruction.
+
+    The NWB file must have data acquired on two headstages/electrodes where the
+    second just reads back the stimulus set.
+    '''
+
+    plt.rcParams['axes.grid'] = True
+    box_props = {"boxstyle": 'round', "facecolor": 'wheat', "alpha": 0.5}
+
+    with NWBHDF5IO(nwbfile, 'r') as io:
+        nwb = io.read()
+
+        with PdfPages(outfile) as pdf:
+            try:
+                idx = 0
+                for i in range(10000):
+
+                    stim_key = f"index_{idx:02d}"
+                    acq_key = f"index_{idx + 1:02d}"
+
+                    acq = nwb.acquisition[acq_key]
+                    stim = nwb.stimulus[stim_key]
+
+                    if acq.data.attrs.get('unit') == "A":
+                        acq_key = f"index_{idx:02d}"
+                        acq = nwb.acquisition[acq_key]
+
+                    description = json.loads(acq.description)
+                    cycle_id = description['cycle_id']
+
+                    abs_diff = abs(acq.data[()] - stim.data[()])
+                    rel_diff = abs(acq.data[()] - stim.data[()]) / acq.data[()]
+
+                    abs_diff_min = np.nanmin(abs_diff)
+                    abs_diff_max = np.nanmax(abs_diff)
+
+                    rel_diff_min = np.nanmin(rel_diff)
+                    rel_diff_max = np.nanmax(rel_diff)
+
+                    print(f"{cycle_id:10s}, "
+                          f"{acq.stimulus_description:15s}, "
+                          f"absolute diff [{abs_diff_min:.3g}, {abs_diff_max:.3g}], "
+                          f"relative diff [{rel_diff_min:.3g}, {rel_diff_max:.3g}]")
+
+                    fig, axes = plt.subplots(3, ncols=1, sharex='row')
+                    fig.set_size_inches(8.27, 11.69)  # a4 portrait
+                    fig.suptitle(f"Sweep {cycle_id} with {acq.stimulus_description}")
+
+                    plt.subplots_adjust(wspace=0.33)
+
+                    start = acq.starting_time
+                    step = 1 / acq.rate
+                    length = len(abs_diff)
+                    stop = start + step * length
+                    x_data = np.linspace(start, stop, num=length, endpoint=False)
+
+                    axes[0].set_title(f"Acquired vs Stimset")
+                    axes[0].plot(x_data, stim.data[()], label="Stimset", alpha=0.7)
+                    axes[0].plot(x_data, acq.data[()], label="Acquired", alpha=0.7, dashes=[3, 6])
+                    axes[0].xaxis.set_tick_params(bottom=False, labelbottom=False)
+                    axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+                    axes[0].yaxis.grid(which='minor')
+                    axes[0].legend(loc='best')
+                    ticks_y = ticker.FuncFormatter(lambda x, pos: f"{x*1e3:.2f}")
+                    axes[0].yaxis.set_major_formatter(ticks_y)
+
+                    axes[1].set_title(f"Absolute Difference")
+                    axes[1].plot(x_data, abs_diff)
+                    axes[1].xaxis.set_tick_params(bottom=False, labelbottom=False)
+                    axes[1].text(0.05, 0.95,
+                                 f"min = {abs_diff_min:.3g}\nmax = {abs_diff_max:.3g}",
+                                 transform=axes[1].transAxes,
+                                 fontsize=8,
+                                 verticalalignment='top',
+                                 bbox=box_props)
+
+                    axes[2].set_title(f"Relative Difference")
+                    axes[2].plot(x_data, rel_diff)
+                    axes[2].set_yscale('log', nonposy='clip')
+                    axes[2].text(0.05, 0.95,
+                                 f"min = {rel_diff_min:.3g}\nmax = {rel_diff_max:.3g}",
+                                 transform=axes[2].transAxes,
+                                 fontsize=8,
+                                 verticalalignment='top',
+                                 bbox=box_props)
+
+                    pdf.savefig(fig)
+                    plt.close()
+
+                    idx += 2
+            except Exception as e:  # no more TimeSeries
+                print(e)
+                pass
+
+
 def create_regular_pdf(nwbfile, outfile):
     '''
     convert a NeurodataWithoutBorders file to a PortableDocumentFile
@@ -316,6 +415,8 @@ def create_regular_pdf(nwbfile, outfile):
 def main():
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--check-stimset-rec", help="Create plot for checking " +
+                        "the stimset reconstruction.", action="store_true")
     parser.add_argument("nwbfiles", help="Path to input NWB files.", type=str,
                         nargs="+")
     args = parser.parse_args()
@@ -323,7 +424,11 @@ def main():
     for nwbfile in args.nwbfiles:
         outfile = os.path.splitext(nwbfile)[0] + ".pdf"
         print(f"Creating PDF for {nwbfile}")
-        create_regular_pdf(nwbfile, outfile)
+
+        if args.check_stimset_rec:
+            check_stimset_reconstruction(nwbfile, outfile)
+        else:
+            create_regular_pdf(nwbfile, outfile)
 
 
 if __name__ == "__main__":
