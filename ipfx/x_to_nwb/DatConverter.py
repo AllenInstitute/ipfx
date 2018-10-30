@@ -1,6 +1,7 @@
 from hashlib import sha256
 from datetime import datetime
 import os
+import json
 
 import numpy as np
 
@@ -12,7 +13,8 @@ from ipfx.x_to_nwb.hr_bundle import Bundle
 from ipfx.x_to_nwb.hr_nodes import TraceRecord, ChannelRecordStimulus
 from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
 from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
-     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset
+     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset, \
+     getPackageInfo
 
 
 class DatConverter:
@@ -194,17 +196,20 @@ class DatConverter:
         self.session_start_time = self._convertTimestamp(self.bundle.header.Time)
         creatorName = "PatchMaster"
         creatorVersion = self.bundle.header.Version
-        experiment_description = (f"{creatorName} {creatorVersion}")
+        experiment_description = f"{creatorName} {creatorVersion}"
+        source_script_file_name = "run_x_to_nwb_conversion.py"
+        source_script = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
         session_id = PLACEHOLDER
 
         return NWBFile(source=source,
                        session_description=session_description,
-                       file_create_date=datetime.utcnow().isoformat(),
                        identifier=identifier,
                        session_start_time=self.session_start_time,
                        experimenter=None,
                        experiment_description=experiment_description,
-                       session_id=session_id)
+                       session_id=session_id,
+                       source_script=source_script,
+                       source_script_file_name=source_script_file_name)
 
     def _createDevice(self):
         """
@@ -238,6 +243,7 @@ class DatConverter:
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
+                    cycle_id = f"{group.GroupCount}.{series.SeriesCount}.{sweep.SweepCount}"
                     for trace in sweep:
                         stimsetIndex = sweep.StimCount - 1
                         sweepIndex = sweep.SweepCount - 1
@@ -247,7 +253,7 @@ class DatConverter:
                             print(f"Can not yet recreate stimset {series.Label}")
                             continue
 
-                        name, counter = createSeriesName("stimset", counter, total=self.totalSeriesCount)
+                        name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = createCompressedDataset(stimset[sweepIndex])
                         stimRec = self.bundle.pgf[stimsetIndex]
                         assert len(stimRec) == 1, "Unsupported number of channels"
@@ -258,7 +264,7 @@ class DatConverter:
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / stimRec.SampleInterval
                         source = PLACEHOLDER
-                        description = PLACEHOLDER
+                        description = json.dumps({"cycle_id": cycle_id}, sort_keys=True, indent=4)
 
                         clampMode = self._getClampMode(stimRec[0])
 
@@ -297,8 +303,9 @@ class DatConverter:
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
+                    cycle_id = f"{group.GroupCount}.{series.SeriesCount}.{sweep.SweepCount}"
                     for trace in sweep:
-                        name, counter = createSeriesName("sweep", counter, total=self.totalSeriesCount)
+                        name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = createCompressedDataset(self.bundle.data[trace])
                         conversion, unit = parseUnit(trace.YUnit)
                         electrode = electrodes[self.electrodeDict[self._generateElectrodeKey(trace)]]
@@ -307,7 +314,7 @@ class DatConverter:
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / trace.XInterval
                         source = PLACEHOLDER
-                        description = PLACEHOLDER
+                        description = json.dumps({"cycle_id": cycle_id}, sort_keys=True, indent=4)
                         clampMode = self._getClampMode(trace)
                         seriesClass = getAcquiredSeriesClass(clampMode)
                         stimulus_description = series.Label

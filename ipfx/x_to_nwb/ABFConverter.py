@@ -13,12 +13,10 @@ from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import IntracellularElectrode
 
 from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
-     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset
+     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset, \
+     getPackageInfo
 
 ABF_TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
-
-# TODO
-# add abstract base class
 
 
 class ABFConverter:
@@ -197,20 +195,23 @@ class ABFConverter:
         source = PLACEHOLDER
         session_description = getFileComments(self.abfs)
         identifier = sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest()
-        session_start_time = self.refabf.abfDateTime
+        session_start_time = datetime.strptime(self.refabf.abfDateTime, ABF_TIMESTAMP_FORMAT)
         creatorName = self.refabf._stringsIndexed.uCreatorName
         creatorVersion = formatVersion(self.refabf.creatorVersion)
         experiment_description = (f"{creatorName} v{creatorVersion}")
+        source_script_file_name = "run_x_to_nwb_conversion.py"
+        source_script = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
         session_id = PLACEHOLDER
 
         return NWBFile(source=source,
                        session_description=session_description,
-                       file_create_date=datetime.utcnow().isoformat(),
                        identifier=identifier,
                        session_start_time=session_start_time,
                        experimenter=None,
                        experiment_description=experiment_description,
-                       session_id=session_id)
+                       session_id=session_id,
+                       source_script_file_name=source_script_file_name,
+                       source_script=source_script)
 
     def _createDevice(self):
         """
@@ -253,15 +254,16 @@ class ABFConverter:
         series = []
         counter = 0
 
-        for abf in self.abfs:
+        for file_index, abf in enumerate(self.abfs):
             for sweep in range(abf.sweepCount):
+                cycle_id = f"{file_index}.{sweep}"
                 for channel in range(abf.channelCount):
 
                     if not abf._dacSection.nWaveformEnable[channel]:
                         continue
 
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
-                    name, counter = createSeriesName("sweep", counter, total=self.totalSeriesCount)
+                    name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                     data = createCompressedDataset(abf.sweepC)
                     conversion, unit = parseUnit(abf.sweepUnitsC)
                     electrode = electrodes[channel]
@@ -270,7 +272,8 @@ class ABFConverter:
                     starting_time = self._calculateStartingTime(abf)
                     rate = float(abf.dataRate)
                     source = PLACEHOLDER
-                    description = json.dumps({"protocol": abf.protocol,
+                    description = json.dumps({"cycle_id": cycle_id,
+                                              "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
                                               "name": abf.dacNames[channel],
                                               "number": abf._dacSection.nDACNum[channel]},
@@ -302,11 +305,12 @@ class ABFConverter:
         series = []
         counter = 0
 
-        for abf in self.abfs:
+        for file_index, abf in enumerate(self.abfs):
             for sweep in range(abf.sweepCount):
+                cycle_id = f"{file_index}.{sweep}"
                 for channel in range(abf.channelCount):
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
-                    name, counter = createSeriesName("sweep", counter, total=self.totalSeriesCount)
+                    name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                     data = createCompressedDataset(abf.sweepY)
                     conversion, unit = parseUnit(abf.sweepUnitsY)
                     electrode = electrodes[channel]
@@ -316,7 +320,8 @@ class ABFConverter:
                     stimulus_description = abf.protocol
                     rate = float(abf.dataRate)
                     source = PLACEHOLDER
-                    description = json.dumps({"protocol": abf.protocol,
+                    description = json.dumps({"cycle_id": cycle_id,
+                                              "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
                                               "name": abf.adcNames[channel],
                                               "number": abf._adcSection.nADCNum[channel]},

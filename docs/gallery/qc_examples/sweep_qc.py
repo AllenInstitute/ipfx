@@ -19,9 +19,9 @@ nwb_file = '%d.nwb' % specimen_id
 ct = CellTypesApi()
 if not os.path.exists(nwb_file):
     ct.save_ephys_data(specimen_id, nwb_file)
-sweeps = ct.get_ephys_sweeps(specimen_id)
+sweep_info = ct.get_ephys_sweeps(specimen_id)
 
-data_set = AibsDataSet(sweeps, nwb_file)
+data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
 
 # run sweep QC
 sweep_features = qcf.sweep_qc_features(data_set)

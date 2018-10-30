@@ -14,22 +14,22 @@ from ipfx.aibs_data_set import AibsDataSet
 from ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
 from ipfx.stimulus_protocol_analysis import RampAnalysis
 
-# Download and access the experimental data
+# download a specific experiment NWB file via AllenSDK
 ct = CellTypesApi()
 
 specimen_id = 595570553
-nwb_filename = "%d.nwb" % specimen_id
-if not os.path.exists(nwb_filename):
-    ct.save_ephys_data(specimen_id, nwb_filename)
-sweeps = ct.get_ephys_sweeps(specimen_id)
+nwb_file = "%d.nwb" % specimen_id
+if not os.path.exists(nwb_file):
+    ct.save_ephys_data(specimen_id, nwb_file)
+sweep_info = ct.get_ephys_sweeps(specimen_id)
 
 # Build the data set and find the ramp sweeps
-dataset = AibsDataSet(sweeps, nwb_filename)
-ramp_table = dataset.filtered_sweep_table(stimuli=dataset.ramp_names)
-ramp_sweep_set = dataset.sweep_set(ramp_table.sweep_number)
+data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
+ramp_table = data_set.filtered_sweep_table(stimuli=data_set.ontology.ramp_names)
+ramp_sweep_set = data_set.sweep_set(ramp_table.sweep_number)
 
-# Build the extractors (we know stimulus starts at 1.02 s)
-start = 1.02
+# Build the extractors (we know stimulus starts at 0.27 s)
+start = 0.27
 spx = SpikeExtractor(start=start, end=None)
 sptrx = SpikeTrainFeatureExtractor(start=start, end=None)
 

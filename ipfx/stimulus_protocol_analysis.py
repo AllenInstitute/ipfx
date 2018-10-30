@@ -251,6 +251,7 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
 
         most_common = Counter(spiking_sweep_features["stim_amp"].values).most_common()
         common_amp, common_count = most_common[0]
+
         for c in most_common[1:]:
             if c[1] < common_count:
                 break

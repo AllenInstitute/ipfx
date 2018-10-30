@@ -15,23 +15,23 @@ from allensdk.api.queries.cell_types_api import CellTypesApi
 import os
 import matplotlib.pyplot as plt
 
-specimen_id = 595570553
-nwb_file = '%d.nwb' % specimen_id
-
 # download a specific experiment NWB file via AllenSDK
 ct = CellTypesApi()
+
+specimen_id = 595570553
+nwb_file = "%d.nwb" % specimen_id
 if not os.path.exists(nwb_file):
     ct.save_ephys_data(specimen_id, nwb_file)
-sweeps = ct.get_ephys_sweeps(specimen_id)
+sweep_info = ct.get_ephys_sweeps(specimen_id)
 
-# build a data set and find the short squares
-data_set = AibsDataSet(sweeps, nwb_file)
-lsq_table = data_set.filtered_sweep_table(stimuli=data_set.long_square_names)
+# build a data set and find the long squares
+data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
+lsq_table = data_set.filtered_sweep_table(stimuli=data_set.ontology.long_square_names)
 lsq_set = data_set.sweep_set(lsq_table.sweep_number)
 
 # build the extractors
-spx = efex.SpikeExtractor(start=1.02, end=2.02)
-spfx = efex.SpikeTrainFeatureExtractor(start=1.02, end=2.02)
+spx = efex.SpikeExtractor(start=0.27, end=1.27)
+spfx = efex.SpikeTrainFeatureExtractor(start=0.27, end=1.27)
 
 # run the analysis and print out a few of the features
 lsqa = spa.LongSquareAnalysis(spx, spfx, subthresh_min_amp=-100.0)
@@ -46,7 +46,6 @@ plt.plot(spiking_sweeps.stim_amp,
          spiking_sweeps.avg_rate)
 plt.xlabel('Stimulus amplitude (pA)')
 plt.ylabel('Average firing rate (Hz)')
-plt.show()
 
 
 
