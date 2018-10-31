@@ -147,14 +147,14 @@ class SpikeExtractor(object):
             spikes_df[k + "_v"] = np.nan
 
             if len(vals) > 0:
-                spikes_df.ix[valid_ind, k + "_index"] = vals
-                spikes_df.ix[valid_ind, k + "_t"] = t[vals]
-                spikes_df.ix[valid_ind, k + "_v"] = v[vals]
+                spikes_df.loc[valid_ind, k + "_index"] = vals
+                spikes_df.loc[valid_ind, k + "_t"] = t[vals]
+                spikes_df.loc[valid_ind, k + "_v"] = v[vals]
 
             if i is not None:
                 spikes_df[k + "_i"] = np.nan
                 if len(vals) > 0:
-                    spikes_df.ix[valid_ind, k + "_i"] = i[vals]
+                    spikes_df.loc[valid_ind, k + "_i"] = i[vals]
 
         for k, all_vals in six.iteritems(dvdt_data_indexes):
             valid_ind = ~np.isnan(all_vals)
@@ -162,10 +162,10 @@ class SpikeExtractor(object):
             spikes_df[k + "_index"] = np.nan
             spikes_df[k] = np.nan
             if len(vals) > 0:
-                spikes_df.ix[valid_ind, k + "_index"] = vals
-                spikes_df.ix[valid_ind, k + "_t"] = t[vals]
-                spikes_df.ix[valid_ind, k + "_v"] = v[vals]
-                spikes_df.ix[valid_ind, k] = dvdt[vals]
+                spikes_df.loc[valid_ind, k + "_index"] = vals
+                spikes_df.loc[valid_ind, k + "_t"] = t[vals]
+                spikes_df.loc[valid_ind, k + "_v"] = v[vals]
+                spikes_df.loc[valid_ind, k] = dvdt[vals]
 
         spikes_df["isi_type"] = isi_types
 
@@ -176,14 +176,14 @@ class SpikeExtractor(object):
             spikes_df[k + "_t"] = np.nan
             spikes_df[k + "_v"] = np.nan
             if len(vals) > 0:
-                spikes_df.ix[valid_ind, k + "_index"] = vals
-                spikes_df.ix[valid_ind, k + "_t"] = t[vals]
-                spikes_df.ix[valid_ind, k + "_v"] = v[vals]
+                spikes_df.loc[valid_ind, k + "_index"] = vals
+                spikes_df.loc[valid_ind, k + "_t"] = t[vals]
+                spikes_df.loc[valid_ind, k + "_v"] = v[vals]
 
             if i is not None:
                 spikes_df[k + "_i"] = np.nan
                 if len(vals) > 0:
-                    spikes_df.ix[valid_ind, k + "_i"] = i[vals]
+                    spikes_df.loc[valid_ind, k + "_i"] = i[vals]
 
         spikes_df["width"] = widths
 
