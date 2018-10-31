@@ -108,7 +108,6 @@ def get_experiment_epoch(i,v,hz):
 
     if len(diff_idx) == 0:
         raise ValueError("Empty stimulus trace")
-
     if len(diff_idx) >= 4:
         idx = 2  # skip the first up/down assuming that there is a test pulse
     else:

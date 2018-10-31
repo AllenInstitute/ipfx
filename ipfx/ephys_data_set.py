@@ -28,7 +28,7 @@ class EphysDataSet(object):
                              stimuli=None,
                              exclude_search=False,
                              exclude_test=False,
-                             exclude_truncated=True,
+                             exclude_truncated=False,
                              ):
 
         st = self.sweep_table

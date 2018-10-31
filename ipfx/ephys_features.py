@@ -249,6 +249,7 @@ def check_thresholds_and_peaks(v, t, spike_indexes, peak_indexes, upstroke_index
     spike_indexes : numpy array of spike indexes
     peak_indexes : numpy array of indexes of spike peaks
     upstroke_indexes : numpy array of indexes of spike upstrokes
+    end : end of time window for feature analysis (optional)
     max_interval : maximum allowed time between start of spike and time of peak in sec (default 0.005)
     thresh_frac : fraction of average upstroke for threshold calculation (optional, default 0.05)
     filter : cutoff frequency for 4-pole low-pass Bessel filter in kHz (optional, default 10)
@@ -262,9 +263,6 @@ def check_thresholds_and_peaks(v, t, spike_indexes, peak_indexes, upstroke_index
     upstroke_indexes : numpy array of modified spike upstroke indexes
     clipped : numpy array of clipped status of spikes
     """
-
-    if not end:
-        end = t[-1]
 
     overlaps = np.flatnonzero(spike_indexes[1:] <= peak_indexes[:-1] + 1)
     if overlaps.size:
@@ -320,27 +318,52 @@ def check_thresholds_and_peaks(v, t, spike_indexes, peak_indexes, upstroke_index
             else:
                 spike_indexes[i] = upstroke_indexes[i] - below_target[0]
 
-
         if drop_spikes:
             spike_indexes = np.delete(spike_indexes, drop_spikes)
             peak_indexes = np.delete(peak_indexes, drop_spikes)
             upstroke_indexes = np.delete(upstroke_indexes, drop_spikes)
 
-    # Check that last spike was not cut off too early by end of stimulus
-    # by checking that the membrane potential returned to at least the threshold
-    # voltage - otherwise, drop it
-    clipped = np.zeros_like(spike_indexes, dtype=bool)
+    if not end:
+        end = t[-1]
     end_index = find_time_index(t, end)
 
-    vtail = v[peak_indexes[-1]:end_index + 1]
-#    print "peak values:", v[peak_indexes]
-    if len(spike_indexes) > 0 and not np.any(vtail <= v[spike_indexes[-1]] + tol):
-        logging.debug("Failed to return to threshold voltage + tolerance (%.2f) after last spike (min %.2f) - marking last spike as clipped", v[spike_indexes[-1]] + tol, vtail.min())
-        clipped[-1] = True
-        logging.debug("max %f, min %f, t(end_index):%f, end:%d" %(np.max(vtail),np.min(vtail), t[end_index],end))
+    clipped = find_clipped_spikes(v, t, spike_indexes, peak_indexes, end_index, tol)
 
     return spike_indexes, peak_indexes, upstroke_indexes, clipped
 
+
+def find_clipped_spikes(v, t, spike_indexes, peak_indexes, end_index, tol):
+    """
+    Check that last spike was not cut off too early by end of stimulus
+    by checking that the membrane potential returned to at least the threshold
+    voltage - otherwise, drop it
+
+    Parameters
+    ----------
+    v : numpy array of voltage time series in mV
+    t : numpy array of times in seconds
+    spike_indexes : numpy array of spike indexes
+    peak_indexes : numpy array of indexes of spike peaks
+    end_index: int index of the end of time window for feature analysis
+
+    tol: float tolerance to returning to threshold
+
+    Returns
+    -------
+    clipped: Boolean np.array
+    """
+    clipped = np.zeros_like(spike_indexes, dtype=bool)
+
+    if len(spike_indexes)>0:
+        vtail = v[peak_indexes[-1]:end_index + 1]
+        if not np.any(vtail <= v[spike_indexes[-1]] + tol):
+            logging.debug(
+                "Failed to return to threshold voltage + tolerance (%.2f) after last spike (min %.2f) - marking last spike as clipped",
+                v[spike_indexes[-1]] + tol, vtail.min())
+            clipped[-1] = True
+            logging.debug("max %f, min %f, t(end_index):%f" % (np.max(vtail), np.min(vtail), t[end_index]))
+
+    return clipped
 
 def find_trough_indexes(v, t, spike_indexes, peak_indexes, clipped=None, end=None):
     """

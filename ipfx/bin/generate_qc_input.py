@@ -4,15 +4,12 @@ import allensdk.core.json_utilities as ju
 
 """
     Generates an input JSON for QC module saved in the MODULE_IO_DIR
-    run_qc module run example:
-    python run_qc.py --input_json ../../tests/module_io/qc_input_ivscc.json --output_json ../../tests/module_io/qc_output_ivscc.json
 """
 
 MODULE_IO_DIR = "../../tests/module_io"
 
 #output_json = os.path.join(MODULE_IO_DIR,'se_output_ivscc.json')
 #input_json = os.path.join(MODULE_IO_DIR,'se_input_ivscc.json')
-
 
 output_json = os.path.join(MODULE_IO_DIR,'se_output_patchseq.json')
 input_json = os.path.join(MODULE_IO_DIR,'se_input_patchseq.json')

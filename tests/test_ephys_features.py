@@ -264,6 +264,36 @@ def test_width_calculation_too_many_troughs(spike_test_pair):
     with pytest.raises(ft.FeatureError):
         ft.find_widths(v, t, spikes, peaks, troughs)
 
+
+def test_find_clipped_spikes(spike_test_pair):
+
+    data = spike_test_pair
+    spike_indexes = np.array([725, 3382])
+    peak_indexes = np.array([812, 3478])
+    t = data[:, 0]
+    v = data[:, 1]
+
+    clipped = ft.find_clipped_spikes(v,t,spike_indexes,peak_indexes,end_index=3550,tol=1)
+    print clipped, np.array([False, True])
+    print clipped.dtype, np.array([False, True]).dtype
+    assert np.array_equal(clipped, [False, True]) # last spike is clipped
+
+    clipped = ft.find_clipped_spikes(v,t,spike_indexes,peak_indexes,end_index=3600,tol=1)
+    print clipped,np.array([False, False])
+    assert np.array_equal(clipped, [False, False]) # last spike is Ok
+
+    spike_indexes = np.array([])
+    peak_indexes = np.array([])
+
+    t = data[1500:3000, 0]
+    v = data[1500:3000, 1]
+
+    clipped = ft.find_clipped_spikes(v,t,spike_indexes,peak_indexes,end_index=3600,tol=1)
+    assert np.array_equal(clipped, []) # no spikes in the trace
+
+
+
+
 def test_find_stim_start():
     a = [0,1,1,0]
     stim_start = st.find_stim_start(a)

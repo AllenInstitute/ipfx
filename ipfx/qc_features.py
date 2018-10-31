@@ -286,7 +286,8 @@ def sweep_qc_features(data_set):
     sweep_features = []
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
                                                   exclude_test=True,
-                                                  exclude_search=True)
+                                                  exclude_search=True,
+                                                  exclude_truncated=True)
     if len(iclamp_sweeps.index)==0:
         raise ValueError("No current clamp sweeps available for QC.")
 
