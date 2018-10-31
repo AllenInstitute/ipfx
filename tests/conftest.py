@@ -33,7 +33,7 @@ def pytest_addoption(parser):
                      help="run file regression tests for conversion to NWBv2")
 
 
-collect_ignore = ["test_sweep_extraction.py"]
+collect_ignore = []
 if sys.version_info[0] < 3:
     collect_ignore.append("test_x_nwb.py")
     collect_ignore.append("test_x_nwb_helper.py")
