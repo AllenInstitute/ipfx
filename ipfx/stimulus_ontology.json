@@ -115,8 +115,7 @@
     [
       "code",
       "EXTPCllATT",
-      "EXTPCllATT141203",
-      "EXTPCllATT180424"
+      "EXTPCllATT141203"
     ],
     [
       "name",
@@ -230,8 +229,7 @@
     [
       "code",
       "EXTPINBATH",
-      "EXTPINBATH141203",
-	  "EXTPINBATH180424"
+      "EXTPINBATH141203"
     ],
     [
       "name",
@@ -1146,6 +1144,21 @@
       "Unknown"
     ],
     [
+      "core",
+      "Core 2"
+    ],
+    [
+      "code",
+      "C2CHIRP",
+      "C2CHIRP180503"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Unknown"
+    ],
+    [
       "code",
       "Nuc_IC_0"
     ]
@@ -1183,6 +1196,272 @@
   [
     [
       "code",
+      "EXTPBREAKN",
+      "EXTPBREAKN180424"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "EXTPCllATT",
+      "EXTPCllATT180424"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "EXTPEXPEND",
+      "EXTPEXPEND180424"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "EXTPGGAEND",
+      "EXTPGGAEND180424"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "EXTPINBATH",
+      "EXTPINBATH180424"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "EXTPSMOKET",
+      "EXTPSMOKET180424"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Long Square SubThreshold"
+    ],
+    [
+      "code",
+      "X1PS_SubThresh"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Search"
+    ],
+    [
+      "code",
+      "X2LP_Search"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Long Square Threshold"
+    ],
+    [
+      "code",
+      "X3LP_Rheo"
+    ]
+  ],
+  [
+    [
+      "code",
+      "X4PS_SupraThresh"
+    ],
+    [
+      "name",
+      "Long Square SupraThreshold"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Search"
+    ],
+    [
+      "code",
+      "X5SP_Search"
+    ]
+  ],
+  [
+    [
+      "code",
+      "X6SP_Rheo"
+    ],
+    [
+      "name",
+      "Short Square Threshold"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Ramp"
+    ],
+    [
+      "code",
+      "X7Ramp"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_LS"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_LS_Leak"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_prepulse_"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_Sus"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_Sus_Leak"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Unknown"
+    ],
+    [
+      "code",
+      "Blank_pilot"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_Steps"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_Sustain"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "NucVCLS0"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "NucVCLS1Leak"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "NucVCprepulse"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "NucVCSus0"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "NucVCSus1Leak"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
       "C1NSSEED"
     ],
     [
@@ -1194,159 +1473,5 @@
       "core",
       "Core 1"
     ]
-  ],
-  [
-    [
-      "code",
-      "PS_SubThresh",
-      "X1PS_SubThresh"
-    ],
-    [
-      "name",
-      "Long Square SubThreshold"
-    ],
-    [
-      "core",
-      "Core 1"
-    ]
-  ],
-  [
-    [
-      "code",
-      "EXTPEXPEND180424",
-      "EXTPEXPEND"
-    ],
-    [
-      "name",
-      "Test"
-    ]
-  ],
-  [
-    [
-      "code",
-      "EXTPBREAKN180424",
-      "EXTPBREAKN"
-    ],
-    [
-      "name",
-      "Test"
-    ]
-  ],
-  [
-    [
-      "code",
-      "Ramp"
-    ],
-    [
-      "name",
-      "Ramp"
-    ],
-    [
-      "core",
-      "Core 1"
-    ]
-  ],
-  [
-    [
-      "code",
-      "X7Ramp"
-    ],
-    [
-      "name",
-      "Ramp"
-    ],
-    [
-      "core",
-      "Core 1"
-    ]
-  ],
-  [
-    [
-      "code",
-      "SP_Rheo",
-      "X6SP_Rheo"
-    ],
-    [
-      "name",
-      "Short Square Threshold"
-    ],
-    [
-      "core",
-      "Core 2"
-    ]
-  ],
-  [
-    [
-      "code",
-      "X5SP_Search",
-      "SP_Search"
-    ],
-    [
-      "name",
-      "Search"
-    ]
-  ],
-  [
-    [
-      "code",
-      "LP_Search",
-      "X2LP_Search"
-    ],
-    [
-      "name",
-      "Search"
-    ]
-  ],
-  [
-    [
-      "code",
-      "LP_Rheo",
-      "X3LP_Rheo"
-    ],
-    [
-      "name",
-      "Long Square Threshold"
-    ]
-  ],
-  [
-    [
-      "code",
-      "EXTPGGAEND180424",
-      "EXTPGGAEND"
-    ],
-    [
-      "name",
-      "Test"
-    ]
-  ],
-  [
-    [
-      "code",
-      "X4PS_SupraThresh",
-      "PS_SupraThresh",
-      "EXTPGGAEND"
-    ],
-    [
-      "name",
-      "Long Square SupraThreshold"
-    ],
-    [
-      "core",
-      "Core 1"
-    ]
-
-  ],
-  [
-    [
-      "code",
-      "EXTPSMOKET180424",
-      "EXTPSMOKET"
-    ],
-    [
-      "name",
-      "Test"
-    ]
   ]
-
-
 ]

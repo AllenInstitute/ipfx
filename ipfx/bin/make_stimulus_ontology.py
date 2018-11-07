@@ -79,4 +79,4 @@ out.append([ (CODE, 'C1NSSEED'), (NAME, 'Noise', 'Noise 1'), (CORE, 'Core 1') ])
 for o in out:
     print(o)
 
-ju.write('stimulus_ontology_patchseq.json', out)
+ju.write('stimulus_ontology_patchseq2.json', out)

@@ -128,11 +128,7 @@ def qc_current_clamp_sweep(ontology, sweep, qc_criteria=None):
     # keep track of failures
     fail_tags = []
 
-    sweep_num = sweep["sweep_number"]
-    stim_code = sweep["stimulus_code"]
-    unit = sweep["stimulus_units"]
-
-    if unit not in ontology.current_clamp_units:
+    if sweep["stimulus_units"] not in ontology.current_clamp_units:
         return {}
 
     if sweep["pre_noise_rms_mv"] > qc_criteria["pre_noise_rms_mv_max"]:
@@ -143,7 +139,7 @@ def qc_current_clamp_sweep(ontology, sweep, qc_criteria=None):
     is_ramp = ontology.stimulus_has_any_tags(sweep["stimulus_code"], ontology.ramp_names)
 
     if is_ramp:
-        logging.info("sweep %d skipping vrest criteria on ramp", sweep_num)
+        logging.info("sweep %d skipping vrest criteria on ramp", sweep["sweep_number"])
     else:
         if sweep["post_noise_rms_mv"] > qc_criteria["post_noise_rms_mv_max"]:
             fail_tags.append("post-noise: %.3f exceeded qc threshold: %.3f" % (sweep["post_noise_rms_mv"],qc_criteria["post_noise_rms_mv_max"]))
@@ -156,9 +152,8 @@ def qc_current_clamp_sweep(ontology, sweep, qc_criteria=None):
 
     # fail sweeps if stimulus duration is zero
     # Uncomment out the following 3 lines to have sweeps without stimulus fail QC
-    if sweep["stimulus_duration"] <= 0 and not ontology.stimulus_has_any_tags(stim_code, ontology.extp_names):
+    if sweep["stimulus_duration"] <= 0 and not ontology.stimulus_has_any_tags(sweep["stimulus_code"], ontology.extp_names):
         fail_tags.append("No stimulus detected")
-
     return len(fail_tags) > 0, fail_tags
 
 
