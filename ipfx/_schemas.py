@@ -4,10 +4,11 @@ from argschema.fields import Nested, InputFile, OutputFile, Integer, Boolean, St
 
 class SweepFeatures(DefaultSchema):
     stimulus_code = String(description="stimulus code", required=True)
+    stimulus_name = String(description="index of sweep in order of presentation", required=True)
     sweep_number = Integer(description="index of sweep in order of presentation", required=True)
-    stimulus_amplitude = Float(description="amplitude of stimulus", required=True, allow_none=True)
+#    stimulus_amplitude = Float(description="amplitude of stimulus", required=True, allow_none=True)
     stimulus_units = String(desription="stimulus units", required=True)
-    clamp_mode = String(desription="current or voltage clamp", required=True)
+#    clamp_mode = String(desription="current or voltage clamp", required=True)
     id = Integer(description="id of sweep", allow_none=True)
     bridge_balance_mohm = Float(description="bridge balance", allow_none=True)
     pre_vm_mv = Float(allow_none=True)
@@ -79,6 +80,12 @@ class PipelineParameters(ArgSchema):
     qc_fig_dir = OutputFile(description="output qc figure directory", required=False)
     qc_criteria = Nested(QcCriteria, required=True)
     manual_sweep_states = Nested(ManualSweepState, required=False, many=True)
+
+
+class GeneratePipelineInputParameters(ArgSchema):
+    specimen_id = Integer(description="specimen", required=False)
+    input_nwb_file = InputFile(description="input nwb file", required=False)
+    output_dir = OutputFile(description="Output directory", required=True)
 
 
 class OutputSchema(DefaultSchema):

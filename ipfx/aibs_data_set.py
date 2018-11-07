@@ -46,7 +46,6 @@ class AibsDataSet(EphysDataSet):
             sweep_record['clamp_mode'] = ancestry[-1]
             sweep_num = self.nwb_data.get_sweep_number(sweep_name)
             sweep_record['sweep_number'] = sweep_num
-
             stim_code = self.nwb_data.get_stim_code(sweep_name)
             if not stim_code:
                 stim_code = notebook.get_value("Stim Wave Name", sweep_num, "")
