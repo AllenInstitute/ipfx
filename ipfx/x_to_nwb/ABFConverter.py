@@ -193,6 +193,9 @@ class ABFConverter:
             return json.dumps(comments)
 
         session_description = getFileComments(self.abfs)
+        if len(session_description) == 0:
+            session_description = PLACEHOLDER
+
         identifier = sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest()
         session_start_time = datetime.strptime(self.refabf.abfDateTime, ABF_TIMESTAMP_FORMAT)
         creatorName = self.refabf._stringsIndexed.uCreatorName
