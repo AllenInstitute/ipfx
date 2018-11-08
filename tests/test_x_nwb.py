@@ -20,6 +20,7 @@ import subprocess
 import pyabf
 
 from ipfx.x_to_nwb.ABFConverter import ABFConverter
+from ipfx.x_to_nwb.utils import createCycleID
 from ipfx.bin.run_x_to_nwb_conversion import convert
 from .test_x_nwb_helper import fetch_and_extract_zip
 
@@ -97,3 +98,13 @@ def test_file_level_regressions(raw_file):
         print(out.stdout)
 
     assert out.returncode == 0
+
+
+def test_createCycleID():
+
+    assert createCycleID([1, 2, 3, 4], total=2)  == 1234
+    assert createCycleID([1, 2, 3, 4], total=20) == 1020304
+    assert createCycleID([10, 2, 3, 4], total=20) == 10020304
+    assert createCycleID([10, 2, 3, 40], total=20) == 10020340
+    assert createCycleID([10, 20, 30, 4], total=20) == 10203004
+    assert createCycleID([10, 20, 30, 40], total=20) == 10203040

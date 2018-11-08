@@ -65,6 +65,32 @@ def createSeriesName(prefix, number, total):
     return f"{prefix}_{number:0{math.ceil(math.log(total, 10))}d}", number + 1
 
 
+def createCycleID(numbers, total):
+    """
+    Create an integer from all numbers which is unique for that combination.
+
+    :param: numbers:
+        Iterable holding non-negative integer numbers
+
+    :param: total:
+        Total number of TimeSeries written to the NWB file
+    """
+
+    assert total > 0, f"Unexpected value for total {total}"
+
+    places = max(math.ceil(math.log(total, 10)), 1)
+
+    result = 0
+
+    for idx, n in enumerate(reversed(numbers)):
+        assert n >= 0, f"Unexpected value {n} at index {idx}"
+        assert n < 10**places, f"Unexpected value {n} which is larger than {total}"
+
+        result += n * (10**(idx * places))
+
+    return result
+
+
 def createCompressedDataset(array):
     """
     Request compression for the given array and return it wrapped.

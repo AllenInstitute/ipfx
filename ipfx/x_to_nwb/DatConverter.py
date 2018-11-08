@@ -14,7 +14,7 @@ from ipfx.x_to_nwb.hr_nodes import TraceRecord, ChannelRecordStimulus
 from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
 from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset, \
-     getPackageInfo, getChannelRecordIndex, getStimulusRecordIndex
+     getPackageInfo, getChannelRecordIndex, getStimulusRecordIndex, createCycleID
 
 
 class DatConverter:
@@ -249,7 +249,7 @@ class DatConverter:
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
-                    cycle_id = f"{group.GroupCount}.{series.SeriesCount}.{sweep.SweepCount}"
+                    cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount], total=self.totalSeriesCount)
                     stimRec = self.bundle.pgf[getStimulusRecordIndex(sweep)]
                     for trace in sweep:
                         stimset = generator.fetch(sweep, trace)
@@ -285,6 +285,7 @@ class DatConverter:
 
                         timeSeries = seriesClass(name=name,
                                                  data=data,
+                                                 sweep_number=cycle_id,
                                                  unit=unit,
                                                  electrode=electrode,
                                                  gain=gain,
@@ -327,7 +328,7 @@ class DatConverter:
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
-                    cycle_id = f"{group.GroupCount}.{series.SeriesCount}.{sweep.SweepCount}"
+                    cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount], total=self.totalSeriesCount)
                     for trace_index, trace in enumerate(sweep):
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = createCompressedDataset(self.bundle.data[trace])
@@ -377,6 +378,7 @@ class DatConverter:
 
                             acquistion_data = seriesClass(name=name,
                                                           data=data,
+                                                          sweep_number=cycle_id,
                                                           unit=unit,
                                                           electrode=electrode,
                                                           gain=gain,
@@ -409,6 +411,7 @@ class DatConverter:
 
                             acquistion_data = seriesClass(name=name,
                                                           data=data,
+                                                          sweep_number=cycle_id,
                                                           unit=unit,
                                                           electrode=electrode,
                                                           gain=gain,

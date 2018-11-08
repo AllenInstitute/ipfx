@@ -14,7 +14,7 @@ from pynwb.icephys import IntracellularElectrode
 
 from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset, \
-     getPackageInfo
+     getPackageInfo, createCycleID
 
 ABF_TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 
@@ -256,7 +256,7 @@ class ABFConverter:
 
         for file_index, abf in enumerate(self.abfs):
             for sweep in range(abf.sweepCount):
-                cycle_id = f"{file_index}.{sweep}"
+                cycle_id = createCycleID([file_index, sweep], total=self.totalSeriesCount)
                 for channel in range(abf.channelCount):
 
                     if not abf._dacSection.nWaveformEnable[channel]:
@@ -282,6 +282,7 @@ class ABFConverter:
 
                     stimulus = seriesClass(name=name,
                                            data=data,
+                                           sweep_number=cycle_id,
                                            unit=unit,
                                            electrode=electrode,
                                            gain=gain,
@@ -305,7 +306,7 @@ class ABFConverter:
 
         for file_index, abf in enumerate(self.abfs):
             for sweep in range(abf.sweepCount):
-                cycle_id = f"{file_index}.{sweep}"
+                cycle_id = createCycleID([file_index, sweep], total=self.totalSeriesCount)
                 for channel in range(abf.channelCount):
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
@@ -338,6 +339,7 @@ class ABFConverter:
 
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
+                                                      sweep_number=cycle_id,
                                                       unit=unit,
                                                       electrode=electrode,
                                                       gain=gain,
@@ -361,6 +363,7 @@ class ABFConverter:
                         capacitance_compensation = np.nan
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
+                                                      sweep_number=cycle_id,
                                                       unit=unit,
                                                       electrode=electrode,
                                                       gain=gain,
