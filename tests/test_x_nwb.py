@@ -79,7 +79,8 @@ def test_file_level_regressions(raw_file):
     # these objects always change
     ignore_paths = ["--exclude-path", "/general/source_script",
                     "--exclude-path", "/file_create_date",
-                    "--exclude-path", "/identifier"]
+                    "--exclude-path", "/identifier",
+                    "--exclude-path", "/specifications"]
 
     nwb_files = [ref_file, new_file]
 
