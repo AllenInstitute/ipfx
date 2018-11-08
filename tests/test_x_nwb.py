@@ -73,7 +73,7 @@ def test_file_level_regressions(raw_file):
     assert os.path.isfile(ref_file)
     assert os.path.isfile(new_file)
 
-    prog_args = ["-c",  "--follow-symlinks", "--no-dangling-links"]
+    prog_args = ["-c", "-v2", "--follow-symlinks", "--no-dangling-links"]
 
     # list of objects to ignore
     # these objects always change
@@ -93,6 +93,7 @@ def test_file_level_regressions(raw_file):
 
     # h5diff exit codes:
     # 0 if no differences, 1 if differences found, 2 if error
+    if out.returncode:
+        print(out.stdout)
 
-    assert len(out.stdout) == 0
     assert out.returncode == 0
