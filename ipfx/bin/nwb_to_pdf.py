@@ -310,7 +310,7 @@ def check_stimset_reconstruction(nwbfile, outfile):
                         acq = nwb.acquisition[acq_key]
 
                     description = json.loads(acq.description)
-                    cycle_id = description['cycle_id']
+                    cycle_id = str(description['cycle_id'])
 
                     abs_diff = abs(acq.data[()] - stim.data[()])
                     rel_diff = abs(acq.data[()] - stim.data[()]) / acq.data[()]
