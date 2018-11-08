@@ -192,7 +192,6 @@ class ABFConverter:
 
             return json.dumps(comments)
 
-        source = PLACEHOLDER
         session_description = getFileComments(self.abfs)
         identifier = sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest()
         session_start_time = datetime.strptime(self.refabf.abfDateTime, ABF_TIMESTAMP_FORMAT)
@@ -203,8 +202,7 @@ class ABFConverter:
         source_script = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
         session_id = PLACEHOLDER
 
-        return NWBFile(source=source,
-                       session_description=session_description,
+        return NWBFile(session_description=session_description,
                        identifier=identifier,
                        session_start_time=session_start_time,
                        experimenter=None,
@@ -221,7 +219,7 @@ class ABFConverter:
         digitizer = self.refabf._protocolSection.sDigitizerType
         telegraph = self.refabf._adcSection.sTelegraphInstrument[0]
 
-        return Device(f"{digitizer} with {telegraph}", source=PLACEHOLDER)
+        return Device(f"{digitizer} with {telegraph}")
 
     def _createElectrodes(self, device):
         """
@@ -230,7 +228,6 @@ class ABFConverter:
 
         return [IntracellularElectrode(f"Electrode {x:d}",
                                        device,
-                                       source=PLACEHOLDER,
                                        description=PLACEHOLDER)
                 for x in self.refabf.channelList]
 
@@ -271,7 +268,6 @@ class ABFConverter:
                     resolution = np.nan
                     starting_time = self._calculateStartingTime(abf)
                     rate = float(abf.dataRate)
-                    source = PLACEHOLDER
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
@@ -282,7 +278,6 @@ class ABFConverter:
                     seriesClass = getStimulusSeriesClass(self._getClampMode(abf, channel))
 
                     stimulus = seriesClass(name=name,
-                                           source=source,
                                            data=data,
                                            unit=unit,
                                            electrode=electrode,
@@ -319,7 +314,6 @@ class ABFConverter:
                     starting_time = self._calculateStartingTime(abf)
                     stimulus_description = abf.protocol
                     rate = float(abf.dataRate)
-                    source = PLACEHOLDER
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
@@ -340,7 +334,6 @@ class ABFConverter:
                         whole_cell_series_resistance_comp = np.nan
 
                         acquistion_data = seriesClass(name=name,
-                                                      source=source,
                                                       data=data,
                                                       unit=unit,
                                                       electrode=electrode,
@@ -364,7 +357,6 @@ class ABFConverter:
                         bridge_balance = np.nan
                         capacitance_compensation = np.nan
                         acquistion_data = seriesClass(name=name,
-                                                      source=source,
                                                       data=data,
                                                       unit=unit,
                                                       electrode=electrode,
