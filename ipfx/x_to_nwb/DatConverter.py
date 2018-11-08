@@ -199,7 +199,6 @@ class DatConverter:
         Create a pynwb NWBFile object from the DAT file contents.
         """
 
-        source = PLACEHOLDER
         session_description = PLACEHOLDER
         identifier = sha256(b'%d_' % self.bundle.header.Time + str.encode(datetime.now().isoformat())).hexdigest()
         self.session_start_time = self._convertTimestamp(self.bundle.header.Time)
@@ -210,8 +209,7 @@ class DatConverter:
         source_script = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
         session_id = PLACEHOLDER
 
-        return NWBFile(source=source,
-                       session_description=session_description,
+        return NWBFile(session_description=session_description,
                        identifier=identifier,
                        session_start_time=self.session_start_time,
                        experimenter=None,
@@ -227,7 +225,7 @@ class DatConverter:
 
         name = self._formatDeviceString(self.bundle.amp[0][0])
 
-        return Device(name, PLACEHOLDER)
+        return Device(name)
 
     def _createElectrodes(self, device):
         """
@@ -236,7 +234,6 @@ class DatConverter:
 
         return [IntracellularElectrode(f"Electrode {x:d}",
                                        device,
-                                       source=PLACEHOLDER,
                                        description=PLACEHOLDER)
                 for x in self.electrodeDict.values()]
 
@@ -272,7 +269,6 @@ class DatConverter:
                         stimulus_description = series.Label
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / stimRec.SampleInterval
-                        source = PLACEHOLDER
                         description = json.dumps({"cycle_id": cycle_id}, sort_keys=True, indent=4)
 
                         channelRec_index = getChannelRecordIndex(self.bundle.pgf, sweep, trace)
@@ -288,7 +284,6 @@ class DatConverter:
                         seriesClass = getStimulusSeriesClass(clampMode)
 
                         timeSeries = seriesClass(name=name,
-                                                 source=source,
                                                  data=data,
                                                  unit=unit,
                                                  electrode=electrode,
@@ -350,7 +345,6 @@ class DatConverter:
                         resolution = np.nan
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / trace.XInterval
-                        source = PLACEHOLDER
                         description = json.dumps({"cycle_id": cycle_id}, sort_keys=True, indent=4)
                         clampMode = self._getClampMode(trace)
                         seriesClass = getAcquiredSeriesClass(clampMode)
@@ -382,7 +376,6 @@ class DatConverter:
                                 capacitance_slow = np.nan
 
                             acquistion_data = seriesClass(name=name,
-                                                          source=source,
                                                           data=data,
                                                           unit=unit,
                                                           electrode=electrode,
@@ -415,7 +408,6 @@ class DatConverter:
                             bridge_balance = trace.RsValue * trace.RsFraction
 
                             acquistion_data = seriesClass(name=name,
-                                                          source=source,
                                                           data=data,
                                                           unit=unit,
                                                           electrode=electrode,
