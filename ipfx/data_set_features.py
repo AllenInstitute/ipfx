@@ -35,13 +35,12 @@
 #
 import numpy as np
 import logging
-import six
 import pandas as pd
 from . import ephys_extractor as efex
 from . import ephys_features as ft
 from . import ephys_data_set as eds
 from . import stimulus_protocol_analysis as spa
-import stim_features as st
+from . import stim_features as st
 
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
@@ -54,7 +53,6 @@ DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
 DETECTION_PARAMETERS = {
     eds.EphysDataSet.SHORT_SQUARE: {'thresh_frac_floor': 0.1 },
-#    eds.EphysDataSet.SHORT_SQUARE_TRIPLE: { 'est_window': (2.02, 2.021), 'thresh_frac_floor': 0.1 },
     eds.EphysDataSet.RAMP: { },
     eds.EphysDataSet.LONG_SQUARE: { }
 }

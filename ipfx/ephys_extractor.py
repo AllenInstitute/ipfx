@@ -37,7 +37,6 @@ import numpy as np
 from pandas import DataFrame
 import warnings
 import logging
-import stim_features as st
 
 from . import ephys_features as ft
 import six
