@@ -39,7 +39,6 @@ import numpy as np
 import scipy.signal as signal
 from scipy.optimize import curve_fit
 from functools import partial
-import stim_features as st
 
 
 def detect_putative_spikes(v, t, start=None, end=None, filter=10., dv_cutoff=20.):

@@ -25,10 +25,7 @@ FEATURE_SUBSET = ["stimulus_units",
 
 def extract_sweep_features_subset(sweep_features, FEATURE_SUBSET):
 
-    sweep_features_subset = []
-    for sf in sweep_features:
-        sf_subset = {k: sf[k] for k in FEATURE_SUBSET}
-        sweep_features_subset.append(sf_subset)
+    sweep_features_subset = [{k: sf[k] for k in FEATURE_SUBSET} for sf in sweep_features]
 
     return sweep_features_subset
 

@@ -1,7 +1,7 @@
+from . import stim_features as st
 from . import ephys_features as ft
 import logging
 import numpy as np
-import stim_features as st
 
 POST_STIM_STABILITY_INTERVAL = 0.5
 LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
