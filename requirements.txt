@@ -10,3 +10,4 @@ allensdk
 dictdiffer
 pyabf==2.0.18
 pynwb>=0.5.1
+six

@@ -1,6 +1,6 @@
 import pytest
 import ipfx.data_set_features as dsft
-from ipfx.ephys_features import FeatureError
+from ipfx.error import FeatureError
 
 
 def test_select_subthreshold_min_amplitude():

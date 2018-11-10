@@ -37,10 +37,11 @@ import numpy as np
 import logging
 import pandas as pd
 from . import ephys_extractor as efex
-from . import ephys_features as ft
 from . import ephys_data_set as eds
+from . import spike_features as spkf
 from . import stimulus_protocol_analysis as spa
-from . import stim_features as st
+from . import stim_features as stf
+import error as er
 
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
@@ -68,12 +69,9 @@ SUBTHRESHOLD_LONG_SQUARE_MIN_AMPS = {
 
 TEST_PULSE_DURATION_SEC = 0.4
 
+
 def detection_parameters(stimulus_name):
     return DETECTION_PARAMETERS.get(stimulus_name, {})
-
-
-def detection_window(stimulus_name):
-    return DETECTION_WINDOWS.get(stimulus_name, {})
 
 
 def extractors_for_sweeps(sweep_set,
@@ -102,7 +100,7 @@ def extractors_for_sweeps(sweep_set,
     """
 
     if est_window is not None:
-        dv_cutoff, thresh_frac = ft.estimate_adjusted_detection_parameters(sweep_set.v, sweep_set.t,
+        dv_cutoff, thresh_frac = spkf.estimate_adjusted_detection_parameters(sweep_set.v, sweep_set.t,
                                                                            est_window[0],
                                                                            est_window[1])
 
@@ -152,10 +150,10 @@ def extract_cell_features(data_set,
 
     # long squares
     if len(long_square_sweep_numbers) == 0:
-        raise ft.FeatureError("No long_square sweeps available for feature extraction")
+        raise er.FeatureError("No long_square sweeps available for feature extraction")
 
     lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
-    lsq_start, lsq_dur, _, _, _ = st.get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
+    lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
 
 
 
@@ -171,16 +169,16 @@ def extract_cell_features(data_set,
     cell_features["long_squares"] = lsq_an.as_dict(lsq_features, [ dict(id=sn) for sn in long_square_sweep_numbers ])
 
     if cell_features["long_squares"]["hero_sweep"] is None:
-        raise ft.FeatureError("Could not find hero sweep.")
+        raise er.FeatureError("Could not find hero sweep.")
 
     # short squares
     logging.info("Analyzing Short Square")
     if len(short_square_sweep_numbers) == 0:
-        raise ft.FeatureError("No short square sweeps available for feature extraction")
+        raise er.FeatureError("No short square sweeps available for feature extraction")
 
     ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
 
-    ssq_start, ssq_dur, _, _, _ = st.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
+    ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
     logging.info("Short square stim start: %f, duration: %f", ssq_start, ssq_dur)
     ssq_spx, ssq_spfx = extractors_for_sweeps(ssq_sweeps,
                                               est_window = [ssq_start,ssq_start+0.001],
@@ -192,11 +190,11 @@ def extract_cell_features(data_set,
     # ramps
     logging.info("Analyzing Ramps")
     if len(ramp_sweep_numbers) == 0:
-        raise ft.FeatureError("No ramp sweeps available for feature extraction")
+        raise er.FeatureError("No ramp sweeps available for feature extraction")
 
     ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
 
-    ramp_start, ramp_dur, _, _, _ = st.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
+    ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
     logging.info("Ramp stim %f, %f", ramp_start, ramp_dur)
 
     ramp_spx, ramp_spfx = extractors_for_sweeps(ramp_sweeps,
@@ -240,7 +238,7 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
     subthresh_min_amp = SUBTHRESHOLD_LONG_SQUARE_MIN_AMPS.get(min_amp_delta, None)
 
     if subthresh_min_amp is None:
-        raise ft.FeatureError("Unknown coarse long square amplitude delta: %f" % min_amp_delta)
+        raise er.FeatureError("Unknown coarse long square amplitude delta: %f" % min_amp_delta)
 
     return subthresh_min_amp, min_amp_delta
 
@@ -398,7 +396,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names):
                                                         str(failed_qc_sweeep_numbers)))
 
     if len(passed_qc_sweeep_numbers) == 0:
-        raise ft.FeatureError("No %s sweeps available for feature extraction " % stimuli_names[0])
+        raise er.FeatureError("No %s sweeps available for feature extraction " % stimuli_names[0])
 
 
     return passed_qc_sweeep_numbers
@@ -433,7 +431,7 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     logging.info("%d of %d current-clamp sweeps passed QC", len(passed_iclamp_sweeps), len(iclamp_sweeps))
 
     if len(passed_iclamp_sweeps) == 0:
-        raise ft.FeatureError("There are no QC-passed sweeps available to analyze")
+        raise er.FeatureError("There are no QC-passed sweeps available to analyze")
 
     # extract cell-level features
     logging.info("Computing cell features")
@@ -472,3 +470,4 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     sweep_records = build_sweep_feature_records(data_set.sweep_table, sweep_features)
 
     return cell_features, sweep_features, cell_record, sweep_records
+

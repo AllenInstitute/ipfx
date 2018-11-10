@@ -1,0 +1,72 @@
+# Allen Institute Software License - This software license is the 2-clause BSD
+# license plus a third clause that prohibits redistribution for commercial
+# purposes without further permission.
+#
+# Copyright 2017. Allen Institute. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3. Redistributions for commercial purposes are not permitted without the
+# Allen Institute's written permission.
+# For purposes of this license, commercial purposes is the incorporation of the
+# Allen Institute's software into anything for which you will charge fees or
+# other compensation. Contact terms@alleninstitute.org for commercial licensing
+# opportunities.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+import pytest
+import ipfx.spike_features as spkf
+import numpy as np
+import os
+import ipfx.error as er
+
+path = os.path.dirname(__file__)
+
+
+def test_width_calculation(spike_test_pair):
+    data = spike_test_pair
+    t = data[:, 0]
+    v = data[:, 1]
+    spikes = np.array([725, 3382])
+    peaks = np.array([812, 3478])
+    troughs = np.array([1089, 3741])
+
+    expected_widths = np.array([0.000545, 0.000585])
+    assert np.allclose(spkf.find_widths(v, t, spikes, peaks, troughs), expected_widths)
+
+
+def test_width_calculation_too_many_troughs(spike_test_pair):
+    data = spike_test_pair
+    t = data[:, 0]
+    v = data[:, 1]
+    spikes = np.array([725, 3382])
+    peaks = np.array([812, 3478])
+    troughs = np.array([1089, 3741, 3999])
+
+    with pytest.raises(er.FeatureError):
+        spkf.find_widths(v, t, spikes, peaks, troughs)
+
+@pytest.mark.skipif(True, reason="not implemented")
+def test_width_calculation_with_burst():
+    # example sp 487663469, sweep 43
+    pass
+

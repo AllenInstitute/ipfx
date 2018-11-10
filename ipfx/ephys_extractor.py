@@ -37,9 +37,13 @@ import numpy as np
 from pandas import DataFrame
 import warnings
 import logging
-
-from . import ephys_features as ft
+from . import spike_features as spkf
+from . import subthresh_features as subf
+from . import spike_detector as spkd
 import six
+import time_series_utils as tsu
+import error as er
+
 
 class SpikeExtractor(object):
     AFFECTED_BY_CLIPPING = [
@@ -81,38 +85,38 @@ class SpikeExtractor(object):
         self.thresh_frac = thresh_frac
 
     def process(self, t, v, i):
-        dvdt = ft.calculate_dvdt(v, t, self.filter)
+        dvdt = tsu.calculate_dvdt(v, t, self.filter)
 
         # Basic features of spikes
 
-        putative_spikes = ft.detect_putative_spikes(v, t, self.start, self.end,
+        putative_spikes = spkd.detect_putative_spikes(v, t, self.start, self.end,
                                                     self.filter, self.dv_cutoff)
-        peaks = ft.find_peak_indexes(v, t, putative_spikes, self.end)
-        putative_spikes, peaks = ft.filter_putative_spikes(v, t, putative_spikes, peaks,
+        peaks = spkd.find_peak_indexes(v, t, putative_spikes, self.end)
+        putative_spikes, peaks = spkd.filter_putative_spikes(v, t, putative_spikes, peaks,
                                                            self.min_height, self.min_peak)
 
         if not putative_spikes.size:
             # Save time if no spikes detected
             return DataFrame()
 
-        upstrokes = ft.find_upstroke_indexes(v, t, putative_spikes, peaks, self.filter, dvdt)
-        thresholds = ft.refine_threshold_indexes(v, t, upstrokes, self.thresh_frac,
+        upstrokes = spkd.find_upstroke_indexes(v, t, putative_spikes, peaks, self.filter, dvdt)
+        thresholds = spkd.refine_threshold_indexes(v, t, upstrokes, self.thresh_frac,
                                                  self.filter, dvdt)
 
-        thresholds, peaks, upstrokes, clipped = ft.check_thresholds_and_peaks(v, t, thresholds, peaks,
+        thresholds, peaks, upstrokes, clipped = spkd.check_thresholds_and_peaks(v, t, thresholds, peaks,
                                                                      upstrokes, self.end, self.max_interval)
         if not thresholds.size:
             # Save time if no spikes detected
             return DataFrame()
 
         # Spike list and thresholds have been refined - now find other features
-        upstrokes = ft.find_upstroke_indexes(v, t, thresholds, peaks, self.filter, dvdt)
-        troughs = ft.find_trough_indexes(v, t, thresholds, peaks, clipped, self.end)
-        downstrokes = ft.find_downstroke_indexes(v, t, peaks, troughs, clipped, self.filter, dvdt)
-        trough_details, clipped = ft.analyze_trough_details(v, t, thresholds, peaks, clipped, self.end,
+        upstrokes = spkd.find_upstroke_indexes(v, t, thresholds, peaks, self.filter, dvdt)
+        troughs = spkd.find_trough_indexes(v, t, thresholds, peaks, clipped, self.end)
+        downstrokes = spkd.find_downstroke_indexes(v, t, peaks, troughs, clipped, self.filter, dvdt)
+        trough_details, clipped = spkf.analyze_trough_details(v, t, thresholds, peaks, clipped, self.end,
                                                             self.filter, dvdt=dvdt)
 
-        widths = ft.find_widths(v, t, thresholds, peaks, trough_details[1], clipped)
+        widths = spkf.find_widths(v, t, thresholds, peaks, trough_details[1], clipped)
 
 
         # Points where we care about t, v, and i if available
@@ -264,16 +268,16 @@ class SpikeTrainFeatureExtractor(object):
             extra_features = []
 
         if 'peak_deflect' in extra_features:
-            features['peak_deflect'] = ft.voltage_deflection(t, v, i, self.start, self.end, self.deflect_type)
+            features['peak_deflect'] = subf.voltage_deflection(t, v, i, self.start, self.end, self.deflect_type)
 
         if 'stim_amp' in extra_features:
             features['stim_amp'] = self.stim_amp_fn(t, i, self.start) if self.stim_amp_fn else None
 
         if 'v_baseline' in extra_features:
-            features['v_baseline'] = ft.baseline_voltage(t, v, self.start, self.baseline_interval, self.filter_frequency)
+            features['v_baseline'] = subf.baseline_voltage(t, v, self.start, self.baseline_interval, self.filter_frequency)
 
         if 'sag' in extra_features:
-            features['sag'] = ft.sag(t, v, i, self.start, self.end, self.peak_width, self.sag_baseline_interval)
+            features['sag'] = subf.sag(t, v, i, self.start, self.end, self.peak_width, self.sag_baseline_interval)
 
         if features["avg_rate"] > 0:
             if 'pause' in extra_features:
@@ -293,19 +297,19 @@ def basic_spike_train_features(t, spikes_df, start, end):
         return features
 
     thresholds = spikes_df["threshold_index"].values.astype(int)
-    isis = ft.get_isis(t, thresholds)
+    isis = spkf.get_isis(t, thresholds)
     with warnings.catch_warnings():
         # ignore mean of empty slice warnings here
         warnings.filterwarnings("ignore", category=RuntimeWarning, module="numpy")
 
         features = {
-            "adapt": ft.adaptation_index(isis),
-            "latency": ft.latency(t, thresholds, start),
+            "adapt": spkf.adaptation_index(isis),
+            "latency": spkf.latency(t, thresholds, start),
             "isi_cv": (isis.std() / isis.mean()) if len(isis) >= 1 else np.nan,
             "mean_isi": isis.mean() if len(isis) > 0 else np.nan,
             "median_isi": np.median(isis),
             "first_isi": isis[0] if len(isis) >= 1 else np.nan,
-            "avg_rate": ft.average_rate(t, thresholds, start, end),
+            "avg_rate": spkf.average_rate(t, thresholds, start, end),
         }
 
     return features
@@ -327,10 +331,10 @@ def pause(self, t, spikes_df, start, end, cost_weight=1.0):
     warnings.warn("This function will be removed")
     # Pauses are unusually long ISIs with a "detour reset" among delay resets
     thresholds = spikes_df["threshold_index"].values.astype(int)
-    isis = ft.get_isis(t, thresholds)
+    isis = spkf.get_isis(t, thresholds)
     isi_types = spikes_df["isi_type"][:-1].values
 
-    pause_list = ft.detect_pauses(isis, isi_types, cost_weight)
+    pause_list = spkf.detect_pauses(isis, isi_types, cost_weight)
 
     if len(pause_list) == 0:
         return 0, 0.
@@ -352,7 +356,7 @@ def burst(t, spikes_df, tol=0.5, pause_cost=1.0):
     """
     warnings.warn("This function will be removed")
     thresholds = spikes_df["threshold_index"].values.astype(int)
-    isis = ft.get_isis(t, thresholds)
+    isis = spkf.get_isis(t, thresholds)
 
     isi_types = spikes_df["isi_type"][:-1].values
     fast_tr_v = spikes_df["fast_trough_v"].values
@@ -361,7 +365,7 @@ def burst(t, spikes_df, tol=0.5, pause_cost=1.0):
     slow_tr_t = spikes_df["slow_trough_t"].values
     thr_v = spikes_df["threshold_v"].values
 
-    bursts = ft.detect_bursts(isis, isi_types,
+    bursts = spkf.detect_bursts(isis, isi_types,
                               fast_tr_v, fast_tr_t,
                               slow_tr_v, slow_tr_t,
                               thr_v, tol, pause_cost)
@@ -395,11 +399,12 @@ def delay(t, v, spikes_df, start, end):
     delay_ratio = latency / tau
     return delay_ratio, tau
 
+
 def fit_fi_slope(stim_amps, avg_rates):
     """Fit the rate and stimulus amplitude to a line and return the slope of the fit."""
 
     if len(stim_amps) < 2:
-        raise ft.FeatureError("Cannot fit f-I curve slope with less than two sweeps")
+        raise er.FeatureError("Cannot fit f-I curve slope with less than two sweeps")
 
     x = stim_amps
     y = avg_rates

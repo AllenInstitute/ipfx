@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 import logging
 from collections import Counter
-
-from . import ephys_features as ft
+from . import stim_features as stf
+from . import subthresh_features as subf
 from . import ephys_extractor as efex
-
-from .ephys_data_set import SweepSet
+from ephys_data_set import SweepSet
+import error as er
 
 class StimulusProtocolAnalysis(object):
     MEAN_FEATURES = [ "upstroke_downstroke_ratio", "peak_v", "peak_t", "trough_v", "trough_t",
@@ -119,7 +119,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
     def __init__(self, spx, sptx, subthresh_min_amp, tau_frac=0.1):
         super(LongSquareAnalysis, self).__init__(spx, sptx)
         self.subthresh_min_amp = subthresh_min_amp
-        self.sptx.stim_amp_fn = ft._step_stim_amp
+        self.sptx.stim_amp_fn = stf._step_stim_amp
         self.tau_frac = tau_frac
 
     def analyze(self, sweep_set):
@@ -145,14 +145,14 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         spiking_sweep_features = self.suprathreshold_sweep_features()
 
         if len(spiking_sweep_features) == 0:
-            raise ft.FeatureError("No spiking long square sweeps, cannot compute cell features.")
+            raise er.FeatureError("No spiking long square sweeps, cannot compute cell features.")
 
         min_index = np.argmin(spiking_sweep_features["stim_amp"].values)
 
         rheobase_index = spiking_sweep_features.iloc[min_index].name
 
         rheo_sweep = sweep_set.sweeps[rheobase_index]
-        rheobase_i = ft._step_stim_amp(rheo_sweep.t, rheo_sweep.i, self.spx.start)
+        rheobase_i = stf._step_stim_amp(rheo_sweep.t, rheo_sweep.i, self.spx.start)
 
         features["rheobase_extractor_index"] = rheobase_index
         features["rheobase_i"] = rheobase_i
@@ -175,7 +175,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         subthreshold_sweep_features = self.subthreshold_sweep_features()
 
         if len(subthreshold_sweep_features) == 0:
-            raise ft.FeatureError("No subthreshold long square sweeps, cannot evaluate cell features.")
+            raise er.FeatureError("No subthreshold long square sweeps, cannot evaluate cell features.")
 
         logging.debug("subthresh_sweeps: %d", len(subthreshold_sweep_features))
 
@@ -192,12 +192,12 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         logging.debug("calc_subthresh_sweeps: %d", len(calc_subthresh_features))
 
         calc_subthresh_ss = SweepSet([sweep_set.sweeps[i] for i in calc_subthresh_features.index.values])
-        taus = [ ft.time_constant(s.t, s.v, s.i, self.spx.start, self.spx.end, self.tau_frac, self.sptx.baseline_interval) for s in calc_subthresh_ss.sweeps ]
+        taus = [ subf.time_constant(s.t, s.v, s.i, self.spx.start, self.spx.end, self.tau_frac, self.sptx.baseline_interval) for s in calc_subthresh_ss.sweeps ]
 
         calc_subthresh_features['tau'] = taus
 
         features["subthreshold_membrane_property_sweeps"] = calc_subthresh_features
-        features["input_resistance"] = ft.input_resistance(calc_subthresh_ss.t,
+        features["input_resistance"] = subf.input_resistance(calc_subthresh_ss.t,
                                                            calc_subthresh_ss.i,
                                                            calc_subthresh_ss.v,
                                                            self.spx.start, self.spx.end,
@@ -235,7 +235,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 class ShortSquareAnalysis(StimulusProtocolAnalysis):
     def __init__(self, spx, sptx):
         super(ShortSquareAnalysis, self).__init__(spx, sptx)
-        self.sptx.stim_amp_fn = ft._short_step_stim_amp
+        self.sptx.stim_amp_fn = stf._short_step_stim_amp
 
     def analyze(self, sweep_set):
         extra_sweep_features = [ "stim_amp" ]
@@ -247,7 +247,7 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
 
         # Need to count how many had spikes at each amplitude; find most; ties go to lower amplitude
         if len(spiking_sweep_features) == 0:
-            raise ft.FeatureError("No spiking short square sweeps, cannot compute cell features.")
+            raise er.FeatureError("No spiking short square sweeps, cannot compute cell features.")
 
         most_common = Counter(spiking_sweep_features["stim_amp"].values).most_common()
         common_amp, common_count = most_common[0]
