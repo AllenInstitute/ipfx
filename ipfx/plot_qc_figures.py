@@ -5,8 +5,8 @@ import logging
 import os
 import shutil
 import numpy as np
-import ipfx.ephys_features as ft
 import ipfx.stim_features as st
+import ipfx.subthresh_features as subf
 import scipy.signal as sg
 import scipy.misc
 
@@ -366,7 +366,7 @@ def plot_subthreshold_long_square_figures(data_set, cell_features, lims_features
         peak_idx = subthresh_dict[s]['peak_deflect'][1]
         peak_t = t[peak_idx]
         plt.scatter([peak_t], [subthresh_dict[s]['peak_deflect'][0]], color='red', zorder=10)
-        popt = ft.fit_membrane_time_constant(t, v, stim_start, peak_t)
+        popt = subf.fit_membrane_time_constant(t, v, stim_start, peak_t)
         plt.title(str(s))
         plt.plot(t[start_idx:peak_idx], exp_curve(t[start_idx:peak_idx] - t[start_idx], *popt), color='blue')
         plt.xlabel("s")

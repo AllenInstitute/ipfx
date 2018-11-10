@@ -1,5 +1,5 @@
-from . import stim_features as st
-from . import ephys_features as ft
+from . import stim_features as stf
+from . import data_set_features as dsf
 import logging
 import numpy as np
 
@@ -183,7 +183,7 @@ def cell_qc_features(data_set, manual_values=None):
         #   computation generated invalid value, trigger same
         #   exception handler with different error
         if seal_gohm is None or not np.isfinite(seal_gohm):
-            raise ft.FeatureError("Could not compute seal")
+            raise dsf.FeatureError("Could not compute seal")
     except IndexError as e:
         # seal is not available, for whatever reason. log error
         msg = "Seal is not available"
@@ -304,7 +304,7 @@ def sweep_qc_features(data_set):
         expt_start_idx, expt_end_idx = sweep_data.expt_idx_range
 
         # measure Vm and noise before stimulus
-        idx0, idx1 = st.get_first_vm_noise_epoch(expt_start_idx, hz) # count from the beginning of the experiment
+        idx0, idx1 = stf.get_first_vm_noise_epoch(expt_start_idx, hz) # count from the beginning of the experiment
 
         _, rms0 = measure_vm(voltage[idx0:idx1])
 
@@ -318,9 +318,9 @@ def sweep_qc_features(data_set):
         is_ramp = sweep_info['stimulus_name'] in ontology.ramp_names
 
         if not is_ramp:
-            idx0, idx1 = st.get_last_vm_epoch(expt_end_idx, hz)
+            idx0, idx1 = stf.get_last_vm_epoch(expt_end_idx, hz)
             mean_last_vm_epoch, _ = measure_vm(voltage[idx0:idx1])
-            idx0, idx1 = st.get_last_vm_noise_epoch(expt_end_idx, hz)
+            idx0, idx1 = stf.get_last_vm_noise_epoch(expt_end_idx, hz)
             _, rms1 = measure_vm(voltage[idx0:idx1])
             sweep["post_vm_mv"] = float(mean_last_vm_epoch)
             sweep["post_noise_rms_mv"] = float(rms1)
@@ -329,9 +329,9 @@ def sweep_qc_features(data_set):
 
         # measure Vm and noise over extended interval, to check stability
 
-        stim_start_ix = st.find_stim_start(current, expt_start_idx)
+        stim_start_ix = stf.find_stim_start(current, expt_start_idx)
         sweep['stimulus_start_time'] = t[stim_start_ix]
-        idx0, idx1 = st.get_stability_vm_epoch(stim_start_ix, hz)
+        idx0, idx1 = stf.get_stability_vm_epoch(stim_start_ix, hz)
         mean2, rms2 = measure_vm(voltage[idx0:idx1])
 
         sweep["slow_vm_mv"] = float(mean2)
@@ -349,8 +349,8 @@ def sweep_qc_features(data_set):
             sweep["vm_delta_mv"] = None
 
         # compute stimulus duration, amplitude, interval
-        stim_amp, stim_dur = st.find_stim_amplitude_and_duration(expt_start_idx, current, hz)
-        stim_int = st.find_stim_interval(expt_start_idx, current, hz)
+        stim_amp, stim_dur = stf.find_stim_amplitude_and_duration(expt_start_idx, current, hz)
+        stim_int = stf.find_stim_interval(expt_start_idx, current, hz)
 
         sweep['stimulus_amplitude'] = stim_amp
         sweep['stimulus_duration'] = stim_dur

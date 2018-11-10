@@ -1,4 +1,5 @@
 import numpy as np
+import time_series_utils as tsu
 
 
 # global constants
@@ -251,3 +252,13 @@ def sweep_truncation_check(i,v,hz):
         sweep_truncated = True
 
     return sweep_truncated
+
+
+def _step_stim_amp(t, i, start):
+    t_index = tsu.find_time_index(t, start)
+    return i[t_index + 1]
+
+
+def _short_step_stim_amp(t, i, start):
+    t_index = tsu.find_time_index(t, start)
+    return i[t_index + 1:].max()
