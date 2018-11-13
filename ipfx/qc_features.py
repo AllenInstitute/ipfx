@@ -1,5 +1,5 @@
 from . import stim_features as stf
-from . import data_set_features as dsf
+from . import error as er
 import logging
 import numpy as np
 
@@ -183,7 +183,7 @@ def cell_qc_features(data_set, manual_values=None):
         #   computation generated invalid value, trigger same
         #   exception handler with different error
         if seal_gohm is None or not np.isfinite(seal_gohm):
-            raise dsf.FeatureError("Could not compute seal")
+            raise er.FeatureError("Could not compute seal")
     except IndexError as e:
         # seal is not available, for whatever reason. log error
         msg = "Seal is not available"

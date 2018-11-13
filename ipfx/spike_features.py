@@ -349,7 +349,7 @@ def detect_pauses(isis, isi_types, cost_weight=1.0):
     """
 
     if len(isis) != len(isi_types):
-        raise dsf.FeatureError("Wrong number of ISIs")
+        raise er.FeatureError("Wrong number of ISIs")
 
     if not np.any(isi_types == "direct"):
         # Need some direct-type firing to have pauses
@@ -415,7 +415,7 @@ def detect_bursts(isis, isi_types, fast_tr_v, fast_tr_t, slow_tr_v, slow_tr_t,
     """
 
     if len(isis) != len(isi_types):
-        raise dsf.FeatureError("Wrong number of ISIs")
+        raise er.FeatureError("Wrong number of ISIs")
 
     if len(isis) < 2: # can't determine burstiness for a single ISI
         return np.array([])
@@ -470,7 +470,7 @@ def detect_bursts(isis, isi_types, fast_tr_v, fast_tr_t, slow_tr_v, slow_tr_t,
         return np.array([])
 
     if len(into_burst) != len(out_of_burst):
-        raise dsf.FeatureError("Inconsistent burst boundary identification")
+        raise er.FeatureError("Inconsistent burst boundary identification")
 
     inout_pairs = list(zip(into_burst, out_of_burst))
     delta_t = slow_tr_t - fast_tr_t
@@ -534,7 +534,7 @@ def fit_prespike_time_constant(t, v, start, spike_time, dv_limit=-0.001, tau_lim
     start_index = tsu.find_time_index(t, start)
     end_index = tsu.find_time_index(t, spike_time)
     if end_index <= start_index:
-        raise dsf.FeatureError("Start for pre-spike time constant fit cannot be after the spike time.")
+        raise er.FeatureError("Start for pre-spike time constant fit cannot be after the spike time.")
 
     v_slice = v[start_index:end_index]
     t_slice = t[start_index:end_index]
@@ -618,10 +618,10 @@ def estimate_adjusted_detection_parameters(v_set, t_set, interval_start, interva
         t_set = list(t_set)
 
     if len(v_set) != len(t_set):
-        raise dsf.FeatureError("t_set and v_set must be lists of equal size")
+        raise er.FeatureError("t_set and v_set must be lists of equal size")
 
     if len(v_set) == 0:
-        raise dsf.FeatureError("t_set and v_set are empty")
+        raise er.FeatureError("t_set and v_set are empty")
 
     start_index = tsu.find_time_index(t_set[0], interval_start)
     end_index = tsu.find_time_index(t_set[0], interval_end)
