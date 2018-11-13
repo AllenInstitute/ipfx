@@ -14,8 +14,22 @@ change at any time.
 As of 9/2018 PClamp/Clampex does not record all required amplifier settings.
 To workaround that issue we've developed `mcc_get_settings.py` which gathers
 all amplifier settings from all active amplifiers and writes them to a file in
-JSON output. This file can then, in a future `run_x_to_nwb_conversion.py`
-version, be used to provide the missing amplifier settings.
+JSON output.
+
+#### MCC settings gathering
+
+```sh
+mcc_get_settings.py --filename 2018_09_12_0003.json --idChannelMapping '{"IN0" : "x00830251_1"}' '{"IN1" : "x00830251_2"}'
+```
+
+The optional parameter `--filename` gives the name of the output file, and
+`--idChannelMapping` makes the connection between the names of the AD channels
+and the amplifier names.
+
+For converting an ABF file to NWB, we expect either one JSON file per ABF file
+when converting single files, or one JSON file per directory when converting
+whole directories. The JSON files must reside in the same directory as the ABF
+files.
 
 #### Required input files
 
