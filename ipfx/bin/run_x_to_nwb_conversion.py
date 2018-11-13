@@ -34,6 +34,8 @@ def convert(inFileOrFolder, overwrite=False, fileType=None):
             raise ValueError("Missing fileType when passing a folder")
 
         inFileOrFolder = os.path.normpath(inFileOrFolder)
+        inFileOrFolder = os.path.realpath(inFileOrFolder)
+
         ext = fileType
         root = os.path.join(inFileOrFolder, "..",
                             os.path.basename(inFileOrFolder))
