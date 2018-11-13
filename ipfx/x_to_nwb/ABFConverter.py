@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 import os
 import glob
+import warnings
 
 import numpy as np
 
@@ -41,6 +42,8 @@ class ABFConverter:
         else:
             raise ValueError(f"{inFileOrFolder} is neither a folder nor a path.")
 
+        self._amplifierSettings = self._getJSONFile(inFileOrFolder)
+
         self.abfs = []
 
         for inFile in inFiles:
@@ -73,6 +76,36 @@ class ABFConverter:
 
         with NWBHDF5IO(outFile, "w") as io:
             io.write(nwbFile, cache_spec=True)
+
+    def _getJSONFile(self, inFileOrFolder):
+        """
+        Search the JSON file with all amplifier settings.
+        If `inFileOrFolder` is a folder we need one JSON file in that folder,
+        if `inFileOrFolder` is a file the JSON file must have the same
+        basename. For all other cases we warn and return nothing.
+        """
+
+        if os.path.isfile(inFileOrFolder):
+            ampSettings = os.path.splitext(inFileOrFolder)[0] + ".json"
+
+            if not os.path.isfile(ampSettings):
+                warnings.warn(f"Could not find the JSON file {ampSettings} with amplifier settings.")
+                return None
+
+        elif os.path.isdir(inFileOrFolder):
+            files = glob.glob(os.path.join(inFileOrFolder, "*.json"))
+
+            if len(files) != 1:
+                warnings.warn(f"Could not find exactly one JSON file with amplifier "
+                              f"settings in folder {inFileOrFolder}.")
+                return None
+
+            ampSettings = files[0]
+        else:
+            return None
+
+        with open(ampSettings) as fh:
+            return json.load(fh)
 
     def _check(self, abf):
         """
@@ -295,6 +328,83 @@ class ABFConverter:
 
         return series
 
+    def _getAmplifierSettings(self, clampMode, adcName):
+        """
+        Return a dict with the amplifier settings read out form the JSON file.
+        Unset values are returned as `NaN`.
+        """
+
+        d = {}
+
+        try:
+            # JSON stores adcName without spaces
+            adcNameWOSpace = adcName.replace(" ", "")
+            amplifier = self._amplifierSettings["uids"][adcNameWOSpace]
+            settings = self._amplifierSettings[amplifier]
+
+            if settings["GetMode"] != clampMode:
+                warnings.warn("Stored clamp mode {settings['GetMode']} does not match requested clamp mode {clampMode}")
+                settings = None
+        except (TypeError, KeyError) as e:
+            warnings.warn(f"Could not find settings for amplifier of channel {adcName}.")
+            settings = None
+
+        if settings:
+            if clampMode == V_CLAMP_MODE:
+                d["capacitance_slow"] = settings["GetSlowCompCap"]
+                d["capacitance_fast"] = settings["GetFastCompCap"]
+
+                if settings["GetRsCompEnable"]:
+                    d["resistance_comp_correction"] = settings["GetRsCompCorrection"]
+                    d["resistance_comp_bandwidth"] = settings["GetRsCompBandwidth"]
+                    d["resistance_comp_prediction"] = settings["GetRsCompPrediction"]
+                else:
+                    d["resistance_comp_correction"] = np.nan
+                    d["resistance_comp_bandwidth"] = np.nan
+                    d["resistance_comp_prediction"] = np.nan
+
+                if settings["GetWholeCellCompEnable"]:
+                    d["whole_cell_capacitance_comp"] = settings["GetWholeCellCompCap"]
+                    d["whole_cell_series_resistance_comp"] = settings["GetWholeCellCompResist"]
+                else:
+                    d["whole_cell_capacitance_comp"] = np.nan
+                    d["whole_cell_series_resistance_comp"] = np.nan
+
+            elif clampMode == I_CLAMP_MODE:
+                if settings["GetHoldingEnable"]:
+                    d["bias_current"] = settings["GetHolding"]
+                else:
+                    d["bias_current"] = np.nan
+
+                if settings["GetBridgeBalEnable"]:
+                    d["bridge_balance"] = settings["GetBridgeBalResist"]
+                else:
+                    d["bridge_balance"] = np.nan
+
+                if settings["GetNeutralizationEnable"]:
+                    d["capacitance_compensation"] = settings["GetNeutralizationCap"]
+                else:
+                    d["capacitance_compensation"] = np.nan
+            else:
+                warnings.warn("Unsupported clamp mode {clampMode}")
+        else:
+            if clampMode == V_CLAMP_MODE:
+                d["capacitance_slow"] = np.nan
+                d["capacitance_fast"] = np.nan
+                d["resistance_comp_correction"] = np.nan
+                d["resistance_comp_bandwidth"] = np.nan
+                d["resistance_comp_prediction"] = np.nan
+                d["whole_cell_capacitance_comp"] = np.nan
+                d["whole_cell_series_resistance_comp"] = np.nan
+            elif clampMode == I_CLAMP_MODE:
+                d["bias_current"] = np.nan
+                d["bridge_balance"] = np.nan
+                d["capacitance_compensation"] = np.nan
+            else:
+                warnings.warn("Unsupported clamp mode {clampMode}")
+
+        return d
+
     def _createAcquiredSeries(self, electrodes):
         """
         Return a list of pynwb acquisition series objects created from the ABF file contents.
@@ -317,25 +427,19 @@ class ABFConverter:
                     starting_time = self._calculateStartingTime(abf)
                     stimulus_description = abf.protocol
                     rate = float(abf.dataRate)
+                    adcName = abf.adcNames[channel]
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
-                                              "name": abf.adcNames[channel],
+                                              "name": adcName,
                                               "number": abf._adcSection.nADCNum[channel]},
                                              sort_keys=True, indent=4)
 
                     clampMode = self._getClampMode(abf, channel)
+                    settings = self._getAmplifierSettings(clampMode, adcName)
                     seriesClass = getAcquiredSeriesClass(clampMode)
 
                     if clampMode == V_CLAMP_MODE:
-                        capacitance_slow = np.nan
-                        capacitance_fast = np.nan
-                        resistance_comp_correction = np.nan
-                        resistance_comp_bandwidth = np.nan
-                        resistance_comp_prediction = np.nan
-                        whole_cell_capacitance_comp = np.nan
-                        whole_cell_series_resistance_comp = np.nan
-
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
                                                       unit=unit,
@@ -346,19 +450,16 @@ class ABFConverter:
                                                       starting_time=starting_time,
                                                       rate=rate,
                                                       description=description,
-                                                      capacitance_slow=capacitance_slow,
-                                                      capacitance_fast=capacitance_fast,
-                                                      resistance_comp_correction=resistance_comp_correction,
-                                                      resistance_comp_bandwidth=resistance_comp_bandwidth,
-                                                      resistance_comp_prediction=resistance_comp_prediction,
+                                                      capacitance_slow=settings["capacitance_slow"],
+                                                      capacitance_fast=settings["capacitance_fast"],
+                                                      resistance_comp_correction=settings["resistance_comp_correction"],
+                                                      resistance_comp_bandwidth=settings["resistance_comp_bandwidth"],
+                                                      resistance_comp_prediction=settings["resistance_comp_prediction"],
                                                       stimulus_description=stimulus_description,
-                                                      whole_cell_capacitance_comp=whole_cell_capacitance_comp,
-                                                      whole_cell_series_resistance_comp=whole_cell_series_resistance_comp)  # noqa: E501
+                                                      whole_cell_capacitance_comp=settings["whole_cell_capacitance_comp"],  # noqa: E501
+                                                      whole_cell_series_resistance_comp=settings["whole_cell_series_resistance_comp"])  # noqa: E501
 
                     elif clampMode == I_CLAMP_MODE:
-                        bias_current = np.nan
-                        bridge_balance = np.nan
-                        capacitance_compensation = np.nan
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
                                                       unit=unit,
@@ -369,10 +470,10 @@ class ABFConverter:
                                                       starting_time=starting_time,
                                                       rate=rate,
                                                       description=description,
-                                                      bias_current=bias_current,
-                                                      bridge_balance=bridge_balance,
+                                                      bias_current=settings["bias_current"],
+                                                      bridge_balance=settings["bridge_balance"],
                                                       stimulus_description=stimulus_description,
-                                                      capacitance_compensation=capacitance_compensation)
+                                                      capacitance_compensation=settings["capacitance_compensation"])
                     else:
                         raise ValueError(f"Unsupported clamp mode {clampMode}.")
 
