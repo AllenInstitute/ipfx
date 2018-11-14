@@ -147,25 +147,21 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         if len(spiking_sweep_features) == 0:
             raise er.FeatureError("No spiking long square sweeps, cannot compute cell features.")
 
-        min_index = np.argmin(spiking_sweep_features["stim_amp"].values)
+        rheobase_sweep_features = self.find_rheobase_sweep(spiking_sweep_features)
 
-        rheobase_index = spiking_sweep_features.iloc[min_index].name
+        rheobase_i = rheobase_sweep_features["stim_amp"]
 
-        rheo_sweep = sweep_set.sweeps[rheobase_index]
-        rheobase_i = stf._step_stim_amp(rheo_sweep.t, rheo_sweep.i, self.spx.start)
-
-        features["rheobase_extractor_index"] = rheobase_index
         features["rheobase_i"] = rheobase_i
-        features["rheobase_sweep"] = spiking_sweep_features.iloc[min_index]
+        features["rheobase_sweep"] = rheobase_sweep_features
         features["spiking_sweeps"] = spiking_sweep_features
 
         features["fi_fit_slope"] = efex.fit_fi_slope(spiking_sweep_features["stim_amp"].values,
                                                      spiking_sweep_features["avg_rate"].values)
 
         # find hero sweep
-        hero_sweep = self.find_hero_sweep(rheobase_i, spiking_sweep_features)
+        hero_sweep_features = self.find_hero_sweep(rheobase_i, spiking_sweep_features)
 
-        features['hero_sweep'] = hero_sweep
+        features['hero_sweep'] = hero_sweep_features
 
         return features
 
@@ -218,18 +214,38 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         return out
 
+    def find_rheobase_sweep(self,spiking_features):
+
+        spiking_features = spiking_features.sort_values("stim_amp")
+
+        spiking_features_depolarized = spiking_features[spiking_features["stim_amp"] > 0]
+
+        if spiking_features_depolarized.empty:
+            raise ValueError("Cannot find rheobase sweep in spiking sweeps with amplitudes:")
+        else:
+            return spiking_features_depolarized.iloc[0]
+
     def find_hero_sweep(self, rheo_amp, spiking_features,
                         min_offset=HERO_MIN_AMP_OFFSET,
                         max_offset=HERO_MAX_AMP_OFFSET):
 
         hero_min, hero_max = rheo_amp + min_offset, rheo_amp + max_offset
         spiking_features = spiking_features.sort_values("stim_amp")
-        hero_features = spiking_features[(spiking_features["stim_amp"] > hero_min) & (spiking_features["stim_amp"] < hero_max)]
+        sweep_features_range = spiking_features[(spiking_features["stim_amp"] > hero_min) & (spiking_features["stim_amp"] < hero_max)]
 
-        if len(hero_features) == 0:
-            raise ValueError("Cannot find hero sweep in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_min, hero_max,rheo_amp))
+        if not sweep_features_range.empty:
+            hero_features = sweep_features_range.iloc[0]
+            logging.info("Found hero sweep with amp %f in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_features["stim_amp"], hero_min, hero_max,rheo_amp))
         else:
-            return hero_features.iloc[0]
+            logging.debug("Cannot find hero sweep in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_min, hero_max,rheo_amp))
+            index_hero = np.argmin(abs(hero_min - spiking_features["stim_amp"]))
+            hero_features = spiking_features.loc[index_hero]
+            logging.debug("Selecting as hero sweep with the amplitude %f closest to the min amplitude in [%f,%f] pA " % (hero_features["stim_amp"], hero_min, hero_max))
+
+        if hero_features.empty:
+            raise ValueError("Cannot find hero sweep.")
+
+        return hero_features
 
 
 class ShortSquareAnalysis(StimulusProtocolAnalysis):

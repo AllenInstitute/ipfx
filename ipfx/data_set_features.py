@@ -269,9 +269,7 @@ def build_cell_feature_record(cell_features, sweep_features):
     # create a table of values
     # this is a dictionary of ephys_features
     base = cell_features["long_squares"]
-    ephys_features["rheobase_sweep_id"] = rheo_sweep_id
     ephys_features["rheobase_sweep_num"] = rheo_sweep_num
-    ephys_features["thumbnail_sweep_id"] = hero_sweep_id
     ephys_features["thumbnail_sweep_num"] = hero_sweep_num
     ephys_features["vrest"] = nan_get(base, "v_baseline")
     ephys_features["ri"] = nan_get(base, "input_resistance")
