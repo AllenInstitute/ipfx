@@ -122,6 +122,7 @@ def create_files_for_upload(ext):
     files = glob.glob(os.path.join(folder, "*." + ext))
 
     for f in files:
+        print(f"Converting {f}")
         convert(f, overwrite=True)
 
     zip_files(folder, basename + "_nwb", ".nwb")
