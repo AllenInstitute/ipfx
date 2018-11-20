@@ -77,6 +77,12 @@ def run_pipeline(input_nwb_file,
 
 def main():
 
+    """
+    Usage:
+    python run_pipeline_extraction.py --input_json INPUT_JSON --output_json OUTPUT_JSON
+
+    """
+
     module = ags.ArgSchemaParser(schema_type=PipelineParameters)
 
     output = run_pipeline(module.args["input_nwb_file"],

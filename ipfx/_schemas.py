@@ -5,9 +5,9 @@ from argschema.fields import Nested, InputFile, OutputFile, Integer, Boolean, St
 class SweepFeatures(DefaultSchema):
     stimulus_code = String(description="stimulus code", required=True)
     stimulus_name = String(description="index of sweep in order of presentation", required=True)
+    stimulus_amplitude = Float(description="amplitude of stimulus", required=True, allow_none=True)
     sweep_number = Integer(description="index of sweep in order of presentation", required=True)
     stimulus_units = String(desription="stimulus units", required=True)
-    id = Integer(description="id of sweep", allow_none=True)
     bridge_balance_mohm = Float(description="bridge balance", allow_none=True)
     pre_vm_mv = Float(allow_none=True)
     leak_pa = Float(allow_none=True)
@@ -30,6 +30,7 @@ class QcSweepFeatures(SweepFeatures):
     slow_noise_rms_mv = Float(description="blah", required=True)
     vm_delta_mv = Float(description="blah", required=True, allow_none=True)
     stimulus_duration = Float(description="blah", required=True)
+    stimulus_amplitude = Float(description="amplitude of stimulus", required=True, allow_none=True)
 
 class FeatureExtractionParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
@@ -83,7 +84,7 @@ class PipelineParameters(ArgSchema):
 class GeneratePipelineInputParameters(ArgSchema):
     specimen_id = Integer(description="specimen", required=False)
     input_nwb_file = InputFile(description="input nwb file", required=False)
-    output_dir = OutputFile(description="Output directory", required=True)
+    cell_dir = OutputFile(description="Cell directory", required=True)
 
 
 class OutputSchema(DefaultSchema):

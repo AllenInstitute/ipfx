@@ -1,10 +1,10 @@
-import json
 import allensdk.internal.core.lims_utilities as lu
 import argschema as ags
 from ipfx._schemas import GeneratePipelineInputParameters
 import ipfx.qc_protocol as qcp
 import allensdk.core.json_utilities as ju
 import os.path
+from generate_se_input import generate_se_input
 
 
 def get_sweep_states_from_lims(specimen_id):
@@ -68,50 +68,63 @@ def get_input_h5_file_from_lims(specimen_id):
     return h5_file_name
 
 
-def make_input_json(args, plot_figures=False):
+def extract_sweep_features_subset(sweep_features, feature_names):
+    """
 
-    pipe_input = dict()
+    Parameters
+    ----------
+    sweep_features: list of dicts of sweep features
+    feature_names: list of features to select
 
-    if "specimen_id" in args:
-        pipe_input['input_nwb_file'] = get_input_nwb_file_from_lims(args["specimen_id"])
-        pipe_input['input_h5_file'] = get_input_h5_file_from_lims(args["specimen_id"])
+    Returns
+    -------
+    sweep_features_subset: list of dicts including only a subset of features from feature_names
+    """
+
+    sweep_features_subset = [{k: sf[k] for k in feature_names} for sf in sweep_features]
+
+    return sweep_features_subset
+
+
+def generate_pipeline_input(args,
+                            plot_figures=False):
+
+    se_input = generate_se_input(args)
+
+    pipe_input = dict(se_input)
+
+    if "specimen_id" in args.keys():
         pipe_input['manual_sweep_states'] = get_sweep_states_from_lims(args["specimen_id"])
 
-    elif "input_nwb_file" in args:
-        pipe_input['input_nwb_file'] = args["input_nwb_file"]
+    elif "input_nwb_file" in args.keys():
         pipe_input['manual_sweep_states'] = []
 
-    cell_name = get_cell_name(pipe_input['input_nwb_file'])
-
-    cell_dir = os.path.join(args["output_dir"],cell_name)
-    if not os.path.exists(cell_dir):
-        os.makedirs(cell_dir)
-
     if plot_figures:
-        pipe_input['qc_fig_dir'] = os.path.join(cell_dir,"qc_figs")
+        pipe_input['qc_fig_dir'] = os.path.join(args["cell_dir"],"qc_figs")
 
-    pipe_input['output_nwb_file'] = os.path.join(cell_dir, "output.nwb")
+    pipe_input['output_nwb_file'] = os.path.join(args["cell_dir"], "output.nwb")
     pipe_input['qc_criteria'] = ju.read(qcp.DEFAULT_QC_CRITERIA_FILE)
-    # pipe_args['stimulus_ontology_file'] = stimulus_ontology_file
 
-    with open(os.path.join(cell_dir, 'pipeline_input.json'), 'w') as f:
-        f.write(json.dumps(pipe_input, indent=2))
-
-
-def get_cell_name(input_nwb_file,):
-
-    input_nwb_file_basename = os.path.basename(input_nwb_file)
-    cell_name = os.path.splitext(input_nwb_file_basename)[0]
-
-    return cell_name
+    return pipe_input
 
 
 def main():
 
+    """
+    Usage:
+    > python generate_pipeline_input.py --specimen_id SPECIMEN_ID --cell_dir CELL_DIR
+    > python generate_pipeline_input.py --input_nwb_file INPUT_NWB_FILE --cell_dir CELL_DIR
+
+    """
 
     module = ags.ArgSchemaParser(schema_type=GeneratePipelineInputParameters)
 
-    make_input_json(module.args)
+    pipe_input = generate_pipeline_input(module.args)
+
+    input_json = os.path.join(module.args["cell_dir"],'pipeline_input.json')
+
+    ju.write(input_json,pipe_input)
+
 
 if __name__ == "__main__": main()
 

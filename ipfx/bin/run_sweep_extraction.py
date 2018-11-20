@@ -14,14 +14,6 @@ MANUAL_KEYS = ['manual_seal_gohm', 'manual_initial_access_resistance_mohm', 'man
 
 def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, input_manual_values=None):
     """
-    Usage:
-    $python run_sweep_extraction.py --input_json INPUT_JSON --output_json OUTPUT_JSON
-
-    Example:
-    $python run_sweep_extraction.py --input_json ../../tests/module_io/Ephys_Roi_Result_730744302/se_input.json --output_json ../../tests/module_io/Ephys_Roi_Result_730744302/se_output.json
-
-
-
     Parameters
     ----------
     input_nwb_file
@@ -56,6 +48,11 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
 
 
 def main():
+    """
+    Usage:
+    python run_sweep_extraction.py --input_json INPUT_JSON --output_json OUTPUT_JSON
+
+    """
 
     module = ags.ArgSchemaParser(schema_type=SweepExtractionParameters)
     output = run_sweep_extraction(module.args["input_nwb_file"],

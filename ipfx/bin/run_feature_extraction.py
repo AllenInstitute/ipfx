@@ -67,6 +67,12 @@ def run_feature_extraction(input_nwb_file,
 
 
 def main():
+    """
+    Usage:
+    python run_feature_extraction.py --input_json INPUT_JSON --output_json OUTPUT_JSON
+
+    """
+
     module = ags.ArgSchemaParser(schema_type=FeatureExtractionParameters)
 
     feature_data = run_feature_extraction(module.args["input_nwb_file"],

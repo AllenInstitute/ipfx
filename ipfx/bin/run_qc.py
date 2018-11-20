@@ -11,12 +11,6 @@ import allensdk.core.json_utilities as ju
 
 def run_qc(stimulus_ontology_file, cell_features, sweep_features, qc_criteria):
     """
-    Usage:
-    python run_qc.py --input_json INPUT_JSON --output_json OUTPUT_JSON
-
-    Run example:
-    python run_qc.py --input_json ../../tests/module_io/Ephys_Roi_Result_730744302/qc_input.json --output_json ../../tests/module_io/Ephys_Roi_Result_730744302/qc_output.json
-
 
     Parameters
     ----------
@@ -47,6 +41,12 @@ def run_qc(stimulus_ontology_file, cell_features, sweep_features, qc_criteria):
 
 
 def main():
+    """
+    Usage:
+    python run_qc.py --input_json INPUT_JSON --output_json OUTPUT_JSON
+
+
+    """
     module = ags.ArgSchemaParser(schema_type=QcParameters)
 
     output = run_qc(module.args.get("stimulus_ontology_file", None),
