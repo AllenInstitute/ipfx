@@ -8,6 +8,7 @@ import ctypes as ct
 import os
 import json
 import datetime
+import argparse
 
 # Original code taken from https://github.com/tgbugs/inferno/core/mcc.py, commit 3d555888 (Update README.md, 2017-08-02)
 # Original License: MIT
@@ -1009,15 +1010,36 @@ class MultiClampControl:
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--filename", type=str, help="Name of the generated JSON file", default="mcc-output.json")
+    parser.add_argument("--idChannelMapping", type=str, nargs="+", help="JSON formatted pairs with the ADC name <-> Amplifier mapping.", default=None)
+
+    args = parser.parse_args()
 
     with MultiClampControl() as mcc:
-        outputFile = "mcc-output.json"
-        with open(outputFile, mode="w", encoding="utf-8") as fh:
-            d = DataGatherer()
-            data = d.getData(mcc)
-            data["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
+        d = DataGatherer()
+        data = d.getData(mcc)
+        data["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
+
+        if args.idChannelMapping:
+            uids = {}
+            for x in args.idChannelMapping:
+                d = json.loads(x)
+
+                if len(d) != 1:
+                    raise ValueError("Unexpected ADC name/amplifier mapping construct.")
+
+                for k, v in d.items():
+                    if not data.get(v):
+                        raise ValueError(f"Amplifier named {v} does not exist.")
+
+                    uids[k] = v
+
+            data["uids"] = uids
+
+        with open(args.filename, mode="w", encoding="utf-8") as fh:
             fh.write(json.dumps(data, sort_keys=True, indent=4))
-            print(f"Output written to {outputFile}")
+            print(f"Output written to {args.filename}")
 
 if __name__ == '__main__':
     main()
