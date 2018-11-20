@@ -1,73 +1,83 @@
 import os
 import allensdk.core.json_utilities as ju
+from ipfx._schemas import GeneratePipelineInputParameters
+import argschema as ags
+from run_sweep_extraction import run_sweep_extraction
+from generate_se_input import generate_se_input
+import generate_pipeline_input as gpi
+
+QC_INPUT_FEATURES = ["stimulus_units",
+                   "stimulus_duration",
+                   "sweep_number",
+                   "vm_delta_mv",
+                   "pre_noise_rms_mv",
+                   "slow_noise_rms_mv",
+                   "stimulus_scale_factor",
+                   "post_noise_rms_mv",
+                   "slow_vm_mv",
+                   "stimulus_code",
+                   "stimulus_name",
+                   ]
 
 
-"""
-    Generates an input JSON for QC module saved in the MODULE_IO_DIR
-"""
-
-MODULE_IO_DIR = "../../tests/module_io/Ephys_Roi_Result_500844779"
-
-FEATURE_SUBSET = ["stimulus_units",
-               "stimulus_duration",
-               "sweep_number",
-               "vm_delta_mv",
-               "pre_noise_rms_mv",
-               "slow_noise_rms_mv",
-               "stimulus_scale_factor",
-               "post_noise_rms_mv",
-               "slow_vm_mv",
-               "stimulus_code",
-               "stimulus_name",
-               ]
 
 
+def generate_qc_input(se_input,se_output):
 
-def extract_sweep_features_subset(sweep_features, FEATURE_SUBSET):
+    qc_input = {}
 
-    sweep_features_subset = [{k: sf[k] for k in FEATURE_SUBSET} for sf in sweep_features]
+    if 'stimulus_ontology_file' in se_input:
+        qc_input['stimulus_ontology_file'] = se_input['stimulus_ontology_file']
 
-    return sweep_features_subset
+    qc_input['qc_criteria'] = { "access_resistance_mohm_max":20.0,
+                             "access_resistance_mohm_min":1.0,
+                             "blowout_mv_max":10.0,
+                             "blowout_mv_min":-10.0,
+                             "created_at":"2015-01-29T13:51:29-08:00",
+                             "electrode_0_pa_max":200.0,
+                             "electrode_0_pa_min":-200.0,
+                             "id":324256702,
+                             "input_vs_access_resistance_max":0.15,
+                             "leak_pa_max":100.0,
+                             "leak_pa_min":-100.0,
+                             "name":"Ephys QC Criteria v1.1",
+                             "post_noise_rms_mv_max":0.07,
+                             "pre_noise_rms_mv_max":0.07,
+                             "seal_gohm_min":1.0,
+                             "slow_noise_rms_mv_max":0.5,
+                             "updated_at":"2015-01-29T13:51:29-08:00",
+                             "vm_delta_mv_max":1.0}
+
+    qc_input['sweep_features'] = gpi.extract_sweep_features_subset(se_output['sweep_features'], QC_INPUT_FEATURES)
+
+    qc_input['cell_features'] = se_output['cell_features']
+
+    return qc_input
 
 
 def main():
+    """
+    Usage:
+    > python generate_qc_input.py --specimen_id SPECIMEN_ID --cell_dir CELL_DIR
+    > python generate_qc_input.py --input_nwb_file input_nwb_file --cell_dir CELL_DIR
 
-    se_output_json = os.path.join(MODULE_IO_DIR, 'se_output.json')
-    se_input_json = os.path.join(MODULE_IO_DIR, 'se_input.json')
+    """
 
-    outd = ju.read(se_output_json)
-    inpd = ju.read(se_input_json)
+    module = ags.ArgSchemaParser(schema_type=GeneratePipelineInputParameters)
 
-    d = {}
+    se_input = generate_se_input(module.args)
 
-    if 'stimulus_ontology_file' in inpd:
-        d['stimulus_ontology_file'] = inpd['stimulus_ontology_file']
+    ju.write(os.path.join(module.args["cell_dir"],'se_input.json'), se_input)
 
-    d['qc_criteria'] = { "access_resistance_mohm_max":20.0,
-                         "access_resistance_mohm_min":1.0,
-                         "blowout_mv_max":10.0,
-                         "blowout_mv_min":-10.0,
-                         "created_at":"2015-01-29T13:51:29-08:00",
-                         "electrode_0_pa_max":200.0,
-                         "electrode_0_pa_min":-200.0,
-                         "id":324256702,
-                         "input_vs_access_resistance_max":0.15,
-                         "leak_pa_max":100.0,
-                         "leak_pa_min":-100.0,
-                         "name":"Ephys QC Criteria v1.1",
-                         "post_noise_rms_mv_max":0.07,
-                         "pre_noise_rms_mv_max":0.07,
-                         "seal_gohm_min":1.0,
-                         "slow_noise_rms_mv_max":0.5,
-                         "updated_at":"2015-01-29T13:51:29-08:00",
-                         "vm_delta_mv_max":1.0}
+    se_output = run_sweep_extraction(se_input["input_nwb_file"],
+                                     se_input.get("input_h5_file",None),
+                                     se_input.get("stimulus_ontology_file", None))
 
-    d['sweep_features'] = extract_sweep_features_subset(outd['sweep_features'], FEATURE_SUBSET)
-    d['cell_features'] = outd['cell_features']
+    ju.write(os.path.join(module.args["cell_dir"],'se_output.json'),se_output)
 
-    qc_input_json = os.path.join(MODULE_IO_DIR,'qc_input.json')
+    qc_input = generate_qc_input(se_input, se_output)
 
-    ju.write(qc_input_json, d)
+    ju.write(os.path.join(module.args["cell_dir"],'qc_input.json'), qc_input)
 
 
 if __name__=="__main__": main()

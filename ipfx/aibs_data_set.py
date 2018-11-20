@@ -162,7 +162,7 @@ class AibsDataSet(EphysDataSet):
                           i = i,
                           sampling_rate = sweep_data['sampling_rate'],
                           expt_idx_range = sweep_data['index_range'],
-                          id = sweep_number,
+                          sweep_number = sweep_number,
                           clamp_mode = clamp_mode
                           )
 
