@@ -45,16 +45,18 @@ def get_input_h5_file_from_lims(specimen_id):
     return h5_file_name
 
 
-def generate_se_input(args,stimulus_ontology_file=None):
+def generate_se_input(specimen_id=None,
+                      input_nwb_file=None,
+                      stimulus_ontology_file=None):
 
     se_input = dict()
 
-    if "specimen_id" in args:
-        se_input['input_nwb_file'] = get_input_nwb_file_from_lims(args["specimen_id"])
-        se_input['input_h5_file'] = get_input_h5_file_from_lims(args["specimen_id"])
+    if specimen_id:
+        se_input['input_nwb_file'] = get_input_nwb_file_from_lims(specimen_id)
+        se_input['input_h5_file'] = get_input_h5_file_from_lims(specimen_id)
 
-    elif "input_nwb_file" in args:
-        se_input['input_nwb_file'] = args["input_nwb_file"]
+    elif input_nwb_file:
+        se_input['input_nwb_file'] = input_nwb_file
 
     if stimulus_ontology_file:
         se_input["stimulus_ontology_file"] = stimulus_ontology_file
@@ -72,9 +74,12 @@ def main():
 
     module = ags.ArgSchemaParser(schema_type=GeneratePipelineInputParameters)
 
-    se_input = generate_se_input(module.args)
+    kwargs = module.args
+    kwargs.pop("log_level")
+    cell_dir = kwargs.pop("cell_dir")
+    se_input = generate_se_input(**kwargs)
 
-    input_json = os.path.join(module.args["cell_dir"],'se_input.json')
+    input_json = os.path.join(cell_dir,'se_input.json')
 
     ju.write(input_json, se_input)
 

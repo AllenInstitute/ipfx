@@ -3,12 +3,20 @@ import sys
 import os.path
 from run_pipeline import run_pipeline
 import generate_pipeline_input as gpi
+import logging
 
 OUTPUT_DIR = "/local1/ephys/patchseq/tsts"
 
 INPUT_JSON = "pipeline_input.json"
 OUTPUT_JSON = "pipeline_output.json"
 
+def configure_logger(cell_dir):
+
+    logging.getLogger().setLevel(logging.INFO)
+    logging.basicConfig(filename=os.path.join(cell_dir,"log.txt"))
+    stderrLogger = logging.StreamHandler()
+    stderrLogger.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+    logging.getLogger().addHandler(stderrLogger)
 
 
 def main():
@@ -28,9 +36,11 @@ def main():
     if not os.path.exists(cell_dir):
         os.makedirs(cell_dir)
 
-    args = {"cell_dir": cell_dir,"input_nwb_file": input_nwb_file}
+    configure_logger(cell_dir)
 
-    pipe_input = gpi.generate_pipeline_input(args)
+    pipe_input = gpi.generate_pipeline_input(cell_dir=cell_dir,
+                                             input_nwb_file = input_nwb_file)
+
     input_json = os.path.join(cell_dir,INPUT_JSON)
     ju.write(input_json,pipe_input)
 
