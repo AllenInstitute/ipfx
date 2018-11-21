@@ -86,23 +86,27 @@ def extract_sweep_features_subset(sweep_features, feature_names):
     return sweep_features_subset
 
 
-def generate_pipeline_input(args,
-                            plot_figures=False):
+def generate_pipeline_input(cell_dir=None,
+                            specimen_id=None,
+                            input_nwb_file=None,
+                            plot_figures=False,
+                            stimulus_ontology_file=None):
 
-    se_input = generate_se_input(args)
-
+    se_input = generate_se_input(specimen_id=specimen_id,
+                                 input_nwb_file=input_nwb_file,
+                                 stimulus_ontology_file=stimulus_ontology_file)
     pipe_input = dict(se_input)
 
-    if "specimen_id" in args.keys():
-        pipe_input['manual_sweep_states'] = get_sweep_states_from_lims(args["specimen_id"])
+    if specimen_id:
+        pipe_input['manual_sweep_states'] = get_sweep_states_from_lims(specimen_id)
 
-    elif "input_nwb_file" in args.keys():
+    elif input_nwb_file:
         pipe_input['manual_sweep_states'] = []
 
     if plot_figures:
-        pipe_input['qc_fig_dir'] = os.path.join(args["cell_dir"],"qc_figs")
+        pipe_input['qc_fig_dir'] = os.path.join(cell_dir,"qc_figs")
 
-    pipe_input['output_nwb_file'] = os.path.join(args["cell_dir"], "output.nwb")
+    pipe_input['output_nwb_file'] = os.path.join(cell_dir, "output.nwb")
     pipe_input['qc_criteria'] = ju.read(qcp.DEFAULT_QC_CRITERIA_FILE)
 
     return pipe_input
@@ -119,7 +123,9 @@ def main():
 
     module = ags.ArgSchemaParser(schema_type=GeneratePipelineInputParameters)
 
-    pipe_input = generate_pipeline_input(module.args)
+    kwargs = module.args
+    kwargs.pop("log_level")
+    pipe_input = generate_pipeline_input(**kwargs)
 
     input_json = os.path.join(module.args["cell_dir"],'pipeline_input.json')
 

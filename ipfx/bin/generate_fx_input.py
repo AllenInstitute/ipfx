@@ -26,7 +26,7 @@ FX_INPUT_FEATURE = [
 
 def generate_fx_input(se_input,
                       se_output,
-                      args,
+                      cell_dir,
                       plot_figures=False):
 
     fx_input = dict()
@@ -41,9 +41,9 @@ def generate_fx_input(se_input,
     fx_input['cell_features'] = se_output['cell_features']
 
     if plot_figures:
-        fx_input['qc_fig_dir'] = os.path.join(args["cell_dir"], "qc_figs")
+        fx_input['qc_fig_dir'] = os.path.join(cell_dir, "qc_figs")
 
-    fx_input['output_nwb_file'] = os.path.join(args["cell_dir"], "output.nwb")
+    fx_input['output_nwb_file'] = os.path.join(cell_dir, "output.nwb")
 
     return fx_input
 
@@ -58,23 +58,27 @@ def main():
 
     module = ags.ArgSchemaParser(schema_type=GeneratePipelineInputParameters)
 
-    se_input = generate_se_input(module.args)
-    ju.write(os.path.join(module.args["cell_dir"],'se_input.json'), se_input)
+    kwargs = module.args
+    kwargs.pop("log_level")
+    cell_dir = kwargs.pop("cell_dir")
+
+    se_input = generate_se_input(**kwargs)
+    ju.write(os.path.join(cell_dir,'se_input.json'), se_input)
 
     se_output = run_sweep_extraction(se_input["input_nwb_file"],
                                      se_input.get("input_h5_file",None),
                                      se_input.get("stimulus_ontology_file", None))
 
-    ju.write(os.path.join(module.args["cell_dir"],'se_output.json'),se_output)
+    ju.write(os.path.join(cell_dir,'se_output.json'),se_output)
 
     qc_input = generate_qc_input(se_input, se_output)
-    ju.write(os.path.join(module.args["cell_dir"],'qc_input.json'), qc_input)
+    ju.write(os.path.join(cell_dir,'qc_input.json'), qc_input)
 
     qc_output = run_qc(qc_input.get("stimulus_ontology_file",None),
                        qc_input["cell_features"],
                        qc_input["sweep_features"],
                        qc_input["qc_criteria"])
-    ju.write(os.path.join(module.args["cell_dir"],'qc_output.json'), qc_output)
+    ju.write(os.path.join(cell_dir,'qc_output.json'), qc_output)
 
     manual_sweep_states = []
     assign_sweep_states(manual_sweep_states,
@@ -84,10 +88,11 @@ def main():
 
     fx_input = generate_fx_input(se_input,
                                  se_output,
-                                 module.args,
-                                 plot_figures=True)
+                                 cell_dir,
+                                 plot_figures=True
+                                 )
 
-    ju.write(os.path.join(module.args["cell_dir"],'fx_input.json'), fx_input)
+    ju.write(os.path.join(cell_dir,'fx_input.json'), fx_input)
 
 if __name__=="__main__": main()
 
