@@ -26,6 +26,20 @@ The optional parameter `--filename` gives the name of the output file, and
 `--idChannelMapping` makes the connection between the names of the AD channels
 and the amplifier names.
 
+If you prefer to pass in a valid JSON file instead of giving these on the commandline use
+```sh
+mcc_get_settings.py --filename 2018_09_12_0003.json --idChannelMappingFromFile idChannelMapping.json
+```
+
+where `idChannelMapping.json` has the following format:
+
+```json
+{
+  "IN0": "x00830251_1",
+  "IN1": "x00830251_2"
+}
+```
+
 For converting an ABF file to NWB, we expect either one JSON file per ABF file
 when converting single files, or one JSON file per directory when converting
 whole directories. The JSON files must reside in the same directory as the ABF

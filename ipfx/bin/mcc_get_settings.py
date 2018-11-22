@@ -1008,11 +1008,40 @@ class MultiClampControl:
         self.aDLL.MCCMSG_QuickSelectButton(self.hMCCmsg, uValue, self._pnError)
         return self._handleError()
 
+def getChannelMapping(idChannelMapping, idChannelMappingFromFile):
+
+    if idChannelMapping:
+
+        uids = {}
+        for x in idChannelMapping:
+            entry = json.loads(x)
+
+            if len(entry) != 1:
+                raise ValueError("Unexpected ADC name/amplifier mapping construct.")
+
+            for k, v in entry.items():
+                uids[k] = v
+
+        return uids
+
+    elif idChannelMappingFromFile:
+
+        if not os.path.isfile(idChannelMappingFromFile):
+            raise ValueError("The parameter idChannelMappingFromFile requires an existing file in JSON format")
+
+        with open(idChannelMappingFromFile) as f:
+            return json.load(f)
+    else:
+        return None
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--filename", type=str, help="Name of the generated JSON file", default="mcc-output.json")
-    parser.add_argument("--idChannelMapping", type=str, nargs="+", help="JSON formatted pairs with the ADC name <-> Amplifier mapping.", default=None)
+    exclusiveGroup = parser.add_mutually_exclusive_group()
+    exclusiveGroup.add_argument("--idChannelMapping", type=str, nargs="+",
+                                help="JSON formatted pairs with the ADC name <-> Amplifier mapping.", default=None)
+    exclusiveGroup.add_argument("--idChannelMappingFromFile", type=str,
+                                help="Same as idChannelMapping but the JSON text is read from a file.", default=None)
 
     args = parser.parse_args()
 
@@ -1021,19 +1050,14 @@ def main():
         data = d.getData(mcc)
         data["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
 
-        if args.idChannelMapping:
-            uids = {}
-            for x in args.idChannelMapping:
-                d = json.loads(x)
+        uids = getChannelMapping(args.idChannelMapping, args.idChannelMappingFromFile)
 
-                if len(d) != 1:
-                    raise ValueError("Unexpected ADC name/amplifier mapping construct.")
+        print(f"ADC name <-> Amplifier mapping: {uids}")
 
-                for k, v in d.items():
-                    if not data.get(v):
-                        raise ValueError(f"Amplifier named {v} does not exist.")
-
-                    uids[k] = v
+        if uids:
+            for k, v in uids.items():
+                if not data.get(v):
+                    raise ValueError(f"Amplifier named {v} does not exist.")
 
             data["uids"] = uids
 
