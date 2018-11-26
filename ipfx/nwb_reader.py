@@ -3,6 +3,15 @@ import numpy as np
 import ipfx.stim_features as st
 
 
+def get_long_unit_name(unit):
+    if unit.startswith('A'):
+        return "Amps"
+    elif unit.startswith('V'):
+        return "Volts"
+    else:
+        raise ValueError("Unit {} not recognized from TimeSeries".format(unit))
+
+
 class NwbReader(object):
 
     def __init__(self, nwb_file):
@@ -124,13 +133,7 @@ class NwbPipelineReader(NwbReader):
             if 'unit' in stimulus_dataset.attrs:
                 unit = stimulus_dataset.attrs["unit"].decode('UTF-8')
 
-                unit_str = None
-                if unit.startswith('A'):
-                    unit_str = "Amps"
-                elif unit.startswith('V'):
-                    unit_str = "Volts"
-                assert unit_str is not None, Exception(
-                    "Stimulus time series unit not recognized")
+                unit_str = get_long_unit_name(unit)
             else:
                 unit = None
                 unit_str = 'Unknown'
