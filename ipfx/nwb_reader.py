@@ -1,5 +1,12 @@
+import re
+import json
+
 import h5py
 import numpy as np
+from pynwb import NWBHDF5IO
+from pynwb.icephys import (CurrentClampSeries, CurrentClampStimulusSeries, VoltageClampSeries,
+                           VoltageClampStimulusSeries, IZeroClampSeries)
+
 import ipfx.stim_features as st
 
 
@@ -22,6 +29,9 @@ class NwbReader(object):
         if self.nwb_major_version == 1:
             self.acquisition_path = "acquisition/timeseries"
             self.stimulus_path = "stimulus/timeseries"
+        elif self.nwb_major_version == 2:
+            self.acquisition_path = "acquisition"
+            self.stimulus_path = "stimulus"
         else:
             raise ValueError("Unsupported NWB major version {}.".format(
                              nwb_major_version))
@@ -79,6 +89,110 @@ class NwbReader(object):
             minor = 0
             major = 0
         return major, minor
+
+
+class NwbXReader(NwbReader):
+    """
+    Read data from NWB v2 files created by run_x_to_nwb_conversion.py from
+    ABF/DAT files.
+    """
+
+    def __init__(self, nwb_file):
+        NwbReader.__init__(self, nwb_file, nwb_major_version=2)
+
+    def get_sweep_number(self, sweep_name):
+        return self.get_sweep_attrs(sweep_name)["sweep_number"]
+
+    def get_stim_code(self, sweep_name):
+        return self.get_sweep_attrs(sweep_name)["stimulus_description"]
+
+    def get_sweep_data(self, sweep_number):
+        """
+        Parameters
+        ----------
+        sweep_number: int
+        """
+
+        if not isinstance(sweep_number, (int, np.uint64)):
+            raise ValueError("sweep_number must be an integer")
+
+        def getRawDataSourceType(experiment_description):
+            """
+            Return the original file format of the NWB file
+            """
+
+            d = {"abf": False, "dat": False, "unknown": False}
+
+            if experiment_description.startswith("PatchMaster"):
+                d["dat"] = True
+            elif experiment_description.startswith("Clampex"):
+                d["abf"] = True
+            else:
+                d["unknown"] = True
+
+            return d
+
+        with NWBHDF5IO(self.nwb_file, mode='r') as io:
+            nwb = io.read()
+
+            rawDataSourceType = getRawDataSourceType(nwb.experiment_description)
+            assert not rawDataSourceType["unknown"], "Can handle data from this raw data source"
+
+            series = nwb.sweep_table.get_series(sweep_number)
+
+            if series is None:
+                raise ValueError("No TimeSeries found for sweep number {}.".format(sweep_number))
+
+            # we need one "*ClampStimulusSeries" and one "*ClampSeries"
+
+            response = None
+            stimulus = None
+
+            for s in series:
+
+                # ABF: Two channels, only the first has valid data
+                # DAT: One channel
+                if rawDataSourceType["abf"]:
+                    description = json.loads(s.description)
+                    channel_number = description['number']
+
+                    if channel_number not in (1, 5):
+                        raise ValueError("Unexpected channel number {} for TimeSeries {}.".format(channel_number, s))
+                    elif channel_number == 5:
+                        # this is the channel were the feedback stimulus is recorded
+                        # TODO maybe we need a better way to find that channel??
+                        continue
+
+                if isinstance(s, (VoltageClampSeries, CurrentClampSeries, IZeroClampSeries)):
+                    if response is not None:
+                        raise ValueError("Found multiple response TimeSeries in NWB file for sweep number {}.".format(sweep_number))
+
+                    response = s.data[:] * float(s.conversion)
+                elif isinstance(s, (VoltageClampStimulusSeries, CurrentClampStimulusSeries)):
+                    if stimulus is not None:
+                        raise ValueError("Found multiple stimulus TimeSeries in NWB file for sweep number {}.".format(sweep_number))
+
+                    stimulus = s.data[:] * float(s.conversion)
+                    stimulus_unit = get_long_unit_name(s.unit)
+                    stimulus_rate = float(s.rate)
+                    stimulus_index_range = (0, int(s.num_samples - 1))
+                else:
+                    raise ValueError("Unexpected TimeSeries {}.".format(type(s)))
+
+            if stimulus is None:
+                raise ValueError("Could not find one stimulus TimeSeries for sweep number {}.".format(sweep_number))
+            elif response is None:
+                raise ValueError("Could not find one response TimeSeries for sweep number {}.".format(sweep_number))
+
+            assert len(stimulus) == len(response), "Stimulus and response have a different length."
+
+            return {
+                'stimulus': stimulus,
+                'response': response,
+                'stimulus_unit': stimulus_unit,
+                'index_range': stimulus_index_range,
+                'sampling_rate': stimulus_rate
+            }
 
 
 class NwbPipelineReader(NwbReader):
@@ -326,7 +440,9 @@ def create_nwb_reader(nwb_file):
 
     nwb_version = get_nwb_version(nwb_file)
 
-    if nwb_version["major"] == 1:
+    if nwb_version["major"] == 2:
+        return NwbXReader(nwb_file)
+    elif nwb_version["major"] == 1:
         with h5py.File(nwb_file, 'r') as f:
 
             sweep_names = [e for e in f["acquisition/timeseries"].keys()]
