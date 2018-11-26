@@ -14,9 +14,17 @@ def get_long_unit_name(unit):
 
 class NwbReader(object):
 
-    def __init__(self, nwb_file):
+    def __init__(self, nwb_file, nwb_major_version):
 
         self.nwb_file = nwb_file
+        self.nwb_major_version = nwb_major_version
+
+        if self.nwb_major_version == 1:
+            self.acquisition_path = "acquisition/timeseries"
+            self.stimulus_path = "stimulus/timeseries"
+        else:
+            raise ValueError("Unsupported NWB major version {}.".format(
+                             nwb_major_version))
 
     def get_sweep_data(self):
         raise NotImplementedError
@@ -30,7 +38,7 @@ class NwbReader(object):
     def get_sweep_attrs(self, sweep_name):
 
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_ts = f["acquisition/timeseries"][sweep_name]
+            sweep_ts = f[self.acquisition_path][sweep_name]
             attrs = dict(sweep_ts.attrs)
 
         return attrs
@@ -38,7 +46,7 @@ class NwbReader(object):
     def get_sweep_names(self):
 
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_names = [e for e in f["acquisition/timeseries"].keys()]
+            sweep_names = [e for e in f[self.acquisition_path].keys()]
 
         return sweep_names
 
@@ -80,7 +88,7 @@ class NwbPipelineReader(NwbReader):
     """
 
     def __init__(self, nwb_file):
-        NwbReader.__init__(self, nwb_file)
+        NwbReader.__init__(self, nwb_file, nwb_major_version=1)
 
     def get_sweep_data(self, sweep_number):
         """
@@ -194,7 +202,7 @@ class NwbPipelineReader(NwbReader):
 
         with h5py.File(self.nwb_file, 'r') as f:
 
-            sweep_ts = f["acquisition/timeseries"][sweep_name]
+            sweep_ts = f[self.acquisition_path][sweep_name]
             # look for the stimulus description
             if stimulus_description in sweep_ts.keys():
                 stim_code_raw = sweep_ts[stimulus_description].value
@@ -216,17 +224,17 @@ class NwbMiesReader(NwbReader):
     """
 
     def __init__(self, nwb_file):
-        NwbReader.__init__(self, nwb_file)
+        NwbReader.__init__(self, nwb_file, nwb_major_version=1)
 
     def get_sweep_data(self, sweep_number):
 
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_response = f['acquisition']['timeseries']["data_%05d_AD0" %
-                                                            sweep_number]
+            sweep_response = f[self.acquisition_path]["data_%05d_AD0" %
+                                                      sweep_number]
             response = sweep_response["data"].value
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
-            sweep_stimulus = f['stimulus']['presentation']["data_%05d_DA0" %
-                                                           sweep_number]
+            sweep_stimulus = f[self.stimulus_path]["data_%05d_DA0" %
+                                                   sweep_number]
             stimulus = sweep_stimulus["data"].value
 
             if 'unit' in sweep_stimulus["data"].attrs:
@@ -268,7 +276,7 @@ class NwbMiesReader(NwbReader):
 
         with h5py.File(self.nwb_file, 'r') as f:
 
-            sweep_ts = f["acquisition/timeseries"][sweep_name]
+            sweep_ts = f[self.acquisition_path][sweep_name]
             # look for the stimulus description
             if stimulus_description in sweep_ts.keys():
                 stim_code_raw = sweep_ts[stimulus_description].value
@@ -284,6 +292,26 @@ class NwbMiesReader(NwbReader):
         return stim_code
 
 
+def get_nwb_version(nwb_file):
+    """
+    Return a dict with `major` and `full` NWB version as read from the NWB
+    file.
+    """
+
+    with h5py.File(nwb_file, 'r') as f:
+        # In v1 this is a dataset
+        nwb_version = f["/"].get("nwb_version")
+        if nwb_version is not None and re.match("^1", nwb_version):
+            return {"major": 1, "full": nwb_version}
+
+        # but in V2 this is an attribute
+        nwb_version = f["/"].attrs.get("nwb_version")
+        if nwb_version is not None and re.match("^2", nwb_version):
+            return {"major": 2, "full": nwb_version}
+
+    return {"major": None, "full": None}
+
+
 def create_nwb_reader(nwb_file):
     """Create an appropriate reader of the nwb_file
 
@@ -296,13 +324,20 @@ def create_nwb_reader(nwb_file):
     reader object
     """
 
-    with h5py.File(nwb_file, 'r') as f:
-        sweep_names = [e for e in f["acquisition/timeseries"].keys()]
-        sweep_naming_convention = sweep_names[0].split('_')[0]
+    nwb_version = get_nwb_version(nwb_file)
 
-    if sweep_naming_convention == "data":
-        return NwbMiesReader(nwb_file)
-    elif sweep_naming_convention == "Sweep":
-        return NwbPipelineReader(nwb_file)
+    if nwb_version["major"] == 1:
+        with h5py.File(nwb_file, 'r') as f:
+
+            sweep_names = [e for e in f["acquisition/timeseries"].keys()]
+            sweep_naming_convention = sweep_names[0].split('_')[0]
+
+        if sweep_naming_convention == "data":
+                return NwbMiesReader(nwb_file)
+        elif sweep_naming_convention == "Sweep":
+                return NwbPipelineReader(nwb_file)
+        else:
+            raise ValueError("Unknown sweep naming convention")
     else:
-        raise ValueError("Unknown sweep naming convention")
+        raise ValueError("Unsupported or unknown NWB major" +
+                         "version {} ({})".format(nwb_version["major"], nwb_version["full"]))
