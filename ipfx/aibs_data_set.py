@@ -163,7 +163,7 @@ class AibsDataSet(EphysDataSet):
                           clamp_mode=clamp_mode
                           )
 
-        except Exception as e:
+        except Exception:
             logging.warning("Error reading sweep %d" % sweep_number)
             raise
 
