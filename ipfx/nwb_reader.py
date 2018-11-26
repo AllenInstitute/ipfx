@@ -24,6 +24,9 @@ class NwbReader(object):
     def get_sweep_number(self):
         raise NotImplementedError
 
+    def get_stim_code(self, sweep_name):
+        raise NotImplementedError
+
     def get_sweep_attrs(self, sweep_name):
 
         with h5py.File(self.nwb_file, 'r') as f:
