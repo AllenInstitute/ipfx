@@ -104,15 +104,6 @@ class AibsDataSet(EphysDataSet):
 
         return sweep_props
 
-    def modify_api_sweep_info(self, sweep_list):
-        return [{AibsDataSet.SWEEP_NUMBER: s['sweep_number'],
-                 AibsDataSet.STIMULUS_UNITS: s['stimulus_units'],
-                 AibsDataSet.STIMULUS_AMPLITUDE: s['stimulus_absolute_amplitude'],
-                 AibsDataSet.STIMULUS_CODE: re.sub(r"\[\d+\]", "", s['stimulus_description']),
-                 AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
-                 AibsDataSet.PASSED: True,
-                   } for s in sweep_list]
-
     def sweep(self, sweep_number):
         """
         Create an instance of the Sweep object from a data set sweep
