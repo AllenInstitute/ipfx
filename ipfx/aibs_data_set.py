@@ -16,7 +16,8 @@ class AibsDataSet(EphysDataSet):
         self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
 
         if sweep_info is not None:
-            sweep_info = self.modify_api_sweep_info(sweep_info) if api_sweeps else sweep_info
+            sweep_info = self.modify_api_sweep_info(
+                sweep_info) if api_sweeps else sweep_info
         else:
             sweep_info = self.extract_sweep_meta_data()
 
@@ -32,7 +33,8 @@ class AibsDataSet(EphysDataSet):
         """
         logging.debug("Build sweep table")
 
-        notebook = lab_notebook_reader.create_lab_notebook_reader(self.nwb_file, self.h5_file)
+        notebook = lab_notebook_reader.create_lab_notebook_reader(
+            self.nwb_file, self.h5_file)
 
         sweep_props = []
         # use same output strategy as h5-nwb converter
@@ -50,7 +52,8 @@ class AibsDataSet(EphysDataSet):
                 stim_code = notebook.get_value("Stim Wave Name", sweep_num, "")
                 logging.debug("Reading stim_code from Labnotebook")
                 if len(stim_code) == 0:
-                    raise Exception("Could not read stimulus wave name from lab notebook")
+                    raise Exception(
+                        "Could not read stimulus wave name from lab notebook")
 
             # stim units are based on timeseries type
             if "CurrentClamp" in ancestry[-1]:
@@ -63,20 +66,24 @@ class AibsDataSet(EphysDataSet):
                 # it's probably OK to skip this sweep and put a 'continue'
                 #   here instead of an exception, but wait until there's
                 #   an actual error and investigate the data before doing so
-                raise Exception("Unable to determine clamp mode in " + sweep_name)
+                raise Exception(
+                    "Unable to determine clamp mode in " + sweep_name)
 
             # bridge balance
-            bridge_balance = notebook.get_value("Bridge Bal Value", sweep_num, None)
+            bridge_balance = notebook.get_value(
+                "Bridge Bal Value", sweep_num, None)
             sweep_record["bridge_balance_mohm"] = bridge_balance
 
             # leak_pa (bias current)
-            bias_current = notebook.get_value("I-Clamp Holding Level", sweep_num, None)
+            bias_current = notebook.get_value(
+                "I-Clamp Holding Level", sweep_num, None)
             sweep_record["leak_pa"] = bias_current
 
             # ephys stim info
             scale_factor = notebook.get_value("Scale Factor", sweep_num, None)
             if scale_factor is None:
-                raise Exception("Unable to read scale factor for " + sweep_name)
+                raise Exception(
+                    "Unable to read scale factor for " + sweep_name)
 
             sweep_record["stimulus_scale_factor"] = scale_factor
 
@@ -92,18 +99,19 @@ class AibsDataSet(EphysDataSet):
                 stim = self.ontology.find_one(stim_code, tag_type='code')
                 sweep_record["stimulus_name"] = stim.tags(tag_type='name')[0][-1]
 
+
             sweep_props.append(sweep_record)
 
         return sweep_props
 
     def modify_api_sweep_info(self, sweep_list):
-        return [ { AibsDataSet.SWEEP_NUMBER: s['sweep_number'],
-                   AibsDataSet.STIMULUS_UNITS: s['stimulus_units'],
-                   AibsDataSet.STIMULUS_AMPLITUDE: s['stimulus_absolute_amplitude'],
-                   AibsDataSet.STIMULUS_CODE: re.sub("\[\d+\]", "", s['stimulus_description']),
-                   AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
-                   AibsDataSet.PASSED: True,
-                   } for s in sweep_list ]
+        return [{AibsDataSet.SWEEP_NUMBER: s['sweep_number'],
+                 AibsDataSet.STIMULUS_UNITS: s['stimulus_units'],
+                 AibsDataSet.STIMULUS_AMPLITUDE: s['stimulus_absolute_amplitude'],
+                 AibsDataSet.STIMULUS_CODE: re.sub("\[\d+\]", "", s['stimulus_description']),
+                 AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
+                 AibsDataSet.PASSED: True,
+                   } for s in sweep_list]
 
     def sweep(self, sweep_number):
         """
@@ -126,14 +134,15 @@ class AibsDataSet(EphysDataSet):
 
         start_ix, end_ix = sweep_data['index_range']
 
-        t = np.arange(0,end_ix+1)*dt - start_ix*dt
+        t = np.arange(0, end_ix+1)*dt - start_ix*dt
 
         response = sweep_data['response'][0:end_ix+1]
         stimulus = sweep_data['stimulus'][0:end_ix+1]
 
         clamp_mode = sweep_info.get('clamp_mode', None)
         if clamp_mode is None:
-            clamp_mode = "CurrentClamp" if sweep_info['stimulus_units'] in self.ontology.current_clamp_units else "VoltageClamp"
+            clamp_mode = "CurrentClamp" if sweep_info[
+                'stimulus_units'] in self.ontology.current_clamp_units else "VoltageClamp"
 
         if clamp_mode == "VoltageClamp":  # voltage clamp
             v = stimulus
@@ -145,15 +154,14 @@ class AibsDataSet(EphysDataSet):
             raise ValueError("Incorrect stimulus unit")
 
         try:
-            sweep = Sweep(t = t,
-                          v = v,
-                          i = i,
-                          sampling_rate = sweep_data['sampling_rate'],
-                          expt_idx_range = sweep_data['index_range'],
-                          sweep_number = sweep_number,
-                          clamp_mode = clamp_mode
+            sweep = Sweep(t=t,
+                          v=v,
+                          i=i,
+                          sampling_rate=sweep_data['sampling_rate'],
+                          expt_idx_range=sweep_data['index_range'],
+                          sweep_number=sweep_number,
+                          clamp_mode=clamp_mode
                           )
-
 
         except Exception as e:
             logging.warning("Error reading sweep %d" % sweep_number)
