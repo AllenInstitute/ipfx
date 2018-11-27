@@ -51,6 +51,13 @@ class NwbReader(object):
             sweep_ts = f[self.acquisition_path][sweep_name]
             attrs = dict(sweep_ts.attrs)
 
+            if self.nwb_major_version == 2:
+                for entry in sweep_ts.keys():
+                    if entry in ("data", "electrode"):
+                        continue
+
+                    attrs[entry] = sweep_ts[entry].value
+
         return attrs
 
     def get_sweep_names(self):
