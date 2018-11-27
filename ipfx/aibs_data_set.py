@@ -10,9 +10,11 @@ import ipfx.nwb_reader as nwb_reader
 class AibsDataSet(EphysDataSet):
     def __init__(self, sweep_info=None, nwb_file=None, h5_file=None, ontology=None, api_sweeps=True):
         super(AibsDataSet, self).__init__(ontology)
-        self.nwb_file = nwb_file
-        self.h5_file = h5_file
+
         self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
+
+        if nwb_file and h5_file:
+            self.notebook = lab_notebook_reader.create_lab_notebook_reader(nwb_file, h5_file)
 
         if sweep_info is not None:
             sweep_info = self.modify_api_sweep_info(
@@ -32,9 +34,6 @@ class AibsDataSet(EphysDataSet):
         """
         logging.debug("Build sweep table")
 
-        notebook = lab_notebook_reader.create_lab_notebook_reader(
-            self.nwb_file, self.h5_file)
-
         sweep_props = []
         # use same output strategy as h5-nwb converter
         # pick the sampling rate from the first iclamp sweep
@@ -48,7 +47,7 @@ class AibsDataSet(EphysDataSet):
             sweep_record['sweep_number'] = sweep_num
             stim_code = self.nwb_data.get_stim_code(sweep_name)
             if not stim_code:
-                stim_code = notebook.get_value("Stim Wave Name", sweep_num, "")
+                stim_code = self.notebook.get_value("Stim Wave Name", sweep_num, "")
                 logging.debug("Reading stim_code from Labnotebook")
                 if len(stim_code) == 0:
                     raise Exception(
@@ -69,17 +68,17 @@ class AibsDataSet(EphysDataSet):
                     "Unable to determine clamp mode in " + sweep_name)
 
             # bridge balance
-            bridge_balance = notebook.get_value(
+            bridge_balance = self.notebook.get_value(
                 "Bridge Bal Value", sweep_num, None)
             sweep_record["bridge_balance_mohm"] = bridge_balance
 
             # leak_pa (bias current)
-            bias_current = notebook.get_value(
+            bias_current = self.notebook.get_value(
                 "I-Clamp Holding Level", sweep_num, None)
             sweep_record["leak_pa"] = bias_current
 
             # ephys stim info
-            scale_factor = notebook.get_value("Scale Factor", sweep_num, None)
+            scale_factor = self.notebook.get_value("Scale Factor", sweep_num, None)
             if scale_factor is None:
                 raise Exception(
                     "Unable to read scale factor for " + sweep_name)
@@ -87,7 +86,7 @@ class AibsDataSet(EphysDataSet):
             sweep_record["stimulus_scale_factor"] = scale_factor
 
             # PBS-229 change stim name by appending set_sweep_count
-            cnt = notebook.get_value("Set Sweep Count", sweep_num, 0)
+            cnt = self.notebook.get_value("Set Sweep Count", sweep_num, 0)
             stim_code_ext = stim_code + "[%d]" % int(cnt)
 
             sweep_record["stimulus_code_ext"] = stim_code_ext
