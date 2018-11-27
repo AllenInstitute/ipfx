@@ -102,6 +102,16 @@ class EphysDataSet(object):
     def aligned_sweeps(self, sweep_numbers, stim_onset_delta):
         raise NotImplementedError
 
+    def extract_sweep_meta_data(self):
+        """
+        Returns
+        -------
+        sweep_props: list of dicts
+            where each dict includes sweep properties
+        """
+
+        raise NotImplementedError
+
 
 class Sweep(object):
     def __init__(self, t, v, i, expt_idx_range, sampling_rate=None, sweep_number=None, clamp_mode=None):

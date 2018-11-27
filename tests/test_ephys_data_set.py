@@ -95,3 +95,9 @@ def test_aligned_sweeps_raises():
     with pytest.raises(NotImplementedError):
         ds = get_dataset()
         ds.aligned_sweeps([5], 0.0)
+
+
+def test_extract_sweep_meta_data_raises():
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.extract_sweep_meta_data()
