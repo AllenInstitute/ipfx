@@ -2,6 +2,7 @@ import pandas as pd
 import logging
 
 from .ephys_data_set import EphysDataSet
+
 import ipfx.lab_notebook_reader as lab_notebook_reader
 import ipfx.nwb_reader as nwb_reader
 
@@ -93,10 +94,7 @@ class AibsDataSet(EphysDataSet):
             sweep_record["stimulus_code"] = stim_code
 
             if self.ontology:
-                # make sure we can find all of our stimuli in the ontology
-                stim = self.ontology.find_one(stim_code, tag_type='code')
-                sweep_record["stimulus_name"] = stim.tags(tag_type='name')[0][-1]
-
+                sweep_record["stimulus_name"] = self.get_stimulus_name(stim_code)
 
             sweep_props.append(sweep_record)
 

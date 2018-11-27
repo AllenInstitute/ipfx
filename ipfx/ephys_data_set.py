@@ -191,6 +191,14 @@ class EphysDataSet(object):
         """
         raise NotImplementedError
 
+    def get_stimulus_name(self, stim_code):
+
+        if not self.ontology:
+            raise ValueError("Missing stimulus ontology")
+
+        stim = self.ontology.find_one(stim_code, tag_type="code")
+        return stim.tags(tag_type="name")[0][-1]
+
 
 class Sweep(object):
     def __init__(self, t, v, i, expt_idx_range, sampling_rate=None, sweep_number=None, clamp_mode=None):
