@@ -1,7 +1,7 @@
 OUTPUT_DIR=/local1/ephys/ivscc/testspecimens
 SPECIMEN_ID=$1
 
-CELL_NAME = $SPECIMEN_ID
+CELL_NAME=$SPECIMEN_ID
 CELL_DIR=$OUTPUT_DIR/$CELL_NAME
 INPUT_JSON=$CELL_DIR/pipeline_input.json
 OUTPUT_JSON=$CELL_DIR/pipeline_output.json

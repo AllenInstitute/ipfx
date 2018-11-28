@@ -19,7 +19,6 @@ FX_INPUT_FEATURE = [
                     "bridge_balance_mohm",
                     "leak_pa",
                     "passed",
-                    "truncated",
                     "pre_vm_mv"
                     ]
 

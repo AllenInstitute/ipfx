@@ -11,7 +11,6 @@ class EphysDataSet(object):
     SWEEP_NUMBER = 'sweep_number'
     PASSED = 'passed'
     CLAMP_MODE = 'clamp_mode'
-    TRUNCATED = 'truncated'
 
     LONG_SQUARE = 'long_square'
     COARSE_LONG_SQUARE = 'coarse_long_square'
@@ -29,7 +28,6 @@ class EphysDataSet(object):
                              stimuli=None,
                              exclude_search=False,
                              exclude_test=False,
-                             exclude_truncated=False,
                              ):
 
         st = self.sweep_table
@@ -50,10 +48,6 @@ class EphysDataSet(object):
 
         if exclude_test:
             mask = ~st[self.STIMULUS_NAME].isin(self.ontology.test_names)
-            st = st[mask]
-
-        if exclude_truncated:
-            mask = ~(st["truncated"] == True)
             st = st[mask]
 
         return st
