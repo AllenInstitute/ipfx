@@ -3,9 +3,6 @@ from . import error as er
 import logging
 import numpy as np
 
-POST_STIM_STABILITY_INTERVAL = 0.5
-LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
-
 
 def measure_blowout(v, idx0):
 
@@ -192,7 +189,7 @@ def cell_qc_features(data_set, manual_values=None):
         # look for manual seal value and use it if it's available
         seal_gohm = manual_values.get('manual_seal_gohm', None)
         if seal_gohm is not None:
-            logging.info("using manual seal value: %f" % seal)
+            logging.info("using manual seal value: %f" % seal_gohm)
             tag_list.append("Seal set using manual value")
     output_data["seal_gohm"] = seal_gohm
 
@@ -287,7 +284,7 @@ def sweep_qc_features(data_set):
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
                                                   exclude_test=True,
                                                   exclude_search=True,
-                                                  exclude_truncated=True)
+                                                  )
     if len(iclamp_sweeps.index)==0:
         raise ValueError("No current clamp sweeps available for QC.")
 
@@ -295,74 +292,99 @@ def sweep_qc_features(data_set):
         sweep_num = sweep_info['sweep_number']
         sweep_data = data_set.sweep(sweep_num)
 
-        sweep = {}
+        if sweep_completed(sweep_data.i, sweep_data.v, sweep_data.sampling_rate):
 
-        voltage = sweep_data.v
-        current = sweep_data.i
-        t = sweep_data.t
-        hz = sweep_data.sampling_rate
-        expt_start_idx, expt_end_idx = sweep_data.expt_idx_range
-
-        # measure Vm and noise before stimulus
-        idx0, idx1 = stf.get_first_vm_noise_epoch(expt_start_idx, hz) # count from the beginning of the experiment
-
-        _, rms0 = measure_vm(voltage[idx0:idx1])
-
-        sweep["pre_noise_rms_mv"] = float(rms0)
-
-        # measure Vm and noise at end of recording
-        # only do so if acquisition not truncated
-        # do not check for ramps, because they do not have enough time to recover
-        mean_last_vm_epoch = None
-
-        is_ramp = sweep_info['stimulus_name'] in ontology.ramp_names
-
-        if not is_ramp:
-            idx0, idx1 = stf.get_last_vm_epoch(expt_end_idx, hz)
-            mean_last_vm_epoch, _ = measure_vm(voltage[idx0:idx1])
-            idx0, idx1 = stf.get_last_vm_noise_epoch(expt_end_idx, hz)
-            _, rms1 = measure_vm(voltage[idx0:idx1])
-            sweep["post_vm_mv"] = float(mean_last_vm_epoch)
-            sweep["post_noise_rms_mv"] = float(rms1)
-        else:
-            sweep["post_noise_rms_mv"] = None
-
-        # measure Vm and noise over extended interval, to check stability
-
-        stim_start_ix = stf.find_stim_start(current, expt_start_idx)
-        sweep['stimulus_start_time'] = t[stim_start_ix]
-        idx0, idx1 = stf.get_stability_vm_epoch(stim_start_ix, hz)
-        mean2, rms2 = measure_vm(voltage[idx0:idx1])
-
-        sweep["slow_vm_mv"] = float(mean2)
-        sweep["slow_noise_rms_mv"] = float(rms2)
-
-        # for now (mid-feb 15), make vm_mv the same for pre and slow
-        mean0 = mean2
-        sweep["pre_vm_mv"] = float(mean0)
-
-        if mean_last_vm_epoch is not None:
-            delta = abs(mean0 - mean_last_vm_epoch)
-            sweep["vm_delta_mv"] = float(delta)
-        else:
-            # Use None as 'nan' still breaks the ruby strategies
-            sweep["vm_delta_mv"] = None
-
-        # compute stimulus duration, amplitude, interval
-        stim_amp, stim_dur = stf.find_stim_amplitude_and_duration(expt_start_idx, current, hz)
-        stim_int = stf.find_stim_interval(expt_start_idx, current, hz)
-
-        sweep['stimulus_amplitude'] = stim_amp
-        sweep['stimulus_duration'] = stim_dur
-        sweep['stimulus_interval'] = stim_int
-
-        sweep.update(sweep_info)
-
-        sweep_features.append(sweep)
+            sweep = current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology)
+            sweep.update(sweep_info)
+            sweep_features.append(sweep)
 
     return sweep_features
 
 
+def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
+
+
+    sweep = {}
+
+    voltage = sweep_data.v
+    current = sweep_data.i
+    t = sweep_data.t
+    hz = sweep_data.sampling_rate
+    expt_start_idx, expt_end_idx = sweep_data.expt_idx_range
+
+    # measure Vm and noise before stimulus
+    idx0, idx1 = stf.get_first_vm_noise_epoch(expt_start_idx, hz)  # count from the beginning of the experiment
+
+    _, rms0 = measure_vm(voltage[idx0:idx1])
+
+    sweep["pre_noise_rms_mv"] = float(rms0)
+
+    # measure Vm and noise at end of recording
+    # do not check for ramps, because they do not have enough time to recover
+    mean_last_vm_epoch = None
+
+    is_ramp = sweep_info['stimulus_name'] in ontology.ramp_names
+
+    if not is_ramp:
+        idx0, idx1 = stf.get_last_vm_epoch(expt_end_idx, hz)
+        mean_last_vm_epoch, _ = measure_vm(voltage[idx0:idx1])
+        idx0, idx1 = stf.get_last_vm_noise_epoch(expt_end_idx, hz)
+        _, rms1 = measure_vm(voltage[idx0:idx1])
+        sweep["post_vm_mv"] = float(mean_last_vm_epoch)
+        sweep["post_noise_rms_mv"] = float(rms1)
+    else:
+        sweep["post_noise_rms_mv"] = None
+
+    # measure Vm and noise over extended interval, to check stability
+
+    stim_start_ix = stf.find_stim_start(current, expt_start_idx)
+    sweep['stimulus_start_time'] = t[stim_start_ix]
+    idx0, idx1 = stf.get_stability_vm_epoch(stim_start_ix, hz)
+    mean2, rms2 = measure_vm(voltage[idx0:idx1])
+
+    sweep["slow_vm_mv"] = float(mean2)
+    sweep["slow_noise_rms_mv"] = float(rms2)
+
+    # for now (mid-feb 15), make vm_mv the same for pre and slow
+    mean0 = mean2
+    sweep["pre_vm_mv"] = float(mean0)
+
+    if mean_last_vm_epoch is not None:
+        delta = abs(mean0 - mean_last_vm_epoch)
+        sweep["vm_delta_mv"] = float(delta)
+    else:
+        # Use None as 'nan' still breaks the ruby strategies
+        sweep["vm_delta_mv"] = None
+
+    # compute stimulus duration, amplitude, interval
+    stim_amp, stim_dur = stf.find_stim_amplitude_and_duration(expt_start_idx, current, hz)
+    stim_int = stf.find_stim_interval(expt_start_idx, current, hz)
+
+    sweep['stimulus_amplitude'] = stim_amp
+    sweep['stimulus_duration'] = stim_dur
+    sweep['stimulus_interval'] = stim_int
+
+    return sweep
+
+def sweep_completed(i,v,hz):
+
+    POSTSTIM_STABILITY_EPOCH = 0.5
+    LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
+
+    stimulus_end_ix = np.nonzero(i)[0][-1]  # last non-zero index along the only dimension=0
+    response_end_ix = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0
+
+    post_stim_response_duration = (response_end_ix - stimulus_end_ix) / hz
+    completed_expt_epoch = post_stim_response_duration > POSTSTIM_STABILITY_EPOCH
+
+    long_response = response_end_ix/hz>LONG_RESPONSE_DURATION
+
+    if completed_expt_epoch or long_response:
+        sweep_completion = True
+    else:
+        sweep_completion = False
+
+    return sweep_completion
 
 
 

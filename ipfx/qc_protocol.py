@@ -36,6 +36,14 @@ def qc_experiment(ontology, cell_features, sweep_features, qc_criteria=None):
         qc_criteria = load_default_qc_criteria()
 
     cell_state = qc_cell(cell_features, qc_criteria)
+
+    sweep_states = qc_sweeps(ontology,sweep_features,qc_criteria)
+
+    return cell_state, sweep_states
+
+
+def qc_sweeps(ontology,sweep_features,qc_criteria):
+
     sweep_states = []
 
     for sweep in sweep_features:
@@ -46,7 +54,7 @@ def qc_experiment(ontology, cell_features, sweep_features, qc_criteria=None):
             print (sweep_num, sweep["stimulus_name"], fail_tags)
         sweep_states.append(sweep_state)
 
-    return cell_state, sweep_states
+    return sweep_states
 
 
 def qc_cell(cell_data, qc_criteria=None):

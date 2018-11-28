@@ -49,7 +49,6 @@ def test_filtered_sweep_table():
     'stimulus_scale_factor':[10.0,0.5,0.5],
     'stimulus_units': ['pA','mV','mV'],
     'sweep_number': [49,5,6],
-    'truncated': [None,None,None]
     }
 
     df = pd.DataFrame(d)

@@ -115,7 +115,7 @@ class AibsDataSet(EphysDataSet):
                    AibsDataSet.STIMULUS_CODE: re.sub("\[\d+\]", "", s['stimulus_description']),
                    AibsDataSet.STIMULUS_NAME: s['stimulus_name'],
                    AibsDataSet.PASSED: True,
-                   AibsDataSet.TRUNCATED: None } for s in sweep_list ]
+                   } for s in sweep_list ]
 
     def sweep(self, sweep_number):
         """

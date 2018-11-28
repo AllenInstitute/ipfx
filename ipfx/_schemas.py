@@ -22,7 +22,6 @@ class CellFeatures(DefaultSchema):
 
 class FxSweepFeatures(SweepFeatures):
     passed = Boolean(description="qc passed or failed", required=True)
-    truncated = Boolean(description="truncated true or false", required=True)
 
 class QcSweepFeatures(SweepFeatures):
     pre_noise_rms_mv = Float(description="blah", required=True)
