@@ -5,7 +5,7 @@ from run_pipeline import run_pipeline
 import generate_pipeline_input as gpi
 import logging
 
-OUTPUT_DIR = "/local1/ephys/patchseq/tsts"
+OUTPUT_DIR = "/local1/ephys/tsts"
 
 INPUT_JSON = "pipeline_input.json"
 OUTPUT_JSON = "pipeline_output.json"
