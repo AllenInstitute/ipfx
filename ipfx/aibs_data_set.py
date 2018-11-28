@@ -6,7 +6,6 @@ import logging
 from .ephys_data_set import EphysDataSet, Sweep
 import ipfx.lab_notebook_reader as lab_notebook_reader
 import ipfx.nwb_reader as nwb_reader
-import ipfx.stim_features as st
 
 
 class AibsDataSet(EphysDataSet):
@@ -93,17 +92,6 @@ class AibsDataSet(EphysDataSet):
                 stim = self.ontology.find_one(stim_code, tag_type='code')
                 sweep_record["stimulus_name"] = stim.tags(tag_type='name')[0][-1]
 
-            if sweep_record["clamp_mode"] == 'CurrentClamp':
-                if sweep_record["stimulus_name"] not in (self.ontology.search_names+self.ontology.test_names):
-                    sweep_data = self.nwb_data.get_sweep_data(sweep_record["sweep_number"])
-
-                    i = sweep_data["stimulus"]
-                    v = sweep_data["response"]
-                    hz = sweep_data["sampling_rate"]
-
-                    sweep_record["truncated"] = st.sweep_truncation_check(i, v, hz)
-            else:
-                sweep_record["truncated"] = None
             sweep_props.append(sweep_record)
 
         return sweep_props

@@ -236,24 +236,6 @@ def get_stim_characteristics(i, t, no_test_pulse=False):
     return (stim_start, stim_dur, stim_amp, start_idx, end_idx)
 
 
-def sweep_truncation_check(i,v,hz):
-
-    stimulus_end_ix = np.nonzero(i)[0][-1]  # last non-zero index along the only dimension=0
-    response_end_ix = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0
-
-    post_stim_response_duration = (response_end_ix - stimulus_end_ix) / hz
-    completed_expt_epoch = post_stim_response_duration > POSTSTIM_STABILITY_EPOCH
-
-    long_response = response_end_ix/hz>LONG_RESPONSE_DURATION
-
-    if completed_expt_epoch or long_response:
-        sweep_truncated = False
-    else:
-        sweep_truncated = True
-
-    return sweep_truncated
-
-
 def _step_stim_amp(t, i, start):
     t_index = tsu.find_time_index(t, start)
     return i[t_index + 1]
