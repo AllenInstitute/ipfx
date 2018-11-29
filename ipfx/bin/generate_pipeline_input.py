@@ -68,24 +68,6 @@ def get_input_h5_file_from_lims(specimen_id):
     return h5_file_name
 
 
-def extract_sweep_features_subset(sweep_features, feature_names):
-    """
-
-    Parameters
-    ----------
-    sweep_features: list of dicts of sweep features
-    feature_names: list of features to select
-
-    Returns
-    -------
-    sweep_features_subset: list of dicts including only a subset of features from feature_names
-    """
-
-    sweep_features_subset = [{k: sf[k] for k in feature_names} for sf in sweep_features]
-
-    return sweep_features_subset
-
-
 def generate_pipeline_input(cell_dir=None,
                             specimen_id=None,
                             input_nwb_file=None,

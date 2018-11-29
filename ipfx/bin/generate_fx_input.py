@@ -1,16 +1,15 @@
 import os
 import allensdk.core.json_utilities as ju
-from run_pipeline import assign_sweep_states
+import ipfx.sweep_props as sp
 from ipfx._schemas import GeneratePipelineInputParameters
 import argschema as ags
 from run_sweep_extraction import run_sweep_extraction
 from generate_qc_input import generate_qc_input
 from generate_se_input import generate_se_input
 from run_qc import run_qc
-import generate_pipeline_input as gpi
 
 
-FX_INPUT_FEATURE = [
+FX_INPUT_FEATURES = [
                     "stimulus_code",
                     "stimulus_name",
                     "stimulus_amplitude",
@@ -35,7 +34,7 @@ def generate_fx_input(se_input,
     if 'input_h5_file' in se_input:
         fx_input['input_h5_file'] = se_input['input_h5_file']
 
-    fx_input['sweep_features'] = gpi.extract_sweep_features_subset(se_output["sweep_features"], FX_INPUT_FEATURE)
+    fx_input['sweep_features'] = sp.extract_sweep_features_subset(FX_INPUT_FEATURES,se_output["sweep_features"])
 
     fx_input['cell_features'] = se_output['cell_features']
 
@@ -70,6 +69,9 @@ def main():
 
     ju.write(os.path.join(cell_dir,'se_output.json'),se_output)
 
+    sp.drop_incomplete_sweeps(se_output["sweep_features"])
+    sp.remove_sweep_feature("completed", se_output["sweep_features"])
+
     qc_input = generate_qc_input(se_input, se_output)
     ju.write(os.path.join(cell_dir,'qc_input.json'), qc_input)
 
@@ -80,7 +82,7 @@ def main():
     ju.write(os.path.join(cell_dir,'qc_output.json'), qc_output)
 
     manual_sweep_states = []
-    assign_sweep_states(manual_sweep_states,
+    sp.assign_sweep_states(manual_sweep_states,
                         qc_output["sweep_states"],
                         se_output["sweep_features"]
                         )

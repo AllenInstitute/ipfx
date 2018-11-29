@@ -1,4 +1,4 @@
-import os
+import logging
 import argschema as ags
 from ipfx._schemas import PipelineParameters
 
@@ -7,27 +7,7 @@ from run_qc import run_qc
 from run_feature_extraction import run_feature_extraction
 
 import allensdk.core.json_utilities as ju
-import logging
-
-
-def assign_sweep_states(manual_sweep_states, auto_sweep_states, sweep_features):
-
-    # start with auto state assignment
-    sweep_states = { s["sweep_number"]:s["passed"] for s in auto_sweep_states }
-
-    # override when manual values are available
-    for mss in manual_sweep_states:
-        sn = mss["sweep_number"]
-        logging.debug("Overriding sweep state for sweep %d from %s to %s", sn, str(sweep_states[sn]), mss["passed"])
-        sweep_states[sn] = mss["passed"]
-
-    # assign sweep state to all sweeps
-    for sweep in sweep_features:
-        sn = sweep["sweep_number"]
-        if sn in sweep_states:
-            sweep["passed"] = sweep_states[sn]
-        else:
-            logging.warning("could not find QC state for sweep number %d", sn)
+import ipfx.sweep_props as sp
 
 
 def run_pipeline(input_nwb_file,
@@ -43,13 +23,16 @@ def run_pipeline(input_nwb_file,
                                      stimulus_ontology_file)
     logging.info("Computed QC features")
 
+    sp.drop_incomplete_sweeps(se_output["sweep_features"])
+    sp.remove_sweep_feature("completed", se_output["sweep_features"])
+
     qc_output = run_qc(stimulus_ontology_file,
                        se_output["cell_features"],
                        se_output["sweep_features"],
                        qc_criteria)
     logging.info("QC checks completed")
 
-    assign_sweep_states(manual_sweep_states,
+    sp.assign_sweep_states(manual_sweep_states,
                         qc_output["sweep_states"],
                         se_output["sweep_features"]
                         )

@@ -295,8 +295,13 @@ def sweep_qc_features(data_set):
         if sweep_completed(sweep_data.i, sweep_data.v, sweep_data.sampling_rate):
 
             sweep = current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology)
-            sweep.update(sweep_info)
-            sweep_features.append(sweep)
+            sweep["completed"] = True
+        else:
+            sweep = dict()
+            sweep["completed"] = False
+
+        sweep.update(sweep_info)
+        sweep_features.append(sweep)
 
     return sweep_features
 
