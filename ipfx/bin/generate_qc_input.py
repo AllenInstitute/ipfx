@@ -4,7 +4,7 @@ from ipfx._schemas import GeneratePipelineInputParameters
 import argschema as ags
 from run_sweep_extraction import run_sweep_extraction
 from generate_se_input import generate_se_input
-import generate_pipeline_input as gpi
+import ipfx.sweep_props as sp
 
 QC_INPUT_FEATURES = ["stimulus_units",
                    "stimulus_duration",
@@ -18,8 +18,6 @@ QC_INPUT_FEATURES = ["stimulus_units",
                    "stimulus_code",
                    "stimulus_name",
                    ]
-
-
 
 
 def generate_qc_input(se_input,se_output):
@@ -48,7 +46,7 @@ def generate_qc_input(se_input,se_output):
                              "updated_at":"2015-01-29T13:51:29-08:00",
                              "vm_delta_mv_max":1.0}
 
-    qc_input['sweep_features'] = gpi.extract_sweep_features_subset(se_output['sweep_features'], QC_INPUT_FEATURES)
+    qc_input['sweep_features'] = sp.extract_sweep_features_subset(QC_INPUT_FEATURES,se_output['sweep_features'])
 
     qc_input['cell_features'] = se_output['cell_features']
 
@@ -78,6 +76,9 @@ def main():
                                      se_input.get("stimulus_ontology_file", None))
 
     ju.write(os.path.join(cell_dir,'se_output.json'),se_output)
+
+    sp.drop_incomplete_sweeps(se_output["sweep_features"])
+    sp.remove_sweep_feature("completed", se_output["sweep_features"])
 
     qc_input = generate_qc_input(se_input, se_output)
 
