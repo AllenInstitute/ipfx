@@ -1,35 +1,50 @@
 import logging
 
 
-def assign_sweep_states(manual_sweep_states, auto_sweep_states, sweep_features):
+def override_auto_sweep_states(manual_sweep_states,sweep_states):
 
-    # start with auto state assignment
-    sweep_states = { s["sweep_number"]:s["passed"] for s in auto_sweep_states }
+    for ss in sweep_states:
+        for mss in manual_sweep_states:
+            if ss["sweep_number"] == mss["sweep_number"]:
+                ss["passed"] = mss["passed"]
+                if mss["passed"]:
+                    ss["reasons"].append("Manually passed")
+                else:
+                    ss["reasons"].append("Manually failed")
 
-    # override when manual values are available
-    for mss in manual_sweep_states:
-        sn = mss["sweep_number"]
-        logging.debug("Overriding sweep state for sweep %d from %s to %s", sn, str(sweep_states[sn]), mss["passed"])
-        sweep_states[sn] = mss["passed"]
 
-    # assign sweep state to all sweeps
-    for sweep in sweep_features:
-        sn = sweep["sweep_number"]
-        if sn in sweep_states:
-            sweep["passed"] = sweep_states[sn]
+def assign_sweep_states(sweep_states, sweep_features):
+    """
+    Assign sweep state to all sweeps
+
+    Parameters
+    ----------
+    sweep_states: dict of sweep states
+    sweep_features: list of dics of sweep features
+
+    Returns
+    -------
+
+    """
+    sweep_states_dict = { s["sweep_number"]:s["passed"] for s in sweep_states }
+
+    for sf in sweep_features:
+        sn = sf["sweep_number"]
+        if sn in sweep_states_dict:
+            sf["passed"] = sweep_states_dict[sn]
         else:
-            logging.warning("could not find QC state for sweep number %d", sn)
+            logging.warning("Could not find QC state for sweep number %d", sn)
 
 
 def drop_incomplete_sweeps(sweep_features):
 
-    sweep_features[:] = [s for s in sweep_features if s["completed"]]
+    sweep_features[:] = [sf for sf in sweep_features if sf["completed"]]
 
 
 def remove_sweep_feature(feature_name,sweep_features):
 
-    for sweep in sweep_features:
-        del sweep[feature_name]
+    for sf in sweep_features:
+        del sf[feature_name]
 
 
 def extract_sweep_features_subset(feature_names, sweep_features):

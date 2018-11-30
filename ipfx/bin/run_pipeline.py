@@ -32,10 +32,9 @@ def run_pipeline(input_nwb_file,
                        qc_criteria)
     logging.info("QC checks completed")
 
-    sp.assign_sweep_states(manual_sweep_states,
-                        qc_output["sweep_states"],
-                        se_output["sweep_features"]
-                        )
+    sp.override_auto_sweep_states(manual_sweep_states,qc_output["sweep_states"])
+    sp.assign_sweep_states(qc_output["sweep_states"],se_output["sweep_features"])
+
     logging.info("Assigned sweep states")
 
     fx_output = run_feature_extraction(input_nwb_file,

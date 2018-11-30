@@ -82,10 +82,8 @@ def main():
     ju.write(os.path.join(cell_dir,'qc_output.json'), qc_output)
 
     manual_sweep_states = []
-    sp.assign_sweep_states(manual_sweep_states,
-                        qc_output["sweep_states"],
-                        se_output["sweep_features"]
-                        )
+    sp.override_auto_sweep_states(manual_sweep_states,qc_output["sweep_states"])
+    sp.assign_sweep_states(qc_output["sweep_states"],se_output["sweep_features"])
 
     fx_input = generate_fx_input(se_input,
                                  se_output,
