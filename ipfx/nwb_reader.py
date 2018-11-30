@@ -27,8 +27,7 @@ class NwbReader(object):
         self.nwb_major_version = nwb_major_version
 
         if self.nwb_major_version == 1:
-            self.acquisition_path = "acquisition/timeseries"
-            self.stimulus_path = "stimulus/timeseries"
+            pass
         elif self.nwb_major_version == 2:
             self.acquisition_path = "acquisition"
             self.stimulus_path = "stimulus"
@@ -48,7 +47,7 @@ class NwbReader(object):
     def get_sweep_attrs(self, sweep_name):
 
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_ts = f[self.acquisition_path][sweep_name]
+            sweep_ts = f["acquisition/timeseries"][sweep_name]
             attrs = dict(sweep_ts.attrs)
 
             if self.nwb_major_version == 2:
@@ -63,7 +62,7 @@ class NwbReader(object):
     def get_sweep_names(self):
 
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_names = [e for e in f[self.acquisition_path].keys()]
+            sweep_names = [e for e in f["acquisition/timeseries"].keys()]
 
         return sweep_names
 
@@ -323,7 +322,7 @@ class NwbPipelineReader(NwbReader):
 
         with h5py.File(self.nwb_file, 'r') as f:
 
-            sweep_ts = f[self.acquisition_path][sweep_name]
+            sweep_ts = f["acquisition/timeseries"][sweep_name]
             # look for the stimulus description
             if stimulus_description in sweep_ts.keys():
                 stim_code_raw = sweep_ts[stimulus_description].value
@@ -350,12 +349,10 @@ class NwbMiesReader(NwbReader):
     def get_sweep_data(self, sweep_number):
 
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_response = f[self.acquisition_path]["data_%05d_AD0" %
-                                                      sweep_number]
+            sweep_response = f["acquisition/timeseries"]["data_%05d_AD0" % sweep_number]
             response = sweep_response["data"].value
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
-            sweep_stimulus = f[self.stimulus_path]["data_%05d_DA0" %
-                                                   sweep_number]
+            sweep_stimulus = f["stimulus/presentation"]["data_%05d_DA0" % sweep_number]
             stimulus = sweep_stimulus["data"].value
 
             if 'unit' in sweep_stimulus["data"].attrs:
@@ -397,7 +394,7 @@ class NwbMiesReader(NwbReader):
 
         with h5py.File(self.nwb_file, 'r') as f:
 
-            sweep_ts = f[self.acquisition_path][sweep_name]
+            sweep_ts = f["acquisition/timeseries"][sweep_name]
             # look for the stimulus description
             if stimulus_description in sweep_ts.keys():
                 stim_code_raw = sweep_ts[stimulus_description].value
@@ -415,20 +412,21 @@ class NwbMiesReader(NwbReader):
 
 def get_nwb_version(nwb_file):
     """
-    Return a dict with `major` and `full` NWB version as read from the NWB
-    file.
+    Return a dict with `major` and `full` NWB version as read from the NWB file.
     """
 
     with h5py.File(nwb_file, 'r') as f:
-        # In v1 this is a dataset
-        nwb_version = f["/"].get("nwb_version")
-        if nwb_version is not None and re.match("^1", nwb_version):
-            return {"major": 1, "full": nwb_version}
+        if "nwb_version" in f:         # In v1 this is a dataset
+            nwb_version = f["nwb_version"].value
+            if isinstance(nwb_version, np.ndarray):
+                nwb_version = nwb_version[0]
+            if nwb_version is not None and re.match("NWB-1", nwb_version):
+                return {"major": 1, "full": nwb_version}
 
-        # but in V2 this is an attribute
-        nwb_version = f["/"].attrs.get("nwb_version")
-        if nwb_version is not None and re.match("^2", nwb_version):
-            return {"major": 2, "full": nwb_version}
+        elif "nwb_version" in f.attrs:   # but in V2 this is an attribute
+            nwb_version = f.attrs["nwb_version"].value
+            if nwb_version is not None and re.match("^2", nwb_version):
+                return {"major": 2, "full": nwb_version}
 
     return {"major": None, "full": None}
 
