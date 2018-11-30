@@ -350,22 +350,20 @@ class NwbMiesReader(NwbReader):
 
         with h5py.File(self.nwb_file, 'r') as f:
             sweep_response = f["acquisition/timeseries"]["data_%05d_AD0" % sweep_number]
-            response = sweep_response["data"].value
+            response_dataset = sweep_response["data"]
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
             sweep_stimulus = f["stimulus/presentation"]["data_%05d_DA0" % sweep_number]
-            stimulus = sweep_stimulus["data"].value
+            stimulus_dataset = sweep_stimulus["data"]
 
-            if 'unit' in sweep_stimulus["data"].attrs:
-                unit = sweep_stimulus["data"].attrs["unit"].decode('UTF-8')
+            response = response_dataset.value
+            stimulus = stimulus_dataset.value
 
-                unit_str = None
-                if unit.startswith('A'):
-                    unit_str = "Amps"
-                elif unit.startswith('V'):
-                    unit_str = "Volts"
-                assert unit_str is not None, Exception(
-                    "Stimulus time series unit not recognized")
+            if 'unit' in stimulus_dataset.attrs:
+                unit = stimulus_dataset.attrs["unit"].decode('UTF-8')
+
+                unit_str = get_long_unit_name(unit)
             else:
+                unit = None
                 unit_str = 'Unknown'
 
             if "CurrentClampSeries" in sweep_response.attrs["ancestry"]:
@@ -431,6 +429,24 @@ def get_nwb_version(nwb_file):
     return {"major": None, "full": None}
 
 
+def get_nwb_flavor(nwb_file):
+
+    with h5py.File(nwb_file, 'r') as f:
+        sweep_names = [e for e in f["acquisition/timeseries"].keys()]
+        sweep_naming_convention = sweep_names[0].split('_')[0]
+
+        if sweep_naming_convention == "Sweep":
+            nwb_flavor = "Pipeline"
+
+        elif sweep_naming_convention == "data":
+            nwb_flavor = "Mies"
+
+        else:
+            raise ValueError("Unknown sweep naming convention: %s" %sweep_naming_convention)
+
+    return nwb_flavor
+
+
 def create_nwb_reader(nwb_file):
     """Create an appropriate reader of the nwb_file
 
@@ -444,21 +460,15 @@ def create_nwb_reader(nwb_file):
     """
 
     nwb_version = get_nwb_version(nwb_file)
+    nwb_flavor = get_nwb_flavor(nwb_file)
 
     if nwb_version["major"] == 2:
         return NwbXReader(nwb_file)
     elif nwb_version["major"] == 1:
-        with h5py.File(nwb_file, 'r') as f:
-
-            sweep_names = [e for e in f["acquisition/timeseries"].keys()]
-            sweep_naming_convention = sweep_names[0].split('_')[0]
-
-        if sweep_naming_convention == "data":
-                return NwbMiesReader(nwb_file)
-        elif sweep_naming_convention == "Sweep":
-                return NwbPipelineReader(nwb_file)
-        else:
-            raise ValueError("Unknown sweep naming convention")
+        if nwb_flavor == "Mies":
+            return NwbMiesReader(nwb_file)
+        if nwb_flavor == "Pipeline":
+            return NwbPipelineReader(nwb_file)
     else:
         raise ValueError("Unsupported or unknown NWB major" +
                          "version {} ({})".format(nwb_version["major"], nwb_version["full"]))
