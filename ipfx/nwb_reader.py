@@ -318,24 +318,26 @@ class NwbPipelineReader(NwbReader):
 
     def get_stim_code(self, sweep_name):
 
-        stimulus_description = "aibs_stimulus_description"
+        names = ["aibs_stimulus_name", "aibs_stimulus_description"]
 
         with h5py.File(self.nwb_file, 'r') as f:
 
             sweep_ts = f["acquisition/timeseries"][sweep_name]
-            # look for the stimulus description
-            if stimulus_description in sweep_ts.keys():
-                stim_code_raw = sweep_ts[stimulus_description].value
 
-                if type(stim_code_raw) is np.ndarray:
-                    stim_code = str(stim_code_raw[0])
-                else:
-                    stim_code = str(stim_code_raw)
+            for stimulus_description in names:
+                if stimulus_description in sweep_ts.keys():
+                    stim_code_raw = sweep_ts[stimulus_description].value
 
-                if stim_code[-5:] == "_DA_0":
-                    stim_code = stim_code[:-5]
+                    if type(stim_code_raw) is np.ndarray:
+                        stim_code = str(stim_code_raw[0])
+                    else:
+                        stim_code = str(stim_code_raw)
 
-        return stim_code
+                    if stim_code[-5:] == "_DA_0":
+                        return stim_code[:-5]
+
+                    return stim_code
+
 
 
 class NwbMiesReader(NwbReader):
