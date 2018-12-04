@@ -12,19 +12,8 @@ import ipfx.stim_features as st
 
 class NwbReader(object):
 
-    def __init__(self, nwb_file, nwb_major_version):
-
+    def __init__(self, nwb_file):
         self.nwb_file = nwb_file
-        self.nwb_major_version = nwb_major_version
-
-        if self.nwb_major_version == 1:
-            pass
-        elif self.nwb_major_version == 2:
-            self.acquisition_path = "acquisition"
-            self.stimulus_path = "stimulus"
-        else:
-            raise ValueError("Unsupported NWB major version {}.".format(
-                             nwb_major_version))
 
     def get_sweep_data(self):
         raise NotImplementedError
@@ -47,7 +36,7 @@ class NwbReader(object):
     def get_sweep_attrs(self, sweep_name):
 
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_ts = f["acquisition/timeseries"][sweep_name]
+            sweep_ts = f[self.acquisition_path][sweep_name]
             attrs = dict(sweep_ts.attrs)
 
             if self.nwb_major_version == 2:
@@ -62,7 +51,7 @@ class NwbReader(object):
     def get_sweep_names(self):
 
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_names = [e for e in f["acquisition/timeseries"].keys()]
+            sweep_names = [e for e in f[self.acquisition_path].keys()]
 
         return sweep_names
 
@@ -104,7 +93,10 @@ class NwbXReader(NwbReader):
     """
 
     def __init__(self, nwb_file):
-        NwbReader.__init__(self, nwb_file, nwb_major_version=2)
+        NwbReader.__init__(self, nwb_file)
+        self.acquisition_path = "acquisition"
+        self.stimulus_path = "stimulus"
+        self.nwb_major_version = 2
 
     def get_sweep_number(self, sweep_name):
         return self.get_sweep_attrs(sweep_name)["sweep_number"]
@@ -208,7 +200,10 @@ class NwbPipelineReader(NwbReader):
     """
 
     def __init__(self, nwb_file):
-        NwbReader.__init__(self, nwb_file, nwb_major_version=1)
+        NwbReader.__init__(self, nwb_file)
+        self.acquisition_path = "acquisition/timeseries"
+        self.stimulus_path = "stimulus/timeseries"
+        self.nwb_major_version = 1
 
     def get_sweep_data(self, sweep_number):
         """
@@ -247,7 +242,7 @@ class NwbPipelineReader(NwbReader):
             #   SI unit. For those files, return uncorrected data.
             #   For newer files (1.1 and later), apply conversion value.
 
-            stimulus_dataset = swp['stimulus/timeseries']['data']
+            stimulus_dataset = swp[self.stimulus_path]['data']
             stimulus_conversion = float(stimulus_dataset.attrs["conversion"])
 
             response_dataset = swp['response/timeseries']['data']
@@ -308,7 +303,7 @@ class NwbPipelineReader(NwbReader):
                 'stimulus_unit': unit_str,
                 'index_range': index_range,
                 'sampling_rate': 1.0 *
-                swp['stimulus']['timeseries']['starting_time'].attrs['rate']
+                swp[self.stimulus_path]['starting_time'].attrs['rate']
             }
 
     def get_sweep_number(self, sweep_name):
@@ -322,7 +317,7 @@ class NwbPipelineReader(NwbReader):
 
         with h5py.File(self.nwb_file, 'r') as f:
 
-            sweep_ts = f["acquisition/timeseries"][sweep_name]
+            sweep_ts = f[self.acquisition_path][sweep_name]
 
             for stimulus_description in names:
                 if stimulus_description in sweep_ts.keys():
@@ -346,15 +341,18 @@ class NwbMiesReader(NwbReader):
     """
 
     def __init__(self, nwb_file):
-        NwbReader.__init__(self, nwb_file, nwb_major_version=1)
+        NwbReader.__init__(self, nwb_file)
+        self.acquisition_path = "acquisition/timeseries"
+        self.stimulus_path = "stimulus/presentation"
+        self.nwb_major_version = 1
 
     def get_sweep_data(self, sweep_number):
 
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_response = f["acquisition/timeseries"]["data_%05d_AD0" % sweep_number]
+            sweep_response = f[self.acquisition_path]["data_%05d_AD0" % sweep_number]
             response_dataset = sweep_response["data"]
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
-            sweep_stimulus = f["stimulus/presentation"]["data_%05d_DA0" % sweep_number]
+            sweep_stimulus = f[self.stimulus_path]["data_%05d_DA0" % sweep_number]
             stimulus_dataset = sweep_stimulus["data"]
 
             response = response_dataset.value
@@ -394,7 +392,7 @@ class NwbMiesReader(NwbReader):
 
         with h5py.File(self.nwb_file, 'r') as f:
 
-            sweep_ts = f["acquisition/timeseries"][sweep_name]
+            sweep_ts = f[self.acquisition_path][sweep_name]
             # look for the stimulus description
             if stimulus_description in sweep_ts.keys():
                 stim_code_raw = sweep_ts[stimulus_description].value
