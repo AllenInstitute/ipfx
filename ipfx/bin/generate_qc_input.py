@@ -8,6 +8,7 @@ import ipfx.sweep_props as sp
 
 QC_INPUT_FEATURES = ["stimulus_units",
                    "stimulus_duration",
+                   "stimulus_amplitude",
                    "sweep_number",
                    "vm_delta_mv",
                    "pre_noise_rms_mv",
