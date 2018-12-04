@@ -247,10 +247,10 @@ class NwbPipelineReader(NwbReader):
             #   SI unit. For those files, return uncorrected data.
             #   For newer files (1.1 and later), apply conversion value.
 
-            stimulus_dataset = swp['stimulus']['timeseries']['data']
+            stimulus_dataset = swp['stimulus/timeseries']['data']
             stimulus_conversion = float(stimulus_dataset.attrs["conversion"])
 
-            response_dataset = swp['response']['timeseries']['data']
+            response_dataset = swp['response/timeseries']['data']
             response_conversion = float(response_dataset.attrs["conversion"])
 
             major, minor = self.get_pipeline_version()
@@ -418,7 +418,7 @@ def get_nwb_version(nwb_file):
             nwb_version = f["nwb_version"].value
             if isinstance(nwb_version, np.ndarray):
                 nwb_version = nwb_version[0]
-            if nwb_version is not None and re.match("NWB-1", nwb_version):
+            if nwb_version is not None and re.match("^NWB-1", nwb_version):
                 return {"major": 1, "full": nwb_version}
 
         elif "nwb_version" in f.attrs:   # but in V2 this is an attribute
@@ -429,7 +429,7 @@ def get_nwb_version(nwb_file):
     return {"major": None, "full": None}
 
 
-def get_nwb_flavor(nwb_file):
+def get_nwb1_flavor(nwb_file):
 
     with h5py.File(nwb_file, 'r') as f:
         sweep_names = [e for e in f["acquisition/timeseries"].keys()]
@@ -442,7 +442,7 @@ def get_nwb_flavor(nwb_file):
             nwb_flavor = "Mies"
 
         else:
-            raise ValueError("Unknown sweep naming convention: %s" %sweep_naming_convention)
+            raise ValueError("Unknown sweep naming convention: %s" % sweep_naming_convention)
 
     return nwb_flavor
 
@@ -460,14 +460,14 @@ def create_nwb_reader(nwb_file):
     """
 
     nwb_version = get_nwb_version(nwb_file)
-    nwb_flavor = get_nwb_flavor(nwb_file)
 
     if nwb_version["major"] == 2:
         return NwbXReader(nwb_file)
     elif nwb_version["major"] == 1:
-        if nwb_flavor == "Mies":
+        nwb1_flavor = get_nwb1_flavor(nwb_file)
+        if nwb1_flavor == "Mies":
             return NwbMiesReader(nwb_file)
-        if nwb_flavor == "Pipeline":
+        if nwb1_flavor == "Pipeline":
             return NwbPipelineReader(nwb_file)
     else:
         raise ValueError("Unsupported or unknown NWB major" +
