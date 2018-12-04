@@ -424,7 +424,7 @@ def get_nwb_version(nwb_file):
                 return {"major": 1, "full": nwb_version}
 
         elif "nwb_version" in f.attrs:   # but in V2 this is an attribute
-            nwb_version = f.attrs["nwb_version"].value
+            nwb_version = f.attrs["nwb_version"]
             if nwb_version is not None and re.match("^2", nwb_version):
                 return {"major": 2, "full": nwb_version}
 
