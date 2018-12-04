@@ -438,15 +438,11 @@ def get_nwb1_flavor(nwb_file):
         sweep_naming_convention = sweep_names[0].split('_')[0]
 
         if sweep_naming_convention == "Sweep":
-            nwb_flavor = "Pipeline"
-
+            return "Pipeline"
         elif sweep_naming_convention == "data":
-            nwb_flavor = "Mies"
+            return "Mies"
 
-        else:
-            raise ValueError("Unknown sweep naming convention: %s" % sweep_naming_convention)
-
-    return nwb_flavor
+        raise ValueError("Unknown sweep naming convention: %s" % sweep_naming_convention)
 
 
 def create_nwb_reader(nwb_file):
