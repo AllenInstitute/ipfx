@@ -10,15 +10,6 @@ from pynwb.icephys import (CurrentClampSeries, CurrentClampStimulusSeries, Volta
 import ipfx.stim_features as st
 
 
-def get_long_unit_name(unit):
-    if unit.startswith('A'):
-        return "Amps"
-    elif unit.startswith('V'):
-        return "Volts"
-    else:
-        raise ValueError("Unit {} not recognized from TimeSeries".format(unit))
-
-
 class NwbReader(object):
 
     def __init__(self, nwb_file, nwb_major_version):
@@ -43,6 +34,15 @@ class NwbReader(object):
 
     def get_stim_code(self, sweep_name):
         raise NotImplementedError
+
+    @staticmethod
+    def get_long_unit_name(unit):
+        if unit.startswith('A'):
+            return "Amps"
+        elif unit.startswith('V'):
+            return "Volts"
+        else:
+            raise ValueError("Unit {} not recognized from TimeSeries".format(unit))
 
     def get_sweep_attrs(self, sweep_name):
 
@@ -179,7 +179,7 @@ class NwbXReader(NwbReader):
                         raise ValueError("Found multiple stimulus TimeSeries in NWB file for sweep number {}.".format(sweep_number))
 
                     stimulus = s.data[:] * float(s.conversion)
-                    stimulus_unit = get_long_unit_name(s.unit)
+                    stimulus_unit = NwbReader.get_long_unit_name(s.unit)
                     stimulus_rate = float(s.rate)
                     stimulus_index_range = (0, int(s.num_samples - 1))
                 else:
@@ -264,7 +264,7 @@ class NwbPipelineReader(NwbReader):
             if 'unit' in stimulus_dataset.attrs:
                 unit = stimulus_dataset.attrs["unit"].decode('UTF-8')
 
-                unit_str = get_long_unit_name(unit)
+                unit_str = NwbReader.get_long_unit_name(unit)
             else:
                 unit = None
                 unit_str = 'Unknown'
@@ -361,7 +361,7 @@ class NwbMiesReader(NwbReader):
             if 'unit' in stimulus_dataset.attrs:
                 unit = stimulus_dataset.attrs["unit"].decode('UTF-8')
 
-                unit_str = get_long_unit_name(unit)
+                unit_str = NwbReader.get_long_unit_name(unit)
             else:
                 unit = None
                 unit_str = 'Unknown'
