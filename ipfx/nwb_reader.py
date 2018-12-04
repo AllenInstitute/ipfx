@@ -434,15 +434,18 @@ def get_nwb_version(nwb_file):
 def get_nwb1_flavor(nwb_file):
 
     with h5py.File(nwb_file, 'r') as f:
-        sweep_names = [e for e in f["acquisition/timeseries"].keys()]
-        sweep_naming_convention = sweep_names[0].split('_')[0]
+        if "acquisition/timeseries" in f:
+            sweep_names = [e for e in f["acquisition/timeseries"].keys()]
+            sweep_naming_convention = sweep_names[0].split('_')[0]
 
-        if sweep_naming_convention == "Sweep":
-            return "Pipeline"
-        elif sweep_naming_convention == "data":
-            return "Mies"
+            if sweep_naming_convention == "Sweep":
+                return "Pipeline"
+            elif sweep_naming_convention == "data":
+                return "Mies"
+        else:
+            sweep_naming_convention = None
 
-        raise ValueError("Unknown sweep naming convention: %s" % sweep_naming_convention)
+    raise ValueError("Unknown sweep naming convention: %s" % sweep_naming_convention)
 
 
 def create_nwb_reader(nwb_file):
