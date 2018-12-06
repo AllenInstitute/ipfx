@@ -106,7 +106,10 @@ def time_constant(t, v, i, start, end, preset_fit_end=None,
     signal = np.abs(v_baseline - v_peak)
     noise_interval_start_index = tsu.find_time_index(t, start - baseline_interval)
     noise = np.std(self.v[noise_interval_start_index:start_index])
-    snr = signal / noise
+    if noise == 0: # noiseless - likely a deterministic model
+        snr = np.inf
+    else:
+        snr = signal / noise
     if snr < min_snr:
         logging.debug("signal-to-noise ratio too low for time constant estimate ({:g} < {:g})".format(snr, min_snr))
         return np.nan
