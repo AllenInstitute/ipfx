@@ -15,7 +15,7 @@ class EphysDataSet(object):
     LONG_SQUARE = 'long_square'
     COARSE_LONG_SQUARE = 'coarse_long_square'
     SHORT_SQUARE_TRIPLE = 'short_square_triple'
-    SHORT_SQUARE= 'short_square'
+    SHORT_SQUARE = 'short_square'
     RAMP = 'ramp'
 
     def __init__(self, ontology=None):
@@ -33,13 +33,15 @@ class EphysDataSet(object):
         st = self.sweep_table
 
         if current_clamp_only:
-            st = st[st[self.STIMULUS_UNITS].isin(self.ontology.current_clamp_units)]
+            st = st[st[self.STIMULUS_UNITS].isin(
+                self.ontology.current_clamp_units)]
 
         if passing_only:
             st = st[st[self.PASSED]]
 
         if stimuli:
-            mask = st[self.STIMULUS_CODE].apply(self.ontology.stimulus_has_any_tags, args=(stimuli,), tag_type="code")
+            mask = st[self.STIMULUS_CODE].apply(
+                self.ontology.stimulus_has_any_tags, args=(stimuli,), tag_type="code")
             st = st[mask]
 
         if exclude_search:
@@ -54,10 +56,12 @@ class EphysDataSet(object):
 
     def get_sweep_number_by_stimulus_names(self, stimulus_names):
 
-        sweeps = self.filtered_sweep_table(stimuli=stimulus_names).sort_values(by='sweep_number')
+        sweeps = self.filtered_sweep_table(
+            stimuli=stimulus_names).sort_values(by='sweep_number')
 
         if len(sweeps) > 1:
-            logging.warning("Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimulus_names))
+            logging.warning(
+                "Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimulus_names))
 
         if len(sweeps) == 0:
             raise IndexError
@@ -81,13 +85,12 @@ class EphysDataSet(object):
 
         return st.to_dict(orient='records')[0]
 
-
     def sweep(self, sweep_number):
         """ returns a dictionary with properties: i (in pA), v (in mV), t (in sec), start, end"""
         raise NotImplementedError
 
     def sweep_set(self, sweep_numbers):
-        return SweepSet([ self.sweep(sn) for sn in sweep_numbers ])
+        return SweepSet([self.sweep(sn) for sn in sweep_numbers])
 
     def aligned_sweeps(self, sweep_numbers, stim_onset_delta):
         pass
@@ -118,7 +121,7 @@ class SweepSet(object):
         self.sweeps = sweeps
 
     def _prop(self, prop):
-        return [ getattr(s, prop) for s in self.sweeps ]
+        return [getattr(s, prop) for s in self.sweeps]
 
     @property
     def t(self):
