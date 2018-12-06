@@ -10,6 +10,18 @@ from pynwb.icephys import (CurrentClampSeries, CurrentClampStimulusSeries, Volta
 import ipfx.stim_features as st
 
 
+def get_scalar_string(string_from_nwb):
+    """
+    Some strings in NWB are stored with dimension scalar some with dimension 1.
+    Use this function to get retrieve the string itself.
+    """
+
+    if isinstance(string_from_nwb, np.ndarray):
+        return np.asscalar(string_from_nwb)
+
+    return string_from_nwb
+
+
 class NwbReader(object):
 
     def __init__(self, nwb_file):
@@ -322,11 +334,7 @@ class NwbPipelineReader(NwbReader):
             for stimulus_description in names:
                 if stimulus_description in sweep_ts.keys():
                     stim_code_raw = sweep_ts[stimulus_description].value
-
-                    if type(stim_code_raw) is np.ndarray:
-                        stim_code = str(stim_code_raw[0])
-                    else:
-                        stim_code = str(stim_code_raw)
+                    stim_code = get_scalar_string(stim_code_raw)
 
                     if stim_code[-5:] == "_DA_0":
                         return stim_code[:-5]
@@ -395,11 +403,7 @@ class NwbMiesReader(NwbReader):
             # look for the stimulus description
             if stimulus_description in sweep_ts.keys():
                 stim_code_raw = sweep_ts[stimulus_description].value
-
-                if type(stim_code_raw) is np.ndarray:
-                    stim_code = str(stim_code_raw[0])
-                else:
-                    stim_code = str(stim_code_raw)
+                stim_code = get_scalar_string(stim_code_raw)
 
                 if stim_code[-5:] == "_DA_0":
                     stim_code = stim_code[:-5]
@@ -414,9 +418,7 @@ def get_nwb_version(nwb_file):
 
     with h5py.File(nwb_file, 'r') as f:
         if "nwb_version" in f:         # In v1 this is a dataset
-            nwb_version = f["nwb_version"].value
-            if isinstance(nwb_version, np.ndarray):
-                nwb_version = nwb_version[0]
+            nwb_version = get_scalar_string(f["nwb_version"].value)
             if nwb_version is not None and re.match("^NWB-1", nwb_version):
                 return {"major": 1, "full": nwb_version}
 
