@@ -36,8 +36,8 @@ def fetch_DAT_NWB_file():
 
 def compare_dicts(d_ref, d):
     # pytest does not support passing in dicts of numpy arrays with strings
-    # See https://github.com/pytest-dev/pytest/issues/4079
-    # And also does not support nan with approx
+    # See https://github.com/pytest-dev/pytest/issues/4079 and
+    # https://github.com/pytest-dev/pytest/issues/4079
     assert sorted(d_ref.keys()) == sorted(d.keys())
     for k, v in d_ref.items():
         if isinstance(v, np.ndarray):
@@ -55,10 +55,7 @@ def compare_dicts(d_ref, d):
             value = d[k]
 
             if isinstance(value_ref, numbers.Number):
-                if np.isnan(value_ref) and np.isnan(value):
-                    pass
-                else:
-                    assert value_ref == approx(value)
+                assert value_ref == approx(value, nan_ok=True)
             else:
                 assert value_ref == value
 
