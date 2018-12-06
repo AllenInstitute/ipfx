@@ -105,7 +105,7 @@ def time_constant(t, v, i, start, end, preset_fit_end=None,
     # Check that SNR is high enough to proceed
     signal = np.abs(v_baseline - v_peak)
     noise_interval_start_index = tsu.find_time_index(t, start - baseline_interval)
-    noise = np.std(self.v[noise_interval_start_index:start_index])
+    noise = np.std(v[noise_interval_start_index:start_index])
     if noise == 0: # noiseless - likely a deterministic model
         snr = np.inf
     else:
