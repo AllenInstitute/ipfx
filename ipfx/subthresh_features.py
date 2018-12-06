@@ -69,19 +69,47 @@ def voltage_deflection(t, v, i, start, end, deflect_type=None):
     return v[deflect_index], deflect_index
 
 
-def time_constant(t, v, i, start, end, frac=0.1, baseline_interval=0.1):
+def time_constant(t, v, i, start, end, preset_fit_end=None,
+                  frac=0.1, baseline_interval=0.1, min_snr=20.):
     """Calculate the membrane time constant by fitting the voltage response with a
     single exponential.
+
+    Parameters
+    ----------
+    v : numpy array of voltages in mV
+    t : numpy array of times in seconds
+    start : start of stimulus interval in seconds
+    end : end of stimulus interval in seconds
+    preset_fit_end : end of exponential fit window. If None, end of fit
+        window will be time of the peak hyperpolarizing deflection (default None)
+    frac : fraction of peak deflection (or deflection at `present_fit_end` if used)
+        to find to determine start of fit window. (default 0.1)
+    baseline_interval : duration before `start` for baseline Vm calculation
+    min_snr : minimum signal-to-noise ratio (SNR) to allow calculation of time constant.
+        If SNR is too low, np.nan will be returned. (default 20)
 
     Returns
     -------
     tau : membrane time constant in seconds
     """
     # Assumes this is being done on a hyperpolarizing step
-    v_peak, peak_index = voltage_deflection(t, v, i, start, end, "min")
+    if preset_fit_end is None:
+        v_peak, peak_index = voltage_deflection(t, v, i, start, end, "min")
+    else:
+        peak_index = tsu.find_time_index(t, preset_fit_end)
+        v_peak = v[peak_index]
     v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
 
     start_index = tsu.find_time_index(t, start)
+
+    # Check that SNR is high enough to proceed
+    signal = np.abs(v_baseline - v_peak)
+    noise_interval_start_index = tsu.find_time_index(t, start - baseline_interval)
+    noise = np.std(self.v[noise_interval_start_index:start_index])
+    snr = signal / noise
+    if snr < min_snr:
+        logging.debug("signal-to-noise ratio too low for time constant estimate ({:g} < {:g})".format(snr, min_snr))
+        return np.nan
 
     search_result = np.flatnonzero(v[start_index:] <= frac * (v_peak - v_baseline) + v_baseline)
 
@@ -100,7 +128,7 @@ def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
 
     Parameters
     ----------
-    peak_width : window width to get more robust peak estimate in sec (default 0.005)F
+    peak_width : window width to get more robust peak estimate in sec (default 0.005)
 
     Returns
     -------
