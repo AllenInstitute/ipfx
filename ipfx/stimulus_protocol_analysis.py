@@ -188,7 +188,10 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         logging.debug("calc_subthresh_sweeps: %d", len(calc_subthresh_features))
 
         calc_subthresh_ss = SweepSet([sweep_set.sweeps[i] for i in calc_subthresh_features.index.values])
-        taus = [ subf.time_constant(s.t, s.v, s.i, self.spx.start, self.spx.end, self.tau_frac, self.sptx.baseline_interval) for s in calc_subthresh_ss.sweeps ]
+
+        median_peak_time = np.median([s.t[subf.voltage_deflection(s.t, s.v, s.i, self.spx.start, self.spx.end, "min")[1]]
+                                      for s in calc_subthresh_ss.sweeps])
+        taus = [ subf.time_constant(s.t, s.v, s.i, self.spx.start, self.spx.end, median_peak_time, self.tau_frac, self.sptx.baseline_interval) for s in calc_subthresh_ss.sweeps ]
 
         calc_subthresh_features['tau'] = taus
 
