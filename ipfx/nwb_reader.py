@@ -334,7 +334,6 @@ class NwbPipelineReader(NwbReader):
                     return stim_code
 
 
-
 class NwbMiesReader(NwbReader):
     """
     Reads data from the MIES generated NWB file
