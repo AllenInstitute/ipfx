@@ -15,7 +15,7 @@ def find_time_index(t, t_0):
     -------
     idx: index of t closest to t_0
     """
-    assert t[0] <= t_0 <= t[-1], "Given time is outside of time range"
+    assert t[0] <= t_0 <= t[-1], "Given time ({:f}) is outside of time range ({:f}, {:f})".format(t_0, t[0], t[-1])
 
     idx = np.argmin(abs(t - t_0))
     return idx
