@@ -377,29 +377,28 @@ def nan_get(obj, key):
     else:
         return None if np.isnan(v) else v
 
-def categorize_iclamp_sweeps(data_set, stimuli_names):
+def categorize_iclamp_sweeps(data_set, stimuli_names, include_failed=False):
 
     iclamp_st = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=stimuli_names)
 
-    mask = iclamp_st["passed"]==False
+    mask = iclamp_st["passed"] == False
     failed_qc_st = iclamp_st[mask]
-    failed_qc_sweeep_numbers = failed_qc_st["sweep_number"].sort_values().values
+    failed_qc_sweep_numbers = failed_qc_st["sweep_number"].sort_values().values
 
-    mask = iclamp_st["passed"]==True
+    mask = iclamp_st["passed"] == True
     passed_qc_st = iclamp_st[mask]
-    passed_qc_sweeep_numbers = passed_qc_st["sweep_number"].sort_values().values
+    passed_qc_sweep_numbers = passed_qc_st["sweep_number"].sort_values().values
 
     logging.info("%s sweeps  passed: %s  failed: %s " % (stimuli_names[0],
-                                                        str(passed_qc_sweeep_numbers),
-                                                        str(failed_qc_sweeep_numbers)))
+                                                        str(passed_qc_sweep_numbers),
+                                                        str(failed_qc_sweep_numbers)))
 
-    if len(passed_qc_sweeep_numbers) == 0:
-        raise er.FeatureError("No %s sweeps available for feature extraction " % stimuli_names[0])
-
-
-    return passed_qc_sweeep_numbers
-
-
+    if not include_failed:
+        if len(passed_qc_sweep_numbers) == 0:
+            raise er.FeatureError("No %s sweeps available for feature extraction " % stimuli_names[0])
+        return passed_qc_sweep_numbers
+    else:
+        return iclamp_st["sweep_number"].sort_values().values
 
 
 def extract_data_set_features(data_set, subthresh_min_amp=None):
