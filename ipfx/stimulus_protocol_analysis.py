@@ -83,7 +83,8 @@ class StimulusProtocolAnalysis(object):
         self._sweep_features = None
 
     def analyze(self, sweep_set, extra_sweep_features=None):
-        return {}
+        self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_features)
+        return {"spikes_set": self._spikes_set, "sweeps": self._sweep_features}
 
     def as_dict(self, features, extra_params=None):
         return {}
@@ -91,9 +92,7 @@ class StimulusProtocolAnalysis(object):
 
 class RampAnalysis(StimulusProtocolAnalysis):
     def analyze(self, sweep_set):
-        self.analyze_basic_features(sweep_set)
-
-        features = {}
+        features = super(RampAnalysis, self).analyze(sweep_set)
 
         spiking_sweep_features = self.suprathreshold_sweep_features()
         features["spiking_sweeps"] = spiking_sweep_features
@@ -125,11 +124,8 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
     def analyze(self, sweep_set):
 
         extra_sweep_feature_names = ['peak_deflect','stim_amp','v_baseline','sag']
-        self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_feature_names)
+        features = super(LongSquareAnalysis, self).analyze(sweep_set, extra_sweep_features=extra_sweep_feature_names)
 
-        features = {}
-
-        features["sweeps"] = self.all_sweep_features()
         features["v_baseline"] = np.nanmean(self._sweep_features["v_baseline"].values)
 
         spiking_features = self.analyze_suprathreshold(sweep_set)
@@ -258,9 +254,8 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
 
     def analyze(self, sweep_set):
         extra_sweep_features = [ "stim_amp" ]
-        self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_features)
 
-        features = {}
+        features = super(ShortSquareAnalysis, self).analyze(sweep_set, extra_sweep_features=extra_sweep_features)
 
         spiking_sweep_features = self.suprathreshold_sweep_features()
 
