@@ -9,7 +9,6 @@ from . import time_series_utils as tsu
 import error as er
 
 
-
 def extract_feature_vectors(data_set,
                             ramp_sweep_numbers,
                             short_square_sweep_numbers,
@@ -79,8 +78,6 @@ def extract_feature_vectors(data_set,
         ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
 
         ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
-        logging.info("Ramp stim %f, %f", ramp_start, ramp_dur)
-
         ramp_spx, ramp_spfx = dsf.extractors_for_sweeps(ramp_sweeps,
                                                     start = ramp_start,
                                                     **dsf.detection_parameters(data_set.RAMP))
@@ -299,12 +296,13 @@ def isi_shape(sweep_set, features, n_points=100, min_spike=5):
 
         return isi_norm
 
-    threshold_indexes = isi_spikes["threshold_index"].astype(int)
+    clip_mask = isi_spikes["clipped"].values
+    threshold_indexes = isi_spikes["threshold_index"]
     threshold_voltages = isi_spikes["threshold_v"]
-    fast_trough_indexes = isi_spikes["fast_trough_index"].astype(int)
+    fast_trough_indexes = isi_spikes["fast_trough_index"]
     isi_list = []
     for start_index, end_index, thresh_v in zip(fast_trough_indexes[:-1], threshold_indexes[1:], threshold_voltages[:-1]):
-        isi_raw = isi_sweep.v[start_index:end_index] - thresh_v
+        isi_raw = isi_sweep.v[int(start_index):int(end_index)] - thresh_v
         width = len(isi_raw) / n_points
         if width == 0:
             # trace is shorter than 100 points - probably in a burst, so we'll skip
