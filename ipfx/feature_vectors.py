@@ -13,7 +13,8 @@ def extract_feature_vectors(data_set,
                             ramp_sweep_numbers,
                             short_square_sweep_numbers,
                             long_square_sweep_numbers,
-                            use_lsq=True, use_ssq=True, use_ramp=True):
+                            use_lsq=True, use_ssq=True, use_ramp=True,
+                            target_sampling_rate=50000, ap_window_length=0.003):
     """Extract feature vectors for downstream dimensionality reduction
 
     Parameters
@@ -90,25 +91,31 @@ def extract_feature_vectors(data_set,
 
     all_features = feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
                                    lsq_features, ssq_features, ramp_features,
-                                   lsq_start, lsq_start + lsq_dur)
+                                   lsq_start, lsq_start + lsq_dur,
+                                   target_sampling_rate=target_sampling_rate,
+                                   ap_window_length=ap_window_length)
     return all_features
 
 
 def feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
                     lsq_features, ssq_features, ramp_features,
                     lsq_start, lsq_end,
-                    feature_width=20, rate_width=50):
+                    feature_width=20, rate_width=50,
+                    target_sampling_rate=50000, ap_window_length=0.003):
     """Feature vectors from stimulus set features"""
 
     result = {}
     result["step_subthresh"] = step_subthreshold(lsq_sweeps, lsq_features, lsq_start, lsq_end)
     result["subthresh_norm"] = subthresh_norm(lsq_sweeps, lsq_features, lsq_start, lsq_end)
+    result["isi_shape"] = isi_shape(lsq_sweeps, lsq_features)
+    result["first_ap"] = first_ap_features(lsq_sweeps, ssq_sweeps, ramp_sweeps,
+                                           lsq_features, ssq_features, ramp_features,
+                                           target_sampling_rate=target_sampling_rate,
+                                           window_length=ap_window_length)
     return result
 
     result["spiking"] = spiking_features(lsq_features, feature_width, rate_width)
-    result["isi_shape"] = isi_shape(lsq_features)
 
-    result["first_ap"] = first_ap_features(lsq_features, ssq_features, ramp_features)
 
     return result
 
@@ -203,12 +210,12 @@ def subthresh_norm(sweep_set, features, start, end,
 
         Parameters
         ----------
-            sweep_set : SweepSet
-            features : output of LongSquareAnalysis.analyze()
-            start : stimulus interval start (seconds)
-            end : stimulus interval end (seconds)
-            extend_duration: in seconds (default 0.2)
-            subsample_interval: in seconds (default 0.01)
+        sweep_set : SweepSet
+        features : output of LongSquareAnalysis.analyze()
+        start : stimulus interval start (seconds)
+        end : stimulus interval end (seconds)
+        extend_duration: in seconds (default 0.2)
+        subsample_interval: in seconds (default 0.01)
 
         Returns
         -------
@@ -237,4 +244,166 @@ def subthresh_norm(sweep_set, features, start, end,
     subsampled_v /= delta
 
     return subsampled_v
+
+
+def isi_shape(sweep_set, features, n_points=100, min_spike=5):
+    """ Average interspike voltage trajectory with normalized duration, aligned to threshold
+
+        Parameters
+        ----------
+        sweep_set : SweepSet
+        features : output of LongSquareAnalysis.analyze()
+        n_points: number of points in output
+        min_spike: minimum number of spikes for first preference sweep
+
+        Returns
+        -------
+        isi_norm : averaged, threshold-aligned, and duration-normalized voltage trace
+    """
+    sweep_table = features["sweeps"]
+    mask_supra = sweep_table["stim_amp"] >= features["rheobase_i"]
+    amps = sweep_table.loc[mask_supra, "stim_amp"].values - features["rheobase_i"]
+
+    # Pick out the sweep to get the ISI shape
+    # Shape differences are more prominent at lower frequencies, but we want
+    # enough to average to reduce noise. So, we will pick
+    # (1) lowest amplitude sweep with at least `min_spike` spikes (i.e. min_spike - 1 ISIs)
+    # (2) if not (1), sweep with the most spikes if any have multiple spikes
+    # (3) if not (1) or (2), lowest amplitude sweep with 1 spike (use 100 ms after spike or end of trace)
+
+    only_one_spike = False
+    n_spikes = sweep_table.loc[mask_supra, "avg_rate"].values
+
+    mask_spikes = n_spikes >= min_spike
+    if np.any(mask_spikes):
+        min_amp_masked = np.argmin(amps[mask_spikes])
+        isi_index = np.arange(0, len(n_spikes), dtype=int)[mask_spikes][min_amp_masked]
+    elif np.any(n_spikes > 1):
+        isi_index = np.argmax(n_spikes)
+    else:
+        only_one_spike = True
+        isi_index = np.argmin(amps)
+
+    isi_sweep = np.array(sweep_set.sweeps)[mask_supra][isi_index]
+    isi_spikes = np.array(features["spikes_set"])[mask_supra][isi_index]
+    if only_one_spike:
+        threshold_v = isi_spikes["threshold_v"][0]
+        fast_trough_index = isi_spikes["fast_trough_index"].astype(int)[0]
+
+        end_index = tsu.find_time_index(isi_sweep.t, isi_sweep.t[fast_trough_index] + 0.1)
+        isi_raw = isi_sweep.v[fast_trough_index:end_index] - threshold_v
+
+        width = len(isi_raw) / n_points
+        isi_raw = isi_raw[:width * n_points] # ensure division will work
+        isi_norm = subsample_average(isi_raw, width)
+
+        return isi_norm
+
+    threshold_indexes = isi_spikes["threshold_index"].astype(int)
+    threshold_voltages = isi_spikes["threshold_v"]
+    fast_trough_indexes = isi_spikes["fast_trough_index"].astype(int)
+    isi_list = []
+    for start_index, end_index, thresh_v in zip(fast_trough_indexes[:-1], threshold_indexes[1:], threshold_voltages[:-1]):
+        isi_raw = isi_sweep.v[start_index:end_index] - thresh_v
+        width = len(isi_raw) / n_points
+        if width == 0:
+            # trace is shorter than 100 points - probably in a burst, so we'll skip
+            continue
+        isi_norm = subsample_average(isi_raw[:width * n_points], width)
+        isi_list.append(isi_norm)
+
+    isi_norm = np.vstack(isi_list).mean(axis=0)
+    return isi_norm
+
+
+def first_ap_features(lsq_sweeps, ssq_sweeps, ramp_sweeps,
+                      lsq_features, ssq_features, ramp_features,
+                      target_sampling_rate=50000, window_length=0.003):
+    """Waveforms of first APs from long square, short square, and ramp
+
+    Parameters
+    ----------
+    *_sweeps  : SweepSet objects
+    *_features : results of *Analysis.analyze()
+    target_sampling_rate : Hz
+    window_length : seconds
+
+    Returns
+    -------
+    output_vector : waveforms of APs
+    """
+    if lsq_sweeps is None and ssq_sweeps is None and ramp_sweeps is None:
+        raise er.FeatureError("No input provided for first AP shape")
+
+    # Figure out the sampling rate & target length
+    if lsq_sweeps is not None:
+        swp = lsq_sweeps.sweeps[0]
+    elif ssq_sweeps is not None:
+        swp = ssq_sweeps.sweeps[0]
+    elif ramp_sweeps is not None:
+        swp = ramp_sweeps.sweeps[0]
+    else:
+        raise er.FeatureError("Could not find any sweeps for first AP shape")
+    sampling_rate = int(np.rint(1. / (swp.t[1] - swp.t[0])))
+    length_in_points = int(sampling_rate * window_length)
+
+    # Long squares
+    if lsq_sweeps is not None and lsq_features is not None:
+        rheo_ind = lsq_features["rheobase_sweep"].name
+
+        sweep = lsq_sweeps.sweeps[rheo_ind]
+        spikes = lsq_features["spikes_set"][rheo_ind]
+        ap_long_square = first_ap_waveform(sweep, spikes, length_in_points)
+    else:
+        ap_long_square = np.zeros(length_in_points)
+
+    # Ramps
+    if ramp_sweeps is not None and ramp_features is not None:
+        ap_ramp = np.zeros(length_in_points)
+        for swp_ind in ramp_features["spiking_sweeps"].index:
+            sweep = ramp_sweeps.sweeps[swp_ind]
+            spikes = ramp_features["spikes_set"][swp_ind]
+            ap_ramp += first_ap_waveform(sweep, spikes, length_in_points)
+        if len(ramp_features["spiking_sweeps"]) > 0:
+            ap_ramp /= len(ramp_features["spiking_sweeps"])
+    else:
+        ap_ramp = np.zeros(length_in_points)
+
+    # Short square
+    if ssq_sweeps is not None and ssq_features is not None:
+        ap_short_square = np.zeros(length_in_points)
+        for swp in ssq_features["common_amp_sweeps"].index:
+            sweep = ssq_sweeps.sweeps[swp_ind]
+            spikes = ssq_features["spikes_set"][swp_ind]
+            ap_short_square += first_ap_waveform(sweep, spikes, length_in_points)
+        if len(ssq_features["common_amp_sweeps"]) > 0:
+            ap_short_square /= len(ssq_features["common_amp_sweeps"])
+    else:
+        ap_short_square = np.zeros(length_in_points)
+
+    # Downsample if necessary
+    if sampling_rate > target_sampling_rate:
+        sampling_factor = sampling_rate / target_sampling_rate
+        ap_long_square = subsample_average(ap_long_square, sampling_factor)
+        ap_ramp = subsample_average(ap_ramp, sampling_factor)
+        ap_short_square = subsample_average(ap_short_square, sampling_factor)
+
+    dv_ap_short_square = np.diff(ap_short_square)
+    dv_ap_long_square = np.diff(ap_long_square)
+    dv_ap_ramp = np.diff(ap_ramp)
+
+    ap_list = [ap_short_square, ap_long_square, ap_ramp,
+                               dv_ap_short_square, dv_ap_long_square, dv_ap_ramp]
+
+    output_vector = np.hstack([ap_short_square, ap_long_square, ap_ramp,
+                               dv_ap_short_square, dv_ap_long_square, dv_ap_ramp])
+    return output_vector
+
+
+def first_ap_waveform(sweep, spikes, length_in_points):
+    start_index = spikes["threshold_index"].astype(int)[0]
+    end_index = start_index + length_in_points
+    return sweep.v[start_index:end_index]
+
+
 
