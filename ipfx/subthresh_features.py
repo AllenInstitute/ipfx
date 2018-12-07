@@ -69,7 +69,7 @@ def voltage_deflection(t, v, i, start, end, deflect_type=None):
     return v[deflect_index], deflect_index
 
 
-def time_constant(t, v, i, start, end, preset_fit_end=None,
+def time_constant(t, v, i, start, end, max_fit_end=None,
                   frac=0.1, baseline_interval=0.1, min_snr=20.):
     """Calculate the membrane time constant by fitting the voltage response with a
     single exponential.
@@ -80,8 +80,10 @@ def time_constant(t, v, i, start, end, preset_fit_end=None,
     t : numpy array of times in seconds
     start : start of stimulus interval in seconds
     end : end of stimulus interval in seconds
-    preset_fit_end : end of exponential fit window. If None, end of fit
-        window will be time of the peak hyperpolarizing deflection (default None)
+    max_fit_end : maximum end of exponential fit window. If None, end of fit
+        window will always be the time of the peak hyperpolarizing deflection. If set,
+        end of fit window will be max_fit_end if it is earlier than the time of peak
+        deflection (default None)
     frac : fraction of peak deflection (or deflection at `present_fit_end` if used)
         to find to determine start of fit window. (default 0.1)
     baseline_interval : duration before `start` for baseline Vm calculation
@@ -93,10 +95,10 @@ def time_constant(t, v, i, start, end, preset_fit_end=None,
     tau : membrane time constant in seconds
     """
     # Assumes this is being done on a hyperpolarizing step
-    if preset_fit_end is None:
-        v_peak, peak_index = voltage_deflection(t, v, i, start, end, "min")
-    else:
-        peak_index = tsu.find_time_index(t, preset_fit_end)
+    v_peak, peak_index = voltage_deflection(t, v, i, start, end, "min")
+    if max_fit_end is not None:
+        max_peak_index = tsu.find_time_index(t, max_fit_end)
+        peak_index = min(max_peak_index, peak_index)
         v_peak = v[peak_index]
     v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
 
