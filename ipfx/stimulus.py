@@ -2,7 +2,7 @@ import os
 import logging
 import allensdk.core.json_utilities as ju
 
-DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(os.path.dirname(__file__), 'stimulus_ontology.json')
+DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(os.path.dirname(__file__), 'defaults/stimulus_ontology.json')
 
 class Stimulus(object):
 
