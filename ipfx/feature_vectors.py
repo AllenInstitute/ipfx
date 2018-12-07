@@ -370,12 +370,15 @@ def first_ap_features(lsq_sweeps, ssq_sweeps, ramp_sweeps,
     # Short square
     if ssq_sweeps is not None and ssq_features is not None:
         ap_short_square = np.zeros(length_in_points)
-        for swp in ssq_features["common_amp_sweeps"].index:
+        short_count = 0
+        for swp_ind in ssq_features["common_amp_sweeps"].index:
             sweep = ssq_sweeps.sweeps[swp_ind]
             spikes = ssq_features["spikes_set"][swp_ind]
-            ap_short_square += first_ap_waveform(sweep, spikes, length_in_points)
-        if len(ssq_features["common_amp_sweeps"]) > 0:
-            ap_short_square /= len(ssq_features["common_amp_sweeps"])
+            if len(spikes) > 0:
+                short_count += 1
+                ap_short_square += first_ap_waveform(sweep, spikes, length_in_points)
+        if short_count > 0:
+            ap_short_square /= short_count
     else:
         ap_short_square = np.zeros(length_in_points)
 
@@ -418,7 +421,7 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
                         "width",
                         ]):
     """Binned and interpolated per-spike features"""
-    sweep_table = features["sweeps"]
+    sweep_table = features["spiking_sweeps"]
     mask_supra = sweep_table["stim_amp"] >= features["rheobase_i"]
     amps = sweep_table.loc[mask_supra, "stim_amp"].values - features["rheobase_i"]
     spike_data = np.array(features["spikes_set"])
