@@ -36,8 +36,8 @@ def fetch_DAT_NWB_file():
 
 def compare_dicts(d_ref, d):
     # pytest does not support passing in dicts of numpy arrays with strings
-    # See https://github.com/pytest-dev/pytest/issues/4079
-    # And also does not support nan with approx
+    # See https://github.com/pytest-dev/pytest/issues/4079 and
+    # https://github.com/pytest-dev/pytest/issues/4079
     assert sorted(d_ref.keys()) == sorted(d.keys())
     for k, v in d_ref.items():
         if isinstance(v, np.ndarray):
@@ -55,10 +55,7 @@ def compare_dicts(d_ref, d):
             value = d[k]
 
             if isinstance(value_ref, numbers.Number):
-                if np.isnan(value_ref) and np.isnan(value):
-                    pass
-                else:
-                    assert value_ref == approx(value)
+                assert value_ref == approx(value, nan_ok=True)
             else:
                 assert value_ref == value
 
@@ -71,7 +68,7 @@ def test_raises_on_missing_file():
 def test_raises_on_empty_h5_file():
     filename = 'empty.nwb'
 
-    with h5py.File(filename, 'w') as fh:
+    with h5py.File(filename, 'w'):
         pass
 
     with pytest.raises(ValueError, match=r'unknown NWB major'):
@@ -117,7 +114,7 @@ def test_valid_v1_skeleton_Pipeline():
     assert isinstance(reader, NwbPipelineReader)
 
 
-def test_valid_v1_skeleton_MIES():
+def test_valid_v1_skeleton_X_NWB():
     filename = 'valid_v2.nwb'
 
     with h5py.File(filename, 'w') as fh:
@@ -220,9 +217,9 @@ def test_valid_v1_full_Pipeline(fetch_pipeline_file):
     assert sweep_data_ref == sweep_data
 
 
-def test_valid_v1_full_MIES():
-    reader = create_nwb_reader(
-        'data\UntitledExperiment-2018_12_03_234957-compressed.nwb')
+def test_valid_v1_full_MIES_1():
+    reader = create_nwb_reader(os.path.join(os.path.dirname(__file__), 'data',
+                               'UntitledExperiment-2018_12_03_234957-compressed.nwb'))
     assert isinstance(reader, NwbMiesReader)
 
     sweep_names_ref = [u'data_00000_AD0']
@@ -264,9 +261,9 @@ def test_valid_v1_full_MIES():
     assert sweep_data_ref == sweep_data
 
 
-def test_valid_v1_full_MIES():
-    reader = create_nwb_reader(
-        'data\UntitledExperiment-2018_12_03_234957-compressed.nwb')
+def test_valid_v1_full_MIES_2():
+    reader = create_nwb_reader(os.path.join(os.path.dirname(__file__), 'data',
+                               'H18.03.315.11.11.01.05.nwb'))
     assert isinstance(reader, NwbMiesReader)
 
     sweep_names_ref = [u'data_00000_AD0']
@@ -278,14 +275,15 @@ def test_valid_v1_full_MIES():
 
     assert reader.get_sweep_number("data_00000_AD0") == 0
 
-    assert reader.get_stim_code("data_00000_AD0") == "StimulusSetA"
+    assert reader.get_stim_code("data_00000_AD0") == "EXTPSMOKET180424"
 
     # ignore very long comment
     sweep_attrs_ref = {u'ancestry': np.array([u'TimeSeries', u'PatchClampSeries', u'VoltageClampSeries'], dtype=object),
-                       u'comment':  None,
+                       u'comment': None,
                        u'description': u'PLACEHOLDER',
                        u'missing_fields': np.array([u'resistance_comp_bandwidth', u'resistance_comp_correction',
-                                                    u'resistance_comp_prediction'], dtype=object),
+                                                    u'resistance_comp_prediction', u'whole_cell_capacitance_comp',
+                                                    u'whole_cell_series_resistance_comp'], dtype=object),
                        u'neurodata_type': u'TimeSeries',
                        u'source': u'Device=ITC18USB_Dev_0;Sweep=0;AD=0;ElectrodeNumber=0;ElectrodeName=0'}
 
@@ -295,7 +293,53 @@ def test_valid_v1_full_MIES():
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (0, 188000),
+    sweep_data_ref = {'index_range': (0, 65999),
+                      'response': None,
+                      'sampling_rate': 200000.0,
+                      'stimulus': None,
+                      'stimulus_unit': 'Volts'}
+
+    sweep_data = reader.get_sweep_data(0)
+    sweep_data['response'] = None
+    sweep_data['stimulus'] = None
+
+    assert sweep_data_ref == sweep_data
+
+
+def test_valid_v1_full_MIES_3():
+    reader = create_nwb_reader(os.path.join(os.path.dirname(__file__), 'data',
+                               'Sst-IRES-CreAi14-395722.01.01.01.nwb'))
+
+    assert isinstance(reader, NwbMiesReader)
+
+    sweep_names_ref = [u'data_00000_AD0']
+
+    sweep_names = reader.get_sweep_names()
+    assert sorted(sweep_names_ref) == sorted(sweep_names)
+
+    assert reader.get_pipeline_version() == (0, 0)
+
+    assert reader.get_sweep_number("data_00000_AD0") == 0
+
+    assert reader.get_stim_code("data_00000_AD0") == "EXTPSMOKET180424"
+
+    # ignore very long comment
+    sweep_attrs_ref = {u'ancestry': np.array([u'TimeSeries', u'PatchClampSeries', u'VoltageClampSeries'], dtype=object),
+                       u'comment': None,
+                       u'description': u'PLACEHOLDER',
+                       u'missing_fields': np.array([u'resistance_comp_bandwidth', u'resistance_comp_correction',
+                                                    u'resistance_comp_prediction', u'whole_cell_capacitance_comp',
+                                                    u'whole_cell_series_resistance_comp'], dtype=object),
+                       u'neurodata_type': u'TimeSeries',
+                       u'source': u'Device=ITC18USB_Dev_0;Sweep=0;AD=0;ElectrodeNumber=0;ElectrodeName=0'}
+
+    sweep_attrs = reader.get_sweep_attrs("data_00000_AD0")
+    sweep_attrs['comment'] = None
+
+    compare_dicts(sweep_attrs_ref, sweep_attrs)
+
+    # assume the data itself is correct and replace it with None
+    sweep_data_ref = {'index_range': (0, 65999),
                       'response': None,
                       'sampling_rate': 200000.0,
                       'stimulus': None,
@@ -309,7 +353,8 @@ def test_valid_v1_full_MIES():
 
 
 def test_valid_v2_full_ABF():
-    reader = create_nwb_reader('data/2018_03_20_0005.nwb')
+    reader = create_nwb_reader(os.path.join(os.path.dirname(__file__), 'data',
+                               '2018_03_20_0005.nwb'))
     assert isinstance(reader, NwbXReader)
 
     sweep_names_ref = [u'index_0', u'index_1']
