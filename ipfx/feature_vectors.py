@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 import pandas as pd
+from scipy import stats
 from . import stim_features as stf
 from . import data_set_features as dsf
 from . import stimulus_protocol_analysis as spa
@@ -92,6 +93,7 @@ def extract_feature_vectors(data_set,
     all_features = feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
                                    lsq_features, ssq_features, ramp_features,
                                    lsq_start, lsq_start + lsq_dur,
+                                   lsq_spx,
                                    target_sampling_rate=target_sampling_rate,
                                    ap_window_length=ap_window_length)
     return all_features
@@ -99,7 +101,7 @@ def extract_feature_vectors(data_set,
 
 def feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
                     lsq_features, ssq_features, ramp_features,
-                    lsq_start, lsq_end,
+                    lsq_start, lsq_end, lsq_spike_extractor,
                     feature_width=20, rate_width=50,
                     target_sampling_rate=50000, ap_window_length=0.003):
     """Feature vectors from stimulus set features"""
@@ -112,11 +114,9 @@ def feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
                                            lsq_features, ssq_features, ramp_features,
                                            target_sampling_rate=target_sampling_rate,
                                            window_length=ap_window_length)
-    return result
-
-    result["spiking"] = spiking_features(lsq_features, feature_width, rate_width)
-
-
+    result["spiking"] = spiking_features(lsq_sweeps, lsq_features, lsq_spike_extractor,
+                                         lsq_start, lsq_end,
+                                         feature_width, rate_width)
     return result
 
 
@@ -406,4 +406,146 @@ def first_ap_waveform(sweep, spikes, length_in_points):
     return sweep.v[start_index:end_index]
 
 
+def spiking_features(sweep_set, features, spike_extractor, start, end,
+                     feature_width=20, rate_width=50,
+                     amp_interval=20, max_above_rheo=100,
+                     spike_feature_list=[
+                        "upstroke_downstroke_ratio",
+                        "peak_v",
+                        "fast_trough_v",
+                        "adp_delta_v",
+                        "slow_trough_delta_v",
+                        "slow_trough_delta_t",
+                        "threshold_v",
+                        "width",
+                        ]):
+    """Binned and interpolated per-spike features"""
+    sweep_table = features["sweeps"]
+    mask_supra = sweep_table["stim_amp"] >= features["rheobase_i"]
+    amps = sweep_table.loc[mask_supra, "stim_amp"].values - features["rheobase_i"]
+    spike_data = np.array(features["spikes_set"])
+
+    # PSTH Calculation
+    rate_data = {}
+    for amp, swp_ind in zip(amps, sweep_table.index.values[mask_supra]):
+        if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):
+            continue
+
+        amp_level = int(np.rint(amp / float(amp_interval)))
+        thresh_t = spike_data[swp_ind]["threshold_t"]
+        spike_count = np.ones_like(thresh_t)
+        bin_number = int(1. / 0.001) / rate_width + 1
+        bins = np.linspace(start, end, bin_number)
+        bin_width = bins[1] - bins[0]
+        output = stats.binned_statistic(thresh_t,
+                                        spike_count,
+                                        statistic='sum',
+                                        bins=bins)[0]
+        output[np.isnan(output)] = 0
+        output /= bin_width # convert to spikes/s
+        rate_data[amp_level] = output
+
+    # Combine all levels into single vector & imterpolate to fill missing sweeps
+    output_vector = combine_and_interpolate(rate_data, max_level=max_above_rheo / amp_interval)
+
+    # Instantaneous frequency
+    feature_data = {}
+    for amp, swp_ind in zip(amps, sweep_table.index.values[mask_supra]):
+        if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):
+            continue
+
+        amp_level = int(np.rint(amp / float(amp_interval)))
+
+        swp = sweep_set.sweeps[swp_ind]
+        start_index = tsu.find_time_index(swp.t, start)
+        end_index = tsu.find_time_index(swp.t, end)
+
+        thresh_ind = spike_data[swp_ind]["threshold_index"].values
+        thresh_t = spike_data[swp_ind]["threshold_t"].values
+        inst_freq = inst_freq_feature(thresh_t, start, end)
+        inst_freq = np.insert(inst_freq, 0, 1. / (thresh_t[0] - start))
+        thresh_ind = np.insert(thresh_ind, [0, len(thresh_ind)], [start_index, end_index])
+
+        t = swp.t[start_index:end_index]
+        freq = np.zeros_like(t)
+        thresh_ind -= start_index
+        for f, i1, i2 in zip(inst_freq, thresh_ind[:-1], thresh_ind[1:]):
+            freq[i1:i2] = f
+
+        bin_number = int(1. / 0.001) / feature_width + 1
+        bins = np.linspace(1.02, 2.02, bin_number)
+        output = stats.binned_statistic(t,
+                                        freq,
+                                        bins=bins)[0]
+        feature_data[amp_level] = output
+    output_vector = np.append(output_vector, combine_and_interpolate(feature_data, max_level=max_above_rheo / amp_interval))
+
+    # Spike-level feature calculation
+    for feature in spike_feature_list:
+        feature_data = {}
+        for amp, swp_ind in zip(amps, sweep_table.index.values[mask_supra]):
+            if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):
+                continue
+            amp_level = int(np.rint(amp / float(amp_interval)))
+
+            thresh_t = spike_data[swp_ind]["threshold_t"].values
+            if feature not in spike_data[swp_ind].columns:
+                feature_values = np.zeros_like(thresh_t)
+            else:
+                # Not every feature is defined for every spike
+                feature_values = spike_data[swp_ind][feature].values
+                can_be_clipped = spike_extractor.is_spike_feature_affected_by_clipping(feature)
+                if can_be_clipped:
+                    mask = ~spike_data[swp_ind]["clipped"].values
+                    thresh_t = thresh_t[mask]
+                    feature_values = feature_values[mask]
+
+            bin_number = int(1. / 0.001) / feature_width + 1
+            bins = np.linspace(start, end, bin_number)
+
+            output = stats.binned_statistic(thresh_t,
+                                            feature_values,
+                                            bins=bins)[0]
+            nan_ind = np.isnan(output)
+            x = np.arange(len(output))
+            output[nan_ind] = np.interp(x[nan_ind], x[~nan_ind], output[~nan_ind])
+            feature_data[amp_level] = output
+        output_vector = np.append(output_vector, combine_and_interpolate(feature_data, max_level=5))
+    return output_vector
+
+
+def combine_and_interpolate(data, max_level):
+    output_vector = data[0]
+    for i in range(1, max_level + 1):
+        if i not in data:
+            bigger_level = -1
+            for j in range(i + 1, max_level + 1):
+                if j in data:
+                    bigger_level = j
+                    break
+            smaller_level = -1
+            for j in range(i - 1, -1, -1):
+                if j in data:
+                    smaller_level = j
+                    break
+            if bigger_level == -1:
+                new_data = data[smaller_level]
+            else:
+                new_data = (data[smaller_level] + data[bigger_level]) / 2.
+            output_vector = np.append(output_vector, new_data)
+            data[i] = new_data
+        else:
+            output_vector = np.append(output_vector, data[i])
+    return output_vector
+
+
+def inst_freq_feature(threshold_t, start, end):
+    if len(threshold_t) == 0:
+        return np.array([])
+    elif len(threshold_t) == 1:
+        return np.array([1. / (end - start)])
+
+    values = 1. / np.diff(threshold_t)
+    values = np.append(values, 1. / (end - threshold_t[-2])) # last
+    return values
 
