@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import ipfx.qc_features as qcf
 
-DEFAULT_QC_CRITERIA_FILE = os.path.join(os.path.dirname(__file__), 'qc_criteria.json')
+DEFAULT_QC_CRITERIA_FILE = os.path.join(os.path.dirname(__file__), 'defaults/qc_criteria.json')
 
 
 def load_default_qc_criteria():
