@@ -3,7 +3,7 @@ import os
 from ipfx._schemas import GeneratePipelineInputParameters
 import argschema as ags
 import allensdk.internal.core.lims_utilities as lu
-
+import make_stimulus_ontology as mso
 
 def get_input_nwb_file_from_lims(specimen_id):
 
@@ -45,9 +45,10 @@ def get_input_h5_file_from_lims(specimen_id):
     return h5_file_name
 
 
-def generate_se_input(specimen_id=None,
+def generate_se_input(cell_dir,
+                      specimen_id=None,
                       input_nwb_file=None,
-                      stimulus_ontology_file=None):
+                      ):
 
     se_input = dict()
 
@@ -58,8 +59,12 @@ def generate_se_input(specimen_id=None,
     elif input_nwb_file:
         se_input['input_nwb_file'] = input_nwb_file
 
-    if stimulus_ontology_file:
-        se_input["stimulus_ontology_file"] = stimulus_ontology_file
+    stim_ontolgoy_tags = mso.make_stimulus_ontology_from_lims()
+    stim_ontology_json = os.path.join(cell_dir, 'stimulus_ontology.json')
+    ju.write(stim_ontology_json, stim_ontolgoy_tags)
+
+    se_input["stimulus_ontology_file"] = stim_ontology_json
+
     return se_input
 
 
@@ -76,10 +81,10 @@ def main():
 
     kwargs = module.args
     kwargs.pop("log_level")
-    cell_dir = kwargs.pop("cell_dir")
+
     se_input = generate_se_input(**kwargs)
 
-    input_json = os.path.join(cell_dir,'se_input.json')
+    input_json = os.path.join(kwargs["cell_dir"],'se_input.json')
 
     ju.write(input_json, se_input)
 

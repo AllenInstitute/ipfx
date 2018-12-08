@@ -66,8 +66,7 @@ def main():
 
     kwargs = module.args
     kwargs.pop("log_level")
-    cell_dir = kwargs.pop("cell_dir")
-
+    cell_dir = kwargs["cell_dir"]
     se_input = generate_se_input(**kwargs)
 
     ju.write(os.path.join(cell_dir,'se_input.json'), se_input)
