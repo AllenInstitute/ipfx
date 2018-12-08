@@ -90,12 +90,13 @@ def make_default_stimulus_ontology():
     MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
     PACKAGE_DIR = os.path.dirname(MODULE_DIR)
 
-    ontology = make_stimulus_ontology_from_lims()
+    stim_ontology_tags = make_stimulus_ontology_from_lims()
+    stim_ontology_json = os.path.join(PACKAGE_DIR,"defaults/stimulus_ontology.json")
 
-    for o in ontology:
+    ju.write(stim_ontology_json, stim_ontology_tags)
+
+    for o in stim_ontology_tags:
         print(o)
-
-    ju.write(os.path.join(PACKAGE_DIR,"defaults/stimulus_ontology.json"), ontology)
 
 
 def main():

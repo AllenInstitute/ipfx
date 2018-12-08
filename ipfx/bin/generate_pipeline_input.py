@@ -71,12 +71,12 @@ def get_input_h5_file_from_lims(specimen_id):
 def generate_pipeline_input(cell_dir=None,
                             specimen_id=None,
                             input_nwb_file=None,
-                            plot_figures=False,
-                            stimulus_ontology_file=None):
+                            plot_figures=False):
 
-    se_input = generate_se_input(specimen_id=specimen_id,
-                                 input_nwb_file=input_nwb_file,
-                                 stimulus_ontology_file=stimulus_ontology_file)
+    se_input = generate_se_input(cell_dir,
+                                 specimen_id=specimen_id,
+                                 input_nwb_file=input_nwb_file
+                                 )
     pipe_input = dict(se_input)
 
     if specimen_id:
@@ -107,9 +107,10 @@ def main():
 
     kwargs = module.args
     kwargs.pop("log_level")
+    cell_dir = kwargs["cell_dir"]
     pipe_input = generate_pipeline_input(**kwargs)
 
-    input_json = os.path.join(module.args["cell_dir"],'pipeline_input.json')
+    input_json = os.path.join(cell_dir,'pipeline_input.json')
 
     ju.write(input_json,pipe_input)
 

@@ -27,12 +27,7 @@ def generate_fx_input(se_input,
                       cell_dir,
                       plot_figures=False):
 
-    fx_input = dict()
-
-    fx_input['input_nwb_file'] = se_input['input_nwb_file']
-
-    if 'input_h5_file' in se_input:
-        fx_input['input_h5_file'] = se_input['input_h5_file']
+    fx_input = dict(se_input)
 
     fx_input['sweep_features'] = sp.extract_sweep_features_subset(FX_INPUT_FEATURES,se_output["sweep_features"])
 
@@ -58,9 +53,9 @@ def main():
 
     kwargs = module.args
     kwargs.pop("log_level")
-    cell_dir = kwargs.pop("cell_dir")
 
     se_input = generate_se_input(**kwargs)
+    cell_dir = kwargs["cell_dir"]
     ju.write(os.path.join(cell_dir,'se_input.json'), se_input)
 
     se_output = run_sweep_extraction(se_input["input_nwb_file"],
