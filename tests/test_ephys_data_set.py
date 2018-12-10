@@ -101,3 +101,52 @@ def test_extract_sweep_meta_data_raises():
     with pytest.raises(NotImplementedError):
         ds = get_dataset()
         ds.extract_sweep_meta_data()
+
+
+def test_modify_api_sweep_info():
+    d = [{"sweep_number": 123,
+          "stimulus_units": "abcd",
+          "stimulus_absolute_amplitude": 456,
+          "stimulus_description": "efgh[4711]",
+          "stimulus_name": "hijkl"
+          }]
+
+    ds = get_dataset()
+    result = ds.modify_api_sweep_info(d)
+
+    expected = [{EphysDataSet.SWEEP_NUMBER: 123,
+                 EphysDataSet.STIMULUS_UNITS: "abcd",
+                 EphysDataSet.STIMULUS_AMPLITUDE: 456,
+                 EphysDataSet.STIMULUS_CODE: "efgh",
+                 EphysDataSet.STIMULUS_NAME: "hijkl",
+                 EphysDataSet.PASSED: True}]
+
+    assert len(expected) == len(result)
+    compare_dicts(expected[0], result[0])
+
+
+def test_get_stimulus_name():
+
+    with pytest.raises(ValueError):
+        ds = get_dataset()
+        ds.ontology = None
+        ds.get_stimulus_name("abcd")
+
+
+def test_get_stimulus_name_works():
+
+    ds = get_dataset()
+
+    stimulus_code = "EXTPCllATT141203"
+    d = {EphysDataSet.STIMULUS_CODE: stimulus_code}
+    d[EphysDataSet.STIMULUS_NAME] = ds.get_stimulus_name(stimulus_code)
+
+    expected = {EphysDataSet.STIMULUS_CODE: stimulus_code, EphysDataSet.STIMULUS_NAME: "Test"}
+    assert expected == d
+
+
+def test_get_sweep_data():
+
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.get_sweep_data(123)
