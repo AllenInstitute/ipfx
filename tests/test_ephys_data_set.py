@@ -68,3 +68,30 @@ def test_get_sweep_info():
     ds = get_dataset()
     actual = ds.get_sweep_info_by_sweep_number(5)
     compare_dicts(expected, actual)
+
+
+def test_sweep_raises():
+
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.sweep(5)
+
+
+def test_set_sweep_raises_int():
+
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.sweep_set(5)
+
+
+def test_set_sweep_raises_list():
+
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.sweep_set([5, 6])
+
+
+def test_aligned_sweeps_raises():
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.aligned_sweeps([5], 0.0)

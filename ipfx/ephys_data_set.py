@@ -94,10 +94,13 @@ class EphysDataSet(object):
         raise NotImplementedError
 
     def sweep_set(self, sweep_numbers):
-        return SweepSet([self.sweep(sn) for sn in sweep_numbers])
+        try:
+            return SweepSet([self.sweep(sn) for sn in sweep_numbers])
+        except TypeError:  # not iterable
+            return SweepSet([self.sweep(sweep_numbers)])
 
     def aligned_sweeps(self, sweep_numbers, stim_onset_delta):
-        pass
+        raise NotImplementedError
 
 
 class Sweep(object):
