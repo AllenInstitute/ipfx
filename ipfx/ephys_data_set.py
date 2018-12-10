@@ -92,8 +92,61 @@ class EphysDataSet(object):
         return sweeps.to_dict(orient='records')[0]
 
     def sweep(self, sweep_number):
-        """ returns a dictionary with properties: i (in pA), v (in mV), t (in sec), start, end"""
-        raise NotImplementedError
+
+        """
+        Create an instance of the Sweep object from a data set sweep
+        Time t=0 is set to the start of the experiment epoch
+
+        Parameters
+        ----------
+        sweep_number
+
+        Returns
+        -------
+        Sweep object
+        """
+
+        sweep_data = self.get_sweep_data(sweep_number)
+        hz = sweep_data['sampling_rate']
+        dt = 1. / hz
+        sweep_info = self.get_sweep_info_by_sweep_number(sweep_number)
+
+        start_ix, end_ix = sweep_data['index_range']
+
+        t = np.arange(0, end_ix+1)*dt - start_ix*dt
+
+        response = sweep_data['response'][0:end_ix+1]
+        stimulus = sweep_data['stimulus'][0:end_ix+1]
+
+        clamp_mode = sweep_info.get('clamp_mode', None)
+        if clamp_mode is None:
+            clamp_mode = "CurrentClamp" if sweep_info[
+                'stimulus_units'] in self.ontology.current_clamp_units else "VoltageClamp"
+
+        if clamp_mode == "VoltageClamp":  # voltage clamp
+            v = stimulus
+            i = response
+        elif clamp_mode == "CurrentClamp":  # Current clamp
+            v = response
+            i = stimulus
+        else:
+            raise ValueError("Incorrect stimulus unit")
+
+        try:
+            sweep = Sweep(t=t,
+                          v=v,
+                          i=i,
+                          sampling_rate=sweep_data['sampling_rate'],
+                          expt_idx_range=sweep_data['index_range'],
+                          sweep_number=sweep_number,
+                          clamp_mode=clamp_mode
+                          )
+
+        except Exception:
+            logging.warning("Error reading sweep %d" % sweep_number)
+            raise
+
+        return sweep
 
     def sweep_set(self, sweep_numbers):
         try:
@@ -121,6 +174,22 @@ class EphysDataSet(object):
                  EphysDataSet.STIMULUS_CODE: re.sub(r"\[\d+\]", "", s['stimulus_description']),
                  EphysDataSet.STIMULUS_NAME: s['stimulus_name'],
                  EphysDataSet.PASSED: True} for s in sweep_list]
+
+    def get_sweep_data(self, sweep_number):
+        """
+        Return the data of sweep_number as dict. The dict has the format:
+
+        ```
+        {
+            'stimulus': np.ndarray,
+            'response': np.ndarray,
+            'stimulus_unit': string,
+            'index_range': list with two elements,
+            'sampling_rate': float
+        }
+        ```
+        """
+        raise NotImplementedError
 
 
 class Sweep(object):
