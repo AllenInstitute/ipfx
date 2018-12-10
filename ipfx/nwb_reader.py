@@ -28,10 +28,10 @@ class NwbReader(object):
     def __init__(self, nwb_file):
         self.nwb_file = nwb_file
 
-    def get_sweep_data(self):
+    def get_sweep_data(self, sweep_number):
         raise NotImplementedError
 
-    def get_sweep_number(self):
+    def get_sweep_number(self, sweep_name):
         raise NotImplementedError
 
     def get_stim_code(self, sweep_name):
