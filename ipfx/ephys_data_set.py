@@ -28,6 +28,7 @@ class EphysDataSet(object):
                              stimuli=None,
                              exclude_search=False,
                              exclude_test=False,
+                             sweep_number=None,
                              ):
 
         st = self.sweep_table
@@ -50,6 +51,10 @@ class EphysDataSet(object):
 
         if exclude_test:
             mask = ~st[self.STIMULUS_NAME].isin(self.ontology.test_names)
+            st = st[mask]
+
+        if sweep_number:
+            mask = st[self.SWEEP_NUMBER] == sweep_number
             st = st[mask]
 
         return st
@@ -79,11 +84,10 @@ class EphysDataSet(object):
         -------
         sweep_info: dict of sweep properties
         """
-        st = self.sweep_table
-        mask = st[self.SWEEP_NUMBER] == sweep_number
-        st = st[mask]
 
-        return st.to_dict(orient='records')[0]
+        sweeps = self.filtered_sweep_table(sweep_number=sweep_number)
+
+        return sweeps.to_dict(orient='records')[0]
 
     def sweep(self, sweep_number):
         """ returns a dictionary with properties: i (in pA), v (in mV), t (in sec), start, end"""
