@@ -1,4 +1,6 @@
 import pandas as pd
+import pytest
+
 from ipfx.stimulus import StimulusOntology
 from ipfx.ephys_data_set import EphysDataSet
 
@@ -24,6 +26,25 @@ def get_dataset():
     dataset.sweep_table = df
 
     return dataset
+
+
+def test_get_sweep_number_by_stimulus_name_invalid_sweep():
+
+    with pytest.raises(IndexError):
+        ds = get_dataset()
+        ds.get_sweep_number_by_stimulus_names(['I_DONT_EXIST'])
+
+
+def test_get_sweep_number_by_stimulus_name_works_1():
+    ds = get_dataset()
+    sweeps = ds.get_sweep_number_by_stimulus_names(['C1LSFINEST'])
+    assert sweeps == 49
+
+
+def test_get_sweep_number_by_stimulus_name_works_and_returns_only_the_last():
+    ds = get_dataset()
+    sweeps = ds.get_sweep_number_by_stimulus_names(['EXTPBREAKN'])
+    assert sweeps == 6
 
 
 def test_filtered_sweep_table_works():
