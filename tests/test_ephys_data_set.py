@@ -1,14 +1,17 @@
 import pandas as pd
+import numpy as np
 import pytest
 
 from ipfx.stimulus import StimulusOntology
 from ipfx.ephys_data_set import EphysDataSet
 
+from helpers import compare_dicts
+
 
 def get_sweep_table_dict():
-    return {'bridge_balance_mohm': [15.6288156509, None, None],
+    return {'bridge_balance_mohm': [15.6288156509, np.nan, np.nan],
             'clamp_mode': ['CurrentClamp', 'VoltageClamp', 'VoltageClamp'],
-            'leak_pa': [-6.20449542999, None, None],
+            'leak_pa': [-6.20449542999, np.nan, np.nan],
             'stimulus_code': ['C1LSFINEST150112', 'EXTPBREAKN141203', 'EXTPBREAKN141203'],
             'stimulus_code_ext': ['C1LSFINEST150112[0]', 'EXTPBREAKN141203[0]', 'EXTPBREAKN141203[0]'],
             'stimulus_name': ["Long Square", "Test", "Test"],
@@ -53,3 +56,15 @@ def test_filtered_sweep_table_works():
     sweeps = ds.filtered_sweep_table(stimuli=['EXTPBREAKN'])
 
     assert sweeps["sweep_number"].tolist() == [5, 6]
+
+
+def test_get_sweep_info():
+
+    d = get_sweep_table_dict()
+    expected = {}
+    for k in d:
+        expected[k] = d[k][1]
+
+    ds = get_dataset()
+    actual = ds.get_sweep_info_by_sweep_number(5)
+    compare_dicts(expected, actual)
