@@ -259,7 +259,8 @@ class DatConverter:
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
-                    cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount], total=self.totalSeriesCount)
+                    cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount],
+                                             total=self.totalSeriesCount)
                     stimRec = self.bundle.pgf[getStimulusRecordIndex(sweep)]
                     for trace in sweep:
                         stimset = generator.fetch(sweep, trace)
@@ -338,7 +339,8 @@ class DatConverter:
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
-                    cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount], total=self.totalSeriesCount)
+                    cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount],
+                                             total=self.totalSeriesCount)
                     for trace_index, trace in enumerate(sweep):
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = createCompressedDataset(self.bundle.data[trace])
