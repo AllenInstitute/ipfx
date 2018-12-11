@@ -75,6 +75,16 @@ class ABFConverter:
         with NWBHDF5IO(outFile, "w") as io:
             io.write(nwbFile, cache_spec=True)
 
+    @staticmethod
+    def outputMetadata(inFile):
+        if not os.path.isfile(inFile):
+            raise ValueError(f"The file {inFile} does not exist.")
+
+        root, ext = os.path.splitext(inFile)
+
+        abf = pyabf.ABF(inFile)
+        abf.getInfoPage().generateHTML(saveAs=root + ".html")
+
     def _getJSONFile(self, inFileOrFolder):
         """
         Search the JSON file with all amplifier settings.
