@@ -1,5 +1,4 @@
 import os
-import allensdk.core.json_utilities as ju
 from ipfx._schemas import GeneratePipelineInputParameters
 import argschema as ags
 from run_sweep_extraction import run_sweep_extraction
@@ -68,6 +67,9 @@ def main():
     kwargs.pop("log_level")
     cell_dir = kwargs["cell_dir"]
     se_input = generate_se_input(**kwargs)
+
+    if not os.path.exists(cell_dir):
+        os.makedirs(cell_dir)
 
     ju.write(os.path.join(cell_dir,'se_input.json'), se_input)
 

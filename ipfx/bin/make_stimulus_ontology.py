@@ -1,23 +1,13 @@
-import allensdk.internal.core.lims_utilities as lu
 import allensdk.core.json_utilities as ju
 import re
 import os
+import lims_queries as lq
 
 NAME = 'name'
 CODE = 'code'
 RES = 'resolution'
 CORE = 'core'
 HOLD = 'hold'
-
-
-def query_lims_for_stimuli():
-
-    stims = lu.query("""
-    select ersn.name as stimulus_code, est.name as stimulus_name from ephys_raw_stimulus_names ersn
-    join ephys_stimulus_types est on ersn.ephys_stimulus_type_id = est.id
-    """)
-
-    return stims
 
 
 def make_stimulus_ontology(stims):
@@ -76,8 +66,7 @@ def make_stimulus_ontology(stims):
 
 def make_stimulus_ontology_from_lims():
 
-    stimuli = query_lims_for_stimuli()
-
+    stimuli = lq.get_stimuli_description()
     ontology = make_stimulus_ontology(stimuli)
 
     ontology.append([(CODE, 'C1NSSEED'), (NAME, 'Noise', 'Noise 1'), (CORE, 'Core 1')])
