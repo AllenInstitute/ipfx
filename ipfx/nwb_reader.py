@@ -69,7 +69,7 @@ class NwbReader(object):
             real_sweep_number = timeseries.attrs["sweep_number"]
 
         if real_sweep_number is None:
-            warnings.log("Could not find a source/sweep_number attribute/dataset.")
+            warnings.warn("Could not find a source/sweep_number attribute/dataset.")
         elif real_sweep_number != sweep_number:
             raise ValueError("Sweep number mismatch with timeseries {} ({} vs {}).".format(
                              timeseries, sweep_number, real_sweep_number))
