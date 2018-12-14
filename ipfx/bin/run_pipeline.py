@@ -46,9 +46,6 @@ def run_pipeline(input_nwb_file,
                                        )
     logging.info("Extracted features!")
 
-    # On Windows int64 keys of sweep numbers cannot be converted to str by json.dump when serializing.
-    # Thus, we are converting them here:
-    fx_output["sweep_features"] = {str(k): v for k, v in fx_output["sweep_features"].items()}
 
     return dict( sweep_extraction=se_output,
                  qc=qc_output,
