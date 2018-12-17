@@ -1,16 +1,15 @@
 import os
-import numbers
 import urllib2
 import shutil
 
 import pytest
-from pytest import approx
 
 import h5py
 import numpy as np
 
 from ipfx.nwb_reader import create_nwb_reader, NwbMiesReader, NwbPipelineReader, NwbXReader
 from allensdk.api.queries.cell_types_api import CellTypesApi
+from helpers_for_tests import compare_dicts
 
 
 @pytest.fixture()
@@ -32,32 +31,6 @@ def fetch_DAT_NWB_file():
         response = urllib2.urlopen(BASE_URL + output_filepath)
         with open(output_filepath, "wb") as out_file:
             shutil.copyfileobj(response, out_file)
-
-
-def compare_dicts(d_ref, d):
-    # pytest does not support passing in dicts of numpy arrays with strings
-    # See https://github.com/pytest-dev/pytest/issues/4079 and
-    # https://github.com/pytest-dev/pytest/issues/4079
-    assert sorted(d_ref.keys()) == sorted(d.keys())
-    for k, v in d_ref.items():
-        if isinstance(v, np.ndarray):
-            array_ref = d_ref[k]
-            array = d[k]
-
-            assert len(array) == len(array_ref)
-            for index in range(len(array)):
-                if isinstance(array[index], (str, unicode)):
-                    assert array[index] == array_ref[index]
-                else:
-                    assert array[index] == approx(array_ref[index])
-        else:
-            value_ref = d_ref[k]
-            value = d[k]
-
-            if isinstance(value_ref, numbers.Number):
-                assert value_ref == approx(value, nan_ok=True)
-            else:
-                assert value_ref == value
 
 
 def test_raises_on_missing_file():
