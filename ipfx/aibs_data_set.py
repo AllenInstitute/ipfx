@@ -13,13 +13,11 @@ class AibsDataSet(EphysDataSet):
 
         self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
 
-        if nwb_file and h5_file:
-            self.notebook = lab_notebook_reader.create_lab_notebook_reader(nwb_file, h5_file)
-
         if sweep_info is not None:
             sweep_info = self.modify_api_sweep_info(
                 sweep_info) if api_sweeps else sweep_info
         else:
+            self.notebook = lab_notebook_reader.create_lab_notebook_reader(nwb_file, h5_file)
             sweep_info = self.extract_sweep_meta_data()
 
         self.sweep_table = pd.DataFrame.from_records(sweep_info)
