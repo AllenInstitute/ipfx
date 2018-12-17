@@ -68,7 +68,7 @@ def test_file_level_regressions(raw_file):
 
     ref_folder = f"reference_{ext[1:]}_nwb"
 
-    new_file = convert(raw_file, overwrite=True)
+    new_file = convert(raw_file, overwrite=True, outputFeedbackChannel=True)
     ref_file = os.path.join(ref_folder, os.path.basename(new_file))
 
     assert os.path.isfile(ref_file)
