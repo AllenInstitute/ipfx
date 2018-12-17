@@ -189,19 +189,6 @@ class NwbXReader(NwbReader):
 
             for s in series:
 
-                # ABF: Two channels, only the first has valid data
-                # DAT: One channel
-                if rawDataSourceType["abf"]:
-                    description = json.loads(s.description)
-                    channel_number = description['number']
-
-                    if channel_number not in (1, 5):
-                        raise ValueError("Unexpected channel number {} for TimeSeries {}.".format(channel_number, s))
-                    elif channel_number == 5:
-                        # this is the channel were the feedback stimulus is recorded
-                        # TODO maybe we need a better way to find that channel??
-                        continue
-
                 if isinstance(s, (VoltageClampSeries, CurrentClampSeries, IZeroClampSeries)):
                     if response is not None:
                         raise ValueError("Found multiple response TimeSeries in NWB file for sweep number {}.".format(sweep_number))
