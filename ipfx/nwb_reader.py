@@ -14,7 +14,7 @@ import ipfx.stim_features as st
 def get_scalar_string(string_from_nwb):
     """
     Some strings in NWB are stored with dimension scalar some with dimension 1.
-    Use this function to get retrieve the string itself.
+    Use this function to retrieve the string itself.
     """
 
     if isinstance(string_from_nwb, np.ndarray):
