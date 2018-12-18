@@ -20,14 +20,16 @@ from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
 class ABFConverter:
 
     protocolStorageDir = None
+    adcNamesWithRealData = ("IN 0", "IN 1", "IN 2", "IN 3")
 
-    def __init__(self, inFileOrFolder, outFile):
+    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel):
         """
         Convert the given ABF file to NWB
 
         Keyword arguments:
-        inFileOrFolder -- input file, or folder with multiple files, in ABF v2 format
-        outFile        -- target filepath (must not exist)
+        inFileOrFolder        -- input file, or folder with multiple files, in ABF v2 format
+        outFile               -- target filepath (must not exist)
+        outputFeedbackChannel -- Output ADC data from feedback channels as well (useful for debugging only)
         """
 
         inFiles = []
@@ -38,6 +40,8 @@ class ABFConverter:
             inFiles = glob.glob(os.path.join(inFileOrFolder, "*.abf"))
         else:
             raise ValueError(f"{inFileOrFolder} is neither a folder nor a path.")
+
+        self.outputFeedbackChannel = outputFeedbackChannel
 
         self._amplifierSettings = self._getJSONFile(inFileOrFolder)
 
@@ -423,6 +427,15 @@ class ABFConverter:
             for sweep in range(abf.sweepCount):
                 cycle_id = createCycleID([file_index, sweep], total=self.totalSeriesCount)
                 for channel in range(abf.channelCount):
+                    adcName = abf.adcNames[channel]
+
+                    if not self.outputFeedbackChannel:
+                        if adcName in adcNamesWithRealData:
+                            pass
+                        else:
+                            # feedback data, skip
+                            continue
+
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                     data = createCompressedDataset(abf.sweepY)
@@ -433,7 +446,6 @@ class ABFConverter:
                     starting_time = self._calculateStartingTime(abf)
                     stimulus_description = abf.protocol
                     rate = float(abf.dataRate)
-                    adcName = abf.adcNames[channel]
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,

@@ -330,7 +330,7 @@ def test_valid_v2_full_ABF():
                                '2018_03_20_0005.nwb'))
     assert isinstance(reader, NwbXReader)
 
-    sweep_names_ref = [u'index_0', u'index_1']
+    sweep_names_ref = [u'index_0']
 
     sweep_names = reader.get_sweep_names()
     assert sorted(sweep_names_ref) == sorted(sweep_names)
