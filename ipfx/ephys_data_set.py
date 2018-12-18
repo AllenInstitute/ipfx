@@ -55,7 +55,7 @@ class EphysDataSet(object):
             mask = ~st[self.STIMULUS_NAME].isin(self.ontology.test_names)
             st = st[mask]
 
-        if sweep_number:
+        if sweep_number is not None:
             mask = st[self.SWEEP_NUMBER] == sweep_number
             st = st[mask]
 
