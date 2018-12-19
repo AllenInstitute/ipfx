@@ -17,7 +17,7 @@ def get_sweep_table_dict():
             'stimulus_name': ["Long Square", "Test", "Test"],
             'stimulus_scale_factor': [10.0, 0.5, 0.5],
             'stimulus_units': ['pA', 'mV', 'mV'],
-            'sweep_number': [49, 5, 6]}
+            'sweep_number': [0, 5, 6]}
 
 
 def get_dataset():
@@ -41,7 +41,7 @@ def test_get_sweep_number_by_stimulus_name_invalid_sweep():
 def test_get_sweep_number_by_stimulus_name_works_1():
     ds = get_dataset()
     sweeps = ds.get_sweep_number_by_stimulus_names(['C1LSFINEST'])
-    assert sweeps == 49
+    assert sweeps == 0
 
 
 def test_get_sweep_number_by_stimulus_name_works_and_returns_only_the_last():
@@ -56,6 +56,13 @@ def test_filtered_sweep_table_works():
     sweeps = ds.filtered_sweep_table(stimuli=['EXTPBREAKN'])
 
     assert sweeps["sweep_number"].tolist() == [5, 6]
+
+def test_filtered_sweep_table_works_with_sweep_number():
+
+    ds = get_dataset()
+    sweeps = ds.filtered_sweep_table(sweep_number=0)
+
+    assert sweeps["sweep_number"].tolist() == [0]
 
 
 def test_get_sweep_info():
