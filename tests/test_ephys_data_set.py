@@ -1,62 +1,159 @@
 import pandas as pd
+import numpy as np
 import pytest
+
 from ipfx.stimulus import StimulusOntology
 from ipfx.ephys_data_set import EphysDataSet
 
-
-@pytest.fixture()
-def ontology():
-    return StimulusOntology([ [ ('name', 'long square'),
-                                ('code', 'LS') ],
-                              [ ('name', 'noise', 'noise 1'),
-                                ('code', 'C1NS1') ],
-                              [ ('name', 'noise', 'noise 2'),
-                                ('code', 'C1NS2') ] ])
+from helpers_for_tests import compare_dicts
 
 
-def test_load_default_ontology():
-    StimulusOntology()
-
-def test_find(ontology):
-    stims = ontology.find('C1NS1')
-
-    stims = ontology.find('noise')
-    assert len(stims) == 2
-
-def test_find_one(ontology):
-    stim = ontology.find_one('LS')
-
-    assert stim.tags(tag_type='name')[0][-1] == 'long square'
-
-    with pytest.raises(KeyError):
-        stims = ontology.find_one('noise')
+def get_sweep_table_dict():
+    return {'bridge_balance_mohm': [15.6288156509, np.nan, np.nan],
+            'clamp_mode': ['CurrentClamp', 'VoltageClamp', 'VoltageClamp'],
+            'leak_pa': [-6.20449542999, np.nan, np.nan],
+            'stimulus_code': ['C1LSFINEST150112', 'EXTPBREAKN141203', 'EXTPBREAKN141203'],
+            'stimulus_code_ext': ['C1LSFINEST150112[0]', 'EXTPBREAKN141203[0]', 'EXTPBREAKN141203[0]'],
+            'stimulus_name': ["Long Square", "Test", "Test"],
+            'stimulus_scale_factor': [10.0, 0.5, 0.5],
+            'stimulus_units': ['pA', 'mV', 'mV'],
+            'sweep_number': [0, 5, 6]}
 
 
-def test_has(ontology):
-    assert ontology.stimulus_has_any_tags('C1NS1', ('noise',))
-    assert ontology.stimulus_has_any_tags('C1NS1', ('noise','noise 2'))
-    assert not ontology.stimulus_has_all_tags('C1NS1', ('noise','noise 2'))
+def get_dataset():
 
-
-def test_filtered_sweep_table():
-
-    d = {'bridge_balance_mohm': [15.6288156509,None,None],
-    'clamp_mode': ['CurrentClamp','VoltageClamp','VoltageClamp'],
-    'leak_pa' : [-6.20449542999,None,None],
-    'stimulus_code': ['C1LSFINEST150112', 'EXTPBREAKN141203', 'EXTPBREAKN141203'],
-    'stimulus_code_ext': ['C1LSFINEST150112[0]','EXTPBREAKN141203[0]','EXTPBREAKN141203[0]'],
-    'stimulus_name': ["Long Square","Test","Test"],
-    'stimulus_scale_factor':[10.0,0.5,0.5],
-    'stimulus_units': ['pA','mV','mV'],
-    'sweep_number': [49,5,6],
-    }
-
+    d = get_sweep_table_dict()
     df = pd.DataFrame(d)
-
-    stimulus_names = ['EXTPBREAKN']
     default_ontology = StimulusOntology()
-    ds = EphysDataSet(default_ontology)
-    ds.sweep_table = df
-    sweeps = ds.filtered_sweep_table(stimuli=stimulus_names)
+    dataset = EphysDataSet(default_ontology)
+    dataset.sweep_table = df
 
-    assert len(sweeps) == 2
+    return dataset
+
+
+def test_get_sweep_number_by_stimulus_name_invalid_sweep():
+
+    with pytest.raises(IndexError):
+        ds = get_dataset()
+        ds.get_sweep_number_by_stimulus_names(['I_DONT_EXIST'])
+
+
+def test_get_sweep_number_by_stimulus_name_works_1():
+    ds = get_dataset()
+    sweeps = ds.get_sweep_number_by_stimulus_names(['C1LSFINEST'])
+    assert sweeps == 0
+
+
+def test_get_sweep_number_by_stimulus_name_works_and_returns_only_the_last():
+    ds = get_dataset()
+    sweeps = ds.get_sweep_number_by_stimulus_names(['EXTPBREAKN'])
+    assert sweeps == 6
+
+
+def test_filtered_sweep_table_works():
+
+    ds = get_dataset()
+    sweeps = ds.filtered_sweep_table(stimuli=['EXTPBREAKN'])
+
+    assert sweeps["sweep_number"].tolist() == [5, 6]
+
+def test_filtered_sweep_table_works_with_sweep_number():
+
+    ds = get_dataset()
+    sweeps = ds.filtered_sweep_table(sweep_number=0)
+
+    assert sweeps["sweep_number"].tolist() == [0]
+
+
+def test_get_sweep_info():
+
+    d = get_sweep_table_dict()
+    expected = {}
+    for k in d:
+        expected[k] = d[k][1]
+
+    ds = get_dataset()
+    actual = ds.get_sweep_info_by_sweep_number(5)
+    compare_dicts(expected, actual)
+
+
+def test_sweep_raises():
+
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.sweep(5)
+
+
+def test_set_sweep_raises_int():
+
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.sweep_set(5)
+
+
+def test_set_sweep_raises_list():
+
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.sweep_set([5, 6])
+
+
+def test_aligned_sweeps_raises():
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.aligned_sweeps([5], 0.0)
+
+
+def test_extract_sweep_meta_data_raises():
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.extract_sweep_meta_data()
+
+
+def test_modify_api_sweep_info():
+    d = [{"sweep_number": 123,
+          "stimulus_units": "abcd",
+          "stimulus_absolute_amplitude": 456,
+          "stimulus_description": "efgh[4711]",
+          "stimulus_name": "hijkl"
+          }]
+
+    ds = get_dataset()
+    result = ds.modify_api_sweep_info(d)
+
+    expected = [{EphysDataSet.SWEEP_NUMBER: 123,
+                 EphysDataSet.STIMULUS_UNITS: "abcd",
+                 EphysDataSet.STIMULUS_AMPLITUDE: 456,
+                 EphysDataSet.STIMULUS_CODE: "efgh",
+                 EphysDataSet.STIMULUS_NAME: "hijkl",
+                 EphysDataSet.PASSED: True}]
+
+    assert len(expected) == len(result)
+    compare_dicts(expected[0], result[0])
+
+
+def test_get_stimulus_name():
+
+    with pytest.raises(ValueError):
+        ds = get_dataset()
+        ds.ontology = None
+        ds.get_stimulus_name("abcd")
+
+
+def test_get_stimulus_name_works():
+
+    ds = get_dataset()
+
+    stimulus_code = "EXTPCllATT141203"
+    d = {EphysDataSet.STIMULUS_CODE: stimulus_code}
+    d[EphysDataSet.STIMULUS_NAME] = ds.get_stimulus_name(stimulus_code)
+
+    expected = {EphysDataSet.STIMULUS_CODE: stimulus_code, EphysDataSet.STIMULUS_NAME: "Test"}
+    assert expected == d
+
+
+def test_get_sweep_data():
+
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.get_sweep_data(123)

@@ -1,0 +1,20 @@
+{
+    "vm_delta_mv_max": 1.0,
+    "access_resistance_mohm_max": 20.0,
+    "blowout_mv_min": -10.0,
+    "electrode_0_pa_max": 200.0,
+    "electrode_0_pa_min": -200.0,
+    "created_at": "2015-01-29T13:51:29-08:00",
+    "blowout_mv_max": 10.0,
+    "pre_noise_rms_mv_max": 0.07,
+    "updated_at": "2015-01-29T13:51:29-08:00",
+    "access_resistance_mohm_min": 1.0,
+    "input_vs_access_resistance_max": 0.15,
+    "leak_pa_max": 100.0,
+    "post_noise_rms_mv_max": 0.07,
+    "slow_noise_rms_mv_max": 0.5,
+    "seal_gohm_min": 1.0,
+    "leak_pa_min": -100.0,
+    "id": 324256702,
+    "name": "Ephys QC Criteria v1.1"
+  }

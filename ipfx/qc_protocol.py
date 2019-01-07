@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import ipfx.qc_features as qcf
 
-DEFAULT_QC_CRITERIA_FILE = os.path.join(os.path.dirname(__file__), 'qc_criteria.json')
+DEFAULT_QC_CRITERIA_FILE = os.path.join(os.path.dirname(__file__), 'defaults/qc_criteria.json')
 
 
 def load_default_qc_criteria():
@@ -106,6 +106,10 @@ def qc_cell(cell_data, qc_criteria=None):
                                              cell_fail_tags)
 
     cell_state["fail_tags"] = cell_fail_tags
+    if cell_fail_tags:
+        cell_state["failed_qc"] = True
+    else:
+        cell_state["failed_qc"] = False
 
     return cell_state
 

@@ -99,3 +99,9 @@ nwb_to_pdf.py file1.nwb file2.nwb
 ```
 
 This creates two PDFs named `file1.pdf` and `file2.pdf`.
+
+## Outputting DAT/ABF metadata files for debugging purposes
+
+```sh
+run_x_to_nwb_conversion.py --outputMetadata *.dat *.abf
+```

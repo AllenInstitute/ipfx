@@ -48,6 +48,16 @@ class DatConverter:
         with NWBHDF5IO(outFile, "w") as io:
             io.write(nwbFile, cache_spec=True)
 
+    @staticmethod
+    def outputMetadata(inFile):
+        if not os.path.isfile(inFile):
+            raise ValueError(f"The file {inFile} does not exist.")
+
+        root, ext = os.path.splitext(inFile)
+
+        with Bundle(inFile) as bundle:
+            bundle._all_info(root + ".txt")
+
     def _getClampMode(self, node):
         """
         Return the clamp mode of the given node.
@@ -249,7 +259,8 @@ class DatConverter:
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
-                    cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount], total=self.totalSeriesCount)
+                    cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount],
+                                             total=self.totalSeriesCount)
                     stimRec = self.bundle.pgf[getStimulusRecordIndex(sweep)]
                     for trace in sweep:
                         stimset = generator.fetch(sweep, trace)
@@ -328,7 +339,8 @@ class DatConverter:
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
-                    cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount], total=self.totalSeriesCount)
+                    cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount],
+                                             total=self.totalSeriesCount)
                     for trace_index, trace in enumerate(sweep):
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = createCompressedDataset(self.bundle.data[trace])

@@ -25,6 +25,8 @@ def main():
     Usage:
     python pipeline_from_nwb_file.py INPUT_NWB_FILE
 
+    User must specify the OUTPUT_DIR
+
     """
 
     input_nwb_file = sys.argv[1]
@@ -38,7 +40,7 @@ def main():
 
     configure_logger(cell_dir)
 
-    pipe_input = gpi.generate_pipeline_input(cell_dir=cell_dir,
+    pipe_input = gpi.generate_pipeline_input(cell_dir,
                                              input_nwb_file = input_nwb_file)
 
     input_json = os.path.join(cell_dir,INPUT_JSON)

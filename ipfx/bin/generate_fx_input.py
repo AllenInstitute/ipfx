@@ -7,7 +7,7 @@ from run_sweep_extraction import run_sweep_extraction
 from generate_qc_input import generate_qc_input
 from generate_se_input import generate_se_input
 from run_qc import run_qc
-
+import lims_queries as lq
 
 FX_INPUT_FEATURES = [
                     "stimulus_code",
@@ -27,12 +27,7 @@ def generate_fx_input(se_input,
                       cell_dir,
                       plot_figures=False):
 
-    fx_input = dict()
-
-    fx_input['input_nwb_file'] = se_input['input_nwb_file']
-
-    if 'input_h5_file' in se_input:
-        fx_input['input_h5_file'] = se_input['input_h5_file']
+    fx_input = dict(se_input)
 
     fx_input['sweep_features'] = sp.extract_sweep_features_subset(FX_INPUT_FEATURES,se_output["sweep_features"])
 
@@ -44,6 +39,7 @@ def generate_fx_input(se_input,
     fx_input['output_nwb_file'] = os.path.join(cell_dir, "output.nwb")
 
     return fx_input
+
 
 
 def main():
@@ -58,9 +54,13 @@ def main():
 
     kwargs = module.args
     kwargs.pop("log_level")
-    cell_dir = kwargs.pop("cell_dir")
 
     se_input = generate_se_input(**kwargs)
+    cell_dir = kwargs["cell_dir"]
+
+    if not os.path.exists(cell_dir):
+        os.makedirs(cell_dir)
+
     ju.write(os.path.join(cell_dir,'se_input.json'), se_input)
 
     se_output = run_sweep_extraction(se_input["input_nwb_file"],
@@ -81,7 +81,11 @@ def main():
                        qc_input["qc_criteria"])
     ju.write(os.path.join(cell_dir,'qc_output.json'), qc_output)
 
-    manual_sweep_states = []
+    if kwargs["specimen_id"]:
+        manual_sweep_states = lq.get_sweep_states(kwargs["specimen_id"])
+    elif kwargs["input_nwb_file"]:
+        manual_sweep_states = []
+
     sp.override_auto_sweep_states(manual_sweep_states,qc_output["sweep_states"])
     sp.assign_sweep_states(qc_output["sweep_states"],se_output["sweep_features"])
 

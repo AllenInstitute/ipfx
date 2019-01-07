@@ -1,5 +1,6 @@
 import re
 import json
+import warnings
 
 import h5py
 import numpy as np
@@ -10,15 +11,27 @@ from pynwb.icephys import (CurrentClampSeries, CurrentClampStimulusSeries, Volta
 import ipfx.stim_features as st
 
 
+def get_scalar_string(string_from_nwb):
+    """
+    Some strings in NWB are stored with dimension scalar some with dimension 1.
+    Use this function to retrieve the string itself.
+    """
+
+    if isinstance(string_from_nwb, np.ndarray):
+        return np.asscalar(string_from_nwb)
+
+    return string_from_nwb
+
+
 class NwbReader(object):
 
     def __init__(self, nwb_file):
         self.nwb_file = nwb_file
 
-    def get_sweep_data(self):
+    def get_sweep_data(self, sweep_number):
         raise NotImplementedError
 
-    def get_sweep_number(self):
+    def get_sweep_number(self, sweep_name):
         raise NotImplementedError
 
     def get_stim_code(self, sweep_name):
@@ -32,6 +45,34 @@ class NwbReader(object):
             return "Volts"
         else:
             raise ValueError("Unit {} not recognized from TimeSeries".format(unit))
+
+    @staticmethod
+    def check_sweep_number(timeseries, sweep_number):
+        """
+        Check if the assumed sweep number is the same than the real sweep number.
+        """
+
+        real_sweep_number = None
+
+        def read_sweep_from_source(source):
+            source = get_scalar_string(source)
+            for x in source.split(";"):
+                result = re.search(r"^Sweep=(\d+)$", x)
+                if result:
+                    return int(result.group(1))
+
+        if "source" in timeseries:
+            real_sweep_number = read_sweep_from_source(timeseries["source"].value)
+        elif "source" in timeseries.attrs:
+            real_sweep_number = read_sweep_from_source(timeseries.attrs["source"])
+        elif "sweep_number" in timeseries.attrs:
+            real_sweep_number = timeseries.attrs["sweep_number"]
+
+        if real_sweep_number is None:
+            warnings.warn("Could not find a source/sweep_number attribute/dataset.")
+        elif real_sweep_number != sweep_number:
+            raise ValueError("Sweep number mismatch with timeseries {} ({} vs {}).".format(
+                             timeseries, sweep_number, real_sweep_number))
 
     def get_sweep_attrs(self, sweep_name):
 
@@ -148,19 +189,6 @@ class NwbXReader(NwbReader):
 
             for s in series:
 
-                # ABF: Two channels, only the first has valid data
-                # DAT: One channel
-                if rawDataSourceType["abf"]:
-                    description = json.loads(s.description)
-                    channel_number = description['number']
-
-                    if channel_number not in (1, 5):
-                        raise ValueError("Unexpected channel number {} for TimeSeries {}.".format(channel_number, s))
-                    elif channel_number == 5:
-                        # this is the channel were the feedback stimulus is recorded
-                        # TODO maybe we need a better way to find that channel??
-                        continue
-
                 if isinstance(s, (VoltageClampSeries, CurrentClampSeries, IZeroClampSeries)):
                     if response is not None:
                         raise ValueError("Found multiple response TimeSeries in NWB file for sweep number {}.".format(sweep_number))
@@ -233,7 +261,11 @@ class NwbPipelineReader(NwbReader):
         """
         with h5py.File(self.nwb_file, 'r') as f:
 
-            swp = f['epochs']['Sweep_%d' % sweep_number]
+            sweep_name = 'Sweep_%d' % sweep_number
+            swp = f['epochs'][sweep_name]
+
+            sweep_ts = f[self.acquisition_path][sweep_name]
+            NwbReader.check_sweep_number(sweep_ts, sweep_number)
 
             #   fetch data from file and convert to correct SI unit
             #   this operation depends on file version. early versions of
@@ -322,17 +354,12 @@ class NwbPipelineReader(NwbReader):
             for stimulus_description in names:
                 if stimulus_description in sweep_ts.keys():
                     stim_code_raw = sweep_ts[stimulus_description].value
-
-                    if type(stim_code_raw) is np.ndarray:
-                        stim_code = str(stim_code_raw[0])
-                    else:
-                        stim_code = str(stim_code_raw)
+                    stim_code = get_scalar_string(stim_code_raw)
 
                     if stim_code[-5:] == "_DA_0":
                         return stim_code[:-5]
 
                     return stim_code
-
 
 
 class NwbMiesReader(NwbReader):
@@ -350,9 +377,11 @@ class NwbMiesReader(NwbReader):
 
         with h5py.File(self.nwb_file, 'r') as f:
             sweep_response = f[self.acquisition_path]["data_%05d_AD0" % sweep_number]
+            self.check_sweep_number(sweep_response, sweep_number)
             response_dataset = sweep_response["data"]
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
             sweep_stimulus = f[self.stimulus_path]["data_%05d_DA0" % sweep_number]
+            self.check_sweep_number(sweep_stimulus, sweep_number)
             stimulus_dataset = sweep_stimulus["data"]
 
             response = response_dataset.value
@@ -396,11 +425,7 @@ class NwbMiesReader(NwbReader):
             # look for the stimulus description
             if stimulus_description in sweep_ts.keys():
                 stim_code_raw = sweep_ts[stimulus_description].value
-
-                if type(stim_code_raw) is np.ndarray:
-                    stim_code = str(stim_code_raw[0])
-                else:
-                    stim_code = str(stim_code_raw)
+                stim_code = get_scalar_string(stim_code_raw)
 
                 if stim_code[-5:] == "_DA_0":
                     stim_code = stim_code[:-5]
@@ -415,9 +440,7 @@ def get_nwb_version(nwb_file):
 
     with h5py.File(nwb_file, 'r') as f:
         if "nwb_version" in f:         # In v1 this is a dataset
-            nwb_version = f["nwb_version"].value
-            if isinstance(nwb_version, np.ndarray):
-                nwb_version = nwb_version[0]
+            nwb_version = get_scalar_string(f["nwb_version"].value)
             if nwb_version is not None and re.match("^NWB-1", nwb_version):
                 return {"major": 1, "full": nwb_version}
 

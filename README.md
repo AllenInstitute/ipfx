@@ -14,17 +14,16 @@ This software is designed for use in the Allen Institute for Brain Science elect
 To run:
 
 ```bash
- $ cd allensdk/ipfx/bin
- $ python run_pipeline_nwb.py input_nwb_file output_dir
+ $ cd ipfx/ipfx/bin
+ $ python pipeline_from_nwb.py input_nwb_file
 ```
+User must specify the OUTPUT_DIR inside the pipeline_from_nwb.py
 
 Input:
 * input_nwb_file: a full path to the NWB file with cell ephys recordings
-* output_dir: a base output directory that will include the output subdirectory
-
-The output subdirectory is named from the basename of the NWB file.
 
 Output:
+
  * pipeline_input.json: input parameters
  * pipeline_output.json: output including cell features
  * output.nwb: NWB file including spike times
