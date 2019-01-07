@@ -37,10 +37,10 @@ def extract_feature_vectors(data_set,
         check_lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
         lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(check_lsq_sweeps.sweeps[0].i, check_lsq_sweeps.sweeps[0].t)
 
-        # Check that all sweeps are long enough
+        # Check that all sweeps are long enough and not ended early
         extra_dur = 0.2
         good_lsq_sweep_numbers = [n for n, s in zip(long_square_sweep_numbers, check_lsq_sweeps.sweeps)
-                                  if s.t[-1] >= lsq_start + lsq_dur + extra_dur]
+                                  if s.t[-1] >= lsq_start + lsq_dur + extra_dur and not np.all(s.v[tsu.find_time_index(s.t, lsq_start + lsq_dur)-100:tsu.find_time_index(s.t, lsq_start + lsq_dur)] == 0)]
         lsq_sweeps = data_set.sweep_set(good_lsq_sweep_numbers)
 
         lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(lsq_sweeps,
@@ -259,7 +259,7 @@ def isi_shape(sweep_set, features, n_points=100, min_spike=5):
     """
     sweep_table = features["sweeps"]
     mask_supra = sweep_table["stim_amp"] >= features["rheobase_i"]
-    amps = sweep_table.loc[mask_supra, "stim_amp"].values - features["rheobase_i"]
+    amps = np.rint(sweep_table.loc[mask_supra, "stim_amp"].values - features["rheobase_i"])
 
     # Pick out the sweep to get the ISI shape
     # Shape differences are more prominent at lower frequencies, but we want
@@ -296,10 +296,10 @@ def isi_shape(sweep_set, features, n_points=100, min_spike=5):
 
         return isi_norm
 
-    clip_mask = isi_spikes["clipped"].values
-    threshold_indexes = isi_spikes["threshold_index"]
-    threshold_voltages = isi_spikes["threshold_v"]
-    fast_trough_indexes = isi_spikes["fast_trough_index"]
+    clip_mask = ~isi_spikes["clipped"].values
+    threshold_indexes = isi_spikes["threshold_index"].values[clip_mask]
+    threshold_voltages = isi_spikes["threshold_v"].values[clip_mask]
+    fast_trough_indexes = isi_spikes["fast_trough_index"].values[clip_mask]
     isi_list = []
     for start_index, end_index, thresh_v in zip(fast_trough_indexes[:-1], threshold_indexes[1:], threshold_voltages[:-1]):
         isi_raw = isi_sweep.v[int(start_index):int(end_index)] - thresh_v
@@ -423,12 +423,14 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
     """Binned and interpolated per-spike features"""
     sweep_table = features["spiking_sweeps"]
     mask_supra = sweep_table["stim_amp"] >= features["rheobase_i"]
-    amps = sweep_table.loc[mask_supra, "stim_amp"].values - features["rheobase_i"]
+    sweep_indexes = consolidated_long_square_indexes(sweep_table.loc[mask_supra, :])
+    amps = np.rint(sweep_table.loc[sweep_indexes, "stim_amp"].values - features["rheobase_i"])
+
     spike_data = np.array(features["spikes_set"])
 
     # PSTH Calculation
     rate_data = {}
-    for amp, swp_ind in zip(amps, sweep_table.index.values[mask_supra]):
+    for amp, swp_ind in zip(amps, sweep_indexes):
         if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):
             continue
 
@@ -451,7 +453,7 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
 
     # Instantaneous frequency
     feature_data = {}
-    for amp, swp_ind in zip(amps, sweep_table.index.values[mask_supra]):
+    for amp, swp_ind in zip(amps, sweep_indexes):
         if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):
             continue
 
@@ -474,7 +476,7 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
             freq[i1:i2] = f
 
         bin_number = int(1. / 0.001) / feature_width + 1
-        bins = np.linspace(1.02, 2.02, bin_number)
+        bins = np.linspace(start, end, bin_number)
         output = stats.binned_statistic(t,
                                         freq,
                                         bins=bins)[0]
@@ -484,7 +486,7 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
     # Spike-level feature calculation
     for feature in spike_feature_list:
         feature_data = {}
-        for amp, swp_ind in zip(amps, sweep_table.index.values[mask_supra]):
+        for amp, swp_ind in zip(amps, sweep_indexes):
             if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):
                 continue
             amp_level = int(np.rint(amp / float(amp_interval)))
@@ -513,6 +515,22 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
             feature_data[amp_level] = output
         output_vector = np.append(output_vector, combine_and_interpolate(feature_data, max_level=5))
     return output_vector
+
+
+def consolidated_long_square_indexes(sweep_table):
+    sweep_index_list = []
+    amp_arr = sweep_table["stim_amp"].unique()
+    for a in amp_arr:
+        ind = np.flatnonzero(sweep_table["stim_amp"] == a)
+        if len(ind) == 1:
+            sweep_index_list.append(sweep_table.index[ind[0]])
+        else:
+            # find the sweep with the median number of spikes at a given amplitude
+            rates = sweep_table.iloc[ind, :]["avg_rate"].values
+            median_ind = np.argmin(np.abs(np.median(rates) - rates))
+            sweep_index_list.append(sweep_table.index.values[ind[median_ind]])
+
+    return np.array(sweep_index_list)
 
 
 def combine_and_interpolate(data, max_level):
