@@ -68,11 +68,11 @@ class StimulusProtocolAnalysis(object):
         return output
 
     def analyze_basic_features(self, sweep_set, extra_sweep_features=None):
-        logging.info("analysing basic features:")
+        logging.debug("analysing basic features:")
 
         self._spikes_set = []
         for sweep in sweep_set.sweeps:
-            logging.info("sweep_number: %d" % sweep.sweep_number)
+            logging.debug("sweep_number: %d" % sweep.sweep_number)
             self._spikes_set.append(self.spx.process(sweep.t, sweep.v, sweep.i))
 
         self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features)
@@ -234,7 +234,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         if not sweep_features_range.empty:
             hero_features = sweep_features_range.iloc[0]
-            logging.info("Found hero sweep with amp %f in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_features["stim_amp"], hero_min, hero_max,rheo_amp))
+            logging.debug("Found hero sweep with amp %f in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_features["stim_amp"], hero_min, hero_max,rheo_amp))
         else:
             logging.debug("Cannot find hero sweep in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_min, hero_max,rheo_amp))
             index_hero = np.argmin(abs(hero_min - spiking_features["stim_amp"]))
