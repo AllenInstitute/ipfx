@@ -88,7 +88,8 @@ def get_sweep_epoch(response):
 
 def get_experiment_epoch(i,v,hz):
     """
-    Find index range for the experiment epoch. The start is defined as stim start- PRESTIM_DURATION*sampling_rate
+    Find index range for the experiment epoch.
+    The start index of the experiment epoch is defined as stim_start_idx - PRESTIM_DURATION*sampling_rate
     The end is defined by the last nonzero response.
 
 

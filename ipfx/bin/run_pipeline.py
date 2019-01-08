@@ -56,7 +56,7 @@ def main():
 
     """
     Usage:
-    python run_pipeline_extraction.py --input_json INPUT_JSON --output_json OUTPUT_JSON
+    python run_pipeline.py --input_json INPUT_JSON --output_json OUTPUT_JSON
 
     """
 

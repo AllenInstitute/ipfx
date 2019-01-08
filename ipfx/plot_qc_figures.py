@@ -160,11 +160,14 @@ def plot_sweep_figures(data_set, image_dir, sizes):
     b, a = sg.bessel(4, 0.1, "low")
 
     for i, sweep_number in enumerate(iclamp_sweep_numbers):
-        logging.info("plotting sweep %d" %  sweep_number)
 
+        logging.info("plotting sweep %d" % sweep_number)
 
         if i == 0:
             v_init, i_init, t_init, r_init, dt_init = load_sweep(data_set, sweep_number)
+
+            if r_init[0] <= 0:
+                r_init = (5000,r_init[1])
 
             tp_steps = r_init[0]
             tp_len = tp_steps*dt_init
@@ -198,6 +201,9 @@ def plot_sweep_figures(data_set, image_dir, sizes):
 
         else:
             v, i, t, r, dt = load_sweep(data_set, sweep_number)
+
+            if r[0] <= 0:       # This happens when stimulus starts less than 0.5 s after test pulse
+                r = (5000,r[1]) # Manually set start of experiment to a default positive value
 
             tp_steps = r[0]
             tp_len = tp_steps*dt
@@ -254,6 +260,7 @@ def plot_sweep_figures(data_set, image_dir, sizes):
         save_figure(exp_fig, 'experiment_%d' % sweep_number, 'experiments', image_dir, sizes, image_file_sets)
 
     return image_file_sets
+
 
 def save_figure(fig, image_name, image_set_name, image_dir, sizes, image_sets, scalew=1, scaleh=1, ext='png'):
     plt.figure(fig.number)
