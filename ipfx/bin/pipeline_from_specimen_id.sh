@@ -1,3 +1,5 @@
+#!/bin/sh
+
 OUTPUT_DIR=/local1/ephys/tsts
 SPECIMEN_ID=$1
 
