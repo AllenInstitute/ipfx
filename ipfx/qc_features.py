@@ -270,7 +270,7 @@ def sweep_qc_features(data_set):
 
     Parameters
     ----------
-    data_set : AibsDataSet
+    data_set : EphysDataSet
         dataset
 
     Returns

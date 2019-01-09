@@ -6,7 +6,7 @@ import ipfx.error as er
 import ipfx.data_set_features as dsft
 from ipfx.stimulus import StimulusOntology
 from ipfx._schemas import FeatureExtractionParameters
-from ipfx.aibs_data_set import AibsDataSet
+from ipfx.data_set_utils import create_data_set
 
 import allensdk.core.json_utilities as ju
 from allensdk.core.nwb_data_set import NwbDataSet
@@ -41,10 +41,10 @@ def run_feature_extraction(input_nwb_file,
 
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
 
-    data_set = AibsDataSet(sweep_info=sweep_info,
-                           nwb_file=input_nwb_file,
-                           ontology=ont,
-                           api_sweeps=False)
+    data_set = create_data_set(sweep_info=sweep_info,
+                               nwb_file=input_nwb_file,
+                               ontology=ont,
+                               api_sweeps=False)
 
     try:
         cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)

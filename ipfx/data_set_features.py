@@ -407,7 +407,7 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
 
     Parameters
     ----------
-    data_set : AibsDataSet
+    data_set : EphysDataSet
         data set
     subthresh_min_amp
 
