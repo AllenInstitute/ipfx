@@ -157,34 +157,6 @@ def find_stim_window(stim, idx0=0):
     return stim_start, stim_end - stim_start
 
 
-def find_stim_amplitude_and_duration(idx0, stim, hz):
-    stim=np.array(stim)
-    if len(stim) < idx0:
-        idx0 = 0
-
-    stim = stim[idx0:]
-
-    peak_high = max(stim)
-    peak_low = min(stim)
-
-    # measure stimulus length
-    # find index of first non-zero value, and last return to zero
-    nzero = np.where(stim!=0)[0]
-    if len(nzero) > 0:
-        start = nzero[0]
-        end = nzero[-1]+1
-        dur = (end - start) / hz
-    else:
-        dur = 0
-
-    dur = float(dur)
-
-    if abs(peak_high) > abs(peak_low):
-        amp = float(peak_high)
-    else:
-        amp = float(peak_low)
-    return amp, dur
-
 
 def find_stim_interval(idx0, stim, hz):
     stim = np.array(stim)[idx0:]
@@ -210,11 +182,10 @@ def find_stim_interval(idx0, stim, hz):
     return None
 
 
-def get_stim_characteristics(i, t, no_test_pulse=False):
+def get_stim_characteristics(i, t, test_pulse=True):
     """
     Identify the start time, duration, amplitude, start index, and
     end index of a general stimulus.
-    This assumes that there is a test pulse followed by the stimulus square.
     """
 
     di = np.diff(i)
@@ -223,8 +194,7 @@ def get_stim_characteristics(i, t, no_test_pulse=False):
     if len(diff_idx) == 0:
         return (None, None, 0.0, None, None)
 
-    # skip the first up/down
-    idx = 0 if no_test_pulse else 2
+    idx = 2 if test_pulse else 0     # skip the first up/down (test pulse) if present
 
     # shift by one to compensate for diff()
     start_idx = diff_idx[idx] + 1
@@ -232,9 +202,18 @@ def get_stim_characteristics(i, t, no_test_pulse=False):
 
     stim_start = float(t[start_idx])
     stim_dur = float(t[end_idx] - t[start_idx])
-    stim_amp = float(i[start_idx])
 
-    return (stim_start, stim_dur, stim_amp, start_idx, end_idx)
+    stim = i[start_idx:end_idx + 1]
+
+    peak_high = max(stim)
+    peak_low = min(stim)
+
+    if abs(peak_high) > abs(peak_low):
+        stim_amp = float(peak_high)
+    else:
+        stim_amp = float(peak_low)
+
+    return stim_start, stim_dur, stim_amp, start_idx, end_idx
 
 
 def _step_stim_amp(t, i, start):

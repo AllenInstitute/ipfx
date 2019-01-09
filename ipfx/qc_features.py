@@ -362,7 +362,7 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
         sweep["vm_delta_mv"] = None
 
     # compute stimulus duration, amplitude, interval
-    stim_amp, stim_dur = stf.find_stim_amplitude_and_duration(expt_start_idx, current, hz)
+    _, stim_dur, stim_amp, _, _ = stf.get_stim_characteristics(current,t)
     stim_int = stf.find_stim_interval(expt_start_idx, current, hz)
 
     sweep['stimulus_amplitude'] = stim_amp
