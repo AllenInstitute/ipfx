@@ -67,8 +67,8 @@ def main():
                           module.args["output_nwb_file"],
                           module.args.get("stimulus_ontology_file", None),
                           module.args.get("qc_fig_dir", None),
-                          module.args["qc_criteria"],
-                          module.args["manual_sweep_states"])
+                          module.args.get("qc_criteria", None),
+                          module.args.get("manual_sweep_states", None))
 
 
     ju.write(module.args["output_json"], output)
