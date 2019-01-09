@@ -40,11 +40,11 @@ def get_input_h5_file(specimen_id):
         return None
 
     h5_res = lu.query("""
-    select err.*, wkf.*,sp.name as specimen_name 
-    from ephys_roi_results err 
-    join specimens sp on sp.ephys_roi_result_id = err.id 
-    join well_known_files wkf on wkf.attachable_id = err.id 
-    where sp.id = %d 
+    select err.*, wkf.*,sp.name as specimen_name
+    from ephys_roi_results err
+    join specimens sp on sp.ephys_roi_result_id = err.id
+    join well_known_files wkf on wkf.attachable_id = err.id
+    where sp.id = %d
     and wkf.well_known_file_type_id = 306905526
     """ % specimen_id)
 
