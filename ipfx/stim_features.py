@@ -157,7 +157,6 @@ def find_stim_window(stim, idx0=0):
     return stim_start, stim_end - stim_start
 
 
-
 def find_stim_interval(idx0, stim, hz):
     stim = np.array(stim)[idx0:]
 
@@ -184,15 +183,14 @@ def find_stim_interval(idx0, stim, hz):
 
 def get_stim_characteristics(i, t, test_pulse=True):
     """
-    Identify the start time, duration, amplitude, start index, and
-    end index of a general stimulus.
+    Identify the start time, duration, amplitude, start index, and end index of a general stimulus.
     """
 
     di = np.diff(i)
-    diff_idx = np.flatnonzero(di)# != 0)
+    diff_idx = np.flatnonzero(di)   # != 0
 
     if len(diff_idx) == 0:
-        return (None, None, 0.0, None, None)
+        return None, None, 0.0, None, None
 
     idx = 2 if test_pulse else 0     # skip the first up/down (test pulse) if present
 
@@ -200,8 +198,8 @@ def get_stim_characteristics(i, t, test_pulse=True):
     start_idx = diff_idx[idx] + 1
     end_idx = diff_idx[-1] + 1
 
-    stim_start = float(t[start_idx])
-    stim_dur = float(t[end_idx] - t[start_idx])
+    start_time = float(t[start_idx])
+    duration = float(t[end_idx] - t[start_idx])
 
     stim = i[start_idx:end_idx + 1]
 
@@ -209,11 +207,11 @@ def get_stim_characteristics(i, t, test_pulse=True):
     peak_low = min(stim)
 
     if abs(peak_high) > abs(peak_low):
-        stim_amp = float(peak_high)
+        amplitude = float(peak_high)
     else:
-        stim_amp = float(peak_low)
+        amplitude = float(peak_low)
 
-    return stim_start, stim_dur, stim_amp, start_idx, end_idx
+    return start_time, duration, amplitude, start_idx, end_idx
 
 
 def _step_stim_amp(t, i, start):
