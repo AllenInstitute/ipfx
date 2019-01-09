@@ -1,8 +1,16 @@
 import os
-import allensdk.internal.core.lims_utilities as lu
+import warnings
 
+try:
+    import allensdk.internal.core.lims_utilities as lu
+except ImportError as e:
+    warnings.warn("Can not import LIMS libraries due to '%s', using default values." % e)
+    lu = None
 
 def get_input_nwb_file(specimen_id):
+
+    if not lu:
+        return None
 
     query="""
     select err.storage_directory||'EPHYS_FEATURE_EXTRACTION_V2_QUEUE_'||err.id||'_input.json' as input_v2_json,
@@ -28,6 +36,9 @@ def get_input_nwb_file(specimen_id):
 
 def get_input_h5_file(specimen_id):
 
+    if not lu:
+        return None
+
     h5_res = lu.query("""
     select err.*, wkf.*,sp.name as specimen_name 
     from ephys_roi_results err 
@@ -44,12 +55,15 @@ def get_input_h5_file(specimen_id):
 
 def get_sweep_states(specimen_id):
 
+    sweep_states = []
+
+    if not lu:
+        return sweep_states
+
     res = lu.query("""
         select sweep_number, workflow_state from ephys_sweeps
         where specimen_id = %d
         """ % specimen_id)
-
-    sweep_states = []
 
     for sweep in res:
         # only care about manual calls
@@ -64,6 +78,9 @@ def get_sweep_states(specimen_id):
 
 
 def get_stimuli_description():
+
+    if not lu:
+        return None
 
     stims = lu.query("""
     select ersn.name as stimulus_code, est.name as stimulus_name from ephys_raw_stimulus_names ersn
