@@ -187,21 +187,20 @@ def get_stim_characteristics(i, t, test_pulse=True):
     """
 
     di = np.diff(i)
-    diff_idx = np.flatnonzero(di)   # != 0
+    di_idx = np.flatnonzero(di)   # != 0
 
-    if len(diff_idx) == 0:
+    start_idx_idx = 2 if test_pulse else 0     # skip the first up/down (test pulse) if present
+
+    if len(di_idx[start_idx_idx:]) == 0:
         return None, None, 0.0, None, None
 
-    idx = 2 if test_pulse else 0     # skip the first up/down (test pulse) if present
-
-    # shift by one to compensate for diff()
-    start_idx = diff_idx[idx] + 1
-    end_idx = diff_idx[-1] + 1
+    start_idx = di_idx[start_idx_idx] + 1   # shift by one to compensate for diff()
+    end_idx = di_idx[-1]
 
     start_time = float(t[start_idx])
-    duration = float(t[end_idx] - t[start_idx])
+    duration = float(t[end_idx] - t[start_idx-1])
 
-    stim = i[start_idx:end_idx + 1]
+    stim = i[start_idx:end_idx+1]
 
     peak_high = max(stim)
     peak_low = min(stim)
