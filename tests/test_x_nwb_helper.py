@@ -125,7 +125,9 @@ def create_files_for_upload(ext):
         print(f"Converting {f}")
         convert(f, overwrite=True, outputFeedbackChannel=True)
 
-    zip_files(folder, basename + "_nwb", ".nwb")
+    nwb_folder = basename + "_nwb"
+    zip_files(folder, nwb_folder, ".nwb")
+    shutil.rmtree(nwb_folder)
 
 
 def zip_files(folder, filename, extension):
