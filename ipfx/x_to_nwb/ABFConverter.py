@@ -430,7 +430,7 @@ class ABFConverter:
                     adcName = abf.adcNames[channel]
 
                     if not self.outputFeedbackChannel:
-                        if adcName in adcNamesWithRealData:
+                        if adcName in ABFConverter.adcNamesWithRealData:
                             pass
                         else:
                             # feedback data, skip
