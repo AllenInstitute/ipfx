@@ -324,7 +324,7 @@ class ABFConverter:
 
                     stimulus = seriesClass(name=name,
                                            data=data,
-                                           sweep_number=cycle_id,
+                                           sweep_number=np.uint64(cycle_id),
                                            unit=unit,
                                            electrode=electrode,
                                            gain=gain,
@@ -460,7 +460,7 @@ class ABFConverter:
                     if clampMode == V_CLAMP_MODE:
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
-                                                      sweep_number=cycle_id,
+                                                      sweep_number=np.uint64(cycle_id),
                                                       unit=unit,
                                                       electrode=electrode,
                                                       gain=gain,
@@ -481,7 +481,7 @@ class ABFConverter:
                     elif clampMode == I_CLAMP_MODE:
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
-                                                      sweep_number=cycle_id,
+                                                      sweep_number=np.uint64(cycle_id),
                                                       unit=unit,
                                                       electrode=electrode,
                                                       gain=gain,
