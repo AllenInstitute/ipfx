@@ -1,3 +1,5 @@
+#!/bin/sh
+
 OUTPUT_DIR=/local1/ephys/tsts
 
 INPUT_NWB_FILE_FULL_PATH=$1

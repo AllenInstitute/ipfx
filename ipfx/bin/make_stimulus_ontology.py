@@ -67,6 +67,10 @@ def make_stimulus_ontology(stims):
 def make_stimulus_ontology_from_lims():
 
     stimuli = lq.get_stimuli_description()
+
+    if not stimuli:
+        return None
+
     ontology = make_stimulus_ontology(stimuli)
 
     ontology.append([(CODE, 'C1NSSEED'), (NAME, 'Noise', 'Noise 1'), (CORE, 'Core 1')])
@@ -80,6 +84,10 @@ def make_default_stimulus_ontology():
     PACKAGE_DIR = os.path.dirname(MODULE_DIR)
 
     stim_ontology_tags = make_stimulus_ontology_from_lims()
+
+    if not stim_ontology_tags:
+        return
+
     stim_ontology_json = os.path.join(PACKAGE_DIR,"defaults/stimulus_ontology.json")
 
     ju.write(stim_ontology_json, stim_ontology_tags)
