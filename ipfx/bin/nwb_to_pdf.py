@@ -267,7 +267,7 @@ def plot_sweepdata(sweepdata, axes, addXTicks=False):
         axes:      np.ndarray(plt.axis)
         addXTicks: Add ticks and a label to the X axis at the bottom
     '''
-    length = len(sweepdata.items())
+    numItems = len(sweepdata.items())
 
     for index, pcs_data_plot in enumerate(sweepdata.values()):
         plot_patchClampSeries(axes[index], pcs_data_plot)
@@ -277,7 +277,7 @@ def plot_sweepdata(sweepdata, axes, addXTicks=False):
                                                 pcs_data_plot.unit['x']))
             axes[index].xaxis.set_tick_params(labelbottom=True)
 
-    for axis in axes[length:]:
+    for axis in axes[numItems:]:
         axis.remove()
 
 
