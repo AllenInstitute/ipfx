@@ -240,13 +240,14 @@ def gather_sweeps(nwbfile):
     return sweeps
 
 
-def plot_patchClampSeries(axis, pcs_data_plot):
+def plot_patchClampSeries(axis, pcs_data_plot, length):
     '''
     plot a PatchClampSeries against the axis
         pcs_data_plot: class PatchClampSeriesPlotData
         axis:    plt.axis
+        length:  number of points to plot
     '''
-    axis.plot(pcs_data_plot.data['x'], pcs_data_plot.data['y'])
+    axis.plot(pcs_data_plot.data['x'][:length - 1], pcs_data_plot.data['y'][:length-1])
     axis.set_title("%s" % pcs_data_plot.title)
     axis.set_ylabel('%s [%s]' % (pcs_data_plot.axis['y'],
                                  pcs_data_plot.unit['y']))
@@ -259,18 +260,19 @@ def plot_patchClampSeries(axis, pcs_data_plot):
               bbox=props)
 
 
-def plot_sweepdata(sweepdata, axes, addXTicks=False):
+def plot_sweepdata(sweepdata, axes, length, addXTicks=False):
     '''
     plot the given sweep data (stimulus or acquisition) on the given axes
         sweepdata: dict(class PatchClampSeriesPlotData) (either acquisition or
                    stimulus)
         axes:      np.ndarray(plt.axis)
+        length:    number of points to plot
         addXTicks: Add ticks and a label to the X axis at the bottom
     '''
     numItems = len(sweepdata.items())
 
     for index, pcs_data_plot in enumerate(sweepdata.values()):
-        plot_patchClampSeries(axes[index], pcs_data_plot)
+        plot_patchClampSeries(axes[index], pcs_data_plot, length)
 
         if addXTicks:
             axes[index].set_xlabel('%s [%s]' % (pcs_data_plot.axis['x'],
@@ -388,6 +390,12 @@ def create_regular_pdf(nwbfile, outfile):
 
     sweeps = gather_sweeps(nwbfile)
 
+    def min_length(sweepdata, length):
+        for pcs_data_plot in sweepdata.values():
+            length = min(length, len(pcs_data_plot.data['y']))
+
+        return length
+
     with PdfPages(outfile) as pdf:
         for cycle_id in sweeps:
             sweep = sweeps.get(cycle_id)
@@ -399,8 +407,11 @@ def create_regular_pdf(nwbfile, outfile):
             fig, axes = plt.subplots(nrows=2, ncols=ncols, sharex='row',
                                      num=cycle_id, squeeze=False)
 
-            plot_sweepdata(sweep.get_stimulus(), axes[0][:])
-            plot_sweepdata(sweep.get_acquisition(), axes[1][:], addXTicks=True)
+            length = min_length(sweep.get_stimulus(), math.inf)
+            length = min_length(sweep.get_acquisition(), length)
+
+            plot_sweepdata(sweep.get_stimulus(), axes[0][:], length)
+            plot_sweepdata(sweep.get_acquisition(), axes[1][:], length, addXTicks=True)
 
             fig.suptitle("Sweep %s" % cycle_id)
             fig.set_size_inches(8.27, 11.69)  # a4 portrait
