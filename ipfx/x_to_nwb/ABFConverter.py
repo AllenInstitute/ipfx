@@ -317,6 +317,7 @@ class ABFConverter:
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
+                                              "file": os.path.basename(abf.abfFilePath),
                                               "name": abf.dacNames[channel],
                                               "number": abf._dacSection.nDACNum[channel]},
                                              sort_keys=True, indent=4)
@@ -452,6 +453,7 @@ class ABFConverter:
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
+                                              "file": os.path.basename(abf.abfFilePath),
                                               "name": adcName,
                                               "number": abf._adcSection.nADCNum[channel]},
                                              sort_keys=True, indent=4)
