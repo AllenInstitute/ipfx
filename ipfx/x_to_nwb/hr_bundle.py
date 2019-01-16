@@ -47,7 +47,7 @@ class Bundle():
                 ext = item.Extension
                 self.catalog[ext] = item
 
-            if not self.header.Version.startswith("v2x90.1"):
+            if not self.header.Version.startswith("v2x90"):
                 warnings.warn(f"The DAT file version '{self.header.Version}' of '{file_name}' might "
                               "be incompatible and therefore read/interpretation errors are possible.")
 
