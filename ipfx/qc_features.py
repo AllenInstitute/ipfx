@@ -291,8 +291,7 @@ def sweep_qc_features(data_set):
     for sweep_info in iclamp_sweeps.to_dict(orient='records'):
         sweep_num = sweep_info['sweep_number']
         sweep_data = data_set.sweep(sweep_num)
-
-        if sweep_completed(sweep_data.i, sweep_data.v, sweep_data.sampling_rate):
+        if sweep_completed(sweep_data.i, sweep_data.v, sweep_data.t,sweep_data.sampling_rate):
 
             sweep = current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology)
             sweep["completed"] = True
@@ -307,7 +306,6 @@ def sweep_qc_features(data_set):
 
 
 def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
-
 
     sweep = {}
 
@@ -342,9 +340,11 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
 
     # measure Vm and noise over extended interval, to check stability
 
-    stim_start_ix = stf.find_stim_start(current, expt_start_idx)
-    sweep['stimulus_start_time'] = t[stim_start_ix]
-    idx0, idx1 = stf.get_stability_vm_epoch(stim_start_ix, hz)
+    stim_start_time, stim_dur, stim_amp, stim_start_idx, stim_end_idx = stf.get_stim_characteristics(current,t)
+
+    sweep['stimulus_start_time'] = stim_start_time
+
+    idx0, idx1 = stf.get_stability_vm_epoch(stim_start_idx, hz)
     mean2, rms2 = measure_vm(voltage[idx0:idx1])
 
     sweep["slow_vm_mv"] = float(mean2)
@@ -371,13 +371,23 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
 
     return sweep
 
-def sweep_completed(i,v,hz):
+
+def sweep_completed(i,v,t,hz):
 
     POSTSTIM_STABILITY_EPOCH = 0.5
     LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
 
-    stimulus_end_ix = np.nonzero(i)[0][-1]  # last non-zero index along the only dimension=0
-    response_end_ix = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0
+    di = np.diff(i)
+    di_idx = np.flatnonzero(di)   # != 0
+
+    if len(di_idx) < 4: # assuming there is a test pulse there should be at least 2 pulses (i.e, 4 jumps)
+        return False
+
+    stim_start_time, stim_duration, stim_amplitude, stim_start_idx, stim_end_idx = stf.get_stim_characteristics(i,t)
+    expt_start_ix, expt_end_ix = stf.get_experiment_epoch(i, v, hz)
+
+    stimulus_end_ix = stim_end_idx
+    response_end_ix = expt_end_ix
 
     post_stim_response_duration = (response_end_ix - stimulus_end_ix) / hz
     completed_expt_epoch = post_stim_response_duration > POSTSTIM_STABILITY_EPOCH
@@ -385,9 +395,9 @@ def sweep_completed(i,v,hz):
     long_response = response_end_ix/hz>LONG_RESPONSE_DURATION
 
     if completed_expt_epoch or long_response:
-        sweep_completion = True
+        return True
     else:
-        sweep_completion = False
+        return False
 
     return sweep_completion
 
