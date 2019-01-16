@@ -353,7 +353,8 @@ class ABFConverter:
             settings = self._amplifierSettings[amplifier]
 
             if settings["GetMode"] != clampMode:
-                warnings.warn("Stored clamp mode {settings['GetMode']} does not match requested clamp mode {clampMode}")
+                warnings.warn(f"Stored clamp mode {settings['GetMode']} does not match requested "
+                              f"clamp mode {clampMode} of channel {adcName}.")
                 settings = None
         except (TypeError, KeyError) as e:
             warnings.warn(f"Could not find settings for amplifier of channel {adcName}.")
