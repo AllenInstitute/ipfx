@@ -2,19 +2,6 @@ import ipfx.stim_features as st
 import numpy as np
 
 
-def test_find_stim_start():
-    a = [0,1,1,0]
-    stim_start = st.find_stim_start(a)
-    assert stim_start == 1
-
-    a = [0,1,1,0,1,1,0]
-    stim_start = st.find_stim_start(a, idx0=3)
-    assert stim_start == 4
-
-    a = [1,1,0,0,0,0,0]
-    stim_start = st.find_stim_start(a)
-    assert stim_start == 2
-
 def test_find_stim_window():
     a = [0,1,1,0]
     stim_start, stim_dur = st.find_stim_window(a)

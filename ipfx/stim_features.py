@@ -48,33 +48,6 @@ def get_stability_vm_epoch(stim_start, hz):
     return stim_start-1-num_steps, stim_start-1
 
 
-def find_stim_start(stim, idx0=0):
-    """
-    Find the index of the first nonzero positive or negative jump in an array.
-
-    Parameters
-    ----------
-    stim: np.ndarray
-        Array to be searched
-
-    idx0: int
-        Start searching with this index (default: 0).
-
-    Returns
-    -------
-    int
-    """
-
-    di = np.diff(stim)
-    idxs = np.flatnonzero(di)
-    idxs = idxs[idxs >= idx0]
-
-    if len(idxs) == 0:
-        return -1
-
-    return idxs[0]+1
-
-
 def get_recording_end_idx(v):
 
     end_idx = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0.
@@ -191,12 +164,11 @@ def get_stim_characteristics(i, t, test_pulse=True):
 
     start_idx_idx = 2 if test_pulse else 0     # skip the first up/down (test pulse) if present
 
-    if len(di_idx[start_idx_idx:]) == 0:
+    if len(di_idx[start_idx_idx:]) == 0:    # if no stimulus is found
         return None, None, 0.0, None, None
 
     start_idx = di_idx[start_idx_idx] + 1   # shift by one to compensate for diff()
     end_idx = di_idx[-1]
-
     start_time = float(t[start_idx])
     duration = float(t[end_idx] - t[start_idx-1])
 
