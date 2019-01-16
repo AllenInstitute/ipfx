@@ -312,6 +312,7 @@ class ABFConverter:
                     gain = abf._dacSection.fDACScaleFactor[channel]
                     resolution = np.nan
                     starting_time = self._calculateStartingTime(abf)
+                    stimulus_description = abf.protocol
                     rate = float(abf.dataRate)
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
@@ -332,7 +333,8 @@ class ABFConverter:
                                            conversion=conversion,
                                            starting_time=starting_time,
                                            rate=rate,
-                                           description=description)
+                                           description=description,
+                                           stimulus_description=stimulus_description)
 
                     series.append(stimulus)
 
