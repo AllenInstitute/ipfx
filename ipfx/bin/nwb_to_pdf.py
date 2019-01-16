@@ -176,6 +176,8 @@ class PatchClampSeriesPlotData():
 
     def _annotation(self, pcs):
         self.annotation = []
+        description = json.loads(pcs.description)
+        self.add_annotation("file", description.get("file", "NA"), None)
         self.add_annotation("desc", pcs.stimulus_description, None)
         self.add_annotation("rate", pcs.rate, "Hz")
         self.add_annotation("gain", pcs.gain, "x")
