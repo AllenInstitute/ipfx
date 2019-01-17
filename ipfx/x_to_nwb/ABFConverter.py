@@ -312,10 +312,12 @@ class ABFConverter:
                     gain = abf._dacSection.fDACScaleFactor[channel]
                     resolution = np.nan
                     starting_time = self._calculateStartingTime(abf)
+                    stimulus_description = abf.protocol
                     rate = float(abf.dataRate)
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
+                                              "file": os.path.basename(abf.abfFilePath),
                                               "name": abf.dacNames[channel],
                                               "number": abf._dacSection.nDACNum[channel]},
                                              sort_keys=True, indent=4)
@@ -332,7 +334,8 @@ class ABFConverter:
                                            conversion=conversion,
                                            starting_time=starting_time,
                                            rate=rate,
-                                           description=description)
+                                           description=description,
+                                           stimulus_description=stimulus_description)
 
                     series.append(stimulus)
 
@@ -353,7 +356,8 @@ class ABFConverter:
             settings = self._amplifierSettings[amplifier]
 
             if settings["GetMode"] != clampMode:
-                warnings.warn("Stored clamp mode {settings['GetMode']} does not match requested clamp mode {clampMode}")
+                warnings.warn(f"Stored clamp mode {settings['GetMode']} does not match requested "
+                              f"clamp mode {clampMode} of channel {adcName}.")
                 settings = None
         except (TypeError, KeyError) as e:
             warnings.warn(f"Could not find settings for amplifier of channel {adcName}.")
@@ -449,6 +453,7 @@ class ABFConverter:
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
+                                              "file": os.path.basename(abf.abfFilePath),
                                               "name": adcName,
                                               "number": abf._adcSection.nADCNum[channel]},
                                              sort_keys=True, indent=4)

@@ -280,7 +280,9 @@ class DatConverter:
                         stimulus_description = series.Label
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / stimRec.SampleInterval
-                        description = json.dumps({"cycle_id": cycle_id}, sort_keys=True, indent=4)
+                        description = json.dumps({"cycle_id": cycle_id,
+                                                  "file": os.path.basename(self.bundle.file_name)},
+                                                 sort_keys=True, indent=4)
 
                         channelRec_index = getChannelRecordIndex(self.bundle.pgf, sweep, trace)
                         assert channelRec_index is not None, "Unexpected channel record index"
@@ -358,7 +360,9 @@ class DatConverter:
                         resolution = np.nan
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / trace.XInterval
-                        description = json.dumps({"cycle_id": cycle_id}, sort_keys=True, indent=4)
+                        description = json.dumps({"cycle_id": cycle_id,
+                                                  "file": os.path.basename(self.bundle.file_name)},
+                                                 sort_keys=True, indent=4)
                         clampMode = self._getClampMode(trace)
                         seriesClass = getAcquiredSeriesClass(clampMode)
                         stimulus_description = series.Label
