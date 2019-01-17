@@ -1,4 +1,5 @@
 from . import stim_features as stf
+from . import epochs as ep
 from . import error as er
 import logging
 import numpy as np
@@ -316,7 +317,7 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
     expt_start_idx, expt_end_idx = sweep_data.expt_idx_range
 
     # measure Vm and noise before stimulus
-    idx0, idx1 = stf.get_first_vm_noise_epoch(expt_start_idx, hz)  # count from the beginning of the experiment
+    idx0, idx1 = ep.get_first_vm_noise_epoch(expt_start_idx, hz)  # count from the beginning of the experiment
 
     _, rms0 = measure_vm(voltage[idx0:idx1])
 
@@ -329,9 +330,9 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
     is_ramp = sweep_info['stimulus_name'] in ontology.ramp_names
 
     if not is_ramp:
-        idx0, idx1 = stf.get_last_vm_epoch(expt_end_idx, hz)
+        idx0, idx1 = ep.get_last_vm_epoch(expt_end_idx, hz)
         mean_last_vm_epoch, _ = measure_vm(voltage[idx0:idx1])
-        idx0, idx1 = stf.get_last_vm_noise_epoch(expt_end_idx, hz)
+        idx0, idx1 = ep.get_last_vm_noise_epoch(expt_end_idx, hz)
         _, rms1 = measure_vm(voltage[idx0:idx1])
         sweep["post_vm_mv"] = float(mean_last_vm_epoch)
         sweep["post_noise_rms_mv"] = float(rms1)
@@ -344,7 +345,7 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
 
     sweep['stimulus_start_time'] = stim_start_time
 
-    idx0, idx1 = stf.get_stability_vm_epoch(stim_start_idx, hz)
+    idx0, idx1 = ep.get_stability_vm_epoch(stim_start_idx, hz)
     mean2, rms2 = measure_vm(voltage[idx0:idx1])
 
     sweep["slow_vm_mv"] = float(mean2)
@@ -384,7 +385,7 @@ def sweep_completed(i,v,t,hz):
         return False
 
     stim_start_time, stim_duration, stim_amplitude, stim_start_idx, stim_end_idx = stf.get_stim_characteristics(i,t)
-    expt_start_ix, expt_end_ix = stf.get_experiment_epoch(i, v, hz)
+    expt_start_ix, expt_end_ix = ep.get_experiment_epoch(i, v, hz)
 
     stimulus_end_ix = stim_end_idx
     response_end_ix = expt_end_ix

@@ -1,5 +1,4 @@
 import re
-import json
 import warnings
 
 import h5py
@@ -8,7 +7,7 @@ from pynwb import NWBHDF5IO
 from pynwb.icephys import (CurrentClampSeries, CurrentClampStimulusSeries, VoltageClampSeries,
                            VoltageClampStimulusSeries, IZeroClampSeries)
 
-import ipfx.stim_features as st
+import ipfx.epochs as ep
 
 
 def get_scalar_string(string_from_nwb):
@@ -396,9 +395,9 @@ class NwbMiesReader(NwbReader):
                 unit_str = 'Unknown'
 
             if "CurrentClampSeries" in sweep_response.attrs["ancestry"]:
-                index_range = st.get_experiment_epoch(stimulus, response, hz)
+                index_range = ep.get_experiment_epoch(stimulus, response, hz)
             elif "VoltageClampSeries" in sweep_response.attrs["ancestry"]:
-                index_range = st.get_sweep_epoch(response)
+                index_range = ep.get_sweep_epoch(response)
             else:
                 raise ValueError("Unknown Clamp Mode")
 
