@@ -351,7 +351,6 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
     sweep["slow_vm_mv"] = float(mean2)
     sweep["slow_noise_rms_mv"] = float(rms2)
 
-    # for now (mid-feb 15), make vm_mv the same for pre and slow
     mean0 = mean2
     sweep["pre_vm_mv"] = float(mean0)
 
@@ -362,8 +361,6 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
         # Use None as 'nan' still breaks the ruby strategies
         sweep["vm_delta_mv"] = None
 
-    # compute stimulus duration, amplitude, interval
-    _, stim_dur, stim_amp, _, _ = stf.get_stim_characteristics(current,t)
     stim_int = stf.find_stim_interval(expt_start_idx, current, hz)
 
     sweep['stimulus_amplitude'] = stim_amp
@@ -393,14 +390,12 @@ def sweep_completed(i,v,t,hz):
     post_stim_response_duration = (response_end_ix - stimulus_end_ix) / hz
     completed_expt_epoch = post_stim_response_duration > POSTSTIM_STABILITY_EPOCH
 
-    long_response = response_end_ix/hz>LONG_RESPONSE_DURATION
+    long_response = (response_end_ix / hz) > LONG_RESPONSE_DURATION
 
     if completed_expt_epoch or long_response:
         return True
     else:
         return False
-
-    return sweep_completion
 
 
 
