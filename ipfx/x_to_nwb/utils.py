@@ -91,7 +91,7 @@ def createCycleID(numbers, total):
     return result
 
 
-def createCompressedDataset(array):
+def convertDataset(array):
     """
     Request compression for the given array and return it wrapped.
     """
