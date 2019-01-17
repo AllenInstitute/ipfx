@@ -6,7 +6,7 @@ import shutil
 from ipfx.stimulus import StimulusOntology
 from ipfx.hbg_dataset import HBGDataSet
 
-from helpers import compare_dicts
+from helpers_for_tests import compare_dicts
 
 
 @pytest.fixture()
