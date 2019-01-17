@@ -155,7 +155,9 @@ class PatchClampSeriesPlotData():
 
         conv = attributes.get('conversion')
         unit = attributes.get('unit')
-        self.unit['y'] = physical(conv, unit).split("1.0").pop()
+
+        self.data['y'] *= conv
+        self.unit['y'] = unit
 
         if unit == "A":
             self.axis['y'] = 'Current'

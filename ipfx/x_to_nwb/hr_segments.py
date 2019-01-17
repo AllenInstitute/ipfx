@@ -27,6 +27,7 @@ def getSegmentClass(stimRec, channelRec, segmentRec):
 # PatchMaster manual page 113
 # StimulationRecord.SampleInterval: Determines x-spacing
 # StimSegmentRecord.Duration [s]: x-Length
+# Amplitude [V] for VC and [µA] for IC
 class Segment(ABC):
     """
         Base class for all segment types.
@@ -57,9 +58,16 @@ class Segment(ABC):
         self.duration = segmentRec.Duration
         self.sampleInterval = stimRec.SampleInterval
 
+        # PatchMaster stores "V" for VC and "µA" for IC
+        # and we want to have "mV" for VC and "pA" for IC
+        self.amplitudeScale = 1e3
+
     def __str__(self):
         return ("xDelta={}, yDelta={}, "
-                "duration={}, sampleInterval={}").format(self.xDelta, self.yDelta, self.duration, self.sampleInterval)
+                "duration={}, sampleInterval={}"
+                "amplitudeScale={}").format(self.xDelta, self.yDelta,
+                                            self.duration, self.sampleInterval,
+                                            self.amplitudeScale)
 
     @staticmethod
     def _hasDelta(deltaDict):
@@ -84,6 +92,13 @@ class Segment(ABC):
             return deltaDict["factor"] * val + deltaDict["offset"]
 
         return val
+
+    def applyAmplitudeScale(self, amplitude):
+        """
+        Scale the amplitude so that we get the correct units. See also Segment.createArray.
+        """
+
+        return amplitude * self.amplitudeScale
 
     def _step(self, xValue, yValue):
         """
@@ -129,7 +144,7 @@ class Segment(ABC):
         for _ in range(sweepNo):
             duration, amplitude = self._step(duration, amplitude)
 
-        return duration, amplitude
+        return duration, self.applyAmplitudeScale(amplitude)
 
     def calculateNumberOfPoints(self, duration):
         """
@@ -184,8 +199,8 @@ class SquareSegment(Segment):
         oneCycle = np.zeros([numPointsCycle])
 
         halfCycleLength = int(numPointsCycle/2)
-        oneCycle[:halfCycleLength] = self.posAmp
-        oneCycle[halfCycleLength:] = -self.posAmp
+        oneCycle[:halfCycleLength] = self.applyAmplitudeScale(self.posAmp)
+        oneCycle[halfCycleLength:] = self.applyAmplitudeScale(-self.posAmp)
 
         numCycles = math.ceil(self.duration / self.cycleDuration)
 
