@@ -298,7 +298,7 @@ class DatConverter:
 
                         timeSeries = seriesClass(name=name,
                                                  data=data,
-                                                 sweep_number=cycle_id,
+                                                 sweep_number=np.uint64(cycle_id),
                                                  unit=unit,
                                                  electrode=electrode,
                                                  gain=gain,
@@ -394,7 +394,7 @@ class DatConverter:
 
                             acquistion_data = seriesClass(name=name,
                                                           data=data,
-                                                          sweep_number=cycle_id,
+                                                          sweep_number=np.uint64(cycle_id),
                                                           unit=unit,
                                                           electrode=electrode,
                                                           gain=gain,
@@ -427,7 +427,7 @@ class DatConverter:
 
                             acquistion_data = seriesClass(name=name,
                                                           data=data,
-                                                          sweep_number=cycle_id,
+                                                          sweep_number=np.uint64(cycle_id),
                                                           unit=unit,
                                                           electrode=electrode,
                                                           gain=gain,
