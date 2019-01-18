@@ -3,9 +3,11 @@ import re
 
 import numpy as np
 from ipfx.stimulus import StimulusOntology
+import ipfx.epochs as ep
 
 
 class EphysDataSet(object):
+
     STIMULUS_UNITS = 'stimulus_units'
     STIMULUS_CODE = 'stimulus_code'
     STIMULUS_AMPLITUDE = 'stimulus_amplitude'
@@ -75,7 +77,7 @@ class EphysDataSet(object):
 
         return sweeps.sweep_number.values[-1]
 
-    def get_sweep_info_by_sweep_number(self, sweep_number):
+    def get_sweep_meta_data(self, sweep_number):
         """
 
         Parameters
@@ -84,12 +86,12 @@ class EphysDataSet(object):
 
         Returns
         -------
-        sweep_info: dict of sweep properties
+        sweep_meta_data: dict of sweep properties
         """
 
-        sweeps = self.filtered_sweep_table(sweep_number=sweep_number)
+        sweep_meta_data = self.filtered_sweep_table(sweep_number=sweep_number)
 
-        return sweeps.to_dict(orient='records')[0]
+        return sweep_meta_data.to_dict(orient='records')[0]
 
     def sweep(self, sweep_number):
 
@@ -107,39 +109,35 @@ class EphysDataSet(object):
         """
 
         sweep_data = self.get_sweep_data(sweep_number)
-        hz = sweep_data['sampling_rate']
-        dt = 1. / hz
-        sweep_info = self.get_sweep_info_by_sweep_number(sweep_number)
+        sweep_meta_data = self.get_sweep_meta_data(sweep_number)
+        sampling_rate = sweep_data['sampling_rate']
+        dt = 1. / sampling_rate
+        sweep_start_ix, sweep_end_ix = ep.get_sweep_epoch(sweep_data['response'])
 
-        start_ix, end_ix = sweep_data['index_range']
+        response = sweep_data['response'][sweep_start_ix:sweep_end_ix+1]
+        stimulus = sweep_data['stimulus'][sweep_start_ix:sweep_end_ix+1]
+        t = np.arange(sweep_start_ix, sweep_end_ix + 1) * dt
 
-        t = np.arange(0, end_ix+1)*dt - start_ix*dt
-
-        response = sweep_data['response'][0:end_ix+1]
-        stimulus = sweep_data['stimulus'][0:end_ix+1]
-
-        clamp_mode = sweep_info.get('clamp_mode', None)
-        if clamp_mode is None:
-            clamp_mode = "CurrentClamp" if sweep_info[
-                'stimulus_units'] in self.ontology.current_clamp_units else "VoltageClamp"
-
-        if clamp_mode == "VoltageClamp":  # voltage clamp
+        if sweep_meta_data[self.CLAMP_MODE] == "VoltageClamp":
             v = stimulus
             i = response
-        elif clamp_mode == "CurrentClamp":  # Current clamp
+            expt_idx_range = None
+        elif sweep_meta_data[self.CLAMP_MODE] == "CurrentClamp":
             v = response
             i = stimulus
+            expt_idx_range = ep.get_experiment_epoch(stimulus, response, sampling_rate)
+            expt_start_ix,expt_end_ix = expt_idx_range
+            t = t - expt_start_ix*dt
         else:
-            raise ValueError("Incorrect stimulus unit")
+            raise Exception("Unable to determine clamp mode for sweep " + sweep_number)
 
         try:
             sweep = Sweep(t=t,
                           v=v,
                           i=i,
-                          sampling_rate=sweep_data['sampling_rate'],
-                          expt_idx_range=sweep_data['index_range'],
+                          sampling_rate=sampling_rate,
+                          expt_idx_range=expt_idx_range,
                           sweep_number=sweep_number,
-                          clamp_mode=clamp_mode
                           )
 
         except Exception:
@@ -179,15 +177,13 @@ class EphysDataSet(object):
         """
         Return the data of sweep_number as dict. The dict has the format:
 
-        ```
         {
             'stimulus': np.ndarray,
             'response': np.ndarray,
             'stimulus_unit': string,
-            'index_range': list with two elements,
             'sampling_rate': float
         }
-        ```
+
         """
         raise NotImplementedError
 
@@ -201,14 +197,13 @@ class EphysDataSet(object):
 
 
 class Sweep(object):
-    def __init__(self, t, v, i, expt_idx_range, sampling_rate=None, sweep_number=None, clamp_mode=None):
+    def __init__(self, t, v, i, expt_idx_range, sampling_rate=None, sweep_number=None):
         self.t = t
         self.v = v
         self.i = i
         self.expt_idx_range = expt_idx_range
         self.sampling_rate = sampling_rate
         self.sweep_number = sweep_number
-        self.clamp_mode = clamp_mode
 
     @property
     def t_end(self):

@@ -177,7 +177,7 @@ def test_valid_v1_full_Pipeline(fetch_pipeline_file):
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (37500, 101149),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 50000.0,
                       'stimulus': None,
@@ -221,7 +221,7 @@ def test_valid_v1_full_MIES_1():
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (0, 188000),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 200000.0,
                       'stimulus': None,
@@ -266,7 +266,7 @@ def test_valid_v1_full_MIES_2():
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (0, 65999),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 200000.0,
                       'stimulus': None,
@@ -312,7 +312,7 @@ def test_valid_v1_full_MIES_3():
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (0, 65999),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 200000.0,
                       'stimulus': None,
@@ -361,7 +361,7 @@ def test_valid_v2_full_ABF():
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (0, 899999),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 50000.0,
                       'stimulus': None,
@@ -414,7 +414,7 @@ def test_valid_v2_full_DAT(fetch_DAT_NWB_file):
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (0, 199999),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 200000.00000000003,
                       'stimulus': None,
