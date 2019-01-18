@@ -301,7 +301,10 @@ class DatConverter:
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / stimRec.SampleInterval
                         description = json.dumps({"cycle_id": cycle_id,
-                                                  "file": os.path.basename(self.bundle.file_name)},
+                                                  "file": os.path.basename(self.bundle.file_name),
+                                                  "group_label": group.Label,
+                                                  "series_label": series.Label,
+                                                  "sweep_label": sweep.Label},
                                                  sort_keys=True, indent=4)
 
                         channelRec_index = getChannelRecordIndex(self.bundle.pgf, sweep, trace)
@@ -381,7 +384,10 @@ class DatConverter:
                         starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / trace.XInterval
                         description = json.dumps({"cycle_id": cycle_id,
-                                                  "file": os.path.basename(self.bundle.file_name)},
+                                                  "file": os.path.basename(self.bundle.file_name),
+                                                  "group_label": group.Label,
+                                                  "series_label": series.Label,
+                                                  "sweep_label": sweep.Label},
                                                  sort_keys=True, indent=4)
                         clampMode = self._getClampMode(trace)
                         seriesClass = getAcquiredSeriesClass(clampMode)
