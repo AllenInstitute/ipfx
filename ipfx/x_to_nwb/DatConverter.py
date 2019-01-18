@@ -19,7 +19,7 @@ from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
 
 class DatConverter:
 
-    def __init__(self, inFile, outFile):
+    def __init__(self, inFile, outFile, multipleGroupsPerFile=False):
 
         if not os.path.isfile(inFile):
             raise ValueError(f"The input file {inFile} does not exist.")
@@ -30,23 +30,41 @@ class DatConverter:
 
         self.totalSeriesCount = self._getMaxTimeSeriesCount()
 
-        nwbFile = self._createFile()
+        def generateList(multipleGroupsPerFile, pul):
+            """
+            Return a list of groups from pul depending on multipleGroupsPerFile.
+            """
 
-        device = self._createDevice()
-        nwbFile.add_device(device)
+            if multipleGroupsPerFile:
+                return [pul]
 
-        self.electrodeDict = self._generateElectrodeDict()
-        electrodes = self._createElectrodes(device)
-        nwbFile.add_ic_electrode(electrodes)
+            return [[x] for x in pul]
 
-        for i in self._createAcquiredSeries(electrodes):
-            nwbFile.add_acquisition(i)
+        for elem in generateList(multipleGroupsPerFile, self.bundle.pul):
 
-        for i in self._createStimulusSeries(electrodes):
-            nwbFile.add_stimulus(i)
+            nwbFile = self._createFile()
 
-        with NWBHDF5IO(outFile, "w") as io:
-            io.write(nwbFile, cache_spec=True)
+            device = self._createDevice()
+            nwbFile.add_device(device)
+
+            self.electrodeDict = self._generateElectrodeDict(elem)
+            electrodes = self._createElectrodes(device)
+            nwbFile.add_ic_electrode(electrodes)
+
+            for i in self._createAcquiredSeries(electrodes, elem):
+                nwbFile.add_acquisition(i)
+
+            for i in self._createStimulusSeries(electrodes, elem):
+                nwbFile.add_stimulus(i)
+
+            if multipleGroupsPerFile:
+                outFileFmt = outFile
+            else:
+                name, suffix = os.path.splitext(outFile)
+                outFileFmt = f"{name}-{elem[0].GroupCount}{suffix}"
+
+            with NWBHDF5IO(outFileFmt, "w") as io:
+                io.write(nwbFile, cache_spec=True)
 
     @staticmethod
     def outputMetadata(inFile):
@@ -92,6 +110,8 @@ class DatConverter:
 
         counter = 0
 
+        # We ignore the multipleGroupsPerFile flag here so that the sweep numbers are
+        # independent of its value.
         for group in self.bundle.pul:
             for series in group:
                 for sweep in series:
@@ -109,7 +129,7 @@ class DatConverter:
 
         return f"{DAC}_{ADC}"
 
-    def _generateElectrodeDict(self):
+    def _generateElectrodeDict(self, groups):
         """
         Generate a dictionary of all electrodes in the file.
         Use self._generateElectrodeKey(trace) for generating the key, the
@@ -119,7 +139,7 @@ class DatConverter:
         electrodes = {}
         index = 0
 
-        for group in self.bundle.pul:
+        for group in groups:
             for series in group:
                 for sweep in series:
                     for trace in sweep:
@@ -247,7 +267,7 @@ class DatConverter:
                                        description=PLACEHOLDER)
                 for x in self.electrodeDict.values()]
 
-    def _createStimulusSeries(self, electrodes):
+    def _createStimulusSeries(self, electrodes, groups):
         """
         Return a list of pynwb stimulus series objects created from the DAT file contents.
         """
@@ -256,7 +276,7 @@ class DatConverter:
         nwbSeries = []
         counter = 0
 
-        for group in self.bundle.pul:
+        for group in groups:
             for series in group:
                 for sweep in series:
                     cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount],
@@ -313,7 +333,7 @@ class DatConverter:
 
         return nwbSeries
 
-    def _createAcquiredSeries(self, electrodes):
+    def _createAcquiredSeries(self, electrodes, groups):
         """
         Return a list of pynwb acquisition series objects created from the DAT file contents.
         """
@@ -338,7 +358,7 @@ class DatConverter:
             # and sometimes we got nothing at all
             return None
 
-        for group in self.bundle.pul:
+        for group in groups:
             for series in group:
                 for sweep in series:
                     cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount],
