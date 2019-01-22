@@ -1,3 +1,8 @@
+"""
+Miscellaneous helper routines for the ABF/DAT to NWB v2 (aka X to NWB) conversion
+functionality.
+"""
+
 import math
 from pkg_resources import get_distribution, DistributionNotFound
 import os

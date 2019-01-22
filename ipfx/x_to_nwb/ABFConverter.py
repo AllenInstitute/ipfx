@@ -1,3 +1,7 @@
+"""
+Convert ABF files, created by PClamp/Clampex, to NWB v2 files.
+"""
+
 from hashlib import sha256
 import json
 import os

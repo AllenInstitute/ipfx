@@ -1,3 +1,7 @@
+"""
+Create a numpy array with the stimulus set data from the stored parameters.
+"""
+
 import math
 from abc import ABC, abstractmethod
 

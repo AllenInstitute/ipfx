@@ -1,3 +1,7 @@
+"""
+Convert DAT files, created by PatchMaster, to NWB v2 files.
+"""
+
 from hashlib import sha256
 from datetime import datetime
 import os
