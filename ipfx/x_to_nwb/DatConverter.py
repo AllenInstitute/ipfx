@@ -16,7 +16,7 @@ from pynwb.icephys import IntracellularElectrode
 from ipfx.x_to_nwb.hr_bundle import Bundle
 from ipfx.x_to_nwb.hr_nodes import TraceRecord, ChannelRecordStimulus
 from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
-from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
+from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, getChannelRecordIndex, getStimulusRecordIndex, createCycleID
 
