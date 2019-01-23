@@ -71,7 +71,15 @@
         "GetWholeCellCompResist": 10006730.0,
         "GetZapDuration": 0.0005000000237487257
     },
-    "timestamp": "2018-11-22T16:52:19.840183Z",
+    "ScaleFactors": {
+        "C1NSD1SHORT": 1.05,
+        "C1NSD2SHORT": 1.05,
+        "CHIRP": 1,
+        "LSFINEST": 1.05,
+        "SSFINEST": 7,
+        "TRIPPLE": 7
+    },
+    "timestamp": "2019-01-23T13:36:39.338296Z",
     "uids": {
         "IN0": "Demo1_1",
         "IN1": "Demo1_2"

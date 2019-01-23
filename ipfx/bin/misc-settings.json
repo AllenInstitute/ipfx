@@ -1,0 +1,12 @@
+{
+    "IN0": "Demo1_1",
+    "IN1": "Demo1_2",
+    "ScaleFactors": {
+        "C1NSD1SHORT": 1.05,
+        "C1NSD2SHORT": 1.05,
+        "CHIRP": 1,
+        "LSFINEST": 1.05,
+        "SSFINEST": 7,
+        "TRIPPLE": 7
+    }
+}

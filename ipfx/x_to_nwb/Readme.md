@@ -19,24 +19,28 @@ JSON output.
 #### MCC settings gathering
 
 ```sh
-mcc_get_settings.py --filename 2018_09_12_0003.json --idChannelMapping '{"IN0" : "x00830251_1"}' '{"IN1" : "x00830251_2"}'
+mcc_get_settings.py --filename 2018_09_12_0003.json --settingsFile misc-settings.json
 ```
 
-The optional parameter `--filename` gives the name of the output file, and
-`--idChannelMapping` makes the connection between the names of the AD channels
-and the amplifier names.
+The optional parameter `--filename` gives the name of the output file,
+`--settingsFile` is mandatory and makes the connection between the names of the
+AD channels and the amplifier names. In addition it holds the optional scale
+factors for the stimulus sets.
 
-If you prefer to pass in a valid JSON file instead of giving these on the commandline use
-```sh
-mcc_get_settings.py --filename 2018_09_12_0003.json --idChannelMappingFromFile idChannelMapping.json
-```
-
-where `idChannelMapping.json` has the following format:
+Example for `misc-settings.json`:
 
 ```json
 {
-  "IN0": "x00830251_1",
-  "IN1": "x00830251_2"
+    "IN0": "Demo1_1",
+    "IN1": "Demo1_2",
+    "ScaleFactors": {
+        "C1NSD1SHORT": 1.05,
+        "C1NSD2SHORT": 1.05,
+        "CHIRP": 1,
+        "LSFINEST": 1.05,
+        "SSFINEST": 7,
+        "TRIPPLE": 7
+    }
 }
 ```
 
