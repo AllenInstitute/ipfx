@@ -47,7 +47,7 @@ class ABFConverter:
 
         self.outputFeedbackChannel = outputFeedbackChannel
 
-        self._amplifierSettings = self._getJSONFile(inFileOrFolder)
+        self._settings = self._getJSONFile(inFileOrFolder)
 
         self.abfs = []
 
@@ -95,32 +95,32 @@ class ABFConverter:
 
     def _getJSONFile(self, inFileOrFolder):
         """
-        Search the JSON file with all amplifier settings.
+        Search the JSON file with all miscellaneous settings.
         If `inFileOrFolder` is a folder we need one JSON file in that folder,
         if `inFileOrFolder` is a file the JSON file must have the same
         basename. For all other cases we warn and return nothing.
         """
 
         if os.path.isfile(inFileOrFolder):
-            ampSettings = os.path.splitext(inFileOrFolder)[0] + ".json"
+            settings = os.path.splitext(inFileOrFolder)[0] + ".json"
 
-            if not os.path.isfile(ampSettings):
-                warnings.warn(f"Could not find the JSON file {ampSettings} with amplifier settings.")
+            if not os.path.isfile(settings):
+                warnings.warn(f"Could not find the JSON file {settings} with settings.")
                 return None
 
         elif os.path.isdir(inFileOrFolder):
             files = glob.glob(os.path.join(inFileOrFolder, "*.json"))
 
             if len(files) != 1:
-                warnings.warn(f"Could not find exactly one JSON file with amplifier "
+                warnings.warn(f"Could not find exactly one JSON file with "
                               f"settings in folder {inFileOrFolder}.")
                 return None
 
-            ampSettings = files[0]
+            settings = files[0]
         else:
             return None
 
-        with open(ampSettings) as fh:
+        with open(settings) as fh:
             return json.load(fh)
 
     def _check(self, abf):
@@ -356,8 +356,8 @@ class ABFConverter:
         try:
             # JSON stores adcName without spaces
             adcNameWOSpace = adcName.replace(" ", "")
-            amplifier = self._amplifierSettings["uids"][adcNameWOSpace]
-            settings = self._amplifierSettings[amplifier]
+            amplifier = self._settings["uids"][adcNameWOSpace]
+            settings = self._settings[amplifier]
 
             if settings["GetMode"] != clampMode:
                 warnings.warn(f"Stored clamp mode {settings['GetMode']} does not match requested "
