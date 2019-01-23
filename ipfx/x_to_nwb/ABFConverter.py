@@ -4,6 +4,7 @@ Convert ABF files, created by PClamp/Clampex, to NWB v2 files.
 
 from hashlib import sha256
 import json
+import re
 import os
 import glob
 import warnings
@@ -92,6 +93,14 @@ class ABFConverter:
 
         abf = pyabf.ABF(inFile)
         abf.getInfoPage().generateHTML(saveAs=root + ".html")
+
+    @staticmethod
+    def _getProtocolName(protocolName):
+        """
+        Return the protocol/stimset name without the channel suffix.
+        """
+
+        return re.sub(r"_IN\d+$", "", protocolName)
 
     def _getJSONFile(self, inFileOrFolder):
         """
@@ -310,13 +319,13 @@ class ABFConverter:
 
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
+                    stimulus_description = ABFConverter._getProtocolName(abf.protocol)
                     data = convertDataset(abf.sweepC)
                     conversion, unit = parseUnit(abf.sweepUnitsC)
                     electrode = electrodes[channel]
                     gain = abf._dacSection.fDACScaleFactor[channel]
                     resolution = np.nan
                     starting_time = self._calculateStartingTime(abf)
-                    stimulus_description = abf.protocol
                     rate = float(abf.dataRate)
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
@@ -452,7 +461,7 @@ class ABFConverter:
                     gain = abf._adcSection.fADCProgrammableGain[channel]
                     resolution = np.nan
                     starting_time = self._calculateStartingTime(abf)
-                    stimulus_description = abf.protocol
+                    stimulus_description = ABFConverter._getProtocolName(abf.protocol)
                     rate = float(abf.dataRate)
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
