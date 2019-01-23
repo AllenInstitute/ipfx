@@ -320,7 +320,8 @@ class ABFConverter:
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                     stimulus_description = ABFConverter._getProtocolName(abf.protocol)
-                    data = convertDataset(abf.sweepC)
+                    scale_factor = self._getScaleFactor(stimulus_description)
+                    data = convertDataset(abf.sweepC * scale_factor)
                     conversion, unit = parseUnit(abf.sweepUnitsC)
                     electrode = electrodes[channel]
                     gain = abf._dacSection.fDACScaleFactor[channel]
@@ -353,6 +354,17 @@ class ABFConverter:
                     series.append(stimulus)
 
         return series
+
+    def _getScaleFactor(self, stimset):
+        """
+        Return the stimulus scale factor for the given stimset.
+        """
+
+        try:
+            return float(self._settings["ScaleFactors"][stimset])
+        except (TypeError, KeyError) as e:
+            warnings.warn(f"Could not find the scale factor for the stimset {stimset} using 1.0 as fallback.")
+            return 1.0
 
     def _getAmplifierSettings(self, clampMode, adcName):
         """
