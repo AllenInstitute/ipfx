@@ -57,6 +57,7 @@ def test_filtered_sweep_table_works():
 
     assert sweeps["sweep_number"].tolist() == [5, 6]
 
+
 def test_filtered_sweep_table_works_with_sweep_number():
 
     ds = get_dataset()
@@ -65,7 +66,7 @@ def test_filtered_sweep_table_works_with_sweep_number():
     assert sweeps["sweep_number"].tolist() == [0]
 
 
-def test_get_sweep_info():
+def test_get_sweep_meta_data():
 
     d = get_sweep_table_dict()
     expected = {}
@@ -73,7 +74,7 @@ def test_get_sweep_info():
         expected[k] = d[k][1]
 
     ds = get_dataset()
-    actual = ds.get_sweep_info_by_sweep_number(5)
+    actual = ds.get_sweep_meta_data(5)
     compare_dicts(expected, actual)
 
 

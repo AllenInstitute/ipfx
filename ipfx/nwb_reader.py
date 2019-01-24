@@ -209,7 +209,6 @@ class NwbXReader(NwbReader):
                     stimulus = s.data[:] * float(s.conversion)
                     stimulus_unit = NwbReader.get_long_unit_name(s.unit)
                     stimulus_rate = float(s.rate)
-                    stimulus_index_range = (0, int(s.num_samples - 1))
                 else:
                     raise ValueError("Unexpected TimeSeries {}.".format(type(s)))
 
@@ -224,7 +223,6 @@ class NwbXReader(NwbReader):
                 'stimulus': stimulus,
                 'response': response,
                 'stimulus_unit': stimulus_unit,
-                'index_range': stimulus_index_range,
                 'sampling_rate': stimulus_rate
             }
 
@@ -314,35 +312,13 @@ class NwbPipelineReader(NwbReader):
             else:
                 raise ValueError("Unknown stimulus unit")
 
-            swp_idx_start = swp['stimulus']['idx_start'].value
-            swp_length = swp['stimulus']['count'].value
-
-            swp_idx_stop = swp_idx_start + swp_length - 1
-            sweep_index_range = (swp_idx_start, swp_idx_stop)
-
-            # if the sweep has an experiment, extract the experiment's index
-            # range
-            try:
-                exp = f['epochs']['Experiment_%d' % sweep_number]
-                exp_idx_start = exp['stimulus']['idx_start'].value
-                exp_length = exp['stimulus']['count'].value
-                exp_idx_stop = exp_idx_start + exp_length - 1
-                index_range = (exp_idx_start, exp_idx_stop)
-            except KeyError:
-                # this sweep has no experiment.  return the index range of the
-                # entire sweep.
-                index_range = sweep_index_range
-
-            assert sweep_index_range[0] == 0, Exception(
-                "index range of the full sweep does not start at 0.")
+            hz = 1.0 * swp[self.stimulus_path]['starting_time'].attrs['rate']
 
             return {
                 'stimulus': stimulus,
                 'response': response,
                 'stimulus_unit': unit_str,
-                'index_range': index_range,
-                'sampling_rate': 1.0 *
-                swp[self.stimulus_path]['starting_time'].attrs['rate']
+                'sampling_rate': hz
             }
 
     def get_sweep_number(self, sweep_name):
@@ -400,18 +376,10 @@ class NwbMiesReader(NwbReader):
                 unit = None
                 unit_str = 'Unknown'
 
-            if "CurrentClampSeries" in sweep_response.attrs["ancestry"]:
-                index_range = ep.get_experiment_epoch(stimulus, response, hz)
-            elif "VoltageClampSeries" in sweep_response.attrs["ancestry"]:
-                index_range = ep.get_sweep_epoch(response)
-            else:
-                raise ValueError("Unknown Clamp Mode")
-
         return {"stimulus": stimulus,
                 "response": response,
                 "sampling_rate": hz,
                 "stimulus_unit": unit_str,
-                "index_range": index_range,
                 }
 
     def get_sweep_number(self, sweep_name):
