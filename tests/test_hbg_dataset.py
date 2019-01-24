@@ -5,6 +5,7 @@ from ipfx.hbg_dataset import HBGDataSet
 
 from helpers_for_tests import compare_dicts
 
+
 @pytest.fixture()
 def ontology():
     return StimulusOntology([[('name', 'ramp stimulus'), ('code', 'RAMP1')],

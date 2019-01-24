@@ -5,6 +5,7 @@ import numpy as np
 from ipfx.nwb_reader import create_nwb_reader, NwbMiesReader, NwbPipelineReader, NwbXReader
 from helpers_for_tests import compare_dicts
 from allensdk.api.queries.cell_types_api import CellTypesApi
+from fetch_file import fetch_test_file
 
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__),'data')
 
@@ -21,6 +22,11 @@ def fetch_pipeline_file(request):
         ct.save_ephys_data(specimen_id, nwb_file_full_path)
 
     return nwb_file_full_path
+
+
+@pytest.fixture()
+def fetch_missing_sweep_number_files():
+    return [fetch_test_file(".", x) for x in ["500844779.nwb", "509604657.nwb"]]
 
 
 def test_raises_on_missing_file():
@@ -87,6 +93,16 @@ def test_valid_v1_skeleton_X_NWB():
 
     reader = create_nwb_reader(filename)
     assert isinstance(reader, NwbXReader)
+
+
+def test_assumed_sweep_number_fallback(fetch_missing_sweep_number_files):
+
+    for x in fetch_missing_sweep_number_files:
+        reader = create_nwb_reader(x)
+        assert isinstance(reader, NwbPipelineReader)
+
+        with pytest.warns(UserWarning, match="Sweep number mismatch"):
+            assert reader.get_sweep_number("Sweep_10") == 10
 
 
 def test_valid_v1_full_Pipeline(fetch_pipeline_file):

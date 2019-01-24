@@ -45,33 +45,42 @@ class NwbReader(object):
         else:
             raise ValueError("Unit {} not recognized from TimeSeries".format(unit))
 
-    @staticmethod
-    def check_sweep_number(timeseries, sweep_number):
+    def get_real_sweep_number(self, sweep_name, assumed_sweep_number=None):
         """
-        Check if the assumed sweep number is the same than the real sweep number.
+        Return the real sweep number for the given sweep_name. Falls back to
+        assumed_sweep_number if given.
         """
 
-        real_sweep_number = None
+        with h5py.File(self.nwb_file, 'r') as f:
+            timeseries = f[self.acquisition_path][sweep_name]
 
-        def read_sweep_from_source(source):
-            source = get_scalar_string(source)
-            for x in source.split(";"):
-                result = re.search(r"^Sweep=(\d+)$", x)
-                if result:
-                    return int(result.group(1))
+            real_sweep_number = None
 
-        if "source" in timeseries:
-            real_sweep_number = read_sweep_from_source(timeseries["source"].value)
-        elif "source" in timeseries.attrs:
-            real_sweep_number = read_sweep_from_source(timeseries.attrs["source"])
-        elif "sweep_number" in timeseries.attrs:
-            real_sweep_number = timeseries.attrs["sweep_number"]
+            def read_sweep_from_source(source):
+                source = get_scalar_string(source)
+                for x in source.split(";"):
+                    result = re.search(r"^Sweep=(\d+)$", x)
+                    if result:
+                        return int(result.group(1))
 
-        if real_sweep_number is None:
-            warnings.warn("Could not find a source/sweep_number attribute/dataset.")
-        elif real_sweep_number != sweep_number:
-            raise ValueError("Sweep number mismatch with timeseries {} ({} vs {}).".format(
-                             timeseries, sweep_number, real_sweep_number))
+            if "source" in timeseries:
+                real_sweep_number = read_sweep_from_source(timeseries["source"].value)
+            elif "source" in timeseries.attrs:
+                real_sweep_number = read_sweep_from_source(timeseries.attrs["source"])
+            elif "sweep_number" in timeseries.attrs:
+                real_sweep_number = timeseries.attrs["sweep_number"]
+
+        if assumed_sweep_number is not None and assumed_sweep_number != real_sweep_number:
+            warnings.warn("Sweep number mismatch (real: {} vs assumed: {}"
+                          " in file {}".format(real_sweep_number,
+                                               assumed_sweep_number, self.nwb_file))
+
+        if real_sweep_number is not None:
+            return real_sweep_number
+        elif assumed_sweep_number is not None:
+            return assumed_sweep_number
+
+        raise ValueError("Could not find a source/sweep_number attribute/dataset.")
 
     def get_sweep_attrs(self, sweep_name):
 
@@ -139,7 +148,7 @@ class NwbXReader(NwbReader):
         self.nwb_major_version = 2
 
     def get_sweep_number(self, sweep_name):
-        return self.get_sweep_attrs(sweep_name)["sweep_number"]
+        return self.get_real_sweep_number(sweep_name)
 
     def get_stim_code(self, sweep_name):
         return self.get_sweep_attrs(sweep_name)["stimulus_description"]
@@ -262,7 +271,6 @@ class NwbPipelineReader(NwbReader):
             swp = f['epochs'][sweep_name]
 
             sweep_ts = f[self.acquisition_path][sweep_name]
-            NwbReader.check_sweep_number(sweep_ts, sweep_number)
 
             #   fetch data from file and convert to correct SI unit
             #   this operation depends on file version. early versions of
@@ -315,8 +323,8 @@ class NwbPipelineReader(NwbReader):
 
     def get_sweep_number(self, sweep_name):
 
-        sweep_number = int(sweep_name.split('_')[-1])
-        return sweep_number
+        assumed_sweep_number = int(sweep_name.split('_')[-1])
+        return self.get_real_sweep_number(sweep_name, assumed_sweep_number)
 
     def get_stim_code(self, sweep_name):
 
@@ -352,11 +360,9 @@ class NwbMiesReader(NwbReader):
 
         with h5py.File(self.nwb_file, 'r') as f:
             sweep_response = f[self.acquisition_path]["data_%05d_AD0" % sweep_number]
-            self.check_sweep_number(sweep_response, sweep_number)
             response_dataset = sweep_response["data"]
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
             sweep_stimulus = f[self.stimulus_path]["data_%05d_DA0" % sweep_number]
-            self.check_sweep_number(sweep_stimulus, sweep_number)
             stimulus_dataset = sweep_stimulus["data"]
 
             response = response_dataset.value
@@ -378,9 +384,8 @@ class NwbMiesReader(NwbReader):
 
     def get_sweep_number(self, sweep_name):
 
-        sweep_number = int(sweep_name.split('_')[1])
-
-        return sweep_number
+        assumed_sweep_number = int(sweep_name.split('_')[1])
+        return self.get_real_sweep_number(sweep_name, assumed_sweep_number)
 
     def get_stim_code(self, sweep_name):
 

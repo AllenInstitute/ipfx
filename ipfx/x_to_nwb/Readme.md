@@ -86,10 +86,16 @@ run_x_to_nwb_conversion.py --fileType ".abf" --overwrite someFolder
 
 #### Examples
 
-##### Convert a single file
+##### Convert a single file creating one NWB file per Group
 
 ```sh
 run_x_to_nwb_conversion.py H18.28.015.11.12.dat
+```
+
+##### Convert a single file creating one NWB file with all Groups
+
+```sh
+run_x_to_nwb_conversion.py --multipleGroupsPerFile H18.28.015.11.12.dat
 ```
 
 ## Creating a PDF from an NWB file for preview purposes
