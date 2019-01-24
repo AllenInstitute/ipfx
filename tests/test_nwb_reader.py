@@ -1,36 +1,27 @@
 import os
-import urllib2
-import shutil
-
 import pytest
 
 import h5py
 import numpy as np
 
 from ipfx.nwb_reader import create_nwb_reader, NwbMiesReader, NwbPipelineReader, NwbXReader
-from allensdk.api.queries.cell_types_api import CellTypesApi
 from helpers_for_tests import compare_dicts
+from fetch_file import get_celltypes_file, fetch_test_file
 
 
 @pytest.fixture()
 def fetch_pipeline_file():
-    specimen_id = 595570553
-    nwb_file = '{}.nwb'.format(specimen_id)
-    if not os.path.exists(nwb_file):
-        ct = CellTypesApi()
-        ct.save_ephys_data(specimen_id, nwb_file)
+    return get_celltypes_file(".", 595570553)
 
 
 @pytest.fixture()
 def fetch_DAT_NWB_file():
-    output_filepath = 'H18.28.015.11.14.nwb'
-    if not os.path.exists(output_filepath):
+    return fetch_test_file(".", 'H18.28.015.11.14.nwb')
 
-        BASE_URL = "https://www.byte-physics.de/Downloads/allensdk-test-data/"
 
-        response = urllib2.urlopen(BASE_URL + output_filepath)
-        with open(output_filepath, "wb") as out_file:
-            shutil.copyfileobj(response, out_file)
+@pytest.fixture()
+def fetch_missing_sweep_number_files():
+    return [fetch_test_file(".", x) for x in ["500844779.nwb", "509604657.nwb"]]
 
 
 def test_raises_on_missing_file():
@@ -97,8 +88,18 @@ def test_valid_v1_skeleton_X_NWB():
     assert isinstance(reader, NwbXReader)
 
 
+def test_assumed_sweep_number_fallback(fetch_missing_sweep_number_files):
+
+    for x in fetch_missing_sweep_number_files:
+        reader = create_nwb_reader(x)
+        assert isinstance(reader, NwbPipelineReader)
+
+        with pytest.warns(UserWarning, match="Sweep number mismatch"):
+            assert reader.get_sweep_number("Sweep_10") == 10
+
+
 def test_valid_v1_full_Pipeline(fetch_pipeline_file):
-    reader = create_nwb_reader('595570553.nwb')
+    reader = create_nwb_reader(fetch_pipeline_file)
     assert isinstance(reader, NwbPipelineReader)
 
     sweep_names_ref = [u'Sweep_10',
@@ -376,7 +377,7 @@ def test_valid_v2_full_ABF():
 
 def test_valid_v2_full_DAT(fetch_DAT_NWB_file):
 
-    reader = create_nwb_reader('H18.28.015.11.14.nwb')
+    reader = create_nwb_reader(fetch_DAT_NWB_file)
     assert isinstance(reader, NwbXReader)
 
     sweep_names_ref = ['index_{:02d}'.format(x) for x in range(0, 78)]
