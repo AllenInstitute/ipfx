@@ -1,13 +1,9 @@
-import os
 import pytest
-import urllib2
-import shutil
 
 from ipfx.stimulus import StimulusOntology
 from ipfx.hbg_dataset import HBGDataSet
 
 from helpers_for_tests import compare_dicts
-
 
 @pytest.fixture()
 def ontology():
@@ -24,21 +20,10 @@ def ontology():
                              ])
 
 
-@pytest.fixture()
-def fetch_DAT_NWB_file():
-    output_filepath = 'H18.28.015.11.14.nwb'
-    if not os.path.exists(output_filepath):
+@pytest.mark.parametrize('ontology, NWB_file',[(None,'2018_03_20_0005.nwb')], indirect=True)
+def test_main_abf(ontology, NWB_file):
 
-        BASE_URL = "https://www.byte-physics.de/Downloads/allensdk-test-data/"
-
-        response = urllib2.urlopen(BASE_URL + output_filepath)
-        with open(output_filepath, "wb") as out_file:
-            shutil.copyfileobj(response, out_file)
-
-
-def test_main_abf(ontology):
-    dataset = HBGDataSet(nwb_file=os.path.join(os.path.dirname(__file__), 'data',
-                                               '2018_03_20_0005.nwb'), ontology=ontology)
+    dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
 
     expected = {'stimulus_units': {0: 'A'},
                 'clamp_mode': {0: 'CurrentClamp'},
@@ -54,8 +39,10 @@ def test_main_abf(ontology):
     compare_dicts(expected, dataset.sweep_table.to_dict())
 
 
-def test_main_dat(ontology, fetch_DAT_NWB_file):
-    dataset = HBGDataSet(nwb_file='H18.28.015.11.14.nwb', ontology=ontology)
+@pytest.mark.parametrize('ontology, NWB_file',[(None,'H18.28.015.11.14.nwb')], indirect=True)
+def test_main_dat(ontology, NWB_file):
+
+    dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
 
     expected = {'stimulus_units': {0: 'V'},
                 'clamp_mode': {0: 'VoltageClamp'},
@@ -67,7 +54,6 @@ def test_main_dat(ontology, fetch_DAT_NWB_file):
                 'stimulus_name': {0: u'extpinbath stimulus'},
                 'bridge_balance_mohm': {0: None}
                 }
-
     # only compare one sweep
     sweep_table = dataset.filtered_sweep_table(sweep_number=10101)
 
