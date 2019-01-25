@@ -1,4 +1,5 @@
 import pytest
+import ipfx.feature_record as fr
 import ipfx.data_set_features as dsft
 from ipfx.error import FeatureError
 
@@ -43,19 +44,17 @@ def test_select_subthreshold_min_amplitude():
     assert min_amp == -100
 
 
-
-
 def test_nan_get():
 
     a = {}
-    v = dsft.nan_get(a, 'fish')
+    v = fr.nan_get(a, 'fish')
     assert v == None
 
     a = { 'fish': 1 }
-    v = dsft.nan_get(a, 'fish')
+    v = fr.nan_get(a, 'fish')
     assert v == 1
 
     a = { 'fish': float("nan") }
-    v = dsft.nan_get(a, 'fish')
+    v = fr.nan_get(a, 'fish')
     assert v == None
 
