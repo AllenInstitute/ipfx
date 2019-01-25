@@ -40,6 +40,7 @@ import logging
 from . import spike_features as spkf
 from . import subthresh_features as subf
 from . import spike_detector as spkd
+from . import spike_train_features as strf
 import six
 import time_series_utils as tsu
 import error as er
@@ -135,7 +136,6 @@ class SpikeExtractor(object):
         # Trough details
         isi_types = trough_details[0]
         trough_detail_indexes = dict(zip(["fast_trough", "adp", "slow_trough"], trough_details[1:]))
-#        print "trough_detail_indexes:", trough_detail_indexes
 
         # Redundant, but ensures that DataFrame has right number of rows
         # Any better way to do it?
@@ -236,6 +236,7 @@ class SpikeExtractor(object):
 
         return values
 
+
 class SpikeTrainFeatureExtractor(object):
     def __init__(self, start, end,
                 #pause_cost_weight=1.0,
@@ -259,7 +260,7 @@ class SpikeTrainFeatureExtractor(object):
         self.peak_width = peak_width
 
     def process(self, t, v, i, spikes_df, extra_features=None):
-        features = basic_spike_train_features(t, spikes_df, self.start, self.end)
+        features = strf.basic_spike_train_features(t, spikes_df, self.start, self.end)
 
         if self.start is None:
             self.start = t[0]
@@ -281,138 +282,13 @@ class SpikeTrainFeatureExtractor(object):
 
         if features["avg_rate"] > 0:
             if 'pause' in extra_features:
-                features['pause'] = pause(t, spikes_df, self.start, self.end, self.pause_cost_weight)
+                features['pause'] = strf.pause(t, spikes_df, self.start, self.end, self.pause_cost_weight)
             if 'burst' in extra_features:
-                features['burst'] = burst(t, spikes_df, self.burst_tol, self.pause_cost)
+                features['burst'] = strf.burst(t, spikes_df, self.burst_tol, self.pause_cost)
             if 'delay' in extra_features:
-                features['delay'] = delay(t, v, spikes_df, self.start, self.end)
+                features['delay'] = strf.delay(t, v, spikes_df, self.start, self.end)
 
         return features
-
-
-def basic_spike_train_features(t, spikes_df, start, end):
-    features = {}
-    if len(spikes_df) == 0 or spikes_df.empty:
-        features["avg_rate"] = 0
-        return features
-
-    thresholds = spikes_df["threshold_index"].values.astype(int)
-    isis = spkf.get_isis(t, thresholds)
-    with warnings.catch_warnings():
-        # ignore mean of empty slice warnings here
-        warnings.filterwarnings("ignore", category=RuntimeWarning, module="numpy")
-
-        features = {
-            "adapt": spkf.adaptation_index(isis),
-            "latency": spkf.latency(t, thresholds, start),
-            "isi_cv": (isis.std() / isis.mean()) if len(isis) >= 1 else np.nan,
-            "mean_isi": isis.mean() if len(isis) > 0 else np.nan,
-            "median_isi": np.median(isis),
-            "first_isi": isis[0] if len(isis) >= 1 else np.nan,
-            "avg_rate": spkf.average_rate(t, thresholds, start, end),
-        }
-
-    return features
-
-def pause(self, t, spikes_df, start, end, cost_weight=1.0):
-    """Estimate average number of pauses and average fraction of time spent in a pause
-
-    Attempts to detect pauses with a variety of conditions and averages results together.
-
-    Pauses that are consistently detected contribute more to estimates.
-
-    Returns
-    -------
-    avg_n_pauses : average number of pauses detected across conditions
-    avg_pause_frac : average fraction of interval (between start and end) spent in a pause
-    max_reliability : max fraction of times most reliable pause was detected given weights tested
-    n_max_rel_pauses : number of pauses detected with `max_reliability`
-    """
-    warnings.warn("This function will be removed")
-    # Pauses are unusually long ISIs with a "detour reset" among delay resets
-    thresholds = spikes_df["threshold_index"].values.astype(int)
-    isis = spkf.get_isis(t, thresholds)
-    isi_types = spikes_df["isi_type"][:-1].values
-
-    pause_list = spkf.detect_pauses(isis, isi_types, cost_weight)
-
-    if len(pause_list) == 0:
-        return 0, 0.
-
-    n_pauses = len(pause_list)
-    pause_frac = isis[pause_list].sum()
-    pause_frac /= end - start
-
-    return n_pauses, pause_frac
-
-
-def burst(t, spikes_df, tol=0.5, pause_cost=1.0):
-    """Find bursts and return max "burstiness" index (normalized max rate in burst vs out).
-
-    Returns
-    -------
-    max_burstiness_index : max "burstiness" index across detected bursts
-    num_bursts : number of bursts detected
-    """
-    warnings.warn("This function will be removed")
-    thresholds = spikes_df["threshold_index"].values.astype(int)
-    isis = spkf.get_isis(t, thresholds)
-
-    isi_types = spikes_df["isi_type"][:-1].values
-    fast_tr_v = spikes_df["fast_trough_v"].values
-    fast_tr_t = spikes_df["fast_trough_t"].values
-    slow_tr_v = spikes_df["slow_trough_v"].values
-    slow_tr_t = spikes_df["slow_trough_t"].values
-    thr_v = spikes_df["threshold_v"].values
-
-    bursts = spkf.detect_bursts(isis, isi_types,
-                              fast_tr_v, fast_tr_t,
-                              slow_tr_v, slow_tr_t,
-                              thr_v, tol, pause_cost)
-
-    burst_info = np.array(bursts)
-
-    if burst_info.shape[0] > 0:
-        return burst_info[:, 0].max(), burst_info.shape[0]
-    else:
-        return 0., 0
-
-def delay(t, v, spikes_df, start, end):
-    """Calculates ratio of latency to dominant time constant of rise before spike
-
-    Returns
-    -------
-    delay_ratio : ratio of latency to tau (higher means more delay)
-    tau : dominant time constant of rise before spike
-    """
-    warnings.warn("This function will be removed")
-
-    if len(spikes_df) == 0:
-        logging.info("No spikes available for delay calculation")
-        return 0., 0.
-
-    spike_time = spikes_df["threshold_t"].values[0]
-
-#    tau = ft.fit_prespike_time_constant(t, v, start, spike_time)
-    latency = spike_time - start
-
-    delay_ratio = latency / tau
-    return delay_ratio, tau
-
-
-def fit_fi_slope(stim_amps, avg_rates):
-    """Fit the rate and stimulus amplitude to a line and return the slope of the fit."""
-
-    if len(stim_amps) < 2:
-        raise er.FeatureError("Cannot fit f-I curve slope with less than two sweeps")
-
-    x = stim_amps
-    y = avg_rates
-
-    A = np.vstack([x, np.ones_like(x)]).T
-    m, c = np.linalg.lstsq(A, y)[0]
-
-    return m
 
 
 

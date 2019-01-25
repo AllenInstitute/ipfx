@@ -4,9 +4,10 @@ import logging
 from collections import Counter
 from . import stim_features as stf
 from . import subthresh_features as subf
-from . import ephys_extractor as efex
+from . import spike_train_features as strf
 from ephys_data_set import SweepSet
 import error as er
+
 
 class StimulusProtocolAnalysis(object):
     MEAN_FEATURES = [ "upstroke_downstroke_ratio", "peak_v", "peak_t", "trough_v", "trough_t",
@@ -155,7 +156,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         features["rheobase_sweep"] = rheobase_sweep_features
         features["spiking_sweeps"] = spiking_sweep_features
 
-        features["fi_fit_slope"] = efex.fit_fi_slope(spiking_sweep_features["stim_amp"].values,
+        features["fi_fit_slope"] = strf.fit_fi_slope(spiking_sweep_features["stim_amp"].values,
                                                      spiking_sweep_features["avg_rate"].values)
 
         # find hero sweep
