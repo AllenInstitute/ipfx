@@ -46,7 +46,7 @@ import time_series_utils as tsu
 import error as er
 
 
-class SpikeExtractor(object):
+class SpikeFeatureExtractor(object):
     AFFECTED_BY_CLIPPING = [
         "trough_t", "trough_v", "trough_i", "trough_index",
         "downstroke", "downstroke_t","downstroke_v", "downstroke_index",

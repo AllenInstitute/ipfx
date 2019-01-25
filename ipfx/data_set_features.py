@@ -36,7 +36,7 @@
 import numpy as np
 import logging
 import pandas as pd
-from . import ephys_extractor as efex
+from feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
 from . import ephys_data_set as eds
 from . import spike_features as spkf
 from . import stimulus_protocol_analysis as spa
@@ -108,10 +108,10 @@ def extractors_for_sweeps(sweep_set,
     if thresh_frac_floor is not None:
         thresh_frac = max(thresh_frac_floor, thresh_frac)
 
-    spx = efex.SpikeExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac, start=start, end=end)
-    spfx = efex.SpikeTrainFeatureExtractor(start, end)
+    sfx = SpikeFeatureExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac, start=start, end=end)
+    stfx = SpikeTrainFeatureExtractor(start, end)
 
-    return spx, spfx
+    return sfx, stfx
 
 
 def extract_sweep_features(data_set, sweep_table):
@@ -131,11 +131,11 @@ def extract_sweep_features(data_set, sweep_table):
             if k in dp:
                 dp.pop(k)
 
-        spx, _ = extractors_for_sweeps(sweep_set, **dp)
+        sfx, _ = extractors_for_sweeps(sweep_set, **dp)
 
         for sn, sweep in zip(sweep_numbers, sweep_set.sweeps):
 #            logging.info("Extracting features from the sweep %d" % sn)
-            spikes_df = spx.process(sweep.t, sweep.v, sweep.i)
+            spikes_df = sfx.process(sweep.t, sweep.v, sweep.i)
             sweep_features[sn] = { 'spikes': spikes_df.to_dict(orient='records'), "id": sn }
 
     return sweep_features
