@@ -35,11 +35,13 @@
 #
 import pytest
 import numpy as np
-import ipfx.ephys_extractor as efex
+from ipfx.feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
+
 
 def test_extractors_no_values():
-    efex.SpikeExtractor()
-    efex.SpikeTrainFeatureExtractor(start=0,end=0)
+
+    SpikeFeatureExtractor()
+    SpikeTrainFeatureExtractor(start=0,end=0)
 
 
 def test_extractor_wrong_inputs(spike_test_pair):
@@ -49,7 +51,7 @@ def test_extractor_wrong_inputs(spike_test_pair):
     v = data[:, 1]
     i = np.zeros_like(v)
 
-    ext = efex.SpikeExtractor()
+    ext = SpikeFeatureExtractor()
 
     with pytest.raises(IndexError):
         ext.process([t],v,i)
@@ -70,10 +72,10 @@ def test_extractor_on_sample_data(spike_test_pair):
     t = data[:, 0]
     v = data[:, 1]
 
-    ext = efex.SpikeExtractor()
+    ext = SpikeFeatureExtractor()
     spikes = ext.process(t=t, v=v, i=None)
 
-    sx = efex.SpikeTrainFeatureExtractor(start=0, end=t[-1])
+    sx = SpikeTrainFeatureExtractor(start=0, end=t[-1])
     sx.process(t=t, v=v, i=None, spikes_df=spikes)
 
 
@@ -84,10 +86,10 @@ def test_extractor_on_sample_data_with_i(spike_test_pair):
     v = data[:, 1]
     i = np.zeros_like(v)
 
-    ext = efex.SpikeExtractor()
+    ext = SpikeFeatureExtractor()
     spikes = ext.process(t, v, i)
 
-    sx = efex.SpikeTrainFeatureExtractor(start=0, end=t[-1])
+    sx = SpikeTrainFeatureExtractor(start=0, end=t[-1])
     sx.process(t, v, i, spikes)
 
 
@@ -97,7 +99,7 @@ def test_extractor_on_zero_voltage():
     v = np.zeros_like(t)
     i = np.zeros_like(t)
 
-    ext = efex.SpikeExtractor()
+    ext = SpikeFeatureExtractor()
     spikes = ext.process(t, v, i)
 
 
@@ -107,7 +109,7 @@ def test_extractor_on_variable_time_step(spike_test_var_dt):
     t = data[:, 0]
     v = data[:, 1]
 
-    ext = efex.SpikeExtractor()
+    ext = SpikeFeatureExtractor()
     spikes = ext.process(t, v, i=None)
 
     expected_thresh_ind = np.array([73, 183, 314, 463, 616, 770])
@@ -120,7 +122,7 @@ def test_extractor_with_high_init_dvdt(spike_test_high_init_dvdt):
     t = data[:, 0]
     v = data[:, 1]
 
-    ext = efex.SpikeExtractor()
+    ext = SpikeFeatureExtractor()
     spikes = ext.process(t, v, i=None)
 
     expected_thresh_ind = np.array([11222, 16258, 24060])
