@@ -143,7 +143,10 @@ def cell_qc_features(data_set, manual_values=None):
     try:
         blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
-        blowout_mv = measure_blowout(blowout_data.v, blowout_data.expt_idx_range[0])
+
+        expt_start_idx, expt_end_idx = ep.get_experiment_epoch(blowout_data.i, blowout_data.v, blowout_data.sampling_rate)
+
+        blowout_mv = measure_blowout(blowout_data.v, expt_start_idx)
         output_data['blowout_mv'] = blowout_mv
     except IndexError as e:
         msg = "Blowout is not available"
@@ -299,7 +302,6 @@ def sweep_qc_features(data_set):
         else:
             sweep = dict()
             sweep["completed"] = False
-
         sweep.update(sweep_info)
         sweep_features.append(sweep)
 
@@ -314,7 +316,8 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
     current = sweep_data.i
     t = sweep_data.t
     hz = sweep_data.sampling_rate
-    expt_start_idx, expt_end_idx = sweep_data.expt_idx_range
+
+    expt_start_idx, expt_end_idx = ep.get_experiment_epoch(current, voltage, hz)
 
     # measure Vm and noise before stimulus
     idx0, idx1 = ep.get_first_vm_noise_epoch(expt_start_idx, hz)  # count from the beginning of the experiment
