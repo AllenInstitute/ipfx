@@ -1,7 +1,14 @@
+"""
+Miscellaneous helper routines for the ABF/DAT to NWB v2 (aka X to NWB) conversion
+functionality.
+"""
+
 import math
 from pkg_resources import get_distribution, DistributionNotFound
 import os
 from subprocess import Popen, PIPE
+
+import numpy as np
 
 from pynwb.icephys import CurrentClampStimulusSeries, VoltageClampStimulusSeries
 from pynwb.icephys import CurrentClampSeries, VoltageClampSeries
@@ -91,12 +98,12 @@ def createCycleID(numbers, total):
     return result
 
 
-def createCompressedDataset(array):
+def convertDataset(array):
     """
-    Request compression for the given array and return it wrapped.
+    Convert to FP32 and request compression for the given array and return it wrapped.
     """
 
-    return H5DataIO(data=array, compression=True, chunks=True, shuffle=True, fletcher32=True)
+    return H5DataIO(data=array.astype(np.float32), compression=True, chunks=True, shuffle=True, fletcher32=True)
 
 
 def getPackageInfo():

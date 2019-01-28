@@ -1,3 +1,7 @@
+"""
+Convert DAT files, created by PatchMaster, to NWB v2 files.
+"""
+
 from hashlib import sha256
 from datetime import datetime
 import os
@@ -12,8 +16,8 @@ from pynwb.icephys import IntracellularElectrode
 from ipfx.x_to_nwb.hr_bundle import Bundle
 from ipfx.x_to_nwb.hr_nodes import TraceRecord, ChannelRecordStimulus
 from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
-from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
-     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset, \
+from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
+     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, getChannelRecordIndex, getStimulusRecordIndex, createCycleID
 
 
@@ -292,7 +296,7 @@ class DatConverter:
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
 
                         sweepIndex = sweep.SweepCount - 1
-                        data = createCompressedDataset(stimset[sweepIndex])
+                        data = convertDataset(stimset[sweepIndex])
 
                         electrode = electrodes[self.electrodeDict[self._generateElectrodeKey(trace)]]
                         gain = 1.0
@@ -368,7 +372,7 @@ class DatConverter:
                                              total=self.totalSeriesCount)
                     for trace_index, trace in enumerate(sweep):
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
-                        data = createCompressedDataset(self.bundle.data[trace])
+                        data = convertDataset(self.bundle.data[trace])
 
                         ampState = getAmplifierState(self.bundle, series, trace_index)
 

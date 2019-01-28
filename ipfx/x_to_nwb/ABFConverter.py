@@ -1,3 +1,7 @@
+"""
+Convert ABF files, created by PClamp/Clampex, to NWB v2 files.
+"""
+
 from hashlib import sha256
 import json
 import os
@@ -12,8 +16,8 @@ from pynwb.device import Device
 from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import IntracellularElectrode
 
-from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
-     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset, \
+from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
+     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, createCycleID
 
 
@@ -306,7 +310,7 @@ class ABFConverter:
 
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
-                    data = createCompressedDataset(abf.sweepC)
+                    data = convertDataset(abf.sweepC)
                     conversion, unit = parseUnit(abf.sweepUnitsC)
                     electrode = electrodes[channel]
                     gain = abf._dacSection.fDACScaleFactor[channel]
@@ -442,7 +446,7 @@ class ABFConverter:
 
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
-                    data = createCompressedDataset(abf.sweepY)
+                    data = convertDataset(abf.sweepY)
                     conversion, unit = parseUnit(abf.sweepUnitsY)
                     electrode = electrodes[channel]
                     gain = abf._adcSection.fADCProgrammableGain[channel]
