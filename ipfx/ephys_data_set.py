@@ -122,13 +122,9 @@ class EphysDataSet(object):
         if sweep_meta_data[self.CLAMP_MODE] == "VoltageClamp":
             v = stimulus
             i = response
-            expt_idx_range = None
         elif sweep_meta_data[self.CLAMP_MODE] == "CurrentClamp":
             v = response
             i = stimulus
-            expt_idx_range = ep.get_experiment_epoch(stimulus, response, sampling_rate)
-            expt_start_ix,expt_end_ix = expt_idx_range
-            t = t - expt_start_ix*dt
         else:
             raise Exception("Unable to determine clamp mode for sweep " + sweep_number)
 
@@ -137,7 +133,6 @@ class EphysDataSet(object):
                           v=v,
                           i=i,
                           sampling_rate=sampling_rate,
-                          expt_idx_range=expt_idx_range,
                           sweep_number=sweep_number,
                           )
 
@@ -155,6 +150,18 @@ class EphysDataSet(object):
 
     def aligned_sweeps(self, sweep_numbers, stim_onset_delta):
         raise NotImplementedError
+
+    def stim_aligned_sweep_set(self,sweep_numbers):
+
+        sweep_list = []
+        for sweep_number in sweep_numbers:
+            sweep = self.sweep(sweep_number)
+            expt_idx_start, expt_idx_end = ep.get_experiment_epoch(sweep.i,sweep.v,sweep.sampling_rate)
+            sweep.shift_time_by(expt_idx_start)
+            sweep_list.append(sweep)
+
+        return SweepSet(sweep_list)
+
 
     def extract_sweep_meta_data(self):
         """
