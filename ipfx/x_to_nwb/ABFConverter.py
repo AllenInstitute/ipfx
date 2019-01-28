@@ -4,6 +4,7 @@ Convert ABF files, created by PClamp/Clampex, to NWB v2 files.
 
 from hashlib import sha256
 import json
+import re
 import os
 import glob
 import warnings
@@ -47,7 +48,7 @@ class ABFConverter:
 
         self.outputFeedbackChannel = outputFeedbackChannel
 
-        self._amplifierSettings = self._getJSONFile(inFileOrFolder)
+        self._settings = self._getJSONFile(inFileOrFolder)
 
         self.abfs = []
 
@@ -93,34 +94,42 @@ class ABFConverter:
         abf = pyabf.ABF(inFile)
         abf.getInfoPage().generateHTML(saveAs=root + ".html")
 
+    @staticmethod
+    def _getProtocolName(protocolName):
+        """
+        Return the protocol/stimset name without the channel suffix.
+        """
+
+        return re.sub(r"_IN\d+$", "", protocolName)
+
     def _getJSONFile(self, inFileOrFolder):
         """
-        Search the JSON file with all amplifier settings.
+        Search the JSON file with all miscellaneous settings.
         If `inFileOrFolder` is a folder we need one JSON file in that folder,
         if `inFileOrFolder` is a file the JSON file must have the same
         basename. For all other cases we warn and return nothing.
         """
 
         if os.path.isfile(inFileOrFolder):
-            ampSettings = os.path.splitext(inFileOrFolder)[0] + ".json"
+            settings = os.path.splitext(inFileOrFolder)[0] + ".json"
 
-            if not os.path.isfile(ampSettings):
-                warnings.warn(f"Could not find the JSON file {ampSettings} with amplifier settings.")
+            if not os.path.isfile(settings):
+                warnings.warn(f"Could not find the JSON file {settings} with settings.")
                 return None
 
         elif os.path.isdir(inFileOrFolder):
             files = glob.glob(os.path.join(inFileOrFolder, "*.json"))
 
             if len(files) != 1:
-                warnings.warn(f"Could not find exactly one JSON file with amplifier "
+                warnings.warn(f"Could not find exactly one JSON file with "
                               f"settings in folder {inFileOrFolder}.")
                 return None
 
-            ampSettings = files[0]
+            settings = files[0]
         else:
             return None
 
-        with open(ampSettings) as fh:
+        with open(settings) as fh:
             return json.load(fh)
 
     def _check(self, abf):
@@ -310,13 +319,14 @@ class ABFConverter:
 
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
-                    data = convertDataset(abf.sweepC)
+                    stimulus_description = ABFConverter._getProtocolName(abf.protocol)
+                    scale_factor = self._getScaleFactor(stimulus_description)
+                    data = convertDataset(abf.sweepC * scale_factor)
                     conversion, unit = parseUnit(abf.sweepUnitsC)
                     electrode = electrodes[channel]
                     gain = abf._dacSection.fDACScaleFactor[channel]
                     resolution = np.nan
                     starting_time = self._calculateStartingTime(abf)
-                    stimulus_description = abf.protocol
                     rate = float(abf.dataRate)
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
@@ -345,6 +355,17 @@ class ABFConverter:
 
         return series
 
+    def _getScaleFactor(self, stimset):
+        """
+        Return the stimulus scale factor for the given stimset.
+        """
+
+        try:
+            return float(self._settings["ScaleFactors"][stimset])
+        except (TypeError, KeyError) as e:
+            warnings.warn(f"Could not find the scale factor for the stimset {stimset} using 1.0 as fallback.")
+            return 1.0
+
     def _getAmplifierSettings(self, clampMode, adcName):
         """
         Return a dict with the amplifier settings read out form the JSON file.
@@ -356,8 +377,8 @@ class ABFConverter:
         try:
             # JSON stores adcName without spaces
             adcNameWOSpace = adcName.replace(" ", "")
-            amplifier = self._amplifierSettings["uids"][adcNameWOSpace]
-            settings = self._amplifierSettings[amplifier]
+            amplifier = self._settings["uids"][adcNameWOSpace]
+            settings = self._settings[amplifier]
 
             if settings["GetMode"] != clampMode:
                 warnings.warn(f"Stored clamp mode {settings['GetMode']} does not match requested "
@@ -452,7 +473,7 @@ class ABFConverter:
                     gain = abf._adcSection.fADCProgrammableGain[channel]
                     resolution = np.nan
                     starting_time = self._calculateStartingTime(abf)
-                    stimulus_description = abf.protocol
+                    stimulus_description = ABFConverter._getProtocolName(abf.protocol)
                     rate = float(abf.dataRate)
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,

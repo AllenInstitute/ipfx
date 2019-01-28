@@ -1008,62 +1008,53 @@ class MultiClampControl:
         self.aDLL.MCCMSG_QuickSelectButton(self.hMCCmsg, uValue, self._pnError)
         return self._handleError()
 
-def getChannelMapping(idChannelMapping, idChannelMappingFromFile):
 
-    if idChannelMapping:
+def parseSettingsFromFile(settingsFile):
 
-        uids = {}
-        for x in idChannelMapping:
-            entry = json.loads(x)
+    if not os.path.isfile(settingsFile):
+        raise ValueError("The parameter settingsFile requires an existing file in JSON format.")
 
-            if len(entry) != 1:
-                raise ValueError("Unexpected ADC name/amplifier mapping construct.")
+    with open(settingsFile) as fh:
+        d = json.load(fh)
 
-            for k, v in entry.items():
-                uids[k] = v
+    scaleFactors = d.pop("ScaleFactors", None)
+    uids = d
 
-        return uids
+    return uids, scaleFactors
 
-    elif idChannelMappingFromFile:
-
-        if not os.path.isfile(idChannelMappingFromFile):
-            raise ValueError("The parameter idChannelMappingFromFile requires an existing file in JSON format")
-
-        with open(idChannelMappingFromFile) as f:
-            return json.load(f)
-    else:
-        return None
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--filename", type=str, help="Name of the generated JSON file", default="mcc-output.json")
-    exclusiveGroup = parser.add_mutually_exclusive_group()
-    exclusiveGroup.add_argument("--idChannelMapping", type=str, nargs="+",
-                                help="JSON formatted pairs with the ADC name <-> Amplifier mapping.", default=None)
-    exclusiveGroup.add_argument("--idChannelMappingFromFile", type=str,
-                                help="Same as idChannelMapping but the JSON text is read from a file.", default=None)
+    parser.add_argument("--settingsFile", "--idChannelMappingFromFile", type=str,
+                        help="JSON formatted file with the ADC name <-> Amplifier mapping and optional stimset scale factors.",
+                        required=True)
 
     args = parser.parse_args()
 
     with MultiClampControl() as mcc:
         d = DataGatherer()
         data = d.getData(mcc)
-        data["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
 
-        uids = getChannelMapping(args.idChannelMapping, args.idChannelMappingFromFile)
+    data["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
 
-        print(f"ADC name <-> Amplifier mapping: {uids}")
+    uids, scaleFactors = parseSettingsFromFile(args.settingsFile)
 
-        if uids:
-            for k, v in uids.items():
-                if not data.get(v):
-                    raise ValueError(f"Amplifier named {v} does not exist.")
+    print(f"ADC name <-> Amplifier mapping: {uids}")
+    print(f"Scale factors: {scaleFactors}")
 
-            data["uids"] = uids
+    if uids:
+        for k, v in uids.items():
+            if not data.get(v):
+                raise ValueError(f"Amplifier named {v} does not exist.")
 
-        with open(args.filename, mode="w", encoding="utf-8") as fh:
-            fh.write(json.dumps(data, sort_keys=True, indent=4))
-            print(f"Output written to {args.filename}")
+        data["uids"] = uids
+
+    data["ScaleFactors"] = scaleFactors
+
+    with open(args.filename, mode="w", encoding="utf-8") as fh:
+        fh.write(json.dumps(data, sort_keys=True, indent=4))
+        print(f"Output written to {args.filename}")
 
 if __name__ == '__main__':
     main()
