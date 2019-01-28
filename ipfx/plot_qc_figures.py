@@ -7,6 +7,7 @@ import shutil
 import numpy as np
 import ipfx.stim_features as st
 import ipfx.subthresh_features as subf
+import ipfx.epochs as ep
 import scipy.signal as sg
 import scipy.misc
 
@@ -33,7 +34,8 @@ def get_features(sweep_features, sweep_number):
 def load_sweep(data_set, sweep_number):
     sweep = data_set.sweep(sweep_number)
     dt = sweep.t[1] - sweep.t[0]
-    r = sweep.expt_idx_range
+    r = ep.get_experiment_epoch(sweep.i, sweep.v, sweep.sampling_rate)
+
     return (sweep.v, sweep.i, sweep.t, r, dt)
 
 
@@ -106,6 +108,9 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
         plt.figure(figs[3 + index].number)
 
         v, i, t, r, dt = load_sweep(data_set, sn)
+        hz = 1./dt
+        expt_idx_range = ep.get_experiment_epoch(i,v,hz)
+        t = t - expt_idx_range[0]*dt
         plt.plot(t, v, color='black')
         plt.title(str(sn))
 
