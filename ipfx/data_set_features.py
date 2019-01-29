@@ -124,7 +124,6 @@ def extract_sweep_features(data_set, sweep_table):
         sweep_numbers = sorted(sweep_numbers)
         logging.debug("%s:%s" % (stimulus_name, ','.join(map(str, sweep_numbers))))
 
-#        sweep_set = data_set.sweep_set(sweep_numbers)
         sweep_set = data_set.stim_aligned_sweep_set(sweep_numbers)
 
         dp = detection_parameters(stimulus_name).copy()
@@ -137,7 +136,7 @@ def extract_sweep_features(data_set, sweep_table):
         for sn, sweep in zip(sweep_numbers, sweep_set.sweeps):
 #            logging.info("Extracting features from the sweep %d" % sn)
             spikes_df = sfx.process(sweep.t, sweep.v, sweep.i)
-            sweep_features[sn] = { 'spikes': spikes_df.to_dict(orient='records'), "id": sn }
+            sweep_features[sn] = {'spikes': spikes_df.to_dict(orient='records'), "sweep_number": sn }
 
     return sweep_features
 
@@ -154,10 +153,8 @@ def extract_cell_features(data_set,
     if len(long_square_sweep_numbers) == 0:
         raise er.FeatureError("No long_square sweeps available for feature extraction")
 
-#    lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
     lsq_sweeps = data_set.stim_aligned_sweep_set(long_square_sweep_numbers)
     lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
-
 
 
     logging.info("Analyzing Long Square")
@@ -169,7 +166,7 @@ def extract_cell_features(data_set,
                                               **detection_parameters(data_set.LONG_SQUARE))
     lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=subthresh_min_amp)
     lsq_features = lsq_an.analyze(lsq_sweeps)
-    cell_features["long_squares"] = lsq_an.as_dict(lsq_features, [ dict(id=sn) for sn in long_square_sweep_numbers ])
+    cell_features["long_squares"] = lsq_an.as_dict(lsq_features, [ dict(sweep_number=sn) for sn in long_square_sweep_numbers ])
 
     if cell_features["long_squares"]["hero_sweep"] is None:
         raise er.FeatureError("Could not find hero sweep.")
@@ -179,7 +176,6 @@ def extract_cell_features(data_set,
     if len(short_square_sweep_numbers) == 0:
         raise er.FeatureError("No short square sweeps available for feature extraction")
 
-#    ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
     ssq_sweeps = data_set.stim_aligned_sweep_set(short_square_sweep_numbers)
 
     ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
@@ -189,14 +185,13 @@ def extract_cell_features(data_set,
                                               **detection_parameters(data_set.SHORT_SQUARE))
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
     ssq_features = ssq_an.analyze(ssq_sweeps)
-    cell_features["short_squares"] = ssq_an.as_dict(ssq_features, [ dict(id=sn) for sn in short_square_sweep_numbers ])
+    cell_features["short_squares"] = ssq_an.as_dict(ssq_features, [ dict(sweep_number=sn) for sn in short_square_sweep_numbers ])
 
     # ramps
     logging.info("Analyzing Ramps")
     if len(ramp_sweep_numbers) == 0:
         raise er.FeatureError("No ramp sweeps available for feature extraction")
 
-#    ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
     ramp_sweeps = data_set.stim_aligned_sweep_set(ramp_sweep_numbers)
 
     ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
@@ -207,7 +202,7 @@ def extract_cell_features(data_set,
                                                 **detection_parameters(data_set.RAMP))
     ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
     ramp_features = ramp_an.analyze(ramp_sweeps)
-    cell_features["ramps"] = ramp_an.as_dict(ramp_features, [ dict(id=sn) for sn in ramp_sweep_numbers ])
+    cell_features["ramps"] = ramp_an.as_dict(ramp_features, [dict(sweep_number=sn) for sn in ramp_sweep_numbers ])
 
     return cell_features
 
@@ -334,10 +329,10 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
 
     # shuffle peak deflection for the subthreshold long squares
     for s in cell_features["long_squares"]["subthreshold_sweeps"]:
-        sweep_features[s['id']]['peak_deflect'] = s['peak_deflect']
+        sweep_features[s['sweep_number']]['peak_deflect'] = s['peak_deflect']
 
-    cell_record = fr.build_cell_feature_record(cell_features, sweep_features)
-    sweep_records = fr.build_sweep_feature_records(data_set.sweep_table, sweep_features)
+    cell_record = fr.build_cell_feature_record(cell_features)
+    sweep_records = fr.build_sweep_feature_record(data_set.sweep_table, sweep_features)
 
     return cell_features, sweep_features, cell_record, sweep_records
 
