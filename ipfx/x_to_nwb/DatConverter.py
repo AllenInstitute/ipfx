@@ -183,6 +183,25 @@ class DatConverter:
     def _isValidAmplifierState(ampState):
         return len(ampState.StateVersion) > 0
 
+    @staticmethod
+    def _getAmplifierState(bundle, series, trace_index):
+        """ Return the amplifier state object taking into account different PatchMaster versions """
+
+        ampState = series.AmplifierState
+
+        # try the default location first
+        if DatConverter._isValidAmplifierState(ampState):
+            return ampState
+
+        # newer Patchmaster versions store it in the Amplifier tree
+        ampState = bundle.amp[series.AmplStateSeries - 1][trace_index].AmplifierState
+
+        if DatConverter._isValidAmplifierState(ampState):
+            return ampState
+
+        # and sometimes we got nothing at all
+        return None
+
     def _check(self):
         """
         Check that all prerequisites are met.
@@ -348,23 +367,6 @@ class DatConverter:
         nwbSeries = []
         counter = 0
 
-        def getAmplifierState(bundle, series, trace_index):
-
-            ampState = series.AmplifierState
-
-            # try the default location first
-            if DatConverter._isValidAmplifierState(ampState):
-                return ampState
-
-            # newer Patchmaster versions store it in the Amplifier tree
-            ampState = bundle.amp[series.AmplStateSeries - 1][trace_index].AmplifierState
-
-            if DatConverter._isValidAmplifierState(ampState):
-                return ampState
-
-            # and sometimes we got nothing at all
-            return None
-
         for group in groups:
             for series in group:
                 for sweep in series:
@@ -374,7 +376,7 @@ class DatConverter:
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = convertDataset(self.bundle.data[trace])
 
-                        ampState = getAmplifierState(self.bundle, series, trace_index)
+                        ampState = DatConverter._getAmplifierState(self.bundle, series, trace_index)
 
                         if ampState:
                             gain = ampState.Gain
