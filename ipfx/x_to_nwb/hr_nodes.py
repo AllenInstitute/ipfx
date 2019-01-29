@@ -94,13 +94,16 @@ def convertDataFormatToNP(dataFormat):
     return d[dataFormat]
 
 
-# aka clamp mode
-def getADCMode(byte):
+def getClampMode(byte):
     return getFromList(["TestMode", "VCMode", "CCMode", "NoMode"], byte)
 
 
 def getAmplMode(byte):
     return getFromList(["Any", "VCMode", "CCMode", "IDensityMode"], byte)
+
+
+def getADCMode(byte):
+    return getFromList(["AdcOff", "Analog", "Digitals", "Digital", "AdcVirtual"], byte)
 
 
 def convertDataKind(byte):
@@ -313,7 +316,7 @@ class AmplifierState(Struct):
         ('ADBoard', 'b', getADBoard),         # (* BYTE *)
         ('BoardVersion', 'b'),                # (* BYTE *)
         ('ActiveE9Board', 'b'),               # (* BYTE *)
-        ('Mode', 'b'),                        # (* BYTE *)
+        ('Mode', 'b', getClampMode),          # (* BYTE *)
                                               # Modes = (TestMode, VCMode,
                                               #          CCMode, NoMode => (* AmplifierState is invalid *));
         ('Range', 'b'),                       # (* BYTE *)
