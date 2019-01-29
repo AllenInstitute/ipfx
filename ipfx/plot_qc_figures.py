@@ -63,7 +63,7 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
             voltages = [spikes[0][f] for f in voltage_features]
             times = [spikes[0][f] for f in time_features]
         else:
-            rheo_sn = cell_features["long_squares"]["rheobase_sweep"]["id"]
+            rheo_sn = cell_features["long_squares"]["rheobase_sweep"]["sweep_number"]
             rheo_spike = get_spikes(sweep_features, rheo_sn)[0]
             voltages = [ rheo_spike[f] for f in voltage_features]
             times = [ rheo_spike[f] for f in time_features]
@@ -125,7 +125,7 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
                 voltages = [spikes[0][f] for f in voltage_features]
                 times = [spikes[0][f] for f in time_features]
             else:
-                rheo_sn = cell_features["long_squares"]["rheobase_sweep"]["id"]
+                rheo_sn = cell_features["long_squares"]["rheobase_sweep"]["sweep_number"]
                 rheo_spike = get_spikes(sweep_features, rheo_sn)[0]
                 voltages = [rheo_spike[f] for f in voltage_features]
                 times = [rheo_spike[f] for f in time_features]
@@ -351,10 +351,10 @@ def plot_subthreshold_long_square_figures(data_set, cell_features, lims_features
 
     save_figure(fig, 'tau_curve', 'subthreshold_long_squares', image_dir, sizes, cell_image_files)
 
-    subthresh_dict = {s['id']:s for s in tau_sweeps}
+    subthresh_dict = {s['sweep_number']:s for s in tau_sweeps}
 
     # 0c - Plot the subthreshold squares
-    tau_sweeps = [ s['id'] for s in tau_sweeps ]
+    tau_sweeps = [ s['sweep_number'] for s in tau_sweeps ]
     tau_figs = [ plt.figure() for i in range(len(tau_sweeps)) ]
 
     for index, s in enumerate(tau_sweeps):
@@ -396,7 +396,7 @@ def plot_short_square_figures(data_set, cell_features, lims_features, sweep_feat
     repeat_amp = cell_features["short_squares"].get("stimulus_amplitude", None)
 
     if repeat_amp is not None:
-        short_square_sweep_nums = [ s['id'] for s in cell_features["short_squares"]["common_amp_sweeps"] ]
+        short_square_sweep_nums = [ s['sweep_number'] for s in cell_features["short_squares"]["common_amp_sweeps"] ]
 
         figs = plot_single_ap_values(data_set, short_square_sweep_nums,
                                      lims_features, sweep_features, cell_features,
@@ -501,7 +501,7 @@ def plot_hero_figures(data_set, cell_features, lims_features, sweep_features, im
 
 def plot_long_square_summary(data_set, cell_features, lims_features):
     long_square_sweeps = cell_features['long_squares']['sweeps']
-    long_square_sweep_numbers = [ int(s['id']) for s in long_square_sweeps ]
+    long_square_sweep_numbers = [ int(s['sweep_number']) for s in long_square_sweeps ]
 
     thumbnail_summary_fig = plot_sweep_set_summary(data_set, int(lims_features['thumbnail_sweep_num']), long_square_sweep_numbers)
     plt.figure(thumbnail_summary_fig.number)
@@ -537,7 +537,7 @@ def plot_sag_figures(data_set, cell_features, lims_features, sweep_features, ima
     fig = plt.figure()
     for d in cell_features["long_squares"]["subthreshold_sweeps"]:
         if d['peak_deflect'][0] == lims_features["vm_for_sag"]:
-            v, i, t, r, dt = load_sweep(data_set, int(d['id']))
+            v, i, t, r, dt = load_sweep(data_set, int(d['sweep_number']))
             stim_start, stim_dur, stim_amp, start_idx, end_idx = st.get_stim_characteristics(i, t)
             plt.plot(t, v, color='black')
             plt.scatter(d['peak_deflect'][1], d['peak_deflect'][0], color='red', zorder=10)
