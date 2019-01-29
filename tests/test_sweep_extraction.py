@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-import ipfx.ephys_extractor as efex
+from ipfx.feature_extractor import SpikeFeatureExtractor
 
 def test_extractor_on_variable_time_step(spike_test_var_dt):
     data = spike_test_var_dt
@@ -9,7 +9,7 @@ def test_extractor_on_variable_time_step(spike_test_var_dt):
     t = data[:, 0]
     v = data[:, 1]
 
-    ext = efex.SpikeExtractor()
+    ext = SpikeFeatureExtractor()
     spikes = ext.process(t, v, i=None)
 
     expected_thresh_ind = np.array([73, 183, 314, 463, 616, 770])
