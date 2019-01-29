@@ -6,6 +6,7 @@ from hashlib import sha256
 from datetime import datetime
 import os
 import json
+import warnings
 
 import numpy as np
 
@@ -14,7 +15,6 @@ from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import IntracellularElectrode
 
 from ipfx.x_to_nwb.hr_bundle import Bundle
-from ipfx.x_to_nwb.hr_nodes import TraceRecord, ChannelRecordStimulus
 from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
 from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
@@ -80,13 +80,13 @@ class DatConverter:
         with Bundle(inFile) as bundle:
             bundle._all_info(root + ".txt")
 
-    def _getClampMode(self, node):
+    def _getClampMode(self, ampState, trace):
         """
-        Return the clamp mode of the given node.
+        Return the clamp mode of the given amplifier state node.
         """
 
-        if(isinstance(node, TraceRecord)):
-            clampMode = node.AdcMode
+        if ampState:
+            clampMode = ampState.Mode
 
             if clampMode == "VCMode":
                 return V_CLAMP_MODE
@@ -94,18 +94,17 @@ class DatConverter:
                 return I_CLAMP_MODE
             else:
                 raise ValueError(f"Unknown clamp mode {clampMode}")
-        elif(isinstance(node, ChannelRecordStimulus)):
 
-            dacUnit = node.DacUnit
+        warnings.warn("No amplifier state available, falling back to AD unit heuristics.")
 
-            if dacUnit == "A":
-                return I_CLAMP_MODE
-            elif dacUnit == "V":
-                return V_CLAMP_MODE
-            else:
-                raise ValueError(f"Unknown dacUnit {dacUnit}")
+        unit = trace.YUnit
+
+        if unit == "A":
+            return V_CLAMP_MODE
+        elif unit == "V":
+            return I_CLAMP_MODE
         else:
-            raise ValueError(f"Unknown type {node}")
+            raise ValueError(f"Unknown unit {unit}")
 
     def _getMaxTimeSeriesCount(self):
         """
@@ -305,7 +304,7 @@ class DatConverter:
                     cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount],
                                              total=self.totalSeriesCount)
                     stimRec = self.bundle.pgf[getStimulusRecordIndex(sweep)]
-                    for trace in sweep:
+                    for trace_index, trace in enumerate(sweep):
                         stimset = generator.fetch(sweep, trace)
 
                         if not len(stimset):
@@ -333,7 +332,8 @@ class DatConverter:
                         channelRec_index = getChannelRecordIndex(self.bundle.pgf, sweep, trace)
                         assert channelRec_index is not None, "Unexpected channel record index"
 
-                        clampMode = self._getClampMode(stimRec[channelRec_index])
+                        ampState = DatConverter._getAmplifierState(self.bundle, series, trace_index)
+                        clampMode = self._getClampMode(ampState, trace)
 
                         if clampMode == V_CLAMP_MODE:
                             conversion, unit = 1e-3, "V"
@@ -395,7 +395,7 @@ class DatConverter:
                                                   "series_label": series.Label,
                                                   "sweep_label": sweep.Label},
                                                  sort_keys=True, indent=4)
-                        clampMode = self._getClampMode(trace)
+                        clampMode = self._getClampMode(ampState, trace)
                         seriesClass = getAcquiredSeriesClass(clampMode)
                         stimulus_description = series.Label
 
