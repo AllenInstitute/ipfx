@@ -447,15 +447,18 @@ class DatConverter:
                         elif clampMode == I_CLAMP_MODE:
                             bias_current = trace.Holding
 
-                            if trace.AutoCFast or (trace.CanCCFast and trace.CCFastOn):
+                            if ampState and (ampState.AutoCFast or (ampState.CanCCFast and ampState.CCFastOn)):
                                 # stored in two doubles for enhanced precision
-                                capacitance_compensation = trace.CFastAmp1 + trace.CFastAmp2
-                            elif trace.AutoCSlow or (trace.CanCCFast and not trace.CCFastOn):
-                                capacitance_compensation = trace.CSlow
+                                capacitance_compensation = ampState.CFastAmp1 + ampState.CFastAmp2
+                            elif ampState and (ampState.AutoCSlow or (ampState.CanCCFast and not ampState.CCFastOn)):
+                                capacitance_compensation = ampState.CSlow
                             else:
                                 capacitance_compensation = np.nan
 
-                            bridge_balance = trace.RsValue * trace.RsFraction
+                            if ampState:
+                                bridge_balance = ampState.RsValue * ampState.RsFraction
+                            else:
+                                bridge_balance = np.nan
 
                             acquistion_data = seriesClass(name=name,
                                                           data=data,
