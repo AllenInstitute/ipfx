@@ -109,8 +109,8 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
 
         v, i, t, r, dt = load_sweep(data_set, sn)
         hz = 1./dt
-        expt_idx_range = ep.get_experiment_epoch(i,v,hz)
-        t = t - expt_idx_range[0]*dt
+        expt_start_idx, _ = ep.get_experiment_epoch(i,v,hz)
+        t = t - expt_start_idx*dt
         plt.plot(t, v, color='black')
         plt.title(str(sn))
 
