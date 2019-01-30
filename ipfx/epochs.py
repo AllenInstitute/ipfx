@@ -48,16 +48,11 @@ def get_stability_vm_epoch(stim_start, hz):
     return stim_start-1-num_steps, stim_start-1
 
 
-def get_recording_end_idx(v):
-
-    end_idx = np.flatnonzero(v)[-1]  # last non-zero index along the only dimension=0.
-    return end_idx
-
 def get_sweep_epoch(response):
 
     sweep_end_idx = np.flatnonzero(response)[-1]  # last non-zero index along the only dimension=0.
 
-    return (0, sweep_end_idx)
+    return 0, sweep_end_idx
 
 def get_experiment_epoch(i,v,hz):
     """
