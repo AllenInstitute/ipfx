@@ -144,7 +144,7 @@ def cell_qc_features(data_set, manual_values=None):
         blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
 
-        expt_start_idx, expt_end_idx = ep.get_experiment_epoch(blowout_data.i, blowout_data.v, blowout_data.sampling_rate)
+        expt_start_idx, _ = ep.get_experiment_epoch(blowout_data.i, blowout_data.v, blowout_data.sampling_rate)
 
         blowout_mv = measure_blowout(blowout_data.v, expt_start_idx)
         output_data['blowout_mv'] = blowout_mv
@@ -317,7 +317,8 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
     t = sweep_data.t
     hz = sweep_data.sampling_rate
 
-    expt_start_idx, expt_end_idx = ep.get_experiment_epoch(current, voltage, hz)
+    expt_start_idx, _ = ep.get_experiment_epoch(current, voltage, hz)
+    _, sweep_end_idx = ep.get_sweep_epoch(voltage)
 
     # measure Vm and noise before stimulus
     idx0, idx1 = ep.get_first_vm_noise_epoch(expt_start_idx, hz)  # count from the beginning of the experiment
@@ -333,9 +334,9 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
     is_ramp = sweep_info['stimulus_name'] in ontology.ramp_names
 
     if not is_ramp:
-        idx0, idx1 = ep.get_last_vm_epoch(expt_end_idx, hz)
+        idx0, idx1 = ep.get_last_vm_epoch(sweep_end_idx, hz)
         mean_last_vm_epoch, _ = measure_vm(voltage[idx0:idx1])
-        idx0, idx1 = ep.get_last_vm_noise_epoch(expt_end_idx, hz)
+        idx0, idx1 = ep.get_last_vm_noise_epoch(sweep_end_idx, hz)
         _, rms1 = measure_vm(voltage[idx0:idx1])
         sweep["post_vm_mv"] = float(mean_last_vm_epoch)
         sweep["post_noise_rms_mv"] = float(rms1)
