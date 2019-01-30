@@ -71,6 +71,7 @@ def test_time_constant_noise_acceptance():
     v[start_index:end_index] = (baseline - A) + A * np.exp(-(t[start_index:end_index] - t[start_index]) / actual_tau)
 
     noise_level = 0.1
+    np.random.seed(101)
     v += np.random.normal(scale=noise_level, size=len(v))
 
     tau = subf.time_constant(t, v, i, start=start, end=end)
