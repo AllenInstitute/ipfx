@@ -15,6 +15,7 @@ class EphysDataSet(object):
     STIMULUS_NAME = 'stimulus_name'
     SWEEP_NUMBER = 'sweep_number'
     PASSED = 'passed'
+
     CLAMP_MODE = 'clamp_mode'
 
     LONG_SQUARE = 'long_square'
@@ -119,10 +120,12 @@ class EphysDataSet(object):
         stimulus = sweep_data['stimulus'][sweep_start_ix:sweep_end_ix+1]
         t = np.arange(sweep_start_ix, sweep_end_ix + 1) * dt
 
-        if sweep_meta_data[self.CLAMP_MODE] == "VoltageClamp":
+        clamp_mode = self.get_clamp_mode(sweep_meta_data['stimulus_units'])
+
+        if clamp_mode == "VoltageClamp":
             v = stimulus
             i = response
-        elif sweep_meta_data[self.CLAMP_MODE] == "CurrentClamp":
+        elif clamp_mode == "CurrentClamp":
             v = response
             i = stimulus
         else:
@@ -141,6 +144,12 @@ class EphysDataSet(object):
             raise
 
         return sweep
+
+    def get_clamp_mode(self, stimulus_unit):
+
+        clamp_mode = "CurrentClamp" if stimulus_unit in self.ontology.current_clamp_units else "VoltageClamp"
+
+        return clamp_mode
 
     def sweep_set(self, sweep_numbers):
         try:
