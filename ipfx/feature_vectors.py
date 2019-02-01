@@ -96,6 +96,21 @@ def extract_feature_vectors(data_set,
     return all_features
 
 
+def extract_multipatch_feature_vectors(lsq_sweeps, lsq_start, lsq_end,
+                                       target_sampling_rate=50000, ap_window_length=0.003):
+    lsq_spx, lsq_spfx = extractors_for_sweeps(sweep_set, start=lsq_start, end=lsq_end)
+    lsq_an = LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=-100)
+    lsq_features = lsq_an.analyze(sweep_set)
+
+    all_features = feature_vectors(lsq_sweeps, None, None,
+                                   lsq_features, None, None,
+                                   lsq_start, lsq_end,
+                                   lsq_spx,
+                                   target_sampling_rate=target_sampling_rate,
+                                   ap_window_length=ap_window_length)
+    return all_features
+
+
 def feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
                     lsq_features, ssq_features, ramp_features,
                     lsq_start, lsq_end, lsq_spike_extractor,

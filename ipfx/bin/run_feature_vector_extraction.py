@@ -21,6 +21,7 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
     parallel_flag = ags.fields.Boolean(default=True)
     ap_window_length = ags.fields.Float(description="Duration after threshold for AP shape (s)", default=0.003)
 
+
 def project_specimen_ids(project, passed_only=True):
 
     SQL = """

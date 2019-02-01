@@ -64,7 +64,7 @@ class StimulusProtocolAnalysis(object):
         output = {}
         for mf in features_list:
             mfd = [ spikes[mf].values[0] for spikes in spikes_set if len(spikes) > 0 ]
-            output[mf] = np.mean(mfd)
+            output[mf] = np.nanmean(mfd)
         return output
 
     def analyze_basic_features(self, sweep_set, extra_sweep_features=None):
