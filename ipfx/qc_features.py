@@ -144,7 +144,7 @@ def cell_qc_features(data_set, manual_values=None):
         blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
 
-        expt_start_idx, _ = ep.get_experiment_epoch(blowout_data.i, blowout_data.v, blowout_data.sampling_rate)
+        expt_start_idx, _ = ep.get_experiment_epoch(blowout_data.i, blowout_data.sampling_rate)
 
         blowout_mv = measure_blowout(blowout_data.v, expt_start_idx)
         output_data['blowout_mv'] = blowout_mv
@@ -315,7 +315,7 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
     t = sweep_data.t
     hz = sweep_data.sampling_rate
 
-    expt_start_idx, _ = ep.get_experiment_epoch(current, voltage, hz)
+    expt_start_idx, _ = ep.get_experiment_epoch(current, hz)
     _, sweep_end_idx = ep.get_sweep_epoch(voltage)
 
     # measure Vm and noise before stimulus
@@ -377,7 +377,7 @@ def completed_experiment(i,v,hz):
     LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
 
     _, sweep_end_ix = ep.get_sweep_epoch(v)
-    _, expt_end_ix = ep.get_experiment_epoch(i, v, hz)
+    _, expt_end_ix = ep.get_experiment_epoch(i, hz)
 
     if sweep_end_ix >= expt_end_ix:
         return True

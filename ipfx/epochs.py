@@ -97,7 +97,7 @@ def get_stim_epoch_B(i,test_pulse=True):
     return start_idx, end_idx
 
 
-def get_experiment_epoch(i,v,hz):
+def get_experiment_epoch(i,hz):
     """
     Find index range for the experiment epoch.
     The start index of the experiment epoch is defined as stim_start_idx - PRESTIM_DURATION*sampling_rate

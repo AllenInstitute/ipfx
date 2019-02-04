@@ -34,7 +34,7 @@ def get_features(sweep_features, sweep_number):
 def load_sweep(data_set, sweep_number):
     sweep = data_set.sweep(sweep_number)
     dt = sweep.t[1] - sweep.t[0]
-    r = ep.get_experiment_epoch(sweep.i, sweep.v, sweep.sampling_rate)
+    r = ep.get_experiment_epoch(sweep.i, sweep.sampling_rate)
 
     return (sweep.v, sweep.i, sweep.t, r, dt)
 
@@ -109,7 +109,7 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
 
         v, i, t, r, dt = load_sweep(data_set, sn)
         hz = 1./dt
-        expt_start_idx, _ = ep.get_experiment_epoch(i,v,hz)
+        expt_start_idx, _ = ep.get_experiment_epoch(i,hz)
         t = t - expt_start_idx*dt
         plt.plot(t, v, color='black')
         plt.title(str(sn))
