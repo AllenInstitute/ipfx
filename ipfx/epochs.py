@@ -54,25 +54,33 @@ def get_sweep_epoch(response):
 
     return 0, sweep_end_idx
 
-def get_experiment_epoch(i,v,hz):
-    """
-    Find index range for the experiment epoch.
-    The start index of the experiment epoch is defined as stim_start_idx - PRESTIM_DURATION*sampling_rate
-    The end is defined by the last nonzero response.
 
-
-    Parameters
-    ----------
-    i : stimulus
-    v : response
-    hz: sampling rate
-
-    Returns
-    -------
-    start and end indices
+def get_stim_epoch_A(i,test_pulse=True):
 
     """
-    # TODO: deal with non iclamp sweeps and non experimental sweeps
+    Identify start index, and end index of a general stimulus.
+    """
+
+    di = np.diff(i)
+    di_idx = np.flatnonzero(di)   # != 0
+
+    start_idx_idx = 2 if test_pulse else 0     # skip the first up/down (test pulse) if present
+
+    if len(di_idx[start_idx_idx:]) == 0:    # if no stimulus is found
+        return None, None
+
+    start_idx = di_idx[start_idx_idx] + 1   # shift by one to compensate for diff()
+    end_idx = di_idx[-1]
+
+    return start_idx, end_idx
+
+
+def get_stim_epoch_B(i,test_pulse=True):
+
+    """
+    Identify start index, and end index of a general stimulus.
+    """
+
     di = np.diff(i)
     diff_idx = np.flatnonzero(di)  # != 0)
 
@@ -83,10 +91,24 @@ def get_experiment_epoch(i,v,hz):
     else:
         idx = 0
 
-    stim_start_idx = diff_idx[idx] + 1  # shift by one to compensate for diff()
+    start_idx = diff_idx[idx] + 1  # shift by one to compensate for diff()
+    end_idx = diff_idx[-1]
+
+    return start_idx, end_idx
+
+
+def get_experiment_epoch(i,v,hz):
+    """
+    Find index range for the experiment epoch.
+    The start index of the experiment epoch is defined as stim_start_idx - PRESTIM_DURATION*sampling_rate
+    The end index of the experiment epoch is defined as stim_end_idx + POSTSTIM_DURATION*sampling_rate
+
+
+    """
+
+    stim_start_idx, stim_end_idx = get_stim_epoch_B(i)
     expt_start_idx = stim_start_idx - int(PRESTIM_STABILITY_EPOCH * hz)
-    #       Recording ends when zeros start
-    expt_end_idx = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0.
+    expt_end_idx = stim_end_idx + int(POSTSTIM_STABILITY_EPOCH * hz)
 
     return expt_start_idx,expt_end_idx
 
