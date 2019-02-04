@@ -295,8 +295,7 @@ def sweep_qc_features(data_set):
     for sweep_info in iclamp_sweeps.to_dict(orient='records'):
         sweep_num = sweep_info['sweep_number']
         sweep_data = data_set.sweep(sweep_num)
-        if sweep_completed(sweep_data.i, sweep_data.v, sweep_data.t,sweep_data.sampling_rate):
-
+        if completed_experiment(sweep_data.i, sweep_data.v,sweep_data.sampling_rate):
             sweep = current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology)
             sweep["completed"] = True
         else:
@@ -304,7 +303,6 @@ def sweep_qc_features(data_set):
             sweep["completed"] = False
         sweep.update(sweep_info)
         sweep_features.append(sweep)
-
     return sweep_features
 
 
@@ -374,32 +372,21 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
     return sweep
 
 
-def sweep_completed(i,v,t,hz):
+def completed_experiment(i,v,hz):
 
-    POSTSTIM_STABILITY_EPOCH = 0.5
     LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
 
-    di = np.diff(i)
-    di_idx = np.flatnonzero(di)   # != 0
+    _, sweep_end_ix = ep.get_sweep_epoch(v)
+    _, expt_end_ix = ep.get_experiment_epoch(i, v, hz)
 
-    if len(di_idx) < 4: # assuming there is a test pulse there should be at least 2 pulses (i.e, 4 jumps)
-        return False
-
-    stim_start_time, stim_duration, stim_amplitude, stim_start_idx, stim_end_idx = stf.get_stim_characteristics(i,t)
-    expt_start_ix, expt_end_ix = ep.get_experiment_epoch(i, v, hz)
-
-    stimulus_end_ix = stim_end_idx
-    response_end_ix = expt_end_ix
-
-    post_stim_response_duration = (response_end_ix - stimulus_end_ix) / hz
-    completed_expt_epoch = post_stim_response_duration > POSTSTIM_STABILITY_EPOCH
-
-    long_response = (response_end_ix / hz) > LONG_RESPONSE_DURATION
-
-    if completed_expt_epoch or long_response:
+    if sweep_end_ix >= expt_end_ix:
+        return True
+    elif (sweep_end_ix / hz) > LONG_RESPONSE_DURATION:
         return True
     else:
         return False
+
+
 
 
 
