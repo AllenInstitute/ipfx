@@ -75,26 +75,32 @@ def get_stim_epoch_A(i,test_pulse=True):
     return start_idx, end_idx
 
 
-def get_stim_epoch_B(i,test_pulse=True):
+def get_stim_epoch_B(i):
 
     """
-    Identify start index, and end index of a general stimulus.
+    Identify start index, and end index of a general stimulus. Assume there is test pulse.
     """
 
     di = np.diff(i)
-    diff_idx = np.flatnonzero(di)  # != 0)
+    di_idx = np.flatnonzero(di)  # != 0)
 
-    if len(diff_idx) == 0:
+    if len(di_idx) == 0:
         raise ValueError("Empty stimulus trace")
-    if len(diff_idx) >= 4:
+
+    if len(di_idx) >= 4:
         idx = 2  # skip the first up/down assuming that there is a test pulse
     else:
         idx = 0
 
-    start_idx = diff_idx[idx] + 1  # shift by one to compensate for diff()
-    end_idx = diff_idx[-1]
+    start_idx = di_idx[idx] + 1  # shift by one to compensate for diff()
+    end_idx = di_idx[-1]
 
     return start_idx, end_idx
+
+
+def get_stim_epoch(i,test_pulse=True):
+
+    return get_stim_epoch_B(i)
 
 
 def get_experiment_epoch(i,hz):
@@ -102,11 +108,9 @@ def get_experiment_epoch(i,hz):
     Find index range for the experiment epoch.
     The start index of the experiment epoch is defined as stim_start_idx - PRESTIM_DURATION*sampling_rate
     The end index of the experiment epoch is defined as stim_end_idx + POSTSTIM_DURATION*sampling_rate
-
-
     """
 
-    stim_start_idx, stim_end_idx = get_stim_epoch_B(i)
+    stim_start_idx, stim_end_idx = get_stim_epoch(i)
     expt_start_idx = stim_start_idx - int(PRESTIM_STABILITY_EPOCH * hz)
     expt_end_idx = stim_end_idx + int(POSTSTIM_STABILITY_EPOCH * hz)
 
