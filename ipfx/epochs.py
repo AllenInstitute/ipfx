@@ -13,18 +13,21 @@ LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
 
 def get_last_vm_epoch(idx1, hz):
     """
-    Get epoch lasting LAST_STABILITY_EPOCH before the end of recording
+    Get epoch lasting LAST_STABILITY_EPOCH before idx1
 
     Parameters
     ----------
-    idx1
-    hz
+    idx1    : int last index of the epoch
+    hz      : float sampling rate
 
     Returns
     -------
+    (idx0,idx1) : int tuple of epoch indices
 
     """
-    return idx1-int(POSTSTIM_STABILITY_EPOCH * hz), idx1
+    idx0 = idx1-int(POSTSTIM_STABILITY_EPOCH * hz)
+
+    return idx0, idx1
 
 
 def get_first_vm_noise_epoch(idx, hz):
@@ -49,6 +52,18 @@ def get_stability_vm_epoch(stim_start, hz):
 
 
 def get_sweep_epoch(response):
+    """
+    Find sweep epoch defined as interval from the beginning of recordign to last non-zero value
+
+    Parameters
+    ----------
+    response    : float np.array
+
+    Returns
+    -------
+    (start_index,end_index): int tuple with start,end indices of the epoch
+
+    """
 
     sweep_end_idx = np.flatnonzero(response)[-1]  # last non-zero index along the only dimension=0.
 
@@ -76,7 +91,6 @@ def get_stim_epoch_A(i,test_pulse=True):
 
 
 def get_stim_epoch_B(i):
-
     """
     Identify start index, and end index of a general stimulus. Assume there is test pulse.
     """
@@ -108,6 +122,16 @@ def get_experiment_epoch(i,hz):
     Find index range for the experiment epoch.
     The start index of the experiment epoch is defined as stim_start_idx - PRESTIM_DURATION*sampling_rate
     The end index of the experiment epoch is defined as stim_end_idx + POSTSTIM_DURATION*sampling_rate
+
+    Parameters
+    ----------
+    i   :   float np.array of current
+    hz  :   float sampling rate
+
+    Returns
+    -------
+    (expt_start_idx,expt_end_idx): int tuple with start, end indices of the epoch
+
     """
 
     stim_start_idx, stim_end_idx = get_stim_epoch(i)
