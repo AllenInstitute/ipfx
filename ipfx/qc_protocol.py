@@ -140,8 +140,8 @@ def qc_current_clamp_sweep(ontology, sweep, qc_criteria=None):
     # keep track of failures
     fail_tags = []
 
-    if sweep["stimulus_units"] not in ontology.current_clamp_units:
-        return {}
+#    if sweep["stimulus_units"] not in ontology.current_clamp_units:
+#        return {}
 
     if sweep["pre_noise_rms_mv"] > qc_criteria["pre_noise_rms_mv_max"]:
         fail_tags.append("pre-noise: %.3f exceeded qc threshold: %.3f" %(sweep["pre_noise_rms_mv"],qc_criteria["pre_noise_rms_mv_max"]))

@@ -66,8 +66,6 @@ class StimulusOntology(object):
         self.breakin_names = ( 'EXTPBREAKN', )
         self.extp_names = ( 'EXTP', )
 
-        self.current_clamp_units = ( 'Amps', 'pA')
-
     def find(self, tag, tag_type=None):
         matching_stims = [ s for s in self.stimuli if s.has_tag(tag, tag_type=tag_type) ]
 
