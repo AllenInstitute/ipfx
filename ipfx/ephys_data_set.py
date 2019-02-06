@@ -24,6 +24,8 @@ class EphysDataSet(object):
     SHORT_SQUARE = 'short_square'
     RAMP = 'ramp'
 
+    current_clamp_units = ('Amps', 'pA')
+
     def __init__(self, ontology=None):
         self.sweep_table = None
         self.ontology = ontology if ontology else StimulusOntology()
@@ -40,8 +42,7 @@ class EphysDataSet(object):
         st = self.sweep_table
 
         if current_clamp_only:
-            st = st[st[self.STIMULUS_UNITS].isin(
-                self.ontology.current_clamp_units)]
+            st = st[st[self.STIMULUS_UNITS].isin(self.current_clamp_units)]
 
         if passing_only:
             st = st[st[self.PASSED]]
@@ -147,7 +148,7 @@ class EphysDataSet(object):
 
     def get_clamp_mode(self, stimulus_unit):
 
-        clamp_mode = "CurrentClamp" if stimulus_unit in self.ontology.current_clamp_units else "VoltageClamp"
+        clamp_mode = "CurrentClamp" if stimulus_unit in self.current_clamp_units else "VoltageClamp"
 
         return clamp_mode
 
