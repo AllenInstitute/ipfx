@@ -567,7 +567,6 @@ class DatConverter:
                         seriesClass = getAcquiredSeriesClass(clampMode)
                         stimulus_description = series.Label
 
-                        # TODO check amplifier settings mapping from Patchmaster to NWB
                         if clampMode == V_CLAMP_MODE:
 
                             if ampState and ampState.RsOn:
@@ -624,7 +623,7 @@ class DatConverter:
                                 capacitance_compensation = np.nan
 
                             if ampState:
-                                bridge_balance = ampState.RsValue * ampState.RsFraction
+                                bridge_balance = 1.0 / ampState.GSeries
                             else:
                                 bridge_balance = np.nan
 
