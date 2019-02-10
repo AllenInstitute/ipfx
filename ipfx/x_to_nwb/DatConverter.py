@@ -294,6 +294,23 @@ class DatConverter:
                                        description=PLACEHOLDER)
                 for x in self.electrodeDict.values()]
 
+    def _getStartingTime(self, sweep):
+        """
+        Get the starting time in seconds of the sweep relative to the NWB
+        session start time.
+
+        Parameters
+        ----------
+        sweep: SweepRecord
+
+        Returns
+        -------
+        starting time: seconds since NWB file epoch
+        """
+
+        sweepTime = DatConverter._convertTimestamp(sweep.Time)
+        return (sweepTime - self.session_start_time).total_seconds()
+
     def _createStimulusSeries(self, electrodes, groups):
         """
         Return a list of pynwb stimulus series objects created from the DAT file contents.
@@ -326,7 +343,7 @@ class DatConverter:
                         gain = 1.0
                         resolution = np.nan
                         stimulus_description = series.Label
-                        starting_time = (DatConverter._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
+                        starting_time = self._getStartingTime(sweep)
                         rate = 1.0 / stimRec.SampleInterval
                         description = json.dumps({"cycle_id": cycle_id,
                                                   "file": os.path.basename(self.bundle.file_name),
@@ -394,7 +411,7 @@ class DatConverter:
                         electrode = electrodes[self.electrodeDict[electrodeKey]]
 
                         resolution = np.nan
-                        starting_time = (DatConverter._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
+                        starting_time = self._getStartingTime(sweep)
                         rate = 1.0 / trace.XInterval
                         description = json.dumps({"cycle_id": cycle_id,
                                                   "file": os.path.basename(self.bundle.file_name),
