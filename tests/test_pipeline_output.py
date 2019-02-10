@@ -32,7 +32,7 @@ def test_pipeline_output(input_json, output_json, tmpdir_factory):
     -------
 
     """
-    print (input_json, output_json)
+    print(input_json, output_json)
 
     pipeline_input = ju.read(input_json)
     test_dir = str(tmpdir_factory.mktemp("test"))

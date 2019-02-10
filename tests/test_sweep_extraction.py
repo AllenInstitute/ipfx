@@ -5,7 +5,7 @@ from ipfx.feature_extractor import SpikeFeatureExtractor
 def test_extractor_on_variable_time_step(spike_test_var_dt):
     data = spike_test_var_dt
 
-    print data
+    print(data)
     t = data[:, 0]
     v = data[:, 1]
 

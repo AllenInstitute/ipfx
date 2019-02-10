@@ -3,6 +3,7 @@ import numbers
 import numpy as np
 from pytest import approx
 from six.moves import urllib
+import six
 import shutil
 
 
@@ -28,7 +29,7 @@ def compare_dicts(d_ref, d):
 
             assert len(array) == len(array_ref)
             for index in range(len(array)):
-                if isinstance(array[index], (str, unicode)):
+                if isinstance(array[index], (str, six.text_type)):
                     assert array[index] == array_ref[index]
                 else:
                     assert array[index] == approx(array_ref[index])
