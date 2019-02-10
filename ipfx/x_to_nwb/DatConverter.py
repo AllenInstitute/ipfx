@@ -1,7 +1,3 @@
-"""
-Convert DAT files, created by PatchMaster, to NWB v2 files.
-"""
-
 from hashlib import sha256
 from datetime import datetime
 import os
@@ -24,6 +20,20 @@ from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MO
 class DatConverter:
 
     def __init__(self, inFile, outFile, multipleGroupsPerFile=False):
+        """
+        Convert DAT files, created by PatchMaster, to NWB v2 files.
+
+        Parameters
+        ----------
+        inFile: DAT file created by PatchMaster
+        outFile: name of the to-be-created NWB file, must not exist
+        multipleGroupsPerFile: switch determining if multiple DAT groups per
+                               file are created or not
+
+        Returns
+        -------
+        None
+        """
 
         if not os.path.isfile(inFile):
             raise ValueError(f"The input file {inFile} does not exist.")
@@ -72,6 +82,18 @@ class DatConverter:
 
     @staticmethod
     def outputMetadata(inFile):
+        """
+        Create a file with metadata of the given DAT file.
+
+        Parameters
+        ----------
+        inFile: DAT file
+
+        Returns
+        -------
+        None
+        """
+
         if not os.path.isfile(inFile):
             raise ValueError(f"The file {inFile} does not exist.")
 
@@ -83,7 +105,16 @@ class DatConverter:
     @staticmethod
     def _getClampMode(ampState, trace):
         """
-        Return the clamp mode of the given amplifier state node.
+        Return the clamp mode of the given amplifier state node and trace.
+
+        Parameters
+        ----------
+        ampState : AmplifierState as returned by _getAmplifierState()
+        trace : TraceRecord of the given trace
+
+        Returns
+        -------
+        A valid clamp mode, one of V_CLAMP_MODE or I_CLAMP_MODE
         """
 
         if ampState:
@@ -109,7 +140,13 @@ class DatConverter:
 
     def _getMaxTimeSeriesCount(self):
         """
-        Return the maximum number of TimeSeries which will be created the DAT file contents.
+        Return the maximum number of TimeSeries which will be created from the
+        DAT file contents.
+
+        Returns
+        -------
+        count
+
         """
 
         counter = 0
@@ -126,6 +163,18 @@ class DatConverter:
 
     @staticmethod
     def _generateElectrodeKey(trace):
+        """
+        Generate a string which is unique for the given DA/AD combination thus
+        determining a unique electrode name.
+
+        Parameters
+        ----------
+        trace : TraceRecord
+
+        Returns
+        -------
+        electrode name
+        """
 
         # Using LinkDAChannel and SourceChannel here as these look correct
 
@@ -138,8 +187,16 @@ class DatConverter:
     def _generateElectrodeDict(groups):
         """
         Generate a dictionary of all electrodes in the file.
-        Use self._generateElectrodeKey(trace) for generating the key, the
+        Use DatConverter._generateElectrodeKey(trace) for generating the key, the
         value will be the electrode number.
+
+        Parameters
+        ----------
+        groups: list of GroupRecord instances
+
+        Returns
+        -------
+        electrode dict: key is the electrode name and the value the number of electrode
         """
 
         electrodes = {}
@@ -158,6 +215,17 @@ class DatConverter:
 
     @staticmethod
     def _formatDeviceString(ampStateRecord):
+        """
+        Generate the device name
+
+        Parameters
+        ----------
+        ampStateRecord: AmplifierStateRecord
+
+        Returns
+        -------
+        device name: human readable string
+        """
 
         kind = ampStateRecord.AmplifierState.AmplKind
         numBoards = ampStateRecord.AmplifierState.E9Boards
@@ -175,6 +243,15 @@ class DatConverter:
         example in C but the comments are contradicting the code.
 
         The solution here is therefore reverse engineered and tested on a few examples.
+
+        Parameters
+        ----------
+        heka_elapsed_seconds: Number of seconds since a special epoch used by the heka software
+
+        Returns
+        -------
+        seconds: seconds since the unix epoch in UTC
+
         """
 
         JanFirst1990 = 1580970496.0
@@ -185,11 +262,36 @@ class DatConverter:
 
     @staticmethod
     def _isValidAmplifierState(ampState):
+        """
+        Return True if the given AmplifierState is valid, False otherwise.
+
+        Parameters
+        ----------
+        ampState: AmplifierState
+
+        Returns
+        -------
+        valid state
+        """
+
         return len(ampState.StateVersion) > 0
 
     @staticmethod
     def _getAmplifierState(bundle, series, trace_index):
-        """ Return the amplifier state object taking into account different PatchMaster versions """
+        """
+        Different PatchMaster versions create different DAT file layouts. This function tries
+        to accomodate that as it returns the correct object.
+
+        Parameters
+        ----------
+        bundle:  Bundle
+        series: SeriesRecord
+        trace_index: running 0-based index of the trace
+
+        Returns
+        -------
+        ampState: AmplifierState object or None if none could be found
+        """
 
         ampState = series.AmplifierState
 
@@ -209,6 +311,14 @@ class DatConverter:
     def _check(self):
         """
         Check that all prerequisites are met.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ValueError: error message
         """
 
         if not self.bundle.header.IsLittleEndian:
@@ -254,6 +364,10 @@ class DatConverter:
     def _createFile(self):
         """
         Create a pynwb NWBFile object from the DAT file contents.
+
+        Returns
+        -------
+        pynwb.NWBFile
         """
 
         session_description = PLACEHOLDER
@@ -278,6 +392,10 @@ class DatConverter:
     def _createDevice(self):
         """
         Create a pynwb Device object from the DAT file contents.
+
+        Returns
+        -------
+        pynwb.Device
         """
 
         name = DatConverter._formatDeviceString(self.bundle.amp[0][0])
@@ -287,6 +405,14 @@ class DatConverter:
     def _createElectrodes(self, device):
         """
         Create pynwb ic_electrodes objects from the DAT file contents.
+
+        Parameters
+        ----------
+        pynwb.Device
+
+        Returns
+        -------
+        pynwb.IntracellularElectrode
         """
 
         return [IntracellularElectrode(f"Electrode {x:d}",
@@ -314,6 +440,15 @@ class DatConverter:
     def _createStimulusSeries(self, electrodes, groups):
         """
         Return a list of pynwb stimulus series objects created from the DAT file contents.
+
+        Parameters
+        ----------
+        electrodes: list of pynwb.IntracellularElectrode
+        groups: list of GroupRecord
+
+        Returns
+        -------
+        series: list of TimeSeries
         """
 
         generator = StimSetGenerator(self.bundle)
@@ -385,6 +520,15 @@ class DatConverter:
     def _createAcquiredSeries(self, electrodes, groups):
         """
         Return a list of pynwb acquisition series objects created from the DAT file contents.
+
+        Parameters
+        ----------
+        electrodes: list of pynwb.IntracellularElectrode
+        groups: list of GroupRecord
+
+        Returns
+        -------
+        series: list of TimeSeries
         """
 
         nwbSeries = []
