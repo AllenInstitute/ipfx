@@ -14,8 +14,7 @@ def compare_dicts(d_ref, d):
 
     pytest does not support passing in dicts of numpy arrays with strings.
 
-    See https://github.com/pytest-dev/pytest/issues/4079 and
-    https://github.com/pytest-dev/pytest/issues/4079.
+    See https://github.com/pytest-dev/pytest/issues/4079.
 
     And dictdiffer does not work for our NaNs mixture see
     https://github.com/inveniosoftware/dictdiffer/issues/114.
