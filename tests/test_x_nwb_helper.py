@@ -112,7 +112,7 @@ def create_files_for_upload(ext):
 
     nwb_folder = basename + "_nwb"
     zip_files(folder, nwb_folder, ".nwb")
-    shutil.rmtree(nwb_folder)
+    shutil.rmtree(nwb_folder, ignore_errors=True)
 
 
 def zip_files(folder, filename, extension):
