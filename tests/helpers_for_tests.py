@@ -2,6 +2,8 @@ import numbers
 
 import numpy as np
 from pytest import approx
+from six.moves import urllib
+import shutil
 
 
 def compare_dicts(d_ref, d):
@@ -38,3 +40,16 @@ def compare_dicts(d_ref, d):
                 assert value_ref == approx(value, nan_ok=True)
             else:
                 assert value_ref == value
+
+
+def download_file(file_name, output_filepath):
+    """
+    Download the file pointed to by `url` and store it in
+    `output_filepath`.
+    """
+
+    BASE_URL = "https://www.byte-physics.de/Downloads/allensdk-test-data/"
+
+    response = urllib.request.urlopen(BASE_URL + file_name)
+    with open(output_filepath, "wb") as out_file:
+        shutil.copyfileobj(response, out_file)

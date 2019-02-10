@@ -17,8 +17,6 @@ Notes:
     pymeta files are created by `hr_bundle.py`.
 """
 
-
-import urllib.request
 import shutil
 import hashlib
 import os
@@ -27,31 +25,21 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 from ipfx.x_to_nwb.ABFConverter import ABFConverter
 from ipfx.bin.run_x_to_nwb_conversion import convert
+from .helpers_for_tests import download_file
 
-BASE_URL = "https://www.byte-physics.de/Downloads/allensdk-test-data/"
 
-def fetch_and_extract_zip(filename, base_url = BASE_URL):
+def fetch_and_extract_zip(filename):
     """
     Download regression test data.
 
-    Files which must reside in `base_url`:
-    base_url + filename: ZIP file, will be extracted into `filename`
+    Files which must reside in `BASE_URL`:
+    BASE_URL + filename: ZIP file, will be extracted into `filename`
                          without extension on success
-    base_url + filename + ".sha256": Holds the SHA256 hash of the ZIP file
+    BASE_URL + filename + ".sha256": Holds the SHA256 hash of the ZIP file
 
     The usage of the hash file allows us to skip downloading the ZIP file if it
     is already present and in the current version.
     """
-
-    def download_file(url, output_filepath):
-        """
-        Download the file pointed to by `url` and store it in
-        `output_filepath`.
-        """
-
-        with urllib.request.urlopen(url) as response:
-            with open(output_filepath, "wb") as out_file:
-                shutil.copyfileobj(response, out_file)
 
     def compare_checksums(path, checksum):
         """
@@ -75,7 +63,7 @@ def fetch_and_extract_zip(filename, base_url = BASE_URL):
         return existing == expected
 
     checksum = filename + ".sha256"
-    download_file(base_url + checksum, checksum)
+    download_file(checksum, checksum)
 
     folder = os.path.splitext(filename)[0]
     needs_extract = not os.path.isdir(folder)
@@ -84,7 +72,7 @@ def fetch_and_extract_zip(filename, base_url = BASE_URL):
         and not compare_checksums(filename, checksum)) \
        or not os.path.isfile(filename):  # file not present
         print(f"Download large file {filename}, please be patient.")
-        download_file(base_url + filename, filename)
+        download_file(filename, filename)
         needs_extract = True
 
         if not compare_checksums(filename, checksum):
