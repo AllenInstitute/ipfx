@@ -51,7 +51,7 @@ class DatConverter:
             device = self._createDevice()
             nwbFile.add_device(device)
 
-            self.electrodeDict = self._generateElectrodeDict(elem)
+            self.electrodeDict = DatConverter._generateElectrodeDict(elem)
             electrodes = self._createElectrodes(device)
             nwbFile.add_ic_electrode(electrodes)
 
@@ -80,7 +80,8 @@ class DatConverter:
         with Bundle(inFile) as bundle:
             bundle._all_info(root + ".txt")
 
-    def _getClampMode(self, ampState, trace):
+    @staticmethod
+    def _getClampMode(ampState, trace):
         """
         Return the clamp mode of the given amplifier state node.
         """
@@ -123,7 +124,8 @@ class DatConverter:
 
         return counter
 
-    def _generateElectrodeKey(self, trace):
+    @staticmethod
+    def _generateElectrodeKey(trace):
 
         # Using LinkDAChannel and SourceChannel here as these look correct
 
@@ -132,7 +134,8 @@ class DatConverter:
 
         return f"{DAC}_{ADC}"
 
-    def _generateElectrodeDict(self, groups):
+    @staticmethod
+    def _generateElectrodeDict(groups):
         """
         Generate a dictionary of all electrodes in the file.
         Use self._generateElectrodeKey(trace) for generating the key, the
@@ -146,23 +149,25 @@ class DatConverter:
             for series in group:
                 for sweep in series:
                     for trace in sweep:
-                        key = self._generateElectrodeKey(trace)
+                        key = DatConverter._generateElectrodeKey(trace)
                         if electrodes.get(key) is None:
                             electrodes[key] = index
                             index += 1
 
         return electrodes
 
-    def _formatDeviceString(self, amplifierStateRecord):
+    @staticmethod
+    def _formatDeviceString(ampStateRecord):
 
-        kind = amplifierStateRecord.AmplifierState.AmplKind
-        numBoards = amplifierStateRecord.AmplifierState.E9Boards
-        suffix = amplifierStateRecord.AmplifierState.IsEpc9N
-        DAC = amplifierStateRecord.AmplifierState.ADBoard
+        kind = ampStateRecord.AmplifierState.AmplKind
+        numBoards = ampStateRecord.AmplifierState.E9Boards
+        suffix = ampStateRecord.AmplifierState.IsEpc9N
+        DAC = ampStateRecord.AmplifierState.ADBoard
 
         return f"{kind}-{numBoards}-{suffix} with {DAC}"
 
-    def _convertTimestamp(self, heka_elapsed_seconds):
+    @staticmethod
+    def _convertTimestamp(heka_elapsed_seconds):
         """
         Convert a timestamp in heka format to datetime
 
@@ -218,7 +223,7 @@ class DatConverter:
             raise ValueError("Unexpected amplifier tree structure.")
 
         # check that the used device is unique
-        deviceString = self._formatDeviceString(self.bundle.amp[0][0])
+        deviceString = DatConverter._formatDeviceString(self.bundle.amp[0][0])
 
         for series_index, series in enumerate(self.bundle.amp):
             for state_index, state in enumerate(series):
@@ -227,9 +232,9 @@ class DatConverter:
                 if not DatConverter._isValidAmplifierState(state.AmplifierState):
                     continue
 
-                if deviceString != self._formatDeviceString(state):
+                if deviceString != DatConverter._formatDeviceString(state):
                     raise ValueError(f"Device strings differ in tree structure " +
-                                     f"({deviceString} vs {self._formatDeviceString(state)} " +
+                                     f"({deviceString} vs {DatConverter._formatDeviceString(state)} " +
                                      f"at {series_index}.{state_index})")
 
         # check trace properties
@@ -253,7 +258,7 @@ class DatConverter:
 
         session_description = PLACEHOLDER
         identifier = sha256(b'%d_' % self.bundle.header.Time + str.encode(datetime.now().isoformat())).hexdigest()
-        self.session_start_time = self._convertTimestamp(self.bundle.header.Time)
+        self.session_start_time = DatConverter._convertTimestamp(self.bundle.header.Time)
         creatorName = "PatchMaster"
         creatorVersion = self.bundle.header.Version
         experiment_description = f"{creatorName} {creatorVersion}"
@@ -275,7 +280,7 @@ class DatConverter:
         Create a pynwb Device object from the DAT file contents.
         """
 
-        name = self._formatDeviceString(self.bundle.amp[0][0])
+        name = DatConverter._formatDeviceString(self.bundle.amp[0][0])
 
         return Device(name)
 
@@ -316,11 +321,12 @@ class DatConverter:
                         sweepIndex = sweep.SweepCount - 1
                         data = convertDataset(stimset[sweepIndex])
 
-                        electrode = electrodes[self.electrodeDict[self._generateElectrodeKey(trace)]]
+                        electrodeKey = DatConverter._generateElectrodeKey(trace)
+                        electrode = electrodes[self.electrodeDict[electrodeKey]]
                         gain = 1.0
                         resolution = np.nan
                         stimulus_description = series.Label
-                        starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
+                        starting_time = (DatConverter._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / stimRec.SampleInterval
                         description = json.dumps({"cycle_id": cycle_id,
                                                   "file": os.path.basename(self.bundle.file_name),
@@ -333,7 +339,7 @@ class DatConverter:
                         assert channelRec_index is not None, "Unexpected channel record index"
 
                         ampState = DatConverter._getAmplifierState(self.bundle, series, trace_index)
-                        clampMode = self._getClampMode(ampState, trace)
+                        clampMode = DatConverter._getClampMode(ampState, trace)
 
                         if clampMode == V_CLAMP_MODE:
                             conversion, unit = 1e-3, "V"
@@ -384,10 +390,11 @@ class DatConverter:
                             gain = np.nan
 
                         conversion, unit = parseUnit(trace.YUnit)
-                        electrode = electrodes[self.electrodeDict[self._generateElectrodeKey(trace)]]
+                        electrodeKey = DatConverter._generateElectrodeKey(trace)
+                        electrode = electrodes[self.electrodeDict[electrodeKey]]
 
                         resolution = np.nan
-                        starting_time = (self._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
+                        starting_time = (DatConverter._convertTimestamp(sweep.Time) - self.session_start_time).total_seconds()
                         rate = 1.0 / trace.XInterval
                         description = json.dumps({"cycle_id": cycle_id,
                                                   "file": os.path.basename(self.bundle.file_name),
@@ -395,7 +402,7 @@ class DatConverter:
                                                   "series_label": series.Label,
                                                   "sweep_label": sweep.Label},
                                                  sort_keys=True, indent=4)
-                        clampMode = self._getClampMode(ampState, trace)
+                        clampMode = DatConverter._getClampMode(ampState, trace)
                         seriesClass = getAcquiredSeriesClass(clampMode)
                         stimulus_description = series.Label
 
