@@ -18,7 +18,7 @@ import os
 import subprocess
 
 from ipfx.x_to_nwb.ABFConverter import ABFConverter
-from ipfx.x_to_nwb.utils import createCycleID
+from ipfx.x_to_nwb.conversion_utils import createCycleID
 from ipfx.bin.run_x_to_nwb_conversion import convert
 from .test_x_nwb_helper import fetch_and_extract_zip
 
