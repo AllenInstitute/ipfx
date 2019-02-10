@@ -16,7 +16,7 @@ def fetch_pipeline_file(request):
 
     nwb_file_full_path = os.path.join(TEST_DATA_PATH, nwb_file_name)
 
-    if not os.path.exists(nwb_file_name):
+    if not os.path.exists(nwb_file_full_path):
         ct = CellTypesApi()
         ct.save_ephys_data(specimen_id, nwb_file_full_path)
 
