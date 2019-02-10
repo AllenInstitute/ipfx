@@ -9,7 +9,7 @@ def test_input_resistance():
     i1 = np.ones_like(t) * -50.
     i2 = np.ones_like(t) * -100.
 
-    ri = subf.input_resistance([t,t], [i1, i2], [v1,v2], 0, t[-1])
+    ri = subf.input_resistance([t, t], [i1, i2], [v1, v2], 0, t[-1])
 
     assert np.allclose(ri, 100.)
 

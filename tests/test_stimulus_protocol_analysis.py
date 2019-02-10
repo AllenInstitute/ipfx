@@ -27,6 +27,7 @@ def test_find_rheobase_sweep(long_square_analysis, spiking_sweep_features):
     rheobase_sweep = long_square_analysis.find_rheobase_sweep(spiking_features_with_negative_amplitude)
     assert rheobase_sweep["stim_amp"] == 20
 
+
 def test_find_hero_sweep(long_square_analysis, spiking_sweep_features):
 
     spiking_features_with_negative_amplitude = spiking_sweep_features
@@ -35,4 +36,3 @@ def test_find_hero_sweep(long_square_analysis, spiking_sweep_features):
 
     hero_sweep = long_square_analysis.find_hero_sweep(rheobase_i, spiking_sweep_features)
     assert hero_sweep["stim_amp"] == 60
-

@@ -59,4 +59,3 @@ collect_ignore = []
 if sys.version_info[0] < 3:
     collect_ignore.append("test_x_nwb.py")
     collect_ignore.append("test_x_nwb_helper.py")
-

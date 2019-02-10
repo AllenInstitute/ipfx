@@ -21,7 +21,7 @@ def ontology():
                              ])
 
 
-@pytest.mark.parametrize('ontology, NWB_file',[(None,'2018_03_20_0005.nwb')], indirect=True)
+@pytest.mark.parametrize('ontology, NWB_file', [(None, '2018_03_20_0005.nwb')], indirect=True)
 def test_main_abf(ontology, NWB_file):
 
     dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
@@ -40,7 +40,7 @@ def test_main_abf(ontology, NWB_file):
     compare_dicts(expected, dataset.sweep_table.to_dict())
 
 
-@pytest.mark.parametrize('ontology, NWB_file',[(None,'H18.28.015.11.14.nwb')], indirect=True)
+@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
 def test_main_dat(ontology, NWB_file):
 
     dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)

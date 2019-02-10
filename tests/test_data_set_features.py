@@ -5,7 +5,7 @@ from ipfx.error import FeatureError
 
 def test_select_subthreshold_min_amplitude():
 
-    a = [ 10, 10, 10, 10 ]
+    a = [10, 10, 10, 10]
     with pytest.raises(IndexError):
         min_amp, delta = dsft.select_subthreshold_min_amplitude(a)
 
@@ -41,6 +41,3 @@ def test_select_subthreshold_min_amplitude():
     min_amp, delta = dsft.select_subthreshold_min_amplitude(a)
     assert delta == 20
     assert min_amp == -100
-
-
-

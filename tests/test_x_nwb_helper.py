@@ -25,8 +25,6 @@ import os
 import glob
 from zipfile import ZipFile, ZIP_DEFLATED
 
-import pyabf
-
 from ipfx.x_to_nwb.ABFConverter import ABFConverter
 from ipfx.bin.run_x_to_nwb_conversion import convert
 
@@ -97,7 +95,6 @@ def fetch_and_extract_zip(filename, base_url = BASE_URL):
             print(f"Extracting {filename} into {folder}, please be patient.")
             f.testzip()
             f.extractall(folder)
-
 
 
 def create_files_for_upload(ext):

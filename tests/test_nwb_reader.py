@@ -6,7 +6,7 @@ from ipfx.nwb_reader import create_nwb_reader, NwbMiesReader, NwbPipelineReader,
 from helpers_for_tests import compare_dicts
 from allensdk.api.queries.cell_types_api import CellTypesApi
 
-TEST_DATA_PATH = os.path.join(os.path.dirname(__file__),'data')
+TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
 
 @pytest.fixture(scope="session", params=[595570553])
@@ -330,6 +330,7 @@ def test_valid_v1_full_MIES_3(NWB_file):
 
     assert sweep_data_ref == sweep_data
 
+
 @pytest.mark.parametrize('NWB_file', ['2018_03_20_0005.nwb'], indirect=True)
 def test_valid_v2_full_ABF(NWB_file):
 
@@ -380,7 +381,7 @@ def test_valid_v2_full_ABF(NWB_file):
     assert sweep_data_ref == sweep_data
 
 
-@pytest.mark.parametrize('NWB_file',['H18.28.015.11.14.nwb'], indirect=True)
+@pytest.mark.parametrize('NWB_file', ['H18.28.015.11.14.nwb'], indirect=True)
 def test_valid_v2_full_DAT(NWB_file):
     reader = create_nwb_reader(NWB_file)
     assert isinstance(reader, NwbXReader)
