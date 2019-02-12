@@ -94,9 +94,16 @@ def convertDataFormatToNP(dataFormat):
     return d[dataFormat]
 
 
-# aka clamp mode
-def getADCMode(byte):
+def getClampMode(byte):
     return getFromList(["TestMode", "VCMode", "CCMode", "NoMode"], byte)
+
+
+def getAmplMode(byte):
+    return getFromList(["Any", "VCMode", "CCMode", "IDensityMode"], byte)
+
+
+def getADCMode(byte):
+    return getFromList(["AdcOff", "Analog", "Digitals", "Digital", "AdcVirtual"], byte)
 
 
 def convertDataKind(byte):
@@ -309,7 +316,7 @@ class AmplifierState(Struct):
         ('ADBoard', 'b', getADBoard),         # (* BYTE *)
         ('BoardVersion', 'b'),                # (* BYTE *)
         ('ActiveE9Board', 'b'),               # (* BYTE *)
-        ('Mode', 'b'),                        # (* BYTE *)
+        ('Mode', 'b', getClampMode),          # (* BYTE *)
                                               # Modes = (TestMode, VCMode,
                                               #          CCMode, NoMode => (* AmplifierState is invalid *));
         ('Range', 'b'),                       # (* BYTE *)
@@ -671,47 +678,47 @@ class StimulationRecord(TreeNode):
 
 class ChannelRecordStimulus(TreeNode):
     field_info = [
-        ('Mark', 'i'),                 # (* INT32 *)
-        ('LinkedChannel', 'i'),        # (* INT32 *)
-        ('CompressionFactor', 'i'),    # (* INT32 *)
-        ('YUnit', '8s', cstr),         # (* String8Type *)
-        ('AdcChannel', 'H'),           # (* INT16 *)
-        ('AdcMode', 'b', getADCMode),  # (* BYTE *)
-                                       # AdcType = ( AdcOff,
-                                       #             Analog,
-                                       #             Digitals,
-                                       #             Digital,
-                                       #             AdcVirtual );
-        ('DoWrite', '?'),              # (* BOOLEAN *)
-        ('LeakStore', 'b'),            # (* BYTE *)
-                                       # LeakStoreType = ( LNone,
-                                       #                   LStoreAvg,
-                                       #                   LStoreEach,
-                                       #                   LNoStore );
-        ('AmplMode', 'b'),             # (* BYTE *)
-                                       # AmplModeType         = ( AnyAmplMode,
-                                       #                          VCAmplMode,
-                                       #                          CCAmplMode,
-                                       #                          IDensityMode );
-        ('OwnSegTime', '?'),           # (* BOOLEAN *)
-        ('SetLastSegVmemb', '?'),      # (* BOOLEAN *)
-        ('DacChannel', 'H'),           # (* INT16 *)
-        ('DacMode', 'b'),              # (* BYTE *)
-        ('HasLockInSquare', 'b'),      # (* BYTE *)
-        ('RelevantXSegment', 'i'),     # (* INT32 *)
-        ('RelevantYSegment', 'i'),     # (* INT32 *)
-        ('DacUnit', '8s', cstr),       # (* String8Type *)
-        ('Holding', 'd'),              # (* LONGREAL *)
-        ('LeakHolding', 'd'),          # (* LONGREAL *)
-        ('LeakSize', 'd'),             # (* LONGREAL *)
-        ('LeakHoldMode', 'b'),         # (* BYTE *)
-                                       # LeakHoldType = ( Labs,
-                                       #                  Lrel,
-                                       #                  LabsLH,
-                                       #                  LrelLH );
-        ('LeakAlternate', '?'),        # (* BOOLEAN *)
-        ('AltLeakAveraging', '?'),     # (* BOOLEAN *)
-        ('LeakPulseOn', '?'),          # (* BOOLEAN *)
+        ('Mark', 'i'),                   # (* INT32 *)
+        ('LinkedChannel', 'i'),          # (* INT32 *)
+        ('CompressionFactor', 'i'),      # (* INT32 *)
+        ('YUnit', '8s', cstr),           # (* String8Type *)
+        ('AdcChannel', 'H'),             # (* INT16 *)
+        ('AdcMode', 'b', getADCMode),    # (* BYTE *)
+                                         # AdcType = ( AdcOff,
+                                         #             Analog,
+                                         #             Digitals,
+                                         #             Digital,
+                                         #             AdcVirtual );
+        ('DoWrite', '?'),                # (* BOOLEAN *)
+        ('LeakStore', 'b'),              # (* BYTE *)
+                                         # LeakStoreType = ( LNone,
+                                         #                   LStoreAvg,
+                                         #                   LStoreEach,
+                                         #                   LNoStore );
+        ('AmplMode', 'b', getAmplMode),  # (* BYTE *)
+                                         # AmplModeType = (AnyAmplMode,
+                                         #                 VCAmplMode,
+                                         #                 CCAmplMode,
+                                         #                 IDensityMode );
+        ('OwnSegTime', '?'),             # (* BOOLEAN *)
+        ('SetLastSegVmemb', '?'),        # (* BOOLEAN *)
+        ('DacChannel', 'H'),             # (* INT16 *)
+        ('DacMode', 'b'),                # (* BYTE *)
+        ('HasLockInSquare', 'b'),        # (* BYTE *)
+        ('RelevantXSegment', 'i'),       # (* INT32 *)
+        ('RelevantYSegment', 'i'),       # (* INT32 *)
+        ('DacUnit', '8s', cstr),         # (* String8Type *)
+        ('Holding', 'd'),                # (* LONGREAL *)
+        ('LeakHolding', 'd'),            # (* LONGREAL *)
+        ('LeakSize', 'd'),               # (* LONGREAL *)
+        ('LeakHoldMode', 'b'),           # (* BYTE *)
+                                         # LeakHoldType = ( Labs,
+                                         #                  Lrel,
+                                         #                  LabsLH,
+                                         #                  LrelLH );
+        ('LeakAlternate', '?'),          # (* BOOLEAN *)
+        ('AltLeakAveraging', '?'),       # (* BOOLEAN *)
+        ('LeakPulseOn', '?'),            # (* BOOLEAN *)
         ('StimToDacID', 'H', convertStimToDacID),  # (* SET16 *)
         ('CompressionMode', 'H'),     # (* SET16 *)
                                       # CompressionMode : Specifies how to the data
