@@ -4,10 +4,10 @@ import numpy as np
 import io
 import os
 import sys
-import urllib2
-import shutil
+from .helpers_for_tests import download_file
 
-TEST_DATA_PATH = os.path.join(os.path.dirname(__file__),'data')
+
+TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
 
 def load_array_from_zip_file(zip_file, file_name):
@@ -35,15 +35,11 @@ def spike_test_high_init_dvdt():
 @pytest.fixture()
 def NWB_file(request):
 
-    BASE_URL = "https://www.byte-physics.de/Downloads/allensdk-test-data/"
-
     nwb_file_name = request.param
     nwb_file_full_path = os.path.join(TEST_DATA_PATH, nwb_file_name)
 
     if not os.path.exists(nwb_file_full_path):
-        response = urllib2.urlopen(BASE_URL + nwb_file_name)
-        with open(nwb_file_full_path, "wb") as out_file:
-            shutil.copyfileobj(response, out_file)
+        download_file(nwb_file_name, nwb_file_full_path)
 
     return nwb_file_full_path
 
@@ -59,4 +55,3 @@ collect_ignore = []
 if sys.version_info[0] < 3:
     collect_ignore.append("test_x_nwb.py")
     collect_ignore.append("test_x_nwb_helper.py")
-

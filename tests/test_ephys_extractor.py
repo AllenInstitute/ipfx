@@ -35,13 +35,13 @@
 #
 import pytest
 import numpy as np
-from ipfx.feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
+from ipfx.feature_extractor import SpikeFeatureExtractor, SpikeTrainFeatureExtractor
 
 
 def test_extractors_no_values():
 
     SpikeFeatureExtractor()
-    SpikeTrainFeatureExtractor(start=0,end=0)
+    SpikeTrainFeatureExtractor(start=0, end=0)
 
 
 def test_extractor_wrong_inputs(spike_test_pair):
@@ -54,10 +54,10 @@ def test_extractor_wrong_inputs(spike_test_pair):
     ext = SpikeFeatureExtractor()
 
     with pytest.raises(IndexError):
-        ext.process([t],v,i)
+        ext.process([t], v, i)
 
     with pytest.raises(IndexError):
-        ext.process([t],[v],i)
+        ext.process([t], [v], i)
 
     with pytest.raises(ValueError):
         ext.process([t, t], [v], [i])
@@ -100,7 +100,7 @@ def test_extractor_on_zero_voltage():
     i = np.zeros_like(t)
 
     ext = SpikeFeatureExtractor()
-    spikes = ext.process(t, v, i)
+    ext.process(t, v, i)
 
 
 def test_extractor_on_variable_time_step(spike_test_var_dt):
@@ -127,5 +127,3 @@ def test_extractor_with_high_init_dvdt(spike_test_high_init_dvdt):
 
     expected_thresh_ind = np.array([11222, 16258, 24060])
     assert np.allclose(spikes["threshold_index"].values, expected_thresh_ind)
-
-

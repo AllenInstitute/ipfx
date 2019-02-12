@@ -115,3 +115,20 @@ This creates two PDFs named `file1.pdf` and `file2.pdf`.
 ```sh
 run_x_to_nwb_conversion.py --outputMetadata *.dat *.abf
 ```
+
+## Running the regression tests
+
+Currently only file level regressions tests exist which check that the
+conversion from DAT/ABF to NWB results in the same NWB files compared to earlier
+versions.
+
+For running the tests do the following:
+
+```sh
+cd tests
+py.test --collect-only --do-x-nwb-tests test_x_nwb.py
+py.test --do-x-nwb-tests --numprocesses auto test_x_nwb.py
+```
+
+The separate collection step is necessary as that can not be parallelized, see also
+https://github.com/pytest-dev/pytest-xdist/issues/18.
