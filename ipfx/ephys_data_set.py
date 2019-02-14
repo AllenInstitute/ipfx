@@ -100,7 +100,6 @@ class EphysDataSet(object):
 
         """
         Create an instance of the Sweep object from a data set sweep
-        Time t=0 is set to the start of the experiment epoch
 
         Parameters
         ----------
@@ -115,20 +114,22 @@ class EphysDataSet(object):
         sweep_meta_data = self.get_sweep_meta_data(sweep_number)
         sampling_rate = sweep_data['sampling_rate']
         dt = 1. / sampling_rate
-        sweep_start_ix, sweep_end_ix = ep.get_sweep_epoch(sweep_data['response'])
+        t = np.arange(0, len(sweep_data['stimulus'])) * dt
+        assert len(sweep_data['stimulus']) == len(sweep_data['response'])
 
-        response = sweep_data['response'][sweep_start_ix:sweep_end_ix+1]
-        stimulus = sweep_data['stimulus'][sweep_start_ix:sweep_end_ix+1]
-        t = np.arange(sweep_start_ix, sweep_end_ix + 1) * dt
+        try:
+            epochs = sweep_data['epochs']
+        except KeyError:
+            epochs = {}
 
         clamp_mode = self.get_clamp_mode(sweep_meta_data['stimulus_units'])
 
         if clamp_mode == "VoltageClamp":
-            v = stimulus
-            i = response
+            v = sweep_data['stimulus']
+            i = sweep_data['response']
         elif clamp_mode == "CurrentClamp":
-            v = response
-            i = stimulus
+            v = sweep_data['response']
+            i = sweep_data['stimulus']
         else:
             raise Exception("Unable to determine clamp mode for sweep " + sweep_number)
 
@@ -138,6 +139,8 @@ class EphysDataSet(object):
                           i=i,
                           sampling_rate=sampling_rate,
                           sweep_number=sweep_number,
+                          clamp_mode=clamp_mode,
+                          epochs=epochs,
                           )
 
         except Exception:
