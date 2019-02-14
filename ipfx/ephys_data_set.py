@@ -28,7 +28,7 @@ class EphysDataSet(object):
 
     def __init__(self, ontology=None):
         self.sweep_table = None
-        self.ontology = ontology if ontology else StimulusOntology()
+        self.ontology = ontology
 
     def filtered_sweep_table(self,
                              current_clamp_only=False,
