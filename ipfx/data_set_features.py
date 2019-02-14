@@ -43,6 +43,8 @@ from . import stimulus_protocol_analysis as spa
 from . import stim_features as stf
 from . import feature_record as fr
 import error as er
+import ipfx.epochs as ep
+
 
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
@@ -124,7 +126,9 @@ def extract_sweep_features(data_set, sweep_table):
         sweep_numbers = sorted(sweep_numbers)
         logging.debug("%s:%s" % (stimulus_name, ','.join(map(str, sweep_numbers))))
 
-        sweep_set = data_set.stim_aligned_sweep_set(sweep_numbers)
+        sweep_set = data_set.sweep_set(sweep_numbers)
+        sweep_set.select_epoch("response")
+        stim_align_sweep_set(sweep_set)
 
         dp = detection_parameters(stimulus_name).copy()
         for k in [ "start", "end" ]:
@@ -153,7 +157,10 @@ def extract_cell_features(data_set,
     if len(long_square_sweep_numbers) == 0:
         raise er.FeatureError("No long_square sweeps available for feature extraction")
 
-    lsq_sweeps = data_set.stim_aligned_sweep_set(long_square_sweep_numbers)
+    lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
+    lsq_sweeps.select_epoch("response")
+    stim_align_sweep_set(lsq_sweeps)
+
     lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
 
 
@@ -176,7 +183,9 @@ def extract_cell_features(data_set,
     if len(short_square_sweep_numbers) == 0:
         raise er.FeatureError("No short square sweeps available for feature extraction")
 
-    ssq_sweeps = data_set.stim_aligned_sweep_set(short_square_sweep_numbers)
+    ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
+    ssq_sweeps.select_epoch("response")
+    stim_align_sweep_set(ssq_sweeps)
 
     ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
     logging.info("Short square stim start: %f, duration: %f", ssq_start, ssq_dur)
@@ -192,7 +201,9 @@ def extract_cell_features(data_set,
     if len(ramp_sweep_numbers) == 0:
         raise er.FeatureError("No ramp sweeps available for feature extraction")
 
-    ramp_sweeps = data_set.stim_aligned_sweep_set(ramp_sweep_numbers)
+    ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
+    ramp_sweeps.select_epoch("response")
+    stim_align_sweep_set(ramp_sweeps)
 
     ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
     logging.info("Ramp stim %f, %f", ramp_start, ramp_dur)
