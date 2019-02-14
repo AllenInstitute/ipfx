@@ -2,21 +2,84 @@ import numpy as np
 
 
 class Sweep(object):
-    def __init__(self, t, v, i, sampling_rate=None, sweep_number=None):
-        self.t = t
-        self.v = v
-        self.i = i
+    def __init__(self, t, v, i, clamp_mode, sampling_rate, sweep_number=None, epochs=None):
+        self._t = t
+        self._v = v
+        self._i = i
         self.sampling_rate = sampling_rate
         self.sweep_number = sweep_number
+        self.clamp_mode = clamp_mode
+        self.epochs = epochs
+        self.selected_epoch_name = "sweep"
 
-    def shift_time_by(self,time_steps):
+        if self.clamp_mode == "CurrentClamp":
+            self.response = self._v
+            self.stimulus = self._i
+        else:
+            self.response = self._i
+            self.stimulus = self._v
 
-        dt = 1. / self.sampling_rate
-        self.t = self.t - time_steps*dt
+        self.detect_missing_epochs()
 
     @property
-    def t_end(self):
-        return self.t[-1]
+    def t(self):
+        start_idx, end_idx = self.epochs[self.selected_epoch_name]
+        return self._t[start_idx:end_idx]
+
+    @property
+    def v(self):
+        start_idx, end_idx = self.epochs[self.selected_epoch_name]
+        return self._v[start_idx:end_idx]
+
+    @property
+    def i(self):
+        start_idx, end_idx = self.epochs[self.selected_epoch_name]
+        return self._i[start_idx:end_idx]
+
+    def select_epoch(self, epoch_name):
+        self.selected_epoch_name = epoch_name
+
+    def set_time_zero_to(self, time_steps):
+
+        dt = 1. / self.sampling_rate
+        self._t = self._t - time_steps*dt
+
+    def detect_missing_epochs(self):
+        """
+        If epochs are not provided in the constructor then detect them
+
+        """
+
+        epoch_detectors = {
+            "sweep": self.detect_sweep_epoch(),
+            "response": self.detect_response_epoch(),
+        }
+
+        for name, detector in epoch_detectors.items():
+            if name not in self.epochs:
+                self.epochs[name] = detector
+
+            start_idx, end_idx = self.epochs[name]
+
+            assert start_idx >= 0
+            assert end_idx >= 0
+
+    def detect_sweep_epoch(self):
+        """
+        index range of the entire sweep
+
+        """
+        return 0, len(self.response)
+
+    def detect_response_epoch(self):
+        """
+        index range from start to last nonzero response
+
+        """
+        return 0, np.flatnonzero(self.response)[-1]
+
+    def detect_experiment_epoch(self):
+        raise NotImplementedError
 
 
 class SweepSet(object):
@@ -25,6 +88,10 @@ class SweepSet(object):
 
     def _prop(self, prop):
         return [getattr(s, prop) for s in self.sweeps]
+
+    def select_epoch(self, epoch_name):
+        for sweep in self.sweeps:
+            sweep.select_epoch(epoch_name)
 
     @property
     def t(self):
@@ -37,10 +104,6 @@ class SweepSet(object):
     @property
     def i(self):
         return self._prop('i')
-
-    @property
-    def t_end(self):
-        return self._prop('t_end')
 
     @property
     def sweep_number(self):
