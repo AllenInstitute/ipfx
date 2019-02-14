@@ -161,18 +161,6 @@ class EphysDataSet(object):
     def aligned_sweeps(self, sweep_numbers, stim_onset_delta):
         raise NotImplementedError
 
-    def stim_aligned_sweep_set(self,sweep_numbers):
-
-        sweep_list = []
-        for sweep_number in sweep_numbers:
-            sweep = self.sweep(sweep_number)
-            expt_start_idx, _ = ep.get_experiment_epoch(sweep.i,sweep.sampling_rate)
-            sweep.shift_time_by(expt_start_idx)
-            sweep_list.append(sweep)
-
-        return SweepSet(sweep_list)
-
-
     def extract_sweep_meta_data(self):
         """
         Returns
