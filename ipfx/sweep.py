@@ -9,7 +9,12 @@ class Sweep(object):
         self.sampling_rate = sampling_rate
         self.sweep_number = sweep_number
         self.clamp_mode = clamp_mode
-        self.epochs = epochs
+
+        if epochs:
+            self.epochs = epochs
+        else:
+            self.epochs = {}
+
         self.selected_epoch_name = "sweep"
 
         if self.clamp_mode == "CurrentClamp":
