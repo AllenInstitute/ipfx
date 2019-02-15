@@ -29,29 +29,28 @@ class Sweep(object):
     @property
     def t(self):
         start_idx, end_idx = self.epochs[self.selected_epoch_name]
-        return self._t[start_idx:end_idx]
+        return self._t[start_idx:end_idx+1]
 
     @property
     def v(self):
         start_idx, end_idx = self.epochs[self.selected_epoch_name]
-        return self._v[start_idx:end_idx]
+        return self._v[start_idx:end_idx+1]
 
     @property
     def i(self):
         start_idx, end_idx = self.epochs[self.selected_epoch_name]
-        return self._i[start_idx:end_idx]
+        return self._i[start_idx:end_idx+1]
 
     def select_epoch(self, epoch_name):
         self.selected_epoch_name = epoch_name
 
-    def set_time_zero_to(self, time_steps):
-
+    def set_time_zero_to(self, time_step):
         dt = 1. / self.sampling_rate
-        self._t = self._t - time_steps*dt
+        self._t = self._t - time_step*dt
 
     def detect_missing_epochs(self):
         """
-        If epochs are not provided in the constructor then detect them
+        Detect epochs if they are not provided in the constructor
 
         """
 
@@ -71,15 +70,21 @@ class Sweep(object):
 
     def detect_sweep_epoch(self):
         """
-        index range of the entire sweep
+        Detect sweep epoch defined as interval including entire sweep
 
+        Returns
+        -------
+        start,end: int indices of the epoch
         """
         return 0, len(self.response)
 
     def detect_response_epoch(self):
         """
-        index range from start to last nonzero response
+        Detect response epoch defined as interval from start to the last non-zero value of the response
 
+        Returns
+        -------
+        start,end: int indices of the epoch
         """
         return 0, np.flatnonzero(self.response)[-1]
 
