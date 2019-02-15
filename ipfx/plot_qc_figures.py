@@ -111,6 +111,7 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
         hz = 1./dt
         expt_start_idx, _ = ep.get_experiment_epoch(i,hz)
         t = t - expt_start_idx*dt
+        stim_start_shifted = stim_start - expt_start_idx*dt
         plt.plot(t, v, color='black')
         plt.title(str(sn))
 
@@ -145,7 +146,7 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
             if nspikes:
                 plt.xlim(spikes[0]["threshold_t"] - 0.002, spikes[0]["fast_trough_t"] + 0.01)
         elif type_name == "short_square":
-            plt.xlim(stim_start - 0.002, stim_start + stim_dur + 0.01)
+            plt.xlim(stim_start_shifted - 0.002, stim_start_shifted + stim_dur + 0.01)
         elif type_name == "long_square":
             plt.xlim(times[0]- 0.002, times[-2] + 0.002)
 
@@ -174,8 +175,7 @@ def plot_sweep_figures(data_set, image_dir, sizes):
             if r_init[0] <= 0:
                 r_init = (5000,r_init[1])
 
-            tp_steps = r_init[0]
-            tp_len = tp_steps*dt_init
+            tp_steps = int(0.1/dt_init)
             tp_fig = plt.figure()
             axTP = plt.gca()
             axTP.set_title(str(sweep_number))
@@ -210,8 +210,7 @@ def plot_sweep_figures(data_set, image_dir, sizes):
             if r[0] <= 0:       # This happens when stimulus starts less than 0.5 s after test pulse
                 r = (5000,r[1]) # Manually set start of experiment to a default positive value
 
-            tp_steps = r[0]
-            tp_len = tp_steps*dt
+            tp_steps = int(0.1/dt_init)
 
             tp_fig = plt.figure()
             axTP = plt.gca()
