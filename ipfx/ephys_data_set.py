@@ -3,7 +3,6 @@ import re
 
 import numpy as np
 from ipfx.stimulus import StimulusOntology
-import ipfx.epochs as ep
 from ipfx.sweep import Sweep,SweepSet
 
 
@@ -28,7 +27,7 @@ class EphysDataSet(object):
 
     def __init__(self, ontology=None):
         self.sweep_table = None
-        self.ontology = ontology
+        self.ontology = ontology if ontology else StimulusOntology()
 
     def filtered_sweep_table(self,
                              current_clamp_only=False,
@@ -82,7 +81,6 @@ class EphysDataSet(object):
 
     def get_sweep_meta_data(self, sweep_number):
         """
-
         Parameters
         ----------
         sweep_number: int sweep number
@@ -99,15 +97,15 @@ class EphysDataSet(object):
     def sweep(self, sweep_number):
 
         """
-        Create an instance of the Sweep object from a data set sweep
+        Create an instance of the Sweep class with the data loaded from the from a file
 
         Parameters
         ----------
-        sweep_number
+        sweep_number: int
 
         Returns
         -------
-        Sweep object
+        sweep: Sweep object
         """
 
         sweep_data = self.get_sweep_data(sweep_number)
@@ -115,12 +113,8 @@ class EphysDataSet(object):
         sampling_rate = sweep_data['sampling_rate']
         dt = 1. / sampling_rate
         t = np.arange(0, len(sweep_data['stimulus'])) * dt
-        assert len(sweep_data['stimulus']) == len(sweep_data['response'])
 
-        try:
-            epochs = sweep_data['epochs']
-        except KeyError:
-            epochs = {}
+        epochs = sweep_data.get('epochs')
 
         clamp_mode = self.get_clamp_mode(sweep_meta_data['stimulus_units'])
 
