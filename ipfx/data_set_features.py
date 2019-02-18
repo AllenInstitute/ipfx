@@ -127,8 +127,8 @@ def extract_sweep_features(data_set, sweep_table):
         logging.debug("%s:%s" % (stimulus_name, ','.join(map(str, sweep_numbers))))
 
         sweep_set = data_set.sweep_set(sweep_numbers)
-        sweep_set.select_epoch("response")
-        stim_align_sweep_set(sweep_set)
+        sweep_set.select_epoch("recording")
+        sweep_set.align_to_start_of_epoch("experiment")
 
         dp = detection_parameters(stimulus_name).copy()
         for k in [ "start", "end" ]:
@@ -158,11 +158,10 @@ def extract_cell_features(data_set,
         raise er.FeatureError("No long_square sweeps available for feature extraction")
 
     lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
-    lsq_sweeps.select_epoch("response")
-    stim_align_sweep_set(lsq_sweeps)
+    lsq_sweeps.select_epoch("recording")
+    lsq_sweeps.align_to_start_of_epoch("experiment")
 
     lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
-
 
     logging.info("Analyzing Long Square")
     logging.info("Long square stim start: %f, duration: %f", lsq_start, lsq_dur)
@@ -184,8 +183,8 @@ def extract_cell_features(data_set,
         raise er.FeatureError("No short square sweeps available for feature extraction")
 
     ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
-    ssq_sweeps.select_epoch("response")
-    stim_align_sweep_set(ssq_sweeps)
+    ssq_sweeps.select_epoch("recording")
+    ssq_sweeps.align_to_start_of_epoch("experiment")
 
     ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
     logging.info("Short square stim start: %f, duration: %f", ssq_start, ssq_dur)
@@ -202,8 +201,8 @@ def extract_cell_features(data_set,
         raise er.FeatureError("No ramp sweeps available for feature extraction")
 
     ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
-    ramp_sweeps.select_epoch("response")
-    stim_align_sweep_set(ramp_sweeps)
+    ramp_sweeps.select_epoch("recording")
+    ramp_sweeps.align_to_start_of_epoch("experiment")
 
     ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
     logging.info("Ramp stim %f, %f", ramp_start, ramp_dur)
@@ -222,7 +221,7 @@ def stim_align_sweep_set(sweep_set):
 
     for sweep in sweep_set.sweeps:
         expt_start_idx, _ = ep.get_experiment_epoch(sweep.i,sweep.sampling_rate)
-        sweep.set_time_zero_to(expt_start_idx)
+        sweep.set_time_zero_to_index(expt_start_idx)
 
 
 def select_subthreshold_min_amplitude(stim_amps, decimals=0):
