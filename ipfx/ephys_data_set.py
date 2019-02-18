@@ -115,7 +115,6 @@ class EphysDataSet(object):
         t = np.arange(0, len(sweep_data['stimulus'])) * dt
 
         epochs = sweep_data.get('epochs')
-
         clamp_mode = self.get_clamp_mode(sweep_meta_data['stimulus_units'])
 
         if clamp_mode == "VoltageClamp":

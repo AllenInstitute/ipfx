@@ -19,7 +19,7 @@ def test_select_epoch(sweep):
     i_sweep = sweep.i
     v_sweep = sweep.v
 
-    sweep.select_epoch("response")
+    sweep.select_epoch("recording")
     assert sweep.i == [0,0,1,1,0,0,0,2,2,2,2]
     assert sweep.v == [0,0,1,2,1,0,0,1,2,3,1]
 
@@ -28,10 +28,10 @@ def test_select_epoch(sweep):
     assert sweep.v == v_sweep
 
 
-def test_set_time_zero_to(sweep):
+def test_set_time_zero_to_index(sweep):
 
     t0_idx = 7
-    sweep.set_time_zero_to(t0_idx)
+    sweep.set_time_zero_to_index(t0_idx)
 
     assert np.isclose(sweep.t[t0_idx], 0.0)
 
