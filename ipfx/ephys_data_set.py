@@ -1,3 +1,4 @@
+import warnings
 import logging
 import re
 
@@ -194,6 +195,13 @@ class EphysDataSet(object):
         if not self.ontology:
             raise ValueError("Missing stimulus ontology")
 
-        stim = self.ontology.find_one(stim_code, tag_type="code")
-        return stim.tags(tag_type="name")[0][-1]
+        try:
+            stim = self.ontology.find_one(stim_code, tag_type="code")
+            return stim.tags(tag_type="name")[0][-1]
 
+        except KeyError:
+            if self.validate_stim:
+                raise
+            else:
+                warnings.warn("Stimulus code {} is not in the ontology".format(stim_code))
+                return
