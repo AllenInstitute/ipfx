@@ -91,9 +91,7 @@ class AibsDataSet(EphysDataSet):
 
             sweep_record["stimulus_code_ext"] = stim_code_ext
             sweep_record["stimulus_code"] = stim_code
-
-            if self.validate_stim:
-                sweep_record["stimulus_name"] = self.get_stimulus_name(stim_code)
+            sweep_record["stimulus_name"] = self.get_stimulus_name(stim_code)
 
             sweep_props.append(sweep_record)
 
