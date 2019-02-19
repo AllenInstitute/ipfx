@@ -53,11 +53,11 @@ class Segment(ABC):
     def __init__(self, stimRec, channelRec, segmentRec):
         self.xDelta = {"mode": segmentRec.DurationIncMode,
                        "factor": segmentRec.DeltaTFactor,
-                       "offset": segmentRec.DeltaTIncrement}
+                       "inc": segmentRec.DeltaTIncrement}
 
         self.yDelta = {"mode": segmentRec.VoltageIncMode,
                        "factor": segmentRec.DeltaVFactor,
-                       "offset": segmentRec.DeltaVIncrement}
+                       "inc": segmentRec.DeltaVIncrement}
 
         self.duration = segmentRec.Duration
         self.sampleInterval = stimRec.SampleInterval
@@ -79,7 +79,7 @@ class Segment(ABC):
         Return true if delta mode is active, false otherwise.
         """
 
-        return deltaDict["factor"] != 1.0 or deltaDict["offset"] != 0.0
+        return deltaDict["factor"] != 1.0 or deltaDict["inc"] != 0.0
 
     @staticmethod
     def _applyDelta(deltaDict, val):
@@ -93,7 +93,7 @@ class Segment(ABC):
             if deltaDict["mode"] != "Inc":
                 raise ValueError(f"Increment mode {deltaDict['mode']} is not supported.")
 
-            return deltaDict["factor"] * val + deltaDict["offset"]
+            return deltaDict["factor"] * val + deltaDict["inc"]
 
         return val
 
