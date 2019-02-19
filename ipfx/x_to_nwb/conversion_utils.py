@@ -167,3 +167,17 @@ def getChannelRecordIndex(pgf, sweep, trace):
             return idx
 
     return None
+
+
+def clampModeToString(clampMode):
+    """
+    Return the given clamp mode as human readable string. Useful for error
+    messages.
+    """
+
+    if clampMode == I_CLAMP_MODE:
+        return "I_CLAMP_MODE"
+    elif clampMode == V_CLAMP_MODE:
+        return "V_CLAMP_MODE"
+    else:
+        raise ValueError(f"Unknown clampMode {clampMode}")
