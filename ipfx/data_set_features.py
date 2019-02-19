@@ -217,13 +217,6 @@ def extract_cell_features(data_set,
     return cell_features
 
 
-def stim_align_sweep_set(sweep_set):
-
-    for sweep in sweep_set.sweeps:
-        expt_start_idx, _ = ep.get_experiment_epoch(sweep.i,sweep.sampling_rate)
-        sweep.set_time_zero_to_index(expt_start_idx)
-
-
 def select_subthreshold_min_amplitude(stim_amps, decimals=0):
     """Find the min delta between amplitudes of coarse long square sweeps.  Includes failed sweeps.
 
