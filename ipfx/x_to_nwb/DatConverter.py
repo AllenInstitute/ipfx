@@ -290,16 +290,16 @@ class DatConverter:
         return len(ampState.StateVersion) > 0
 
     @staticmethod
-    def _getAmplifierState(bundle, series, trace_index):
+    def _getAmplifierState(bundle, series, trace):
         """
         Different PatchMaster versions create different DAT file layouts. This function tries
         to accomodate that as it returns the correct object.
 
         Parameters
         ----------
-        bundle:  Bundle
+        bundle: Bundle
         series: SeriesRecord
-        trace_index: running 0-based index of the trace
+        trace: TraceRecord
 
         Returns
         -------
@@ -313,10 +313,13 @@ class DatConverter:
             return ampState
 
         # newer Patchmaster versions store it in the Amplifier tree
-        ampState = bundle.amp[series.AmplStateSeries - 1][trace_index].AmplifierState
+        if bundle.amp:
+            seriesIndex = series.AmplStateSeries - 1
+            stateIndex = trace.AmplIndex - 1
+            ampState = bundle.amp[seriesIndex][stateIndex].AmplifierState
 
-        if DatConverter._isValidAmplifierState(ampState):
-            return ampState
+            if DatConverter._isValidAmplifierState(ampState):
+                return ampState
 
         # and sometimes we got nothing at all
         return None
@@ -474,7 +477,7 @@ class DatConverter:
                     cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount],
                                              total=self.totalSeriesCount)
                     stimRec = self.bundle.pgf[getStimulusRecordIndex(sweep)]
-                    for trace_index, trace in enumerate(sweep):
+                    for trace in sweep:
                         stimset = generator.fetch(sweep, trace)
 
                         if not len(stimset):
@@ -500,7 +503,7 @@ class DatConverter:
                                                   "sweep_label": sweep.Label},
                                                  sort_keys=True, indent=4)
 
-                        ampState = DatConverter._getAmplifierState(self.bundle, series, trace_index)
+                        ampState = DatConverter._getAmplifierState(self.bundle, series, trace)
                         clampMode = DatConverter._getClampMode(ampState, cycle_id, trace)
 
                         if clampMode == V_CLAMP_MODE:
@@ -549,11 +552,11 @@ class DatConverter:
                 for sweep in series:
                     cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount],
                                              total=self.totalSeriesCount)
-                    for trace_index, trace in enumerate(sweep):
+                    for trace in sweep:
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = convertDataset(self.bundle.data[trace])
 
-                        ampState = DatConverter._getAmplifierState(self.bundle, series, trace_index)
+                        ampState = DatConverter._getAmplifierState(self.bundle, series, trace)
 
                         if ampState:
                             gain = ampState.Gain
