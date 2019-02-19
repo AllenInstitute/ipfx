@@ -14,7 +14,7 @@ from ipfx.x_to_nwb.hr_bundle import Bundle
 from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
 from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
-     getPackageInfo, getStimulusRecordIndex, createCycleID
+     getPackageInfo, getStimulusRecordIndex, createCycleID, clampModeToString
 
 
 class DatConverter:
@@ -103,21 +103,32 @@ class DatConverter:
             bundle._all_info(root + ".txt")
 
     @staticmethod
-    def _getClampMode(ampState, trace):
+    def _getClampMode(ampState, cycle_id, trace):
         """
         Return the clamp mode of the given amplifier state node and trace.
 
         Parameters
         ----------
         ampState : AmplifierState as returned by _getAmplifierState()
-        trace : TraceRecord of the given trace
+        cycle_id: Cycle identifier
+        trace : TraceRecord
 
         Returns
         -------
         A valid clamp mode, one of V_CLAMP_MODE or I_CLAMP_MODE
         """
 
-        if ampState:
+        def getClampModeFromUnit(trace):
+            unit = trace.YUnit
+
+            if unit == "A":
+                return V_CLAMP_MODE
+            elif unit == "V":
+                return I_CLAMP_MODE
+            else:
+                raise ValueError(f"Unknown unit {unit}")
+
+        def getClampModeFromAmpState(ampState):
             clampMode = ampState.Mode
 
             if clampMode == "VCMode":
@@ -127,16 +138,18 @@ class DatConverter:
             else:
                 raise ValueError(f"Unknown clamp mode {clampMode}")
 
+        if ampState:
+            clampMode = getClampModeFromAmpState(ampState)
+
+            if clampMode != getClampModeFromUnit(trace):
+                warnings.warn(f"Unit and clamp mode does not match for {cycle_id} "
+                              f"({trace.YUnit} unit vs. {clampModeToString(clampMode)}")
+
+            return clampMode
+
         warnings.warn("No amplifier state available, falling back to AD unit heuristics.")
 
-        unit = trace.YUnit
-
-        if unit == "A":
-            return V_CLAMP_MODE
-        elif unit == "V":
-            return I_CLAMP_MODE
-        else:
-            raise ValueError(f"Unknown unit {unit}")
+        return getClampModeFromUnit(trace)
 
     def _getMaxTimeSeriesCount(self):
         """
@@ -488,7 +501,7 @@ class DatConverter:
                                                  sort_keys=True, indent=4)
 
                         ampState = DatConverter._getAmplifierState(self.bundle, series, trace_index)
-                        clampMode = DatConverter._getClampMode(ampState, trace)
+                        clampMode = DatConverter._getClampMode(ampState, cycle_id, trace)
 
                         if clampMode == V_CLAMP_MODE:
                             conversion, unit = 1e-3, "V"
@@ -560,7 +573,7 @@ class DatConverter:
                                                   "series_label": series.Label,
                                                   "sweep_label": sweep.Label},
                                                  sort_keys=True, indent=4)
-                        clampMode = DatConverter._getClampMode(ampState, trace)
+                        clampMode = DatConverter._getClampMode(ampState, cycle_id, trace)
                         seriesClass = getAcquiredSeriesClass(clampMode)
                         stimulus_description = series.Label
 
