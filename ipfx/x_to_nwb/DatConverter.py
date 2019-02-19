@@ -14,7 +14,7 @@ from ipfx.x_to_nwb.hr_bundle import Bundle
 from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
 from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
-     getPackageInfo, getChannelRecordIndex, getStimulusRecordIndex, createCycleID
+     getPackageInfo, getStimulusRecordIndex, createCycleID
 
 
 class DatConverter:
@@ -486,9 +486,6 @@ class DatConverter:
                                                   "series_label": series.Label,
                                                   "sweep_label": sweep.Label},
                                                  sort_keys=True, indent=4)
-
-                        channelRec_index = getChannelRecordIndex(self.bundle.pgf, sweep, trace)
-                        assert channelRec_index is not None, "Unexpected channel record index"
 
                         ampState = DatConverter._getAmplifierState(self.bundle, series, trace_index)
                         clampMode = DatConverter._getClampMode(ampState, trace)
