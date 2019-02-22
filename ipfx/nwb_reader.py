@@ -217,8 +217,6 @@ class NwbXReader(NwbReader):
             elif response is None:
                 raise ValueError("Could not find one response TimeSeries for sweep number {}.".format(sweep_number))
 
-            assert len(stimulus) == len(response), "Stimulus and response have a different length."
-
             return {
                 'stimulus': stimulus,
                 'response': response,

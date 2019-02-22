@@ -127,6 +127,10 @@ class EphysDataSet(object):
         else:
             raise Exception("Unable to determine clamp mode for sweep " + sweep_number)
 
+        if len(sweep_data['stimulus']) != len(sweep_data['response']):
+            warnings.warn("Stimulus duration {} is not equal reponse duration {}".
+                          format(len(sweep_data['stimulus']),len(sweep_data['response'])))
+
         try:
             sweep = Sweep(t=t,
                           v=v,
