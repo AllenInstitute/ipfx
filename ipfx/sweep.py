@@ -130,3 +130,7 @@ class SweepSet(object):
     @property
     def sweep_number(self):
         return self._prop('sweep_number')
+
+    @property
+    def sampling_rate(self):
+        return self._prop('sampling_rate')
