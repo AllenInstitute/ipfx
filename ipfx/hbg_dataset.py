@@ -7,10 +7,10 @@ from .ephys_data_set import EphysDataSet
 
 
 class HBGDataSet(EphysDataSet):
-    def __init__(self, sweep_info=None, nwb_file=None, ontology=None, api_sweeps=True):
+    def __init__(self, sweep_info=None, nwb_file=None, ontology=None, api_sweeps=True, validate_stim=True):
         super(HBGDataSet, self).__init__(ontology)
         self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
-
+        self.validate_stim = validate_stim
         if sweep_info is not None:
             sweep_info = self.modify_api_sweep_info(
                 sweep_info) if api_sweeps else sweep_info
