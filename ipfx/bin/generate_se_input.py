@@ -5,7 +5,6 @@ import argschema as ags
 import make_stimulus_ontology as mso
 import lims_queries as lq
 
-
 def generate_se_input(cell_dir,
                       specimen_id=None,
                       input_nwb_file=None,
@@ -14,11 +13,12 @@ def generate_se_input(cell_dir,
     se_input = dict()
 
     if specimen_id:
-        se_input['input_nwb_file'] = lq.get_input_nwb_file(specimen_id)
-        se_input['input_h5_file'] = lq.get_input_h5_file(specimen_id)
+        input_nwb_file = lq.get_input_nwb_file(specimen_id)
+        input_h5_file = lq.get_input_h5_file(specimen_id)
+        if input_h5_file:
+            se_input['input_h5_file'] = input_h5_file
 
-    elif input_nwb_file:
-        se_input['input_nwb_file'] = input_nwb_file
+    se_input['input_nwb_file'] = input_nwb_file
 
     stim_ontology_tags = mso.make_stimulus_ontology_from_lims()
     stim_ontology_json = os.path.join(cell_dir, 'stimulus_ontology.json')
