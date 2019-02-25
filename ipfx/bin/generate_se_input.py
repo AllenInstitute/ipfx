@@ -1,9 +1,9 @@
 import allensdk.core.json_utilities as ju
 import os
-from ipfx._schemas import GeneratePipelineInputParameters
-import argschema as ags
 import make_stimulus_ontology as mso
 import lims_queries as lq
+import argparse
+
 
 def generate_se_input(cell_dir,
                       specimen_id=None,
@@ -33,6 +33,18 @@ def generate_se_input(cell_dir,
     return se_input
 
 
+def parse_args():
+
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--specimen_id', type=int)
+    group.add_argument('--input_nwb_file', type=str)
+    parser.add_argument('--cell_dir', type=str, required=True)
+    args = parser.parse_args()
+
+    return vars(args)
+
+
 def main():
 
     """
@@ -42,14 +54,10 @@ def main():
 
     """
 
-    module = ags.ArgSchemaParser(schema_type=GeneratePipelineInputParameters)
-
-    kwargs = module.args
-    kwargs.pop("log_level")
-
+    kwargs = parse_args()
     se_input = generate_se_input(**kwargs)
 
-    input_json = os.path.join(kwargs["cell_dir"],'se_input.json')
+    input_json = os.path.join(kwargs["cell_dir"], 'se_input.json')
 
     ju.write(input_json, se_input)
 

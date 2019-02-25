@@ -80,12 +80,6 @@ class PipelineParameters(ArgSchema):
     manual_sweep_states = Nested(ManualSweepState, required=False, many=True)
 
 
-class GeneratePipelineInputParameters(ArgSchema):
-    specimen_id = Integer(description="specimen", required=False)
-    input_nwb_file = InputFile(description="input nwb file", required=False)
-    cell_dir = OutputFile(description="Cell directory", required=True)
-
-
 class OutputSchema(DefaultSchema):
     input_parameters = Nested(FeatureExtractionParameters,
                               description=("Input parameters the module "

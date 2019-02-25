@@ -1,9 +1,7 @@
-import argschema as ags
-from ipfx._schemas import GeneratePipelineInputParameters
 import ipfx.qc_protocol as qcp
 import allensdk.core.json_utilities as ju
 import os.path
-from generate_se_input import generate_se_input
+from generate_se_input import generate_se_input, parse_args
 import lims_queries as lq
 
 
@@ -42,16 +40,13 @@ def main():
 
     """
 
-    module = ags.ArgSchemaParser(schema_type=GeneratePipelineInputParameters)
-
-    kwargs = module.args
-    kwargs.pop("log_level")
-    cell_dir = kwargs["cell_dir"]
+    kwargs = parse_args()
     pipe_input = generate_pipeline_input(**kwargs)
+    cell_dir = kwargs["cell_dir"]
 
-    input_json = os.path.join(cell_dir,'pipeline_input.json')
+    input_json = os.path.join(cell_dir, 'pipeline_input.json')
 
-    ju.write(input_json,pipe_input)
+    ju.write(input_json, pipe_input)
 
 
 if __name__ == "__main__": main()
