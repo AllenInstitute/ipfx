@@ -1,11 +1,9 @@
 import os
 import allensdk.core.json_utilities as ju
 import ipfx.sweep_props as sp
-from ipfx._schemas import GeneratePipelineInputParameters
-import argschema as ags
 from run_sweep_extraction import run_sweep_extraction
 from generate_qc_input import generate_qc_input
-from generate_se_input import generate_se_input
+from generate_se_input import generate_se_input, parse_args
 from run_qc import run_qc
 import lims_queries as lq
 
@@ -50,11 +48,7 @@ def main():
 
     """
 
-    module = ags.ArgSchemaParser(schema_type=GeneratePipelineInputParameters)
-
-    kwargs = module.args
-    kwargs.pop("log_level")
-
+    kwargs = parse_args()
     se_input = generate_se_input(**kwargs)
     cell_dir = kwargs["cell_dir"]
 
@@ -67,7 +61,7 @@ def main():
                                      se_input.get("input_h5_file",None),
                                      se_input.get("stimulus_ontology_file", None))
 
-    ju.write(os.path.join(cell_dir,'se_output.json'),se_output)
+    ju.write(os.path.join(cell_dir, 'se_output.json'),se_output)
 
     sp.drop_incomplete_sweeps(se_output["sweep_features"])
     sp.remove_sweep_feature("completed", se_output["sweep_features"])
