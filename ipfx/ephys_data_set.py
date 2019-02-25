@@ -26,9 +26,10 @@ class EphysDataSet(object):
 
     current_clamp_units = ('Amps', 'pA')
 
-    def __init__(self, ontology=None):
+    def __init__(self, ontology=None, validate_stim=True):
         self.sweep_table = None
         self.ontology = ontology if ontology else StimulusOntology()
+        self.validate_stim = validate_stim
 
     def filtered_sweep_table(self,
                              current_clamp_only=False,

@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ipfx.data_set_utils import create_data_set
 
-DEFAULT_NWB_FILE_NAME ="/allen/programs/celltypes/workgroups/279/MIES Testing Spring 2018/Sst-IRES-CreAi14-395722.01.01.01.nwb"
-
 
 def plot_data_set(data_set, sweep_table, nwb_file_name):
 
@@ -15,14 +13,13 @@ def plot_data_set(data_set, sweep_table, nwb_file_name):
                            gridspec_kw={'height_ratios': height_ratios, 'width_ratios': width_ratios}
                            )
 
-    i_ax = 0
-    for stimulus_code, sweep_set_table in sweep_table.groupby("stimulus_code"):
+    for fig_row, (stimulus_code, sweep_set_table) in enumerate(sweep_table.groupby("stimulus_code")):
         sweep_numbers = sweep_set_table["sweep_number"].sort_values().values
         ss = data_set.sweep_set(sweep_numbers)
 
-        ax_a = ax[i_ax,0]
-        ax_i = ax[i_ax,1]
-        ax_v = ax[i_ax,2]
+        ax_a = ax[fig_row,0]
+        ax_i = ax[fig_row,1]
+        ax_v = ax[fig_row,2]
 
         plot_waveforms(ax_i, ss.i, ss.sampling_rate, ss.sweep_number)
         plot_waveforms(ax_v, ss.v, ss.sampling_rate, ss.sweep_number)
@@ -31,8 +28,6 @@ def plot_data_set(data_set, sweep_table, nwb_file_name):
         clamp_mode = sweep_set_table["clamp_mode"].values[0]
         ax_a.text(0, 0.0, "%s, %s " % (stimulus_code, clamp_mode))
         ax_a.axis('off')
-
-        i_ax += 1
 
     ax[0,0].set_title("Description")
     ax[0,1].set_title("Current")
@@ -52,7 +47,7 @@ def axes_ratios(sweep_table):
     height_ratios = []
     width_ratios = [1,3,3]
 
-    for name, sweep_set_table in sweep_table.groupby("stimulus_code"):
+    for _, sweep_set_table in sweep_table.groupby("stimulus_code"):
         height_ratios.append(len(sweep_set_table.index))
 
     return height_ratios, width_ratios
@@ -86,9 +81,7 @@ def customize_axis(ax):
 
 def get_vertical_offset(data):
 
-    offset = np.max(np.abs(data)) * 1.2
-
-    return offset
+    return np.max(np.abs(data)) * 1.2
 
 
 def main():
@@ -98,8 +91,7 @@ def main():
     $ python plot_ephys_nwb_file.py NWB_FILE_NAME
 
     """
-    if len(sys.argv) == 1:
-        sys.argv.append(DEFAULT_NWB_FILE_NAME)
+
     nwb_file = sys.argv[1]
     print "plotting file: %s" % nwb_file
 
