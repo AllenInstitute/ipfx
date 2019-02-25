@@ -10,10 +10,9 @@ import ipfx.nwb_reader as nwb_reader
 class AibsDataSet(EphysDataSet):
     def __init__(self, sweep_info=None, nwb_file=None, h5_file=None,
                  ontology=None, api_sweeps=True, validate_stim=True):
-        super(AibsDataSet, self).__init__(ontology)
+        super(AibsDataSet, self).__init__(ontology, validate_stim)
 
         self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
-        self.validate_stim = validate_stim
 
         if sweep_info is not None:
             sweep_info = self.modify_api_sweep_info(
