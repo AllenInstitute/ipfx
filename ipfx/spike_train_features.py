@@ -127,7 +127,7 @@ def fit_fi_slope(stim_amps, avg_rates):
     y = avg_rates
 
     A = np.vstack([x, np.ones_like(x)]).T
-    m, c = np.linalg.lstsq(A, y)[0]
+    m, c = np.linalg.lstsq(A, y,rcond=None)[0]
 
     return m
 
