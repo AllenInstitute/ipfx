@@ -7,7 +7,13 @@ from pynwb import NWBHDF5IO
 from pynwb.icephys import (CurrentClampSeries, CurrentClampStimulusSeries, VoltageClampSeries,
                            VoltageClampStimulusSeries, IZeroClampSeries)
 
-import ipfx.epochs as ep
+
+def custom_formatwarning(msg, *args, **kwargs):
+    # ignore everything except the message
+    return str(msg) + '\n'
+
+
+warnings.formatwarning = custom_formatwarning
 
 
 def get_scalar_string(string_from_nwb):
@@ -45,6 +51,7 @@ class NwbReader(object):
         else:
             raise ValueError("Unit {} not recognized from TimeSeries".format(unit))
 
+
     def get_real_sweep_number(self, sweep_name, assumed_sweep_number=None):
         """
         Return the real sweep number for the given sweep_name. Falls back to
@@ -71,9 +78,8 @@ class NwbReader(object):
                 real_sweep_number = timeseries.attrs["sweep_number"]
 
         if assumed_sweep_number is not None and assumed_sweep_number != real_sweep_number:
-            warnings.warn("Sweep number mismatch (real: {} vs assumed: {}"
-                          " in file {}".format(real_sweep_number,
-                                               assumed_sweep_number, self.nwb_file))
+            warnings.warn("Sweep number mismatch (real: {} vs assumed: {})".format
+                          (real_sweep_number, assumed_sweep_number))
 
         if real_sweep_number is not None:
             return real_sweep_number

@@ -73,7 +73,6 @@ class StimulusProtocolAnalysis(object):
 
         self._spikes_set = []
         for sweep in sweep_set.sweeps:
-            logging.info("sweep_number: %d" % sweep.sweep_number)
             self._spikes_set.append(self.spx.process(sweep.t, sweep.v, sweep.i))
 
         self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features)
