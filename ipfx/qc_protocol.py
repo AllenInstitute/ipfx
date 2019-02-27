@@ -51,7 +51,7 @@ def qc_sweeps(ontology,sweep_features,qc_criteria):
         failed, fail_tags = qc_current_clamp_sweep(ontology, sweep, qc_criteria)
         sweep_state = { 'sweep_number': sweep_num, 'passed': not failed, 'reasons': fail_tags }
         if failed:
-            print (sweep_num, sweep["stimulus_name"], fail_tags)
+            logging.info("sweep: {}, {}, {}".format(sweep_num, sweep["stimulus_name"], fail_tags))
         sweep_states.append(sweep_state)
 
     return sweep_states
