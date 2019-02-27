@@ -59,6 +59,7 @@ class Segment(ABC):
                        "factor": segmentRec.DeltaVFactor,
                        "inc": segmentRec.DeltaVIncrement}
 
+        self.amplitude = self.getAmplitude(channelRec, segmentRec)
         self.duration = segmentRec.Duration
         self.sampleInterval = stimRec.SampleInterval
 
@@ -180,6 +181,18 @@ class Segment(ABC):
         """
         return math.trunc(duration / self.sampleInterval)
 
+    def getAmplitude(self, channelRec, segmentRec):
+        """
+        Extract the value of the amplitude from the ChannelRecordStimulus and the StimSegmentRecord.
+        """
+
+        if segmentRec.VoltageSource == "Constant":
+            return segmentRec.Voltage
+        elif segmentRec.VoltageSource == "Hold":
+            return channelRec.Holding
+        else:
+            raise ValueError(f"Unsupported voltage source {segmentRec.VoltageSource}")
+
 
 # Square Wave dialog in patchmaster:
 # Peak Ampl. [V] -> ChannelRecordStimulus.Square_PosAmpl
@@ -220,6 +233,9 @@ class SquareSegment(Segment):
                                                      self.cycleDuration, self.durationFactor,
                                                      self.baseIncr, self.kind)
 
+    def getAmplitude(self, channelRec, segmentRec):
+        return None
+
     def createArray(self, sweep):
 
         numPoints = self.calculateNumberOfPoints(self.duration)
@@ -243,13 +259,6 @@ class ConstantSegment(Segment):
     def __init__(self, stimRec, channelRec, segmentRec):
         super().__init__(stimRec, channelRec, segmentRec)
 
-        if segmentRec.VoltageSource == "Constant":
-            self.amplitude = segmentRec.Voltage
-        elif segmentRec.VoltageSource == "Hold":
-            self.amplitude = channelRec.Holding
-        else:
-            raise ValueError(f"Unsupported voltage source {segmentRec.VoltageSource}")
-
     def __str__(self):
         return super().__str__() + \
                (", "
@@ -267,13 +276,6 @@ class RampSegment(Segment):
 
     def __init__(self, stimRec, channelRec, segmentRec):
         super().__init__(stimRec, channelRec, segmentRec)
-
-        if segmentRec.VoltageSource == "Constant":
-            self.amplitude = segmentRec.Voltage
-        elif segmentRec.VoltageSource == "Hold":
-            self.amplitude = channelRec.Holding
-        else:
-            raise ValueError(f"Unsupported voltage source {segmentRec.VoltageSource}")
 
     def __str__(self):
         return super().__str__() + \
@@ -300,7 +302,6 @@ class ChirpSegment(Segment):
     def __init__(self, stimRec, channelRec, segmentRec):
         super().__init__(stimRec, channelRec, segmentRec)
 
-        self.amplitude = channelRec.Chirp_Amplitude
         self.startFreq = channelRec.Chirp_StartFreq
         self.endFreq = channelRec.Chirp_EndFreq
         self.kind = channelRec.Chirp_Kind
@@ -313,6 +314,9 @@ class ChirpSegment(Segment):
                 (", "
                  "amp {}, start freq {}, end freq = {}, chirp kind = {}"
                  ).format(self.amplitude, self.startFreq, self.endFreq, self.kind)
+
+    def getAmplitude(self, channelRec, segmentRec):
+        return channelRec.Chirp_Amplitude
 
     def createArray(self, sweep):
 
