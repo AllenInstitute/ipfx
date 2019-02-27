@@ -69,7 +69,6 @@ class StimulusProtocolAnalysis(object):
         return output
 
     def analyze_basic_features(self, sweep_set, extra_sweep_features=None):
-        logging.info("analysing basic features:")
 
         self._spikes_set = []
         for sweep in sweep_set.sweeps:
@@ -173,8 +172,6 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         if len(subthreshold_sweep_features) == 0:
             raise er.FeatureError("No subthreshold long square sweeps, cannot evaluate cell features.")
 
-        logging.debug("subthresh_sweeps: %d", len(subthreshold_sweep_features))
-
         sags = subthreshold_sweep_features["sag"]
         sag_eval_levels = np.array([ v[0] for v in subthreshold_sweep_features["peak_deflect"] ])
         closest_index = np.argmin(np.abs(sag_eval_levels - self.SAG_TARGET))
@@ -185,7 +182,6 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         calc_subthresh_features = subthreshold_sweep_features[ (subthreshold_sweep_features["stim_amp"] < self.SUBTHRESH_MAX_AMP) & \
                                                             (subthreshold_sweep_features["stim_amp"] > self.subthresh_min_amp) ].copy()
-        logging.debug("calc_subthresh_sweeps: %d", len(calc_subthresh_features))
 
         calc_subthresh_ss = SweepSet([sweep_set.sweeps[i] for i in calc_subthresh_features.index.values])
 

@@ -12,11 +12,11 @@ import allensdk.core.json_utilities as ju
 from allensdk.core.nwb_data_set import NwbDataSet
 
 import ipfx.plot_qc_figures as plotqc
+import ipfx.logging_utils as lu
 
 
 def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
     # embed spike times in NWB file
-    logging.debug("Embedding spike times")
     tmp_nwb_file = output_nwb_file + ".tmp"
 
     shutil.copy(input_nwb_file, tmp_nwb_file)
@@ -30,6 +30,7 @@ def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
     except OSError as e:
         logging.error("Problem renaming file: %s -> %s" % (tmp_nwb_file, output_nwb_file))
         raise e
+    logging.debug("Embedded spike times into output.nwb file")
 
 
 def run_feature_extraction(input_nwb_file,
@@ -38,6 +39,8 @@ def run_feature_extraction(input_nwb_file,
                            qc_fig_dir,
                            sweep_info,
                            cell_info):
+
+    lu.log_pretty_header("Extract ephys features", level=1)
 
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
 
@@ -62,7 +65,7 @@ def run_feature_extraction(input_nwb_file,
 
     except (er.FeatureError,IndexError) as e:
         cell_state = {"failed_fx":True, "fail_fx_message": e}
-
+        logging.warning(e)
         feature_data = {'cell_state': cell_state}
 
     if not cell_state["failed_fx"]:

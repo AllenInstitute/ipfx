@@ -301,6 +301,7 @@ def sweep_qc_features(data_set):
         else:
             sweep = dict()
             sweep["completed"] = False
+            logging.info("sweep {}, {}, did not complete experiment".format(sweep_num, sweep_info["stimulus_name"]))
         sweep.update(sweep_info)
         sweep_features.append(sweep)
     return sweep_features

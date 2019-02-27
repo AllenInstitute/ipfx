@@ -3,7 +3,7 @@ import sys
 import os.path
 from run_pipeline import run_pipeline
 import generate_pipeline_input as gpi
-import pipeline_from_nwb_file
+import ipfx.logging_utils as lu
 
 OUTPUT_DIR = "/local1/ephys/tsts"
 
@@ -29,7 +29,7 @@ def main():
     if not os.path.exists(cell_dir):
         os.makedirs(cell_dir)
 
-        pipeline_from_nwb_file.configure_logger(cell_dir)
+    lu.configure_logger(cell_dir)
 
     pipe_input = gpi.generate_pipeline_input(cell_dir,
                                              specimen_id=int(specimen_id))

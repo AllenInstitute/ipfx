@@ -21,7 +21,6 @@ def run_pipeline(input_nwb_file,
     se_output = run_sweep_extraction(input_nwb_file,
                                      input_h5_file,
                                      stimulus_ontology_file)
-    logging.info("Computed QC features")
 
     sp.drop_incomplete_sweeps(se_output["sweep_features"])
     sp.remove_sweep_feature("completed", se_output["sweep_features"])
@@ -30,12 +29,9 @@ def run_pipeline(input_nwb_file,
                        se_output["cell_features"],
                        se_output["sweep_features"],
                        qc_criteria)
-    logging.info("QC checks completed")
 
-    sp.override_auto_sweep_states(manual_sweep_states,qc_output["sweep_states"])
-    sp.assign_sweep_states(qc_output["sweep_states"],se_output["sweep_features"])
-
-    logging.info("Assigned sweep states")
+    sp.override_auto_sweep_states(manual_sweep_states, qc_output["sweep_states"])
+    sp.assign_sweep_states(qc_output["sweep_states"], se_output["sweep_features"])
 
     fx_output = run_feature_extraction(input_nwb_file,
                                        stimulus_ontology_file,
@@ -44,9 +40,7 @@ def run_pipeline(input_nwb_file,
                                        se_output['sweep_features'],
                                        se_output['cell_features'],
                                        )
-    logging.info("Extracted features!")
-
-
+    logging.info("Analysis completed!")
     return dict( sweep_extraction=se_output,
                  qc=qc_output,
                  feature_extraction=fx_output )
