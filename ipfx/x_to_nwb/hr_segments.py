@@ -190,7 +190,12 @@ class Segment(ABC):
         """
 
         if segmentRec.VoltageSource == "Constant":
-            return segmentRec.Voltage
+
+            if channelRec.StimToDacID['UseRelative']:
+                return segmentRec.Voltage + channelRec.Holding
+            else:
+                return segmentRec.Voltage
+
         elif segmentRec.VoltageSource == "Hold":
             return channelRec.Holding
         else:
