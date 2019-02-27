@@ -197,7 +197,7 @@ class ABFConverter:
             elif self.refabf.abfVersion != abf.abfVersion:
                 raise ValueError("abfVersion does not match.")
             elif self.refabf.channelList != abf.channelList:
-                raise ValueError("channelList does not match.")
+                raise ValueError(f"channelList does not match ({self.refabf.channelList} vs {abf.channelList}.")
 
     def _getOldestABF(self):
         """
