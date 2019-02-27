@@ -67,6 +67,9 @@ class Segment(ABC):
         # and we want to have "mV" for VC and "pA" for IC
         self.amplitudeScale = 1e3
 
+        if not channelRec.StimToDacID['UseStimScale']:
+            raise ValueError("The flag UseStimScale of StimToDacID being false is not supported.")
+
     def __str__(self):
         return ("xDelta={}, yDelta={}, "
                 "duration={}, sampleInterval={}"
