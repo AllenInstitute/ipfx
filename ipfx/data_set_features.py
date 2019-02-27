@@ -120,11 +120,12 @@ def extract_sweep_features(data_set, sweep_table):
     sweep_groups = sweep_table.groupby(data_set.STIMULUS_NAME)[data_set.SWEEP_NUMBER]
 
     # extract sweep-level features
+    logging.info("----- Analyzing sweep features:")
+
     sweep_features = {}
 
     for stimulus_name, sweep_numbers in sweep_groups:
         sweep_numbers = sorted(sweep_numbers)
-        logging.debug("%s:%s" % (stimulus_name, ','.join(map(str, sweep_numbers))))
 
         sweep_set = data_set.sweep_set(sweep_numbers)
         sweep_set.select_epoch("recording")
@@ -253,32 +254,6 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
     return subthresh_min_amp, min_amp_delta
 
 
-
-
-def categorize_iclamp_sweeps(data_set, stimuli_names):
-
-    iclamp_st = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=stimuli_names)
-
-    mask = iclamp_st["passed"]==False
-    failed_qc_st = iclamp_st[mask]
-    failed_qc_sweeep_numbers = failed_qc_st["sweep_number"].sort_values().values
-
-    mask = iclamp_st["passed"]==True
-    passed_qc_st = iclamp_st[mask]
-    passed_qc_sweeep_numbers = passed_qc_st["sweep_number"].sort_values().values
-
-    logging.info("%s sweeps  passed: %s  failed: %s " % (stimuli_names[0],
-                                                        str(passed_qc_sweeep_numbers),
-                                                        str(failed_qc_sweeep_numbers)))
-
-    if len(passed_qc_sweeep_numbers) == 0:
-        raise er.FeatureError("No %s sweeps available for feature extraction " % stimuli_names[0])
-
-
-    return passed_qc_sweeep_numbers
-
-
-
 def extract_data_set_features(data_set, subthresh_min_amp=None):
     """
 
@@ -303,20 +278,26 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     # for logging purposes
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
     passed_iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, passing_only=True)
-    logging.info("%d of %d current-clamp sweeps passed QC", len(passed_iclamp_sweeps), len(iclamp_sweeps))
 
     if len(passed_iclamp_sweeps) == 0:
         raise er.FeatureError("There are no QC-passed sweeps available to analyze")
 
     # extract cell-level features
-    logging.info("Computing cell features")
 
     clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=ontology.coarse_long_square_names)
     clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values
 
-    lsq_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.long_square_names)
-    ssq_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.short_square_names)
-    ramp_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.ramp_names)
+    lsq_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True,
+                                                      passing_only=True,
+                                                      stimuli=ontology.long_square_names).sweep_number.sort_values().values
+
+    ssq_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True,
+                                                      passing_only=True,
+                                                      stimuli=ontology.short_square_names).sweep_number.sort_values().values
+
+    ramp_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True,
+                                                       passing_only=True,
+                                                       stimuli=ontology.ramp_names).sweep_number.sort_values().values
 
     if subthresh_min_amp is None:
         if len(clsq_sweep_numbers)>0:
