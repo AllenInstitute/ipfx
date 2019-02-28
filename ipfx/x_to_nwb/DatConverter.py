@@ -14,7 +14,7 @@ from ipfx.x_to_nwb.hr_bundle import Bundle
 from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
 from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
-     getPackageInfo, getChannelRecordIndex, getStimulusRecordIndex, createCycleID
+     getPackageInfo, getStimulusRecordIndex, createCycleID, clampModeToString
 
 
 class DatConverter:
@@ -103,21 +103,32 @@ class DatConverter:
             bundle._all_info(root + ".txt")
 
     @staticmethod
-    def _getClampMode(ampState, trace):
+    def _getClampMode(ampState, cycle_id, trace):
         """
         Return the clamp mode of the given amplifier state node and trace.
 
         Parameters
         ----------
         ampState : AmplifierState as returned by _getAmplifierState()
-        trace : TraceRecord of the given trace
+        cycle_id: Cycle identifier
+        trace : TraceRecord
 
         Returns
         -------
         A valid clamp mode, one of V_CLAMP_MODE or I_CLAMP_MODE
         """
 
-        if ampState:
+        def getClampModeFromUnit(trace):
+            unit = trace.YUnit
+
+            if unit == "A":
+                return V_CLAMP_MODE
+            elif unit == "V":
+                return I_CLAMP_MODE
+            else:
+                raise ValueError(f"Unknown unit {unit}")
+
+        def getClampModeFromAmpState(ampState):
             clampMode = ampState.Mode
 
             if clampMode == "VCMode":
@@ -127,16 +138,18 @@ class DatConverter:
             else:
                 raise ValueError(f"Unknown clamp mode {clampMode}")
 
+        if ampState:
+            clampMode = getClampModeFromAmpState(ampState)
+
+            if clampMode != getClampModeFromUnit(trace):
+                warnings.warn(f"Unit and clamp mode does not match for {cycle_id} "
+                              f"({trace.YUnit} unit vs. {clampModeToString(clampMode)}")
+
+            return clampMode
+
         warnings.warn("No amplifier state available, falling back to AD unit heuristics.")
 
-        unit = trace.YUnit
-
-        if unit == "A":
-            return V_CLAMP_MODE
-        elif unit == "V":
-            return I_CLAMP_MODE
-        else:
-            raise ValueError(f"Unknown unit {unit}")
+        return getClampModeFromUnit(trace)
 
     def _getMaxTimeSeriesCount(self):
         """
@@ -277,16 +290,16 @@ class DatConverter:
         return len(ampState.StateVersion) > 0
 
     @staticmethod
-    def _getAmplifierState(bundle, series, trace_index):
+    def _getAmplifierState(bundle, series, trace):
         """
         Different PatchMaster versions create different DAT file layouts. This function tries
         to accomodate that as it returns the correct object.
 
         Parameters
         ----------
-        bundle:  Bundle
+        bundle: Bundle
         series: SeriesRecord
-        trace_index: running 0-based index of the trace
+        trace: TraceRecord
 
         Returns
         -------
@@ -300,10 +313,13 @@ class DatConverter:
             return ampState
 
         # newer Patchmaster versions store it in the Amplifier tree
-        ampState = bundle.amp[series.AmplStateSeries - 1][trace_index].AmplifierState
+        if bundle.amp:
+            seriesIndex = series.AmplStateSeries - 1
+            stateIndex = trace.AmplIndex - 1
+            ampState = bundle.amp[seriesIndex][stateIndex].AmplifierState
 
-        if DatConverter._isValidAmplifierState(ampState):
-            return ampState
+            if DatConverter._isValidAmplifierState(ampState):
+                return ampState
 
         # and sometimes we got nothing at all
         return None
@@ -461,7 +477,7 @@ class DatConverter:
                     cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount],
                                              total=self.totalSeriesCount)
                     stimRec = self.bundle.pgf[getStimulusRecordIndex(sweep)]
-                    for trace_index, trace in enumerate(sweep):
+                    for trace in sweep:
                         stimset = generator.fetch(sweep, trace)
 
                         if not len(stimset):
@@ -487,11 +503,8 @@ class DatConverter:
                                                   "sweep_label": sweep.Label},
                                                  sort_keys=True, indent=4)
 
-                        channelRec_index = getChannelRecordIndex(self.bundle.pgf, sweep, trace)
-                        assert channelRec_index is not None, "Unexpected channel record index"
-
-                        ampState = DatConverter._getAmplifierState(self.bundle, series, trace_index)
-                        clampMode = DatConverter._getClampMode(ampState, trace)
+                        ampState = DatConverter._getAmplifierState(self.bundle, series, trace)
+                        clampMode = DatConverter._getClampMode(ampState, cycle_id, trace)
 
                         if clampMode == V_CLAMP_MODE:
                             conversion, unit = 1e-3, "V"
@@ -539,11 +552,11 @@ class DatConverter:
                 for sweep in series:
                     cycle_id = createCycleID([group.GroupCount, series.SeriesCount, sweep.SweepCount],
                                              total=self.totalSeriesCount)
-                    for trace_index, trace in enumerate(sweep):
+                    for trace in sweep:
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                         data = convertDataset(self.bundle.data[trace])
 
-                        ampState = DatConverter._getAmplifierState(self.bundle, series, trace_index)
+                        ampState = DatConverter._getAmplifierState(self.bundle, series, trace)
 
                         if ampState:
                             gain = ampState.Gain
@@ -563,7 +576,7 @@ class DatConverter:
                                                   "series_label": series.Label,
                                                   "sweep_label": sweep.Label},
                                                  sort_keys=True, indent=4)
-                        clampMode = DatConverter._getClampMode(ampState, trace)
+                        clampMode = DatConverter._getClampMode(ampState, cycle_id, trace)
                         seriesClass = getAcquiredSeriesClass(clampMode)
                         stimulus_description = series.Label
 

@@ -53,18 +53,22 @@ class Segment(ABC):
     def __init__(self, stimRec, channelRec, segmentRec):
         self.xDelta = {"mode": segmentRec.DurationIncMode,
                        "factor": segmentRec.DeltaTFactor,
-                       "offset": segmentRec.DeltaTIncrement}
+                       "inc": segmentRec.DeltaTIncrement}
 
         self.yDelta = {"mode": segmentRec.VoltageIncMode,
                        "factor": segmentRec.DeltaVFactor,
-                       "offset": segmentRec.DeltaVIncrement}
+                       "inc": segmentRec.DeltaVIncrement}
 
+        self.amplitude = self.getAmplitude(channelRec, segmentRec)
         self.duration = segmentRec.Duration
         self.sampleInterval = stimRec.SampleInterval
 
         # PatchMaster stores "V" for VC and "µA" for IC
         # and we want to have "mV" for VC and "pA" for IC
         self.amplitudeScale = 1e3
+
+        if not channelRec.StimToDacID['UseStimScale']:
+            raise ValueError("The flag UseStimScale of StimToDacID being false is not supported.")
 
     def __str__(self):
         return ("xDelta={}, yDelta={}, "
@@ -79,23 +83,51 @@ class Segment(ABC):
         Return true if delta mode is active, false otherwise.
         """
 
-        return deltaDict["factor"] != 1.0 or deltaDict["offset"] != 0.0
+        return deltaDict["factor"] != 1.0 or deltaDict["inc"] != 0.0
 
     @staticmethod
-    def _applyDelta(deltaDict, val):
+    def _applyDelta(deltaDict, val, sweepNo):
         """
         Apply delta mode properties to val if active.
 
         Return the possibly modified value.
         """
 
-        if Segment._hasDelta(deltaDict):
-            if deltaDict["mode"] != "Inc":
-                raise ValueError(f"Increment mode {deltaDict['mode']} is not supported.")
+        if not Segment._hasDelta(deltaDict):
+            return val
 
-            return deltaDict["factor"] * val + deltaDict["offset"]
+        if deltaDict["mode"] == "Inc":
+            return val + deltaDict["inc"] * sweepNo
+        elif deltaDict["mode"] == "LogInc":
+            # PatchMaster manual 10.10.3 "Increment Modes" distinguishes two different
+            # Logaritmic increment modes X * Factor and dX * Factor (X is either V/I/T).
+            #
+            # X             : Voltage/Current/Time
+            # X_{factor}    : V/I/t-fact.
+            # X_{incr}      : V/I/t-incr.
+            # X_{0/1/2/...} : Value at the 0/1/2/... sweep
+            # i             : Sweep index starting at 0 (in the manual it starts at 1)
+            #
+            # X * Factor:
+            #   X_{i} = X * X_{factor}^{i} + i * X_{incr}
+            #
+            # dX * Factor:
+            #   X_{factor} == 1:
+            #     X_{i} = X + i * X_{incr}
+            #
+            #   X_{factor} != 1:
+            #     i == 0:
+            #       X_{0} = X
+            #     i > 0:
+            #       X_{i} = X + X_{factor}^{i - 1} * X_{incr}
+            #
+            # TODO
+            # how to distinguish these two modes?
+            # we just return NaN for now
 
-        return val
+            return float('nan')
+        else:
+            raise ValueError(f"Increment mode {deltaDict['mode']} is not supported.")
 
     def applyAmplitudeScale(self, amplitude):
         """
@@ -104,14 +136,14 @@ class Segment(ABC):
 
         return amplitude * self.amplitudeScale
 
-    def _step(self, xValue, yValue):
+    def _step(self, xValue, yValue, sweepNo):
         """
         Apply delta modes to the given x and y values.
 
         Return the possibly modified values.
         """
 
-        return Segment._applyDelta(self.xDelta, xValue), Segment._applyDelta(self.yDelta, yValue)
+        return Segment._applyDelta(self.xDelta, xValue, sweepNo), Segment._applyDelta(self.yDelta, yValue, sweepNo)
 
     @abstractmethod
     def createArray(self, sweep):
@@ -142,11 +174,7 @@ class Segment(ABC):
         Apply the delta modes the given number of times (once per sweep)
         """
 
-        duration = self.duration
-        amplitude = self.amplitude
-
-        for _ in range(sweepNo):
-            duration, amplitude = self._step(duration, amplitude)
+        duration, amplitude = self._step(self.duration, self.amplitude, sweepNo)
 
         return duration, self.applyAmplitudeScale(amplitude)
 
@@ -155,6 +183,23 @@ class Segment(ABC):
         Return the number of points of this segment.
         """
         return math.trunc(duration / self.sampleInterval)
+
+    def getAmplitude(self, channelRec, segmentRec):
+        """
+        Extract the value of the amplitude from the ChannelRecordStimulus and the StimSegmentRecord.
+        """
+
+        if segmentRec.VoltageSource == "Constant":
+
+            if channelRec.StimToDacID['UseRelative']:
+                return segmentRec.Voltage + channelRec.Holding
+            else:
+                return segmentRec.Voltage
+
+        elif segmentRec.VoltageSource == "Hold":
+            return channelRec.Holding
+        else:
+            raise ValueError(f"Unsupported voltage source {segmentRec.VoltageSource}")
 
 
 # Square Wave dialog in patchmaster:
@@ -196,6 +241,9 @@ class SquareSegment(Segment):
                                                      self.cycleDuration, self.durationFactor,
                                                      self.baseIncr, self.kind)
 
+    def getAmplitude(self, channelRec, segmentRec):
+        return None
+
     def createArray(self, sweep):
 
         numPoints = self.calculateNumberOfPoints(self.duration)
@@ -219,13 +267,6 @@ class ConstantSegment(Segment):
     def __init__(self, stimRec, channelRec, segmentRec):
         super().__init__(stimRec, channelRec, segmentRec)
 
-        if segmentRec.VoltageSource == "Constant":
-            self.amplitude = segmentRec.Voltage
-        elif segmentRec.VoltageSource == "Hold":
-            self.amplitude = channelRec.Holding
-        else:
-            raise ValueError(f"Unsupported voltage source {segmentRec.VoltageSource}")
-
     def __str__(self):
         return super().__str__() + \
                (", "
@@ -243,13 +284,6 @@ class RampSegment(Segment):
 
     def __init__(self, stimRec, channelRec, segmentRec):
         super().__init__(stimRec, channelRec, segmentRec)
-
-        if segmentRec.VoltageSource == "Constant":
-            self.amplitude = segmentRec.Voltage
-        elif segmentRec.VoltageSource == "Hold":
-            self.amplitude = channelRec.Holding
-        else:
-            raise ValueError(f"Unsupported voltage source {segmentRec.VoltageSource}")
 
     def __str__(self):
         return super().__str__() + \
@@ -276,7 +310,6 @@ class ChirpSegment(Segment):
     def __init__(self, stimRec, channelRec, segmentRec):
         super().__init__(stimRec, channelRec, segmentRec)
 
-        self.amplitude = channelRec.Chirp_Amplitude
         self.startFreq = channelRec.Chirp_StartFreq
         self.endFreq = channelRec.Chirp_EndFreq
         self.kind = channelRec.Chirp_Kind
@@ -289,6 +322,9 @@ class ChirpSegment(Segment):
                 (", "
                  "amp {}, start freq {}, end freq = {}, chirp kind = {}"
                  ).format(self.amplitude, self.startFreq, self.endFreq, self.kind)
+
+    def getAmplitude(self, channelRec, segmentRec):
+        return channelRec.Chirp_Amplitude
 
     def createArray(self, sweep):
 
