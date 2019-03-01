@@ -145,6 +145,11 @@ def extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_
             first_spike_lsq_sweep_features = first_spike_lsq(spike_data[swp_ind])
             features.update({"ap_1_{:s}_{:d}_long_square".format(f, amp_label): v
                              for f, v in first_spike_lsq_sweep_features.iteritems()})
+
+            mean_spike_lsq_sweep_features = mean_spike_lsq(spike_data[swp_ind])
+            features.update({"ap_mean_{:s}_{:d}_long_square".format(f, amp_label): v
+                             for f, v in mean_spike_lsq_sweep_features.iteritems()})
+
             sweep_feature_list = [
                 "first_isi",
                 "avg_rate",
@@ -203,6 +208,20 @@ def first_spike_lsq(spike_data,
                         "fast_trough_v",
                     ]):
     return {f: spike_data.loc[0, f] for f in feature_list}
+
+
+def mean_spike_lsq(spike_data,
+                   feature_list = [
+                       "threshold_v",
+                       "peak_v",
+                       "upstroke",
+                       "downstroke",
+                       "upstroke_downstroke_ratio",
+                       "width",
+                       "fast_trough_v",
+                   ]):
+
+    return {f: spike_data[f].values.mean() for f in feature_list}
 
 
 def fi_curve_fit(amps, rates):
