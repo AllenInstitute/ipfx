@@ -34,8 +34,14 @@ def data_for_specimen_id(specimen_id, passed_only):
         logging.debug("No NWB file for {:d}".format(specimen_id))
         return {"error": {"type": "no_nwb", "details": ""}}
 
+    # Check if NWB has lab notebook information, or if additional hdf5 file is needed
+    h5_path = None
+    with h5py.File(nwb_path, "r") as h5:
+        if "general/labnotebook" not in h5:
+            h5_path = lims_utils.get_igorh5_path_from_lims(roi_id)
+
     try:
-        data_set = AibsDataSet(nwb_file=nwb_path)
+        data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
         ontology = data_set.ontology
     except Exception as detail:
         logging.warn("Exception when processing specimen {:d}".format(specimen_id))
