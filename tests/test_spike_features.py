@@ -65,8 +65,8 @@ def test_width_calculation_too_many_troughs(spike_test_pair):
     with pytest.raises(er.FeatureError):
         spkf.find_widths(v, t, spikes, peaks, troughs)
 
+
 @pytest.mark.skipif(True, reason="not implemented")
 def test_width_calculation_with_burst():
     # example sp 487663469, sweep 43
     pass
-

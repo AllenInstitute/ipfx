@@ -2,21 +2,21 @@
 import logging
 import shutil
 import argschema as ags
-
+import ipfx.error as er
 import ipfx.data_set_features as dsft
 from ipfx.stimulus import StimulusOntology
 from ipfx._schemas import FeatureExtractionParameters
-from ipfx.aibs_data_set import AibsDataSet
+from ipfx.data_set_utils import create_data_set
 
 import allensdk.core.json_utilities as ju
 from allensdk.core.nwb_data_set import NwbDataSet
 
 import ipfx.plot_qc_figures as plotqc
+import ipfx.logging_utils as lu
 
 
 def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
     # embed spike times in NWB file
-    logging.debug("Embedding spike times")
     tmp_nwb_file = output_nwb_file + ".tmp"
 
     shutil.copy(input_nwb_file, tmp_nwb_file)
@@ -30,6 +30,7 @@ def embed_spike_times(input_nwb_file, output_nwb_file, sweep_features):
     except OSError as e:
         logging.error("Problem renaming file: %s -> %s" % (tmp_nwb_file, output_nwb_file))
         raise e
+    logging.debug("Embedded spike times into output.nwb file")
 
 
 def run_feature_extraction(input_nwb_file,
@@ -39,29 +40,45 @@ def run_feature_extraction(input_nwb_file,
                            sweep_info,
                            cell_info):
 
+    lu.log_pretty_header("Extract ephys features", level=1)
+
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
 
-    data_set = AibsDataSet(sweep_info=sweep_info,
-                           nwb_file=input_nwb_file,
-                           ontology=ont,
-                           api_sweeps=False)
+    data_set = create_data_set(sweep_info=sweep_info,
+                               nwb_file=input_nwb_file,
+                               ontology=ont,
+                               api_sweeps=False)
 
-    cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
+    try:
+        cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
 
-    if cell_info:
-        cell_record.update(cell_info)
+        if cell_info: cell_record.update(cell_info)
 
-    feature_data = { 'cell_features': cell_features,
-                     'sweep_features': sweep_features,
-                     'cell_record': cell_record,
-                     'sweep_records': sweep_records }
+        cell_state = {"failed_fx": False, "fail_fx_message": None}
 
-    embed_spike_times(input_nwb_file, output_nwb_file, sweep_features)
+        feature_data = { 'cell_features': cell_features,
+                         'sweep_features': sweep_features,
+                         'cell_record': cell_record,
+                         'sweep_records': sweep_records,
+                         'cell_state': cell_state
+                         }
 
-    if qc_fig_dir is None:
-        logging.info("qc_fig_dir is not provided, will not save figures")
-    else:
-        plotqc.display_features(qc_fig_dir, data_set, feature_data)
+    except (er.FeatureError,IndexError) as e:
+        cell_state = {"failed_fx":True, "fail_fx_message": e}
+        logging.warning(e)
+        feature_data = {'cell_state': cell_state}
+
+    if not cell_state["failed_fx"]:
+        embed_spike_times(input_nwb_file, output_nwb_file, sweep_features)
+
+        if qc_fig_dir is None:
+            logging.info("qc_fig_dir is not provided, will not save figures")
+        else:
+            plotqc.display_features(qc_fig_dir, data_set, feature_data)
+
+        # On Windows int64 keys of sweep numbers cannot be converted to str by json.dump when serializing.
+        # Thus, we are converting them here:
+        feature_data["sweep_features"] = {str(k): v for k, v in feature_data["sweep_features"].items()}
 
     return feature_data
 

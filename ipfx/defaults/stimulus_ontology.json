@@ -1262,7 +1262,7 @@
   [
     [
       "name",
-      "Long Square SubThreshold"
+      "Long Square"
     ],
     [
       "code",
@@ -1271,18 +1271,18 @@
   ],
   [
     [
-      "name",
-      "Search"
+      "code",
+      "NucVCtails"
     ],
     [
-      "code",
-      "X2LP_Search"
+      "name",
+      "Test"
     ]
   ],
   [
     [
       "name",
-      "Long Square Threshold"
+      "Long Square"
     ],
     [
       "code",
@@ -1296,17 +1296,7 @@
     ],
     [
       "name",
-      "Long Square SupraThreshold"
-    ]
-  ],
-  [
-    [
-      "name",
-      "Search"
-    ],
-    [
-      "code",
-      "X5SP_Search"
+      "Long Square"
     ]
   ],
   [
@@ -1316,7 +1306,7 @@
     ],
     [
       "name",
-      "Short Square Threshold"
+      "Short Square"
     ]
   ],
   [
@@ -1391,6 +1381,16 @@
   ],
   [
     [
+      "name",
+      "Search"
+    ],
+    [
+      "code",
+      "X5SP_Search"
+    ]
+  ],
+  [
+    [
       "code",
       "Nuc_VC_Steps"
     ],
@@ -1457,6 +1457,444 @@
     [
       "name",
       "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_Steps_50m"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_Steps_200"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Test"
+    ],
+    [
+      "code",
+      "Nuc_VC_Steps_10m"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_Steps_100"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_STeps_250"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_Steps_25m"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_Steps_0ms"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Test"
+    ],
+    [
+      "code",
+      "NucVCprepulse_"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_5"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_4"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_6"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_1"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Test"
+    ],
+    [
+      "code",
+      "Nuc_VC_0"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Test"
+    ],
+    [
+      "code",
+      "Nuc_VC_3"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_2"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Ramp"
+    ],
+    [
+      "code",
+      "Ramp"
+    ]
+  ],
+  [
+    [
+      "code",
+      "LP_Rheo"
+    ],
+    [
+      "name",
+      "Long Square"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Long Square"
+    ],
+    [
+      "code",
+      "PS_SubThresh"
+    ]
+  ],
+  [
+    [
+      "code",
+      "SP_Rheo"
+    ],
+    [
+      "name",
+      "Short Square"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Test"
+    ],
+    [
+      "code",
+      "EXTPSMOKE180424_"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC140"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_LS"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_Leak"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Test"
+    ],
+    [
+      "code",
+      "Nuc_VC70"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_Superthresho"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Unknown"
+    ],
+    [
+      "code",
+      "Nuc_IC_1"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Test"
+    ],
+    [
+      "code",
+      "Nuc_VC_10"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Test"
+    ],
+    [
+      "code",
+      "Nuc_VC105"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC35"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Long Square"
+    ],
+    [
+      "code",
+      "PS_SupraThresh"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Nuc_VC_Steps_250"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "longsquaretemp"
+    ],
+    [
+      "name",
+      "Long Square"
+    ]
+  ],
+  [
+    [
+      "code",
+      "shortsquaretemp"
+    ],
+    [
+      "name",
+      "Short Square"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Unknown"
+    ],
+    [
+      "code",
+      "referenced"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Unknown"
+    ],
+    [
+      "code",
+      "PulseTrain_20Hz"
+    ]
+  ],
+  [
+    [
+      "code",
+      "C2NSD1SHORT17110"
+    ],
+    [
+      "core",
+      "Core 2"
+    ],
+    [
+      "name",
+      "Short Square"
+    ]
+  ],
+  [
+    [
+      "code",
+      "C2NSD2SHORT17110"
+    ],
+    [
+      "core",
+      "Core 2"
+    ],
+    [
+      "name",
+      "Short Square"
+    ]
+  ],
+  [
+    [
+      "code",
+      "NucVCzrecovs1"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "NucVCzrecovms5"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "code",
+      "NucVCzrecovms100"
+    ],
+    [
+      "name",
+      "Test"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Search"
+    ],
+    [
+      "code",
+      "X2LP_Search"
+    ]
+  ],
+  [
+    [
+      "code",
+      "SP_Search"
+    ],
+    [
+      "name",
+      "Search"
+    ]
+  ],
+  [
+    [
+      "name",
+      "Search"
+    ],
+    [
+      "code",
+      "LP_Search"
     ]
   ],
   [

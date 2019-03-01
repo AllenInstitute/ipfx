@@ -7,7 +7,9 @@ import ipfx.qc_protocol as qcp
 import argschema as ags
 from ipfx._schemas import QcParameters
 import allensdk.core.json_utilities as ju
-
+import ipfx.sweep_props as sp
+import pandas as pd
+import ipfx.logging_utils as lu
 
 def run_qc(stimulus_ontology_file, cell_features, sweep_features, qc_criteria):
     """
@@ -29,7 +31,9 @@ def run_qc(stimulus_ontology_file, cell_features, sweep_features, qc_criteria):
         containing state of the cell and sweeps
     """
 
-    logging.debug("stimulus ontology file: %s", stimulus_ontology_file)
+    lu.log_pretty_header("Perform QC checks", level=1)
+
+    logging.info("stimulus ontology file: %s", stimulus_ontology_file)
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
 
     cell_state, sweep_states = qcp.qc_experiment(ont,
@@ -37,7 +41,34 @@ def run_qc(stimulus_ontology_file, cell_features, sweep_features, qc_criteria):
                                                  sweep_features,
                                                  qc_criteria)
 
+    sweep_qc_summary(sweep_features, sweep_states)
+
     return dict(cell_state=cell_state, sweep_states=sweep_states)
+
+
+def sweep_qc_summary(sweep_features, sweep_states):
+    """
+    Create a table of sweep feaures including the sweep_state (passed:True/False)
+
+    Parameters
+    ----------
+    sweep_features: dict
+    sweep_states: dict
+
+    Returns
+    -------
+
+    """
+    sp.assign_sweep_states(sweep_states, sweep_features)
+    sweep_table = pd.DataFrame(sweep_features)
+
+    lu.log_pretty_header("QC Summary:",level=2)
+
+    for stimulus_name, sg_table in sweep_table.groupby("stimulus_name"):
+        passed_sweep_numbers = sg_table[sg_table.passed == True].sweep_number.sort_values().values
+        failed_sweep_numbers = sg_table[sg_table.passed == False].sweep_number.sort_values().values
+
+        logging.info("{} sweeps passed: {}, failed {}".format(stimulus_name, passed_sweep_numbers,failed_sweep_numbers))
 
 
 def main():

@@ -35,13 +35,14 @@
 #
 import numpy as np
 import logging
-import pandas as pd
-from . import ephys_extractor as efex
+from feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
 from . import ephys_data_set as eds
 from . import spike_features as spkf
 from . import stimulus_protocol_analysis as spa
 from . import stim_features as stf
+from . import feature_record as fr
 import error as er
+import logging_utils as lu
 
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
@@ -107,35 +108,38 @@ def extractors_for_sweeps(sweep_set,
     if thresh_frac_floor is not None:
         thresh_frac = max(thresh_frac_floor, thresh_frac)
 
-    spx = efex.SpikeExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac, start=start, end=end)
-    spfx = efex.SpikeTrainFeatureExtractor(start, end)
+    sfx = SpikeFeatureExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac, start=start, end=end)
+    stfx = SpikeTrainFeatureExtractor(start, end)
 
-    return spx, spfx
+    return sfx, stfx
 
 
 def extract_sweep_features(data_set, sweep_table):
     sweep_groups = sweep_table.groupby(data_set.STIMULUS_NAME)[data_set.SWEEP_NUMBER]
 
     # extract sweep-level features
+    lu.log_pretty_header("Analyzing cell features:",level=2)
+
     sweep_features = {}
 
     for stimulus_name, sweep_numbers in sweep_groups:
         sweep_numbers = sorted(sweep_numbers)
-        logging.debug("%s:%s" % (stimulus_name, ','.join(map(str, sweep_numbers))))
 
         sweep_set = data_set.sweep_set(sweep_numbers)
+        sweep_set.select_epoch("recording")
+        sweep_set.align_to_start_of_epoch("experiment")
 
         dp = detection_parameters(stimulus_name).copy()
         for k in [ "start", "end" ]:
             if k in dp:
                 dp.pop(k)
 
-        spx, _ = extractors_for_sweeps(sweep_set, **dp)
+        sfx, _ = extractors_for_sweeps(sweep_set, **dp)
 
         for sn, sweep in zip(sweep_numbers, sweep_set.sweeps):
 #            logging.info("Extracting features from the sweep %d" % sn)
-            spikes_df = spx.process(sweep.t, sweep.v, sweep.i)
-            sweep_features[sn] = { 'spikes': spikes_df.to_dict(orient='records'), "id": sn }
+            spikes_df = sfx.process(sweep.t, sweep.v, sweep.i)
+            sweep_features[sn] = {'spikes': spikes_df.to_dict(orient='records'), "sweep_number": sn }
 
     return sweep_features
 
@@ -145,20 +149,20 @@ def extract_cell_features(data_set,
                           long_square_sweep_numbers,
                           subthresh_min_amp):
 
+    lu.log_pretty_header("Analyzing cell features:",level=2)
 
     cell_features = {}
 
     # long squares
+    lu.log_pretty_header("Long Squares:",level=2)
     if len(long_square_sweep_numbers) == 0:
         raise er.FeatureError("No long_square sweeps available for feature extraction")
 
     lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
+    lsq_sweeps.select_epoch("recording")
+    lsq_sweeps.align_to_start_of_epoch("experiment")
+
     lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
-
-
-
-    logging.info("Analyzing Long Square")
-    logging.info("Long square stim start: %f, duration: %f", lsq_start, lsq_dur)
 
     lsq_spx, lsq_spfx = extractors_for_sweeps(lsq_sweeps,
                                               start = lsq_start,
@@ -166,43 +170,46 @@ def extract_cell_features(data_set,
                                               **detection_parameters(data_set.LONG_SQUARE))
     lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=subthresh_min_amp)
     lsq_features = lsq_an.analyze(lsq_sweeps)
-    cell_features["long_squares"] = lsq_an.as_dict(lsq_features, [ dict(id=sn) for sn in long_square_sweep_numbers ])
+    cell_features["long_squares"] = lsq_an.as_dict(lsq_features, [ dict(sweep_number=sn) for sn in long_square_sweep_numbers ])
 
     if cell_features["long_squares"]["hero_sweep"] is None:
         raise er.FeatureError("Could not find hero sweep.")
 
     # short squares
-    logging.info("Analyzing Short Square")
+    lu.log_pretty_header("Short Squares:",level=2)
+
     if len(short_square_sweep_numbers) == 0:
         raise er.FeatureError("No short square sweeps available for feature extraction")
 
     ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
+    ssq_sweeps.select_epoch("recording")
+    ssq_sweeps.align_to_start_of_epoch("experiment")
 
     ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
-    logging.info("Short square stim start: %f, duration: %f", ssq_start, ssq_dur)
     ssq_spx, ssq_spfx = extractors_for_sweeps(ssq_sweeps,
                                               est_window = [ssq_start,ssq_start+0.001],
                                               **detection_parameters(data_set.SHORT_SQUARE))
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
     ssq_features = ssq_an.analyze(ssq_sweeps)
-    cell_features["short_squares"] = ssq_an.as_dict(ssq_features, [ dict(id=sn) for sn in short_square_sweep_numbers ])
+    cell_features["short_squares"] = ssq_an.as_dict(ssq_features, [ dict(sweep_number=sn) for sn in short_square_sweep_numbers ])
 
     # ramps
-    logging.info("Analyzing Ramps")
+    lu.log_pretty_header("Ramps:", level=2)
     if len(ramp_sweep_numbers) == 0:
         raise er.FeatureError("No ramp sweeps available for feature extraction")
 
     ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
+    ramp_sweeps.select_epoch("recording")
+    ramp_sweeps.align_to_start_of_epoch("experiment")
 
     ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
-    logging.info("Ramp stim %f, %f", ramp_start, ramp_dur)
 
     ramp_spx, ramp_spfx = extractors_for_sweeps(ramp_sweeps,
                                                 start = ramp_start,
                                                 **detection_parameters(data_set.RAMP))
     ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
     ramp_features = ramp_an.analyze(ramp_sweeps)
-    cell_features["ramps"] = ramp_an.as_dict(ramp_features, [ dict(id=sn) for sn in ramp_sweep_numbers ])
+    cell_features["ramps"] = ramp_an.as_dict(ramp_features, [dict(sweep_number=sn) for sn in ramp_sweep_numbers ])
 
     return cell_features
 
@@ -243,171 +250,12 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
     return subthresh_min_amp, min_amp_delta
 
 
-
-
-
-def build_cell_feature_record(cell_features, sweep_features):
-    ephys_features = {}
-
-    # find hero and rheo sweeps in sweep table
-    rheo_sweep_num = cell_features["long_squares"]["rheobase_sweep"]["id"]
-    rheo_sweep_id = sweep_features.get(rheo_sweep_num, {}).get('id', None)
-
-    if rheo_sweep_id is None:
-        raise Exception("Could not find id of rheobase sweep number %d." % rheo_sweep_num)
-
-    hero_sweep = cell_features["long_squares"]["hero_sweep"]
-    if hero_sweep is None:
-        raise Exception("Could not find hero sweep")
-
-    hero_sweep_num = hero_sweep["id"]
-    hero_sweep_id = sweep_features.get(hero_sweep_num, {}).get('id', None)
-
-    if hero_sweep_id is None:
-        raise Exception("Could not find id of hero sweep number %d." % hero_sweep_num)
-
-    # create a table of values
-    # this is a dictionary of ephys_features
-    base = cell_features["long_squares"]
-    ephys_features["rheobase_sweep_num"] = rheo_sweep_num
-    ephys_features["thumbnail_sweep_num"] = hero_sweep_num
-    ephys_features["vrest"] = nan_get(base, "v_baseline")
-    ephys_features["ri"] = nan_get(base, "input_resistance")
-
-    # change the base to hero sweep
-    base = cell_features["long_squares"]["hero_sweep"]
-    ephys_features["adaptation"] = nan_get(base, "adapt")
-    ephys_features["latency"] = nan_get(base, "latency")
-
-    # convert to ms
-    mean_isi = nan_get(base, "mean_isi")
-    ephys_features["avg_isi"] = (mean_isi * 1e3) if mean_isi is not None else None
-
-    # now grab the rheo spike
-    base = cell_features["long_squares"]["rheobase_sweep"]["spikes"][0]
-    ephys_features["upstroke_downstroke_ratio_long_square"] = nan_get(base, "upstroke_downstroke_ratio")
-    ephys_features["peak_v_long_square"] = nan_get(base, "peak_v")
-    ephys_features["peak_t_long_square"] = nan_get(base, "peak_t")
-    ephys_features["trough_v_long_square"] = nan_get(base, "trough_v")
-    ephys_features["trough_t_long_square"] = nan_get(base, "trough_t")
-    ephys_features["fast_trough_v_long_square"] = nan_get(base, "fast_trough_v")
-    ephys_features["fast_trough_t_long_square"] = nan_get(base, "fast_trough_t")
-    ephys_features["slow_trough_v_long_square"] = nan_get(base, "slow_trough_v")
-    ephys_features["slow_trough_t_long_square"] = nan_get(base, "slow_trough_t")
-
-    ephys_features["threshold_v_long_square"] = nan_get(base, "threshold_v")
-    ephys_features["threshold_i_long_square"] = nan_get(base, "threshold_i")
-    ephys_features["threshold_t_long_square"] = nan_get(base, "threshold_t")
-    ephys_features["peak_v_long_square"] = nan_get(base, "peak_v")
-    ephys_features["peak_t_long_square"] = nan_get(base, "peak_t")
-
-    base = cell_features["long_squares"]
-
-    ephys_features["sag"] = nan_get(base, "sag")
-    # convert to ms
-    tau = nan_get(base, "tau")
-    ephys_features["tau"] = (tau * 1e3) if tau is not None else None
-    ephys_features["vm_for_sag"] = nan_get(base, "vm_for_sag")
-    ephys_features["f_i_curve_slope"] = nan_get(base, "fi_fit_slope")
-
-    # change the base to ramp
-    base = cell_features["ramps"]["mean_spike_0"] # mean feature of first spike for all of these
-    ephys_features["upstroke_downstroke_ratio_ramp"] = nan_get(base, "upstroke_downstroke_ratio")
-    ephys_features["peak_v_ramp"] = nan_get(base, "peak_v")
-    ephys_features["peak_t_ramp"] = nan_get(base, "peak_t")
-    ephys_features["trough_v_ramp"] = nan_get(base, "trough_v")
-    ephys_features["trough_t_ramp"] = nan_get(base, "trough_t")
-    ephys_features["fast_trough_v_ramp"] = nan_get(base, "fast_trough_v")
-    ephys_features["fast_trough_t_ramp"] = nan_get(base, "fast_trough_t")
-    ephys_features["slow_trough_v_ramp"] = nan_get(base, "slow_trough_v")
-    ephys_features["slow_trough_t_ramp"] = nan_get(base, "slow_trough_t")
-
-    ephys_features["threshold_v_ramp"] = nan_get(base, "threshold_v")
-    ephys_features["threshold_i_ramp"] = nan_get(base, "threshold_i")
-    ephys_features["threshold_t_ramp"] = nan_get(base, "threshold_t")
-
-    # change the base to short_square
-    base = cell_features["short_squares"]["mean_spike_0"] # mean feature of first spike for all of these
-    ephys_features["upstroke_downstroke_ratio_short_square"] = nan_get(base, "upstroke_downstroke_ratio")
-    ephys_features["peak_v_short_square"] = nan_get(base, "peak_v")
-    ephys_features["peak_t_short_square"] = nan_get(base, "peak_t")
-
-    ephys_features["trough_v_short_square"] = nan_get(base, "trough_v")
-    ephys_features["trough_t_short_square"] = nan_get(base, "trough_t")
-
-    ephys_features["fast_trough_v_short_square"] = nan_get(base, "fast_trough_v")
-    ephys_features["fast_trough_t_short_square"] = nan_get(base, "fast_trough_t")
-
-    ephys_features["slow_trough_v_short_square"] = nan_get(base, "slow_trough_v")
-    ephys_features["slow_trough_t_short_square"] = nan_get(base, "slow_trough_t")
-
-#    print "slow trough t:", ephys_features["slow_trough_t_short_square"]
-
-    ephys_features["threshold_v_short_square"] = nan_get(base, "threshold_v")
-    #ephys_features["threshold_i_short_square"] = nan_get(base, "threshold_i")
-    ephys_features["threshold_t_short_square"] = nan_get(base, "threshold_t")
-
-    ephys_features["threshold_i_short_square"] = nan_get(cell_features["short_squares"], "stimulus_amplitude")
-
-    return ephys_features
-
-def build_sweep_feature_records(sweep_table, sweep_features):
-
-    sweep_table = sweep_table.copy()
-
-    num_spikes = []
-    pds = []
-    for sn in sweep_table['sweep_number']:
-        sweep = sweep_features.get(sn, {})
-        pds.append(sweep.get('peak_deflect', [None])[0])
-        num_spikes.append(len(sweep.get('spikes',[])))
-
-    sweep_table['peak_deflection'] = pd.Series(pds)
-    sweep_table['num_spikes'] = pd.Series(num_spikes)
-
-    return sweep_table.to_dict(orient='records')
-
-
-def nan_get(obj, key):
-    """ Return a value from a dictionary.  If it does not exist, return None.  If it is NaN, return None """
-    v = obj.get(key, None)
-
-    if v is None:
-        return None
-    else:
-        return None if np.isnan(v) else v
-
-def categorize_iclamp_sweeps(data_set, stimuli_names):
-
-    iclamp_st = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=stimuli_names)
-
-    mask = iclamp_st["passed"]==False
-    failed_qc_st = iclamp_st[mask]
-    failed_qc_sweeep_numbers = failed_qc_st["sweep_number"].sort_values().values
-
-    mask = iclamp_st["passed"]==True
-    passed_qc_st = iclamp_st[mask]
-    passed_qc_sweeep_numbers = passed_qc_st["sweep_number"].sort_values().values
-
-    logging.info("%s sweeps  passed: %s  failed: %s " % (stimuli_names[0],
-                                                        str(passed_qc_sweeep_numbers),
-                                                        str(failed_qc_sweeep_numbers)))
-
-    if len(passed_qc_sweeep_numbers) == 0:
-        raise er.FeatureError("No %s sweeps available for feature extraction " % stimuli_names[0])
-
-
-    return passed_qc_sweeep_numbers
-
-
-
-
 def extract_data_set_features(data_set, subthresh_min_amp=None):
     """
 
     Parameters
     ----------
-    data_set : AibsDataSet
+    data_set : EphysDataSet
         data set
     subthresh_min_amp
 
@@ -426,20 +274,26 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     # for logging purposes
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
     passed_iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, passing_only=True)
-    logging.info("%d of %d current-clamp sweeps passed QC", len(passed_iclamp_sweeps), len(iclamp_sweeps))
 
     if len(passed_iclamp_sweeps) == 0:
         raise er.FeatureError("There are no QC-passed sweeps available to analyze")
 
     # extract cell-level features
-    logging.info("Computing cell features")
 
     clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=ontology.coarse_long_square_names)
     clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values
 
-    lsq_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.long_square_names)
-    ssq_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.short_square_names)
-    ramp_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.ramp_names)
+    lsq_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True,
+                                                      passing_only=True,
+                                                      stimuli=ontology.long_square_names).sweep_number.sort_values().values
+
+    ssq_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True,
+                                                      passing_only=True,
+                                                      stimuli=ontology.short_square_names).sweep_number.sort_values().values
+
+    ramp_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True,
+                                                       passing_only=True,
+                                                       stimuli=ontology.ramp_names).sweep_number.sort_values().values
 
     if subthresh_min_amp is None:
         if len(clsq_sweep_numbers)>0:
@@ -457,15 +311,14 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
                                           subthresh_min_amp)
 
     # compute sweep features
-    logging.info("Computing sweep features")
     sweep_features = extract_sweep_features(data_set, iclamp_sweeps)
 
     # shuffle peak deflection for the subthreshold long squares
     for s in cell_features["long_squares"]["subthreshold_sweeps"]:
-        sweep_features[s['id']]['peak_deflect'] = s['peak_deflect']
+        sweep_features[s['sweep_number']]['peak_deflect'] = s['peak_deflect']
 
-    cell_record = build_cell_feature_record(cell_features, sweep_features)
-    sweep_records = build_sweep_feature_records(data_set.sweep_table, sweep_features)
+    cell_record = fr.build_cell_feature_record(cell_features)
+    sweep_records = fr.build_sweep_feature_record(data_set.sweep_table, sweep_features)
 
     return cell_features, sweep_features, cell_record, sweep_records
 

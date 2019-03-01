@@ -3,20 +3,13 @@ import sys
 import os.path
 from run_pipeline import run_pipeline
 import generate_pipeline_input as gpi
-import logging
+import ipfx.logging_utils as lu
 
 OUTPUT_DIR = "/local1/ephys/tsts"
 
 INPUT_JSON = "pipeline_input.json"
 OUTPUT_JSON = "pipeline_output.json"
 
-def configure_logger(cell_dir):
-
-    logging.getLogger().setLevel(logging.INFO)
-    logging.basicConfig(filename=os.path.join(cell_dir,"log.txt"))
-    stderrLogger = logging.StreamHandler()
-    stderrLogger.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
-    logging.getLogger().addHandler(stderrLogger)
 
 
 def main():
@@ -24,6 +17,8 @@ def main():
     Runs pipeline from the nwb file
     Usage:
     python pipeline_from_nwb_file.py INPUT_NWB_FILE
+
+    User must specify the OUTPUT_DIR
 
     """
 
@@ -36,9 +31,9 @@ def main():
     if not os.path.exists(cell_dir):
         os.makedirs(cell_dir)
 
-    configure_logger(cell_dir)
+    lu.configure_logger(cell_dir)
 
-    pipe_input = gpi.generate_pipeline_input(cell_dir=cell_dir,
+    pipe_input = gpi.generate_pipeline_input(cell_dir,
                                              input_nwb_file = input_nwb_file)
 
     input_json = os.path.join(cell_dir,INPUT_JSON)

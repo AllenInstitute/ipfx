@@ -4,9 +4,10 @@ import logging
 from collections import Counter
 from . import stim_features as stf
 from . import subthresh_features as subf
-from . import ephys_extractor as efex
+from . import spike_train_features as strf
 from ephys_data_set import SweepSet
 import error as er
+
 
 class StimulusProtocolAnalysis(object):
     MEAN_FEATURES = [ "upstroke_downstroke_ratio", "peak_v", "peak_t", "trough_v", "trough_t",
@@ -68,11 +69,9 @@ class StimulusProtocolAnalysis(object):
         return output
 
     def analyze_basic_features(self, sweep_set, extra_sweep_features=None):
-        logging.info("analysing basic features:")
 
         self._spikes_set = []
         for sweep in sweep_set.sweeps:
-            logging.info("sweep_number: %d" % sweep.sweep_number)
             self._spikes_set.append(self.spx.process(sweep.t, sweep.v, sweep.i))
 
         self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features)
@@ -155,7 +154,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         features["rheobase_sweep"] = rheobase_sweep_features
         features["spiking_sweeps"] = spiking_sweep_features
 
-        features["fi_fit_slope"] = efex.fit_fi_slope(spiking_sweep_features["stim_amp"].values,
+        features["fi_fit_slope"] = strf.fit_fi_slope(spiking_sweep_features["stim_amp"].values,
                                                      spiking_sweep_features["avg_rate"].values)
 
         # find hero sweep
@@ -173,8 +172,6 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         if len(subthreshold_sweep_features) == 0:
             raise er.FeatureError("No subthreshold long square sweeps, cannot evaluate cell features.")
 
-        logging.debug("subthresh_sweeps: %d", len(subthreshold_sweep_features))
-
         sags = subthreshold_sweep_features["sag"]
         sag_eval_levels = np.array([ v[0] for v in subthreshold_sweep_features["peak_deflect"] ])
         closest_index = np.argmin(np.abs(sag_eval_levels - self.SAG_TARGET))
@@ -185,7 +182,6 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         calc_subthresh_features = subthreshold_sweep_features[ (subthreshold_sweep_features["stim_amp"] < self.SUBTHRESH_MAX_AMP) & \
                                                             (subthreshold_sweep_features["stim_amp"] > self.subthresh_min_amp) ].copy()
-        logging.debug("calc_subthresh_sweeps: %d", len(calc_subthresh_features))
 
         calc_subthresh_ss = SweepSet([sweep_set.sweeps[i] for i in calc_subthresh_features.index.values])
 
@@ -241,7 +237,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
             logging.info("Found hero sweep with amp %f in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_features["stim_amp"], hero_min, hero_max,rheo_amp))
         else:
             logging.debug("Cannot find hero sweep in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_min, hero_max,rheo_amp))
-            index_hero = np.argmin(abs(hero_min - spiking_features["stim_amp"]))
+            index_hero = abs(hero_min - spiking_features["stim_amp"]).idxmin()
             hero_features = spiking_features.loc[index_hero]
             logging.debug("Selecting as hero sweep with the amplitude %f closest to the min amplitude in [%f,%f] pA " % (hero_features["stim_amp"], hero_min, hero_max))
 

@@ -1,10 +1,12 @@
+import logging
 from ipfx.stimulus import StimulusOntology
 import ipfx.qc_features as qcf
 import allensdk.core.json_utilities as ju
 
 import argschema as ags
 from ipfx._schemas import SweepExtractionParameters
-from ipfx.aibs_data_set import AibsDataSet
+from ipfx.data_set_utils import create_data_set
+import ipfx.logging_utils as lu
 
 # manual keys are values that can be passed in through input.json.
 # these values are used if the particular value cannot be computed.
@@ -25,6 +27,8 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
     -------
 
     """
+    lu.log_pretty_header("Extract QC features", level=1)
+
     if input_manual_values is None:
         input_manual_values = {}
 
@@ -34,9 +38,9 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
             manual_values[mk] = input_manual_values[mk]
 
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
-    ds = AibsDataSet(nwb_file=input_nwb_file,
-                     h5_file=input_h5_file,
-                     ontology=ont)
+    ds = create_data_set(nwb_file=input_nwb_file,
+                         h5_file=input_h5_file,
+                         ontology=ont)
 
     cell_features, cell_tags = qcf.cell_qc_features(ds, manual_values)
     sweep_features = qcf.sweep_qc_features(ds)

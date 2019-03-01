@@ -1,63 +1,26 @@
 import os
-import numbers
-import urllib2
-import shutil
-
 import pytest
-from pytest import approx
-
 import h5py
 import numpy as np
-
 from ipfx.nwb_reader import create_nwb_reader, NwbMiesReader, NwbPipelineReader, NwbXReader
+from helpers_for_tests import compare_dicts
 from allensdk.api.queries.cell_types_api import CellTypesApi
 
+TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
-@pytest.fixture()
-def fetch_pipeline_file():
-    specimen_id = 595570553
-    nwb_file = '{}.nwb'.format(specimen_id)
-    if not os.path.exists(nwb_file):
+
+@pytest.fixture(scope="session", params=[595570553])
+def fetch_pipeline_file(request):
+    specimen_id = request.param
+    nwb_file_name = '{}.nwb'.format(specimen_id)
+
+    nwb_file_full_path = os.path.join(TEST_DATA_PATH, nwb_file_name)
+
+    if not os.path.exists(nwb_file_full_path):
         ct = CellTypesApi()
-        ct.save_ephys_data(specimen_id, nwb_file)
+        ct.save_ephys_data(specimen_id, nwb_file_full_path)
 
-
-@pytest.fixture()
-def fetch_DAT_NWB_file():
-    output_filepath = 'H18.28.015.11.14.nwb'
-    if not os.path.exists(output_filepath):
-
-        BASE_URL = "https://www.byte-physics.de/Downloads/allensdk-test-data/"
-
-        response = urllib2.urlopen(BASE_URL + output_filepath)
-        with open(output_filepath, "wb") as out_file:
-            shutil.copyfileobj(response, out_file)
-
-
-def compare_dicts(d_ref, d):
-    # pytest does not support passing in dicts of numpy arrays with strings
-    # See https://github.com/pytest-dev/pytest/issues/4079 and
-    # https://github.com/pytest-dev/pytest/issues/4079
-    assert sorted(d_ref.keys()) == sorted(d.keys())
-    for k, v in d_ref.items():
-        if isinstance(v, np.ndarray):
-            array_ref = d_ref[k]
-            array = d[k]
-
-            assert len(array) == len(array_ref)
-            for index in range(len(array)):
-                if isinstance(array[index], (str, unicode)):
-                    assert array[index] == array_ref[index]
-                else:
-                    assert array[index] == approx(array_ref[index])
-        else:
-            value_ref = d_ref[k]
-            value = d[k]
-
-            if isinstance(value_ref, numbers.Number):
-                assert value_ref == approx(value, nan_ok=True)
-            else:
-                assert value_ref == value
+    return nwb_file_full_path
 
 
 def test_raises_on_missing_file():
@@ -66,7 +29,8 @@ def test_raises_on_missing_file():
 
 
 def test_raises_on_empty_h5_file():
-    filename = 'empty.nwb'
+
+    filename = os.path.join(TEST_DATA_PATH, "empty.nwb")
 
     with h5py.File(filename, 'w'):
         pass
@@ -76,7 +40,8 @@ def test_raises_on_empty_h5_file():
 
 
 def test_valid_v1_but_unknown_sweep_naming():
-    filename = 'invalid_sweep_naming_convention.nwb'
+
+    filename = os.path.join(TEST_DATA_PATH, 'invalid_sweep_naming_convention.nwb')
 
     with h5py.File(filename, 'w') as fh:
         dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
@@ -87,7 +52,7 @@ def test_valid_v1_but_unknown_sweep_naming():
 
 
 def test_valid_v1_skeleton_MIES():
-    filename = 'valid_v1_MIES.nwb'
+    filename = os.path.join(TEST_DATA_PATH, 'valid_v1_MIES.nwb')
 
     with h5py.File(filename, 'w') as fh:
         dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
@@ -101,7 +66,7 @@ def test_valid_v1_skeleton_MIES():
 
 
 def test_valid_v1_skeleton_Pipeline():
-    filename = 'valid_v1_Pipeline.nwb'
+    filename = os.path.join(TEST_DATA_PATH, 'valid_v1_Pipeline.nwb')
 
     with h5py.File(filename, 'w') as fh:
         dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
@@ -115,7 +80,7 @@ def test_valid_v1_skeleton_Pipeline():
 
 
 def test_valid_v1_skeleton_X_NWB():
-    filename = 'valid_v2.nwb'
+    filename = os.path.join(TEST_DATA_PATH, 'valid_v2.nwb')
 
     with h5py.File(filename, 'w') as fh:
         fh.attrs["nwb_version"] = str("2")
@@ -124,8 +89,18 @@ def test_valid_v1_skeleton_X_NWB():
     assert isinstance(reader, NwbXReader)
 
 
+@pytest.mark.parametrize('NWB_file', ["500844779.nwb", "509604657.nwb"], indirect=True)
+def test_assumed_sweep_number_fallback(NWB_file):
+
+    reader = create_nwb_reader(NWB_file)
+    assert isinstance(reader, NwbPipelineReader)
+
+    with pytest.warns(UserWarning, match="Sweep number mismatch"):
+        assert reader.get_sweep_number("Sweep_10") == 10
+
+
 def test_valid_v1_full_Pipeline(fetch_pipeline_file):
-    reader = create_nwb_reader('595570553.nwb')
+    reader = create_nwb_reader(fetch_pipeline_file)
     assert isinstance(reader, NwbPipelineReader)
 
     sweep_names_ref = [u'Sweep_10',
@@ -204,7 +179,7 @@ def test_valid_v1_full_Pipeline(fetch_pipeline_file):
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (37500, 101149),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 50000.0,
                       'stimulus': None,
@@ -217,9 +192,11 @@ def test_valid_v1_full_Pipeline(fetch_pipeline_file):
     assert sweep_data_ref == sweep_data
 
 
-def test_valid_v1_full_MIES_1():
-    reader = create_nwb_reader(os.path.join(os.path.dirname(__file__), 'data',
-                               'UntitledExperiment-2018_12_03_234957-compressed.nwb'))
+@pytest.mark.parametrize('NWB_file', ['UntitledExperiment-2018_12_03_234957-compressed.nwb'], indirect=True)
+def test_valid_v1_full_MIES_1(NWB_file):
+
+    reader = create_nwb_reader(NWB_file)
+
     assert isinstance(reader, NwbMiesReader)
 
     sweep_names_ref = [u'data_00000_AD0']
@@ -248,7 +225,7 @@ def test_valid_v1_full_MIES_1():
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (0, 188000),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 200000.0,
                       'stimulus': None,
@@ -261,9 +238,10 @@ def test_valid_v1_full_MIES_1():
     assert sweep_data_ref == sweep_data
 
 
-def test_valid_v1_full_MIES_2():
-    reader = create_nwb_reader(os.path.join(os.path.dirname(__file__), 'data',
-                               'H18.03.315.11.11.01.05.nwb'))
+@pytest.mark.parametrize('NWB_file', ['H18.03.315.11.11.01.05.nwb'], indirect=True)
+def test_valid_v1_full_MIES_2(NWB_file):
+
+    reader = create_nwb_reader(NWB_file)
     assert isinstance(reader, NwbMiesReader)
 
     sweep_names_ref = [u'data_00000_AD0']
@@ -293,7 +271,7 @@ def test_valid_v1_full_MIES_2():
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (0, 65999),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 200000.0,
                       'stimulus': None,
@@ -306,9 +284,10 @@ def test_valid_v1_full_MIES_2():
     assert sweep_data_ref == sweep_data
 
 
-def test_valid_v1_full_MIES_3():
-    reader = create_nwb_reader(os.path.join(os.path.dirname(__file__), 'data',
-                               'Sst-IRES-CreAi14-395722.01.01.01.nwb'))
+@pytest.mark.parametrize('NWB_file', ['Sst-IRES-CreAi14-395722.01.01.01.nwb'], indirect=True)
+def test_valid_v1_full_MIES_3(NWB_file):
+
+    reader = create_nwb_reader(NWB_file)
 
     assert isinstance(reader, NwbMiesReader)
 
@@ -339,7 +318,7 @@ def test_valid_v1_full_MIES_3():
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (0, 65999),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 200000.0,
                       'stimulus': None,
@@ -352,12 +331,13 @@ def test_valid_v1_full_MIES_3():
     assert sweep_data_ref == sweep_data
 
 
-def test_valid_v2_full_ABF():
-    reader = create_nwb_reader(os.path.join(os.path.dirname(__file__), 'data',
-                               '2018_03_20_0005.nwb'))
+@pytest.mark.parametrize('NWB_file', ['2018_03_20_0005.nwb'], indirect=True)
+def test_valid_v2_full_ABF(NWB_file):
+
+    reader = create_nwb_reader(NWB_file)
     assert isinstance(reader, NwbXReader)
 
-    sweep_names_ref = [u'index_0', u'index_1']
+    sweep_names_ref = [u'index_0']
 
     sweep_names = reader.get_sweep_names()
     assert sorted(sweep_names_ref) == sorted(sweep_names)
@@ -388,7 +368,7 @@ def test_valid_v2_full_ABF():
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (0, 899999),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 50000.0,
                       'stimulus': None,
@@ -401,9 +381,9 @@ def test_valid_v2_full_ABF():
     assert sweep_data_ref == sweep_data
 
 
-def test_valid_v2_full_DAT(fetch_DAT_NWB_file):
-
-    reader = create_nwb_reader('H18.28.015.11.14.nwb')
+@pytest.mark.parametrize('NWB_file', ['H18.28.015.11.14.nwb'], indirect=True)
+def test_valid_v2_full_DAT(NWB_file):
+    reader = create_nwb_reader(NWB_file)
     assert isinstance(reader, NwbXReader)
 
     sweep_names_ref = ['index_{:02d}'.format(x) for x in range(0, 78)]
@@ -441,7 +421,7 @@ def test_valid_v2_full_DAT(fetch_DAT_NWB_file):
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
-    sweep_data_ref = {'index_range': (0, 199999),
+    sweep_data_ref = {
                       'response': None,
                       'sampling_rate': 200000.00000000003,
                       'stimulus': None,

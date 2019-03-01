@@ -1,4 +1,5 @@
 from . import stim_features as stf
+from . import epochs as ep
 from . import error as er
 import logging
 import numpy as np
@@ -142,7 +143,10 @@ def cell_qc_features(data_set, manual_values=None):
     try:
         blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
-        blowout_mv = measure_blowout(blowout_data.v, blowout_data.expt_idx_range[0])
+
+        expt_start_idx, _ = ep.get_experiment_epoch(blowout_data.i, blowout_data.sampling_rate)
+
+        blowout_mv = measure_blowout(blowout_data.v, expt_start_idx)
         output_data['blowout_mv'] = blowout_mv
     except IndexError as e:
         msg = "Blowout is not available"
@@ -270,7 +274,7 @@ def sweep_qc_features(data_set):
 
     Parameters
     ----------
-    data_set : AibsDataSet
+    data_set : EphysDataSet
         dataset
 
     Returns
@@ -291,23 +295,19 @@ def sweep_qc_features(data_set):
     for sweep_info in iclamp_sweeps.to_dict(orient='records'):
         sweep_num = sweep_info['sweep_number']
         sweep_data = data_set.sweep(sweep_num)
-
-        if sweep_completed(sweep_data.i, sweep_data.v, sweep_data.sampling_rate):
-
+        if completed_experiment(sweep_data.i, sweep_data.v,sweep_data.sampling_rate):
             sweep = current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology)
             sweep["completed"] = True
         else:
             sweep = dict()
             sweep["completed"] = False
-
+            logging.info("sweep {}, {}, did not complete experiment".format(sweep_num, sweep_info["stimulus_name"]))
         sweep.update(sweep_info)
         sweep_features.append(sweep)
-
     return sweep_features
 
 
 def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
-
 
     sweep = {}
 
@@ -315,10 +315,12 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
     current = sweep_data.i
     t = sweep_data.t
     hz = sweep_data.sampling_rate
-    expt_start_idx, expt_end_idx = sweep_data.expt_idx_range
+
+    expt_start_idx, _ = ep.get_experiment_epoch(current, hz)
+    _, sweep_end_idx = ep.get_sweep_epoch(voltage)
 
     # measure Vm and noise before stimulus
-    idx0, idx1 = stf.get_first_vm_noise_epoch(expt_start_idx, hz)  # count from the beginning of the experiment
+    idx0, idx1 = ep.get_first_vm_noise_epoch(expt_start_idx, hz)  # count from the beginning of the experiment
 
     _, rms0 = measure_vm(voltage[idx0:idx1])
 
@@ -331,9 +333,9 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
     is_ramp = sweep_info['stimulus_name'] in ontology.ramp_names
 
     if not is_ramp:
-        idx0, idx1 = stf.get_last_vm_epoch(expt_end_idx, hz)
+        idx0, idx1 = ep.get_last_vm_epoch(sweep_end_idx, hz)
         mean_last_vm_epoch, _ = measure_vm(voltage[idx0:idx1])
-        idx0, idx1 = stf.get_last_vm_noise_epoch(expt_end_idx, hz)
+        idx0, idx1 = ep.get_last_vm_noise_epoch(sweep_end_idx, hz)
         _, rms1 = measure_vm(voltage[idx0:idx1])
         sweep["post_vm_mv"] = float(mean_last_vm_epoch)
         sweep["post_noise_rms_mv"] = float(rms1)
@@ -342,15 +344,16 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
 
     # measure Vm and noise over extended interval, to check stability
 
-    stim_start_ix = stf.find_stim_start(current, expt_start_idx)
-    sweep['stimulus_start_time'] = t[stim_start_ix]
-    idx0, idx1 = stf.get_stability_vm_epoch(stim_start_ix, hz)
+    stim_start_time, stim_dur, stim_amp, stim_start_idx, stim_end_idx = stf.get_stim_characteristics(current,t)
+
+    sweep['stimulus_start_time'] = stim_start_time
+
+    idx0, idx1 = ep.get_stability_vm_epoch(stim_start_idx, hz)
     mean2, rms2 = measure_vm(voltage[idx0:idx1])
 
     sweep["slow_vm_mv"] = float(mean2)
     sweep["slow_noise_rms_mv"] = float(rms2)
 
-    # for now (mid-feb 15), make vm_mv the same for pre and slow
     mean0 = mean2
     sweep["pre_vm_mv"] = float(mean0)
 
@@ -361,8 +364,6 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
         # Use None as 'nan' still breaks the ruby strategies
         sweep["vm_delta_mv"] = None
 
-    # compute stimulus duration, amplitude, interval
-    stim_amp, stim_dur = stf.find_stim_amplitude_and_duration(expt_start_idx, current, hz)
     stim_int = stf.find_stim_interval(expt_start_idx, current, hz)
 
     sweep['stimulus_amplitude'] = stim_amp
@@ -371,25 +372,22 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
 
     return sweep
 
-def sweep_completed(i,v,hz):
 
-    POSTSTIM_STABILITY_EPOCH = 0.5
+def completed_experiment(i,v,hz):
+
     LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
 
-    stimulus_end_ix = np.nonzero(i)[0][-1]  # last non-zero index along the only dimension=0
-    response_end_ix = np.nonzero(v)[0][-1]  # last non-zero index along the only dimension=0
+    _, sweep_end_ix = ep.get_sweep_epoch(v)
+    _, expt_end_ix = ep.get_experiment_epoch(i, hz)
 
-    post_stim_response_duration = (response_end_ix - stimulus_end_ix) / hz
-    completed_expt_epoch = post_stim_response_duration > POSTSTIM_STABILITY_EPOCH
-
-    long_response = response_end_ix/hz>LONG_RESPONSE_DURATION
-
-    if completed_expt_epoch or long_response:
-        sweep_completion = True
+    if sweep_end_ix >= expt_end_ix:
+        return True
+    elif (sweep_end_ix / hz) > LONG_RESPONSE_DURATION:
+        return True
     else:
-        sweep_completion = False
+        return False
 
-    return sweep_completion
+
 
 
 
