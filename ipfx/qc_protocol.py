@@ -39,7 +39,41 @@ def qc_experiment(ontology, cell_features, sweep_features, qc_criteria=None):
 
     sweep_states = qc_sweeps(ontology,sweep_features,qc_criteria)
 
+    num_passed_sweeps, num_sweeps = count_sweeps(sweep_states)
+
+    if num_sweeps == 0:
+        cell_state["fail_tags"].append("No sweep states available")
+
+    if num_passed_sweeps == 0:
+        msg = "No current clamps sweeps passed QC"
+        logging.warning(msg)
+        cell_state["fail_tags"].append(msg)
+
     return cell_state, sweep_states
+
+
+def count_sweeps(sweep_states):
+    """
+    Count passed and total sweeps
+
+    Parameters
+    ----------
+    sweep_states: list of dicts
+
+    Returns
+    -------
+    num_passed_sweeps: int
+    num_sweeps: int
+
+    """
+    num_passed_sweeps = 0
+    for ss in sweep_states:
+        if ss["passed"] is True:
+            num_passed_sweeps += 1
+
+    num_sweeps = len(sweep_states)
+
+    return num_passed_sweeps, num_sweeps
 
 
 def qc_sweeps(ontology,sweep_features,qc_criteria):
