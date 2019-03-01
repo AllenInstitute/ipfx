@@ -118,7 +118,7 @@ def extract_sweep_features(data_set, sweep_table):
     sweep_groups = sweep_table.groupby(data_set.STIMULUS_NAME)[data_set.SWEEP_NUMBER]
 
     # extract sweep-level features
-    lu.log_pretty_header("Analyzing cell features:",level=2)
+    lu.log_pretty_header("Analyzing sweep features:",level=2)
 
     sweep_features = {}
 

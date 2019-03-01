@@ -6,6 +6,8 @@ from generate_qc_input import generate_qc_input
 from generate_se_input import generate_se_input, parse_args
 from run_qc import run_qc
 import lims_queries as lq
+import ipfx.logging_utils as lu
+
 
 FX_INPUT_FEATURES = [
                     "stimulus_code",
@@ -48,9 +50,11 @@ def main():
 
     """
 
+
     kwargs = parse_args()
     se_input = generate_se_input(**kwargs)
     cell_dir = kwargs["cell_dir"]
+    lu.configure_logger(cell_dir)
 
     if not os.path.exists(cell_dir):
         os.makedirs(cell_dir)
