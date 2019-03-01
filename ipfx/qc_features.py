@@ -290,7 +290,7 @@ def sweep_qc_features(data_set):
                                                   exclude_search=True,
                                                   )
     if len(iclamp_sweeps.index)==0:
-        raise ValueError("No current clamp sweeps available for QC.")
+        logging.warning("No current clamp sweeps available to compute QC features")
 
     for sweep_info in iclamp_sweeps.to_dict(orient='records'):
         sweep_num = sweep_info['sweep_number']
