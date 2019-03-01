@@ -1,5 +1,10 @@
+"""
+Convert ABF files, created by PClamp/Clampex, to NWB v2 files.
+"""
+
 from hashlib import sha256
 import json
+import re
 import os
 import glob
 import warnings
@@ -12,22 +17,24 @@ from pynwb.device import Device
 from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import IntracellularElectrode
 
-from ipfx.x_to_nwb.utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
-     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, createCompressedDataset, \
+from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
+     parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, createCycleID
 
 
 class ABFConverter:
 
     protocolStorageDir = None
+    adcNamesWithRealData = ("IN 0", "IN 1", "IN 2", "IN 3")
 
-    def __init__(self, inFileOrFolder, outFile):
+    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel):
         """
         Convert the given ABF file to NWB
 
         Keyword arguments:
-        inFileOrFolder -- input file, or folder with multiple files, in ABF v2 format
-        outFile        -- target filepath (must not exist)
+        inFileOrFolder        -- input file, or folder with multiple files, in ABF v2 format
+        outFile               -- target filepath (must not exist)
+        outputFeedbackChannel -- Output ADC data from feedback channels as well (useful for debugging only)
         """
 
         inFiles = []
@@ -39,7 +46,9 @@ class ABFConverter:
         else:
             raise ValueError(f"{inFileOrFolder} is neither a folder nor a path.")
 
-        self._amplifierSettings = self._getJSONFile(inFileOrFolder)
+        self.outputFeedbackChannel = outputFeedbackChannel
+
+        self._settings = self._getJSONFile(inFileOrFolder)
 
         self.abfs = []
 
@@ -75,34 +84,52 @@ class ABFConverter:
         with NWBHDF5IO(outFile, "w") as io:
             io.write(nwbFile, cache_spec=True)
 
+    @staticmethod
+    def outputMetadata(inFile):
+        if not os.path.isfile(inFile):
+            raise ValueError(f"The file {inFile} does not exist.")
+
+        root, ext = os.path.splitext(inFile)
+
+        abf = pyabf.ABF(inFile)
+        abf.getInfoPage().generateHTML(saveAs=root + ".html")
+
+    @staticmethod
+    def _getProtocolName(protocolName):
+        """
+        Return the protocol/stimset name without the channel suffix.
+        """
+
+        return re.sub(r"_IN\d+$", "", protocolName)
+
     def _getJSONFile(self, inFileOrFolder):
         """
-        Search the JSON file with all amplifier settings.
+        Search the JSON file with all miscellaneous settings.
         If `inFileOrFolder` is a folder we need one JSON file in that folder,
         if `inFileOrFolder` is a file the JSON file must have the same
         basename. For all other cases we warn and return nothing.
         """
 
         if os.path.isfile(inFileOrFolder):
-            ampSettings = os.path.splitext(inFileOrFolder)[0] + ".json"
+            settings = os.path.splitext(inFileOrFolder)[0] + ".json"
 
-            if not os.path.isfile(ampSettings):
-                warnings.warn(f"Could not find the JSON file {ampSettings} with amplifier settings.")
+            if not os.path.isfile(settings):
+                warnings.warn(f"Could not find the JSON file {settings} with settings.")
                 return None
 
         elif os.path.isdir(inFileOrFolder):
             files = glob.glob(os.path.join(inFileOrFolder, "*.json"))
 
             if len(files) != 1:
-                warnings.warn(f"Could not find exactly one JSON file with amplifier "
+                warnings.warn(f"Could not find exactly one JSON file with "
                               f"settings in folder {inFileOrFolder}.")
                 return None
 
-            ampSettings = files[0]
+            settings = files[0]
         else:
             return None
 
-        with open(ampSettings) as fh:
+        with open(settings) as fh:
             return json.load(fh)
 
     def _check(self, abf):
@@ -170,7 +197,7 @@ class ABFConverter:
             elif self.refabf.abfVersion != abf.abfVersion:
                 raise ValueError("abfVersion does not match.")
             elif self.refabf.channelList != abf.channelList:
-                raise ValueError("channelList does not match.")
+                raise ValueError(f"channelList does not match ({self.refabf.channelList} vs {abf.channelList}.")
 
     def _getOldestABF(self):
         """
@@ -292,7 +319,9 @@ class ABFConverter:
 
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
-                    data = createCompressedDataset(abf.sweepC)
+                    stimulus_description = ABFConverter._getProtocolName(abf.protocol)
+                    scale_factor = self._getScaleFactor(stimulus_description)
+                    data = convertDataset(abf.sweepC * scale_factor)
                     conversion, unit = parseUnit(abf.sweepUnitsC)
                     electrode = electrodes[channel]
                     gain = abf._dacSection.fDACScaleFactor[channel]
@@ -302,6 +331,7 @@ class ABFConverter:
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
+                                              "file": os.path.basename(abf.abfFilePath),
                                               "name": abf.dacNames[channel],
                                               "number": abf._dacSection.nDACNum[channel]},
                                              sort_keys=True, indent=4)
@@ -310,7 +340,7 @@ class ABFConverter:
 
                     stimulus = seriesClass(name=name,
                                            data=data,
-                                           sweep_number=cycle_id,
+                                           sweep_number=np.uint64(cycle_id),
                                            unit=unit,
                                            electrode=electrode,
                                            gain=gain,
@@ -318,11 +348,23 @@ class ABFConverter:
                                            conversion=conversion,
                                            starting_time=starting_time,
                                            rate=rate,
-                                           description=description)
+                                           description=description,
+                                           stimulus_description=stimulus_description)
 
                     series.append(stimulus)
 
         return series
+
+    def _getScaleFactor(self, stimset):
+        """
+        Return the stimulus scale factor for the given stimset.
+        """
+
+        try:
+            return float(self._settings["ScaleFactors"][stimset])
+        except (TypeError, KeyError) as e:
+            warnings.warn(f"Could not find the scale factor for the stimset {stimset} using 1.0 as fallback.")
+            return 1.0
 
     def _getAmplifierSettings(self, clampMode, adcName):
         """
@@ -335,11 +377,12 @@ class ABFConverter:
         try:
             # JSON stores adcName without spaces
             adcNameWOSpace = adcName.replace(" ", "")
-            amplifier = self._amplifierSettings["uids"][adcNameWOSpace]
-            settings = self._amplifierSettings[amplifier]
+            amplifier = self._settings["uids"][adcNameWOSpace]
+            settings = self._settings[amplifier]
 
             if settings["GetMode"] != clampMode:
-                warnings.warn("Stored clamp mode {settings['GetMode']} does not match requested clamp mode {clampMode}")
+                warnings.warn(f"Stored clamp mode {settings['GetMode']} does not match requested "
+                              f"clamp mode {clampMode} of channel {adcName}.")
                 settings = None
         except (TypeError, KeyError) as e:
             warnings.warn(f"Could not find settings for amplifier of channel {adcName}.")
@@ -413,20 +456,29 @@ class ABFConverter:
             for sweep in range(abf.sweepCount):
                 cycle_id = createCycleID([file_index, sweep], total=self.totalSeriesCount)
                 for channel in range(abf.channelCount):
+                    adcName = abf.adcNames[channel]
+
+                    if not self.outputFeedbackChannel:
+                        if adcName in ABFConverter.adcNamesWithRealData:
+                            pass
+                        else:
+                            # feedback data, skip
+                            continue
+
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
-                    data = createCompressedDataset(abf.sweepY)
+                    data = convertDataset(abf.sweepY)
                     conversion, unit = parseUnit(abf.sweepUnitsY)
                     electrode = electrodes[channel]
                     gain = abf._adcSection.fADCProgrammableGain[channel]
                     resolution = np.nan
                     starting_time = self._calculateStartingTime(abf)
-                    stimulus_description = abf.protocol
+                    stimulus_description = ABFConverter._getProtocolName(abf.protocol)
                     rate = float(abf.dataRate)
-                    adcName = abf.adcNames[channel]
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
                                               "protocolPath": abf.protocolPath,
+                                              "file": os.path.basename(abf.abfFilePath),
                                               "name": adcName,
                                               "number": abf._adcSection.nADCNum[channel]},
                                              sort_keys=True, indent=4)
@@ -438,7 +490,7 @@ class ABFConverter:
                     if clampMode == V_CLAMP_MODE:
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
-                                                      sweep_number=cycle_id,
+                                                      sweep_number=np.uint64(cycle_id),
                                                       unit=unit,
                                                       electrode=electrode,
                                                       gain=gain,
@@ -459,7 +511,7 @@ class ABFConverter:
                     elif clampMode == I_CLAMP_MODE:
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
-                                                      sweep_number=cycle_id,
+                                                      sweep_number=np.uint64(cycle_id),
                                                       unit=unit,
                                                       electrode=electrode,
                                                       gain=gain,

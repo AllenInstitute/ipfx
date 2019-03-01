@@ -1,4 +1,3 @@
-import sys
 import warnings
 
 from ipfx.x_to_nwb.hr_nodes import (Pulsed, StimulusTemplate, AmplifierFile,
@@ -48,7 +47,7 @@ class Bundle():
                 ext = item.Extension
                 self.catalog[ext] = item
 
-            if not self.header.Version.startswith("v2x90.1"):
+            if not self.header.Version.startswith("v2x90"):
                 warnings.warn(f"The DAT file version '{self.header.Version}' of '{file_name}' might "
                               "be incompatible and therefore read/interpretation errors are possible.")
 
@@ -225,13 +224,3 @@ class Bundle():
                 print(record, file=fh)
                 for state in record:
                     print(state, file=fh)
-
-
-def main(argv):
-    for filename in argv[1:]:
-        with Bundle(filename) as bundle:
-            bundle._all_info(filename + ".pymeta")
-
-
-if __name__ == "__main__":
-    main(sys.argv)

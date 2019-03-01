@@ -1,4 +1,6 @@
-OUTPUT_DIR=/local1/ephys/tests
+#!/bin/sh
+
+OUTPUT_DIR=/local1/ephys/tsts
 SPECIMEN_ID=$1
 
 CELL_NAME=$SPECIMEN_ID

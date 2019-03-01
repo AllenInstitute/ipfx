@@ -3,7 +3,7 @@ import numpy as np
 
 
 def test_measure_blowout():
-    a = np.array([ 0,0,1,1 ])
+    a = np.array([0, 0, 1, 1])
     b = qcf.measure_blowout(a, 0)
     assert b == 0.5
 
@@ -12,7 +12,7 @@ def test_measure_blowout():
 
 
 def test_measure_electrode_0():
-    a = np.array([1,1,1,1])
+    a = np.array([1, 1, 1, 1])
     b = qcf.measure_electrode_0(a, 1)
     assert np.isnan(b)
 
@@ -21,11 +21,11 @@ def test_measure_electrode_0():
 
 
 def test_measure_seal():
-    i = np.array([0,0,0,0,1,1,1,0])
-    v = np.array([0,0,0,0,1,1,1,0])
-    t = np.arange(len(v))*1E-3
+    i = np.array([0, 0, 0, 0, 1, 1, 1, 0])
+    v = np.array([0, 0, 0, 0, 1, 1, 1, 0])
+    t = np.arange(len(v)) * 1E-3
     b = qcf.measure_seal(v, i, t)
-    assert np.allclose([b],[1.0])
+    assert np.allclose([b], [1.0])
 
 
 def test_measure_input_resistance():
@@ -48,4 +48,3 @@ def test_measure_input_resistance():
 
     ir_tested = qcf.get_r_from_stable_pulse_response(voltage, current, time)
     assert np.isclose(ir_tested, ir)
-

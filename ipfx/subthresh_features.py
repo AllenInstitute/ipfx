@@ -170,7 +170,7 @@ def input_resistance(t_set, i_set, v_set, start, end, baseline_interval=0.1):
         i = np.append(i, 0.)
 
     A = np.vstack([i, np.ones_like(i)]).T
-    m, c = np.linalg.lstsq(A, v)[0]
+    m, c = np.linalg.lstsq(A, v,rcond=None)[0]
 
     return m * 1e3
 

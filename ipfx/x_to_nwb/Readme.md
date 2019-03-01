@@ -19,24 +19,28 @@ JSON output.
 #### MCC settings gathering
 
 ```sh
-mcc_get_settings.py --filename 2018_09_12_0003.json --idChannelMapping '{"IN0" : "x00830251_1"}' '{"IN1" : "x00830251_2"}'
+mcc_get_settings.py --filename 2018_09_12_0003.json --settingsFile misc-settings.json
 ```
 
-The optional parameter `--filename` gives the name of the output file, and
-`--idChannelMapping` makes the connection between the names of the AD channels
-and the amplifier names.
+The optional parameter `--filename` gives the name of the output file,
+`--settingsFile` is mandatory and makes the connection between the names of the
+AD channels and the amplifier names. In addition it holds the optional scale
+factors for the stimulus sets.
 
-If you prefer to pass in a valid JSON file instead of giving these on the commandline use
-```sh
-mcc_get_settings.py --filename 2018_09_12_0003.json --idChannelMappingFromFile idChannelMapping.json
-```
-
-where `idChannelMapping.json` has the following format:
+Example for `misc-settings.json`:
 
 ```json
 {
-  "IN0": "x00830251_1",
-  "IN1": "x00830251_2"
+    "IN0": "Demo1_1",
+    "IN1": "Demo1_2",
+    "ScaleFactors": {
+        "C1NSD1SHORT": 1.05,
+        "C1NSD2SHORT": 1.05,
+        "CHIRP": 1,
+        "LSFINEST": 1.05,
+        "SSFINEST": 7,
+        "TRIPPLE": 7
+    }
 }
 ```
 
@@ -86,10 +90,16 @@ run_x_to_nwb_conversion.py --fileType ".abf" --overwrite someFolder
 
 #### Examples
 
-##### Convert a single file
+##### Convert a single file creating one NWB file per Group
 
 ```sh
 run_x_to_nwb_conversion.py H18.28.015.11.12.dat
+```
+
+##### Convert a single file creating one NWB file with all Groups
+
+```sh
+run_x_to_nwb_conversion.py --multipleGroupsPerFile H18.28.015.11.12.dat
 ```
 
 ## Creating a PDF from an NWB file for preview purposes
@@ -99,3 +109,26 @@ nwb_to_pdf.py file1.nwb file2.nwb
 ```
 
 This creates two PDFs named `file1.pdf` and `file2.pdf`.
+
+## Outputting DAT/ABF metadata files for debugging purposes
+
+```sh
+run_x_to_nwb_conversion.py --outputMetadata *.dat *.abf
+```
+
+## Running the regression tests
+
+Currently only file level regressions tests exist which check that the
+conversion from DAT/ABF to NWB results in the same NWB files compared to earlier
+versions.
+
+For running the tests do the following:
+
+```sh
+cd tests
+py.test --collect-only --do-x-nwb-tests test_x_nwb.py
+py.test --do-x-nwb-tests --numprocesses auto test_x_nwb.py
+```
+
+The separate collection step is necessary as that can not be parallelized, see also
+https://github.com/pytest-dev/pytest-xdist/issues/18.

@@ -2,7 +2,8 @@ import os
 import logging
 import allensdk.core.json_utilities as ju
 
-DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(os.path.dirname(__file__), 'stimulus_ontology.json')
+DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(os.path.dirname(__file__), 'defaults/stimulus_ontology.json')
+
 
 class Stimulus(object):
 
@@ -24,25 +25,22 @@ class Stimulus(object):
 
 
 class StimulusOntology(object):
-    """
-    Creates stimuli based on stimulus ontology
-    """
 
-    def __init__(self, stimuli_props=None):
+    def __init__(self, stim_ontology_tags=None):
 
         """
 
         Parameters
         ----------
-        stimuli_props: nested list  of stimuli ontology properties
+        stim_ontology_tags: nested list  of stimuli ontology properties
 
         """
 
-        if stimuli_props is None:
+        if stim_ontology_tags is None:
             logging.debug("loading default stimulus ontology: %s", DEFAULT_STIMULUS_ONTOLOGY_FILE)
-            stimuli_props = ju.read(DEFAULT_STIMULUS_ONTOLOGY_FILE)
+            stim_ontology_tags = ju.read(DEFAULT_STIMULUS_ONTOLOGY_FILE)
 
-        self.stimuli = list(Stimulus(s) for s in stimuli_props)
+        self.stimuli = list(Stimulus(s) for s in stim_ontology_tags)
 
         self.ramp_names = ( "Ramp",)
 
@@ -67,8 +65,6 @@ class StimulusOntology(object):
         self.seal_names = ( 'EXTPCllATT', )
         self.breakin_names = ( 'EXTPBREAKN', )
         self.extp_names = ( 'EXTP', )
-
-        self.current_clamp_units = ( 'Amps', 'pA')
 
     def find(self, tag, tag_type=None):
         matching_stims = [ s for s in self.stimuli if s.has_tag(tag, tag_type=tag_type) ]

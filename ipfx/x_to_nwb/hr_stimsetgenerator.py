@@ -1,7 +1,7 @@
 import numpy as np
 
 from ipfx.x_to_nwb.hr_segments import getSegmentClass
-from ipfx.x_to_nwb.utils import getChannelRecordIndex, getStimulusRecordIndex
+from ipfx.x_to_nwb.conversion_utils import getChannelRecordIndex, getStimulusRecordIndex
 
 
 class StimSetGenerator:

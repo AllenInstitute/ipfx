@@ -21,9 +21,8 @@ def test_dvdt_no_filter():
 
 def test_fixed_dt():
     t = [0, 1, 2, 3]
-    assert tsu.has_fixed_dt(t) == True
+    assert tsu.has_fixed_dt(t)
 
     # Change the first time point to make time steps inconsistent
     t[0] -= 3.
-    assert tsu.has_fixed_dt(t) == False
-
+    assert not tsu.has_fixed_dt(t)

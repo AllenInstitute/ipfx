@@ -1,23 +1,7 @@
-import allensdk.internal.core.lims_utilities as lu
 import allensdk.core.json_utilities as ju
 import re
-
-stims = lu.query("""
-select ersn.name as stimulus_code, est.name as stimulus_name from ephys_raw_stimulus_names ersn
-join ephys_stimulus_types est on ersn.ephys_stimulus_type_id = est.id
-""")
-
-out = []
-
-# all core one sweeps
-# ont.has_any(stim, ('Core 1'))
-
-# only Coarse Long Squares
-# ont.has_all(stim, ('Long Square', 'Coarse'))
-
-#
-#
-stims =  [ { k.decode("UTF-8"):v for k,v in stim.items() } for stim in stims   ]
+import os
+import lims_queries as lq
 
 NAME = 'name'
 CODE = 'code'
@@ -25,58 +9,96 @@ RES = 'resolution'
 CORE = 'core'
 HOLD = 'hold'
 
-for stim in stims:
-    tags = set()
 
-    sname = stim['stimulus_name']
-    scode = stim['stimulus_code']
+def make_stimulus_ontology(stims):
 
-    #tags.add(scode)
+    ontology = []
 
-    m = re.search("(.*)\d{6}$", scode)
-    if m:
-        code_name, = m.groups()
-        tags.add((CODE, code_name, scode))
-    else:
-        tags.add((CODE, scode))
+    stims = [{k.decode("UTF-8"): v for k, v in stim.items()} for stim in stims]
 
-    # core tags
-    if scode.startswith('C1'):
-        tags.add((CORE, 'Core 1'))
-    elif scode.startswith('C2'):
-        tags.add((CORE, 'Core 2'))
+    for stim in stims:
+        tags = set()
 
-    # resolution tags
-    if 'FINE' in scode:
-        tags.add((RES, 'Fine'))
-    elif 'COARSE' in scode:
-        tags.add((RES, 'Coarse'))
+        sname = stim['stimulus_name']
+        scode = stim['stimulus_code']
 
-    # name tags
-    if 'C1NS' in scode:
-        tags.add((NAME, 'Noise', sname))
-    elif 'Short Square' in sname and 'Triple' not in sname:
-        tags.add((NAME, 'Short Square'))
-    elif 'Long Square' in sname:
-        tags.add((NAME, 'Long Square'))
-    else:
-        tags.add((NAME, sname))
+        # code tags
+        m = re.search("(.*)\d{6}$", scode)
+        if m:
+            code_name, = m.groups()
+            tags.add((CODE, code_name, scode))
+        else:
+            tags.add((CODE, scode))
 
-    # hold tags
-    if 'Hold' in sname:
-        # find the first dash
-        idx = sname.find('-')
-        a = sname[:idx]
-        b = sname[idx+1:]
-        #tags.add(a.strip())
-        #tags.add(b.strip())
-        tags.add((HOLD, b.strip()))
+        # core tags
+        if scode.startswith('C1'):
+            tags.add((CORE, 'Core 1'))
+        elif scode.startswith('C2'):
+            tags.add((CORE, 'Core 2'))
 
-    out.append(list(tags))
+        # resolution tags
+        if 'FINE' in scode:
+            tags.add((RES, 'Fine'))
+        elif 'COARSE' in scode:
+            tags.add((RES, 'Coarse'))
 
-out.append([ (CODE, 'C1NSSEED'), (NAME, 'Noise', 'Noise 1'), (CORE, 'Core 1') ])
+        # name tags
+        if 'C1NS' in scode:
+            tags.add((NAME, 'Noise', sname))
+        elif 'Short Square' in sname and 'Triple' not in sname:
+            tags.add((NAME, 'Short Square'))
+        elif 'Long Square' in sname:
+            tags.add((NAME, 'Long Square'))
+        else:
+            tags.add((NAME, sname))
 
-for o in out:
-    print(o)
+        # hold tags
+        if 'Hold' in sname:
+            # find the first dash
+            idx = sname.find('-')
+            b = sname[idx + 1:]
+            tags.add((HOLD, b.strip()))
 
-ju.write('stimulus_ontology_patchseq2.json', out)
+        ontology.append(list(tags))
+
+    return ontology
+
+
+def make_stimulus_ontology_from_lims():
+
+    stimuli = lq.get_stimuli_description()
+
+    if not stimuli:
+        return None
+
+    ontology = make_stimulus_ontology(stimuli)
+
+    ontology.append([(CODE, 'C1NSSEED'), (NAME, 'Noise', 'Noise 1'), (CORE, 'Core 1')])
+
+    return ontology
+
+
+def make_default_stimulus_ontology():
+
+    MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
+    PACKAGE_DIR = os.path.dirname(MODULE_DIR)
+
+    stim_ontology_tags = make_stimulus_ontology_from_lims()
+
+    if not stim_ontology_tags:
+        return
+
+    stim_ontology_json = os.path.join(PACKAGE_DIR,"defaults/stimulus_ontology.json")
+
+    ju.write(stim_ontology_json, stim_ontology_tags)
+
+    for o in stim_ontology_tags:
+        print(o)
+
+
+def main():
+
+    make_default_stimulus_ontology()
+
+
+if __name__=="__main__": main()

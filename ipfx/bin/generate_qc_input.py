@@ -1,10 +1,8 @@
 import os
-import allensdk.core.json_utilities as ju
-from ipfx._schemas import GeneratePipelineInputParameters
-import argschema as ags
 from run_sweep_extraction import run_sweep_extraction
-from generate_se_input import generate_se_input
+from generate_se_input import generate_se_input, parse_args
 import ipfx.sweep_props as sp
+import allensdk.core.json_utilities as ju
 
 QC_INPUT_FEATURES = ["stimulus_units",
                    "stimulus_duration",
@@ -62,13 +60,12 @@ def main():
 
     """
 
-    module = ags.ArgSchemaParser(schema_type=GeneratePipelineInputParameters)
+    args = parse_args()
+    se_input = generate_se_input(**args)
 
-    kwargs = module.args
-    kwargs.pop("log_level")
-    cell_dir = kwargs.pop("cell_dir")
-
-    se_input = generate_se_input(**kwargs)
+    cell_dir = args['cell_dir']
+    if not os.path.exists(cell_dir):
+        os.makedirs(cell_dir)
 
     ju.write(os.path.join(cell_dir,'se_input.json'), se_input)
 

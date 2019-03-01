@@ -9,5 +9,5 @@ argschema
 allensdk
 dictdiffer
 pyabf==2.0.25
-pynwb>=0.6.0
+pynwb>=1.0.0
 six

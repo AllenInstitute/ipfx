@@ -3,6 +3,7 @@ import ipfx.spike_detector as spkd
 import numpy as np
 import ipfx.error as er
 
+
 def test_v_and_t_are_arrays():
     v = [0, 1, 2]
     t = [0, 1, 2]
@@ -18,6 +19,7 @@ def test_size_mismatch():
     t = np.array([0, 1])
     with pytest.raises(er.FeatureError):
         spkd.detect_putative_spikes(v, t)
+
 
 def test_detect_one_spike(spike_test_pair):
     data = spike_test_pair
@@ -95,14 +97,14 @@ def test_find_clipped_spikes(spike_test_pair):
     t = data[:, 0]
     v = data[:, 1]
 
-    clipped = spkd.find_clipped_spikes(v,t,spike_indexes,peak_indexes,end_index=3550,tol=1)
-    print clipped, np.array([False, True])
-    print clipped.dtype, np.array([False, True]).dtype
-    assert np.array_equal(clipped, [False, True]) # last spike is clipped
+    clipped = spkd.find_clipped_spikes(v, t, spike_indexes, peak_indexes, end_index=3550, tol=1)
+    print(clipped, np.array([False, True]))
+    print(clipped.dtype, np.array([False, True]).dtype)
+    assert np.array_equal(clipped, [False, True])  # last spike is clipped
 
-    clipped = spkd.find_clipped_spikes(v,t,spike_indexes,peak_indexes,end_index=3600,tol=1)
-    print clipped,np.array([False, False])
-    assert np.array_equal(clipped, [False, False]) # last spike is Ok
+    clipped = spkd.find_clipped_spikes(v, t, spike_indexes, peak_indexes, end_index=3600, tol=1)
+    print(clipped, np.array([False, False]))
+    assert np.array_equal(clipped, [False, False])  # last spike is Ok
 
     spike_indexes = np.array([])
     peak_indexes = np.array([])
@@ -110,8 +112,9 @@ def test_find_clipped_spikes(spike_test_pair):
     t = data[1500:3000, 0]
     v = data[1500:3000, 1]
 
-    clipped = spkd.find_clipped_spikes(v,t,spike_indexes,peak_indexes,end_index=3600,tol=1)
-    assert np.array_equal(clipped, []) # no spikes in the trace
+    clipped = spkd.find_clipped_spikes(v, t, spike_indexes, peak_indexes, end_index=3600, tol=1)
+    assert np.array_equal(clipped, [])  # no spikes in the trace
+
 
 def test_downstrokes(spike_test_pair):
     data = spike_test_pair
@@ -155,7 +158,7 @@ def test_troughs_with_peak_at_end(spike_test_pair):
     clipped = np.array([False, True])
 
     troughs = spkd.find_trough_indexes(v[:peaks[-1]], t[:peaks[-1]],
-                                     spikes, peaks, clipped=clipped)
+                                       spikes, peaks, clipped=clipped)
     assert np.isnan(troughs[-1])
 
 
@@ -200,6 +203,3 @@ def test_upstrokes(spike_test_pair):
 
     expected_upstrokes = np.array([778, 3440])
     assert np.allclose(spkd.find_upstroke_indexes(v, t, spikes, peaks), expected_upstrokes)
-
-
-
