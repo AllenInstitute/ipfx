@@ -24,7 +24,7 @@ class CollectFeatureParameters(ags.ArgSchema):
     project = ags.fields.String(default="T301")
     include_failed_sweeps = ags.fields.Boolean(default=False)
     include_failed_cells = ags.fields.Boolean(default=False)
-    parallel_flag = ags.fields.Boolean(default=True)
+    run_parallel = ags.fields.Boolean(default=True)
 
 
 def data_for_specimen_id(specimen_id, passed_only):
@@ -253,7 +253,7 @@ def lin_sqrt_fit(x, y):
 
 
 def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_cells=False,
-         output_file="", parallel_flag=True, **kwargs):
+         output_file="", run_parallel=True, **kwargs):
     if ids is not None:
         specimen_ids = ids
     else:
@@ -264,7 +264,7 @@ def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_ce
     get_data_partial = partial(data_for_specimen_id,
                                passed_only=not include_failed_sweeps)
 
-    if parallel_flag:
+    if run_parallel:
         pool = Pool()
         results = pool.map(get_data_partial, specimen_ids)
     else:

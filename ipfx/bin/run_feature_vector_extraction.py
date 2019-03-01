@@ -19,7 +19,7 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
     project = ags.fields.String(default="T301")
     include_failed_sweeps = ags.fields.Boolean(default=False)
     include_failed_cells = ags.fields.Boolean(default=False)
-    parallel_flag = ags.fields.Boolean(default=True)
+    run_parallel = ags.fields.Boolean(default=True)
     ap_window_length = ags.fields.Float(description="Duration after threshold for AP shape (s)", default=0.003)
 
 
@@ -89,7 +89,7 @@ def data_for_specimen_id(specimen_id, passed_only, ap_window_length=0.005):
 
 
 def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_cells=False,
-         output_dir="", parallel_flag=True, ap_window_length=0.003, **kwargs):
+         output_dir="", run_parallel=True, ap_window_length=0.003, **kwargs):
     if ids is not None:
         specimen_ids = ids
     else:
@@ -100,7 +100,7 @@ def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_ce
     get_data_partial = partial(data_for_specimen_id,
                                passed_only=not include_failed_sweeps,
                                ap_window_length=ap_window_length)
-    if parallel_flag:
+    if run_parallel:
         pool = Pool()
         results = pool.map(get_data_partial, specimen_ids)
     else:
