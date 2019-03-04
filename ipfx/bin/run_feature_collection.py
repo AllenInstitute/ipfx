@@ -15,6 +15,7 @@ from multiprocessing import Pool
 from functools import partial
 import os
 import json
+import h5py
 from run_feature_vector_extraction import project_specimen_ids, categorize_iclamp_sweeps
 
 
