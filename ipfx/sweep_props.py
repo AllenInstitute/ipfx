@@ -64,3 +64,32 @@ def extract_sweep_features_subset(feature_names, sweep_features):
 
     return sweep_features_subset
 
+
+def count_sweep_states(sweep_states):
+    """
+    Count passed and total sweeps
+
+    Parameters
+    ----------
+    sweep_states: list of dicts
+        Sweep state dict has keys:
+            "reason": list of strings
+            "sweep_number": int
+            "passed": True/False
+    Returns
+    -------
+    num_passed_sweeps: int
+        number of sweeps passed QC
+    num_sweeps: int
+        number of sweeps QCed
+
+    """
+    num_passed_sweeps = 0
+    for ss in sweep_states:
+        if ss["passed"] is True:
+            num_passed_sweeps += 1
+
+    num_sweeps = len(sweep_states)
+
+    return num_passed_sweeps, num_sweeps
+
