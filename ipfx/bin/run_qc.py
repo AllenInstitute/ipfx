@@ -2,7 +2,7 @@
 import logging
 
 from ipfx.stimulus import StimulusOntology
-import ipfx.qc_protocol as qcp
+import ipfx.qc_feature_evaluator as qcp
 
 import argschema as ags
 from ipfx._schemas import QcParameters
