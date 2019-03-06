@@ -50,8 +50,13 @@ def qc_experiment(ontology, cell_features, sweep_features, qc_criteria=None):
         logging.warning(msg)
         cell_state["fail_tags"].append(msg)
 
-    return cell_state, sweep_states
+    if cell_state["fail_tags"]:
+        cell_state["failed_qc"] = True
+    else:
+        cell_state["failed_qc"] = False
 
+
+    return cell_state, sweep_states
 
 
 def qc_sweeps(ontology,sweep_features,qc_criteria):
@@ -118,10 +123,6 @@ def qc_cell(cell_data, qc_criteria=None):
                                              cell_fail_tags)
 
     cell_state["fail_tags"] = cell_fail_tags
-    if cell_fail_tags:
-        cell_state["failed_qc"] = True
-    else:
-        cell_state["failed_qc"] = False
 
     return cell_state
 
