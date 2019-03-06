@@ -222,7 +222,7 @@ def mean_spike_lsq(spike_data,
                        "fast_trough_v",
                    ]):
 
-    return {f: spike_data[f].values.mean() for f in feature_list}
+    return {f: spike_data[f].mean(skipna=True) for f in feature_list}
 
 
 def fi_curve_fit(amps, rates):
