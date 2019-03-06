@@ -183,8 +183,7 @@ def qc_current_clamp_sweep(ontology, sweep, qc_criteria=None):
 
 def evaluate_blowout(blowout_mv, blowout_mv_min, blowout_mv_max, fail_tags):
     if blowout_mv is None or np.isnan(blowout_mv):
-        fail_tags.append("Missing blowout value (%s)" % str(blowout_mv))
-        return True
+        return False
 
     if blowout_mv < blowout_mv_min or blowout_mv > blowout_mv_max:
         fail_tags.append("blowout outside of range")
