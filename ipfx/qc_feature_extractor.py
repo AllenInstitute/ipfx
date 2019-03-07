@@ -6,62 +6,84 @@ import numpy as np
 from . import qc_features as qcf
 
 
-def cell_qc_features(data_set, manual_values=None):
+def extract_blowout(data_set, tags):
+
     """
+    Measure blowout voltage
 
     Parameters
     ----------
-    data_set : MiesDataSet
-        dataset
-    manual_values : dict
-        default (manual) values that can be passed in through input.json.
-
+    data_set: EphysDataSet
+    tags: list
+        warning tags
 
     Returns
     -------
-    output_data : dict
-        cell qc features
-    tag_list : list
-        tag list
-
+    blowout_mv: float
+        blowout voltage in mV
     """
-    if manual_values is None:
-        manual_values = {}
-
-    output_data = {}
-    tag_list = []
     ontology = data_set.ontology
-    # measure blowout voltage
+
     try:
         blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
-
         expt_start_idx, _ = ep.get_experiment_epoch(blowout_data.i, blowout_data.sampling_rate)
-
         blowout_mv = qcf.measure_blowout(blowout_data.v, expt_start_idx)
-        output_data['blowout_mv'] = blowout_mv
+
     except IndexError as e:
-        msg = "Blowout is not available"
-        tag_list.append(msg)
-        logging.warning(msg)
-        output_data['blowout_mv'] = None
+        tags.append("Blowout is not available")
+        blowout_mv = None
+
+    return blowout_mv
 
 
-    # measure "electrode 0"
+def extract_electrode_0(data_set, tags):
+    """
+    Measure electrode zero
+
+    Parameters
+    ----------
+    data_set: EphysDataSet
+    tags: list
+        warning tags
+
+    Returns
+    -------
+    e0: float
+    """
+
+    ontology = data_set.ontology
+
     try:
         bath_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.bath_names)
         bath_data = data_set.sweep(bath_sweep_number)
 
         e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
-        output_data['electrode_0_pa'] = e0
+
     except IndexError as e:
-        msg = "Electrode 0 is not available"
-        tag_list.append(msg)
-        logging.warning(msg)
-        output_data['electrode_0_pa'] = None
+        tags.append("Electrode 0 is not available")
+        e0 = None
+
+    return e0
 
 
-    # measure clamp seal
+def extract_clamp_seal(data_set, tags, manual_values=None):
+    """
+
+    Parameters
+    ----------
+    data_set: EphysDataSet
+    tags: list
+        warning tags
+    manual_values
+
+    Returns
+    -------
+
+    """
+
+    ontology = data_set.ontology
+
     try:
         seal_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.seal_names)
         seal_data = data_set.sweep(seal_sweep_number)
@@ -70,93 +92,159 @@ def cell_qc_features(data_set, manual_values=None):
                                  seal_data.i,
                                  seal_data.t)
 
-
-        # error may arise in computing seal, which falls through to
-        #   exception handler. if seal computation didn't fail but
-        #   computation generated invalid value, trigger same
-        #   exception handler with different error
         if seal_gohm is None or not np.isfinite(seal_gohm):
             raise er.FeatureError("Could not compute seal")
+
     except IndexError as e:
         # seal is not available, for whatever reason. log error
-        msg = "Seal is not available"
-        tag_list.append(msg)
-        logging.warning(msg)
+        tags.append("Seal is not available")
         # look for manual seal value and use it if it's available
         seal_gohm = manual_values.get('manual_seal_gohm', None)
         if seal_gohm is not None:
-            logging.info("using manual seal value: %f" % seal_gohm)
-            tag_list.append("Seal set using manual value")
-    output_data["seal_gohm"] = seal_gohm
+            tags.append("Using manual seal value: %f" % seal_gohm)
+
+    return seal_gohm
 
 
-    # measure input and series resistance
-    # this requires two steps -- finding the breakin sweep, and then
-    #   analyzing it
-    # if the value is unavailable then check to see if it was set manually
-    breakin_data = None
+def extract_input_and_access_resistance(data_set, tags, manual_values=None):
+    """
+    Measure input and series (access) resistance in two steps:
+        1. finding the breakin sweep
+        2. and then analyzing it
+
+    if the value is unavailable then check to see if it was set manually
+
+
+    Parameters
+    ----------
+    data_set: EphysDataSet
+    tags: list
+        warning tags
+
+    manual_values: dict
+        manual/default values
+
+    Returns
+    -------
+    ir: float
+        input resistance
+
+    sr: float
+        access resistance
+    """
+
+    ontology = data_set.ontology
+
+
     try:
         breakin_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.breakin_names)
         breakin_data = data_set.sweep(breakin_sweep_number)
     except IndexError as e:
-        logging.warning("Error reading breakin sweep.")
-        tag_list.append("Breakin sweep not found")
-#        raise
+        tags.append("Breakin sweep not found")
+        breakin_data = None
 
-    ir = None   # input resistance
-    sr = None   # series resistance
+    ir = None  # input resistance
+    sr = None  # series resistance
+
     if breakin_data is not None:
-        ###########################
-        # input resistance
-        try:
-            ir = qcf.measure_input_resistance(breakin_data.v,
-                                          breakin_data.i,
-                                          breakin_data.t)
+        ir = extract_input_resistance(breakin_data,tags,manual_values)
+        sr = extract_initial_access_resistance(breakin_data,tags,manual_values)
 
-        except Exception as e:
-            logging.warning("Error reading input resistance.")
-            raise
+    return ir, sr
 
-        # apply manual value if it's available
-        if ir is None:
-            tag_list.append("Input resistance is not available")
-            ir = manual_values.get('manual_initial_input_mohm', None)
-            if ir is not None:
-                msg = "Using manual value for input resistance"
-                logging.info(msg)
-                tag_list.append(msg);
-        ###########################
-        # initial access resistance
-        try:
-            sr = qcf.measure_initial_access_resistance(breakin_data.v,
-                                                   breakin_data.i,
-                                                   breakin_data.t)
 
-        except Exception as e:
-            logging.warning("Error reading initial access resistance.")
-            raise
+def extract_input_resistance(breakin_sweep,tags,manual_values):
 
-        # apply manual value if it's available
-        if sr is None:
-            tag_list.append("Initial access resistance is not available")
-            sr = manual_values.get('manual_initial_access_resistance_mohm', None)
-            if sr is not None:
-                msg = "Using manual initial access resistance"
-                logging.info(msg)
-                tag_list.append(msg)
-    #
-    output_data['input_resistance_mohm'] = ir
-    output_data["initial_access_resistance_mohm"] = sr
+    try:
+        ir = qcf.measure_input_resistance(breakin_sweep.v,
+                                          breakin_sweep.i,
+                                          breakin_sweep.t)
+
+    except Exception as e:
+        logging.warning("Error reading input resistance.")
+        raise
+
+    # apply manual value if it's available
+    if ir is None:
+        tags.append("Input resistance is not available")
+        ir = manual_values.get('manual_initial_input_mohm', None)
+        if ir is not None:
+            tags.append("Using manual value for input resistance")
+
+    return ir
+
+
+def extract_initial_access_resistance(breakin_sweep,tags,manual_values):
+
+    try:
+        sr = qcf.measure_initial_access_resistance(breakin_sweep.v,
+                                                   breakin_sweep.i,
+                                                   breakin_sweep.t)
+
+    except Exception as e:
+        logging.warning("Error reading initial access resistance.")
+        raise
+
+    # apply manual value if it's available
+    if sr is None:
+        tags.append("Initial access resistance is not available")
+        sr = manual_values.get('manual_initial_access_resistance_mohm', None)
+        if sr is not None:
+            tags.append("Using manual initial access resistance")
+
+    return sr
+
+
+def compute_input_access_resistance_ratio(ir, sr):
 
     sr_ratio = None # input access resistance ratio
     if ir is not None and sr is not None:
         sr_ratio = sr / ir
     else:
-        logging.warning("could not compute input/access resistance ratio (sr: %s, ir:: %s)", str(sr), str(ir))
+        logging.warning("Could not compute input/access resistance ratio (sr: %s, ir:: %s)", str(sr), str(ir))
 
-    output_data['input_access_resistance_ratio'] = sr_ratio
+    return sr_ratio
 
-    return output_data, tag_list
+
+def cell_qc_features(data_set, manual_values=None):
+    """
+
+    Parameters
+    ----------
+    data_set : EphysDataSet
+        dataset
+    manual_values : dict
+        default (manual) values that can be passed in through input.json.
+
+
+    Returns
+    -------
+    features : dict
+        cell qc features
+    tags : list
+        warning tags
+
+    """
+    if manual_values is None:
+        manual_values = {}
+
+    features = {}
+    tags = []
+
+    features['blowout_mv'] = extract_blowout(data_set, tags)
+
+    features['electrode_0_pa'] = extract_electrode_0(data_set, tags)
+
+    features["seal_gohm"] = extract_clamp_seal(data_set, tags, manual_values)
+
+    ir, sr = extract_input_and_access_resistance(data_set, tags)
+
+    features['input_resistance_mohm'] = ir
+    features["initial_access_resistance_mohm"] = sr
+
+    features['input_access_resistance_ratio'] = compute_input_access_resistance_ratio(ir, sr)
+
+    return features, tags
 
 ##############################
 
@@ -196,6 +284,7 @@ def sweep_qc_features(data_set):
             logging.info("sweep {}, {}, did not complete experiment".format(sweep_num, sweep_info["stimulus_name"]))
         sweep.update(sweep_info)
         sweep_features.append(sweep)
+
     return sweep_features
 
 
