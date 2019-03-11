@@ -16,6 +16,14 @@ class EphysDataSet(object):
     SWEEP_NUMBER = 'sweep_number'
     PASSED = 'passed'
 
+    COLUMN_NAMES = [STIMULUS_UNITS,
+                    STIMULUS_CODE,
+                    STIMULUS_AMPLITUDE,
+                    STIMULUS_NAME,
+                    SWEEP_NUMBER,
+                    PASSED
+                    ]
+
     CLAMP_MODE = 'clamp_mode'
 
     LONG_SQUARE = 'long_square'
@@ -41,17 +49,18 @@ class EphysDataSet(object):
                              ):
 
         st = self.sweep_table
-
         if current_clamp_only:
-            st = st[st[self.STIMULUS_UNITS].isin(self.current_clamp_units)]
+            mask = st[self.STIMULUS_UNITS].isin(self.current_clamp_units)
+            st = st[mask.astype(bool)]
 
         if passing_only:
-            st = st[st[self.PASSED]]
+            mask = st[self.PASSED]
+            st = st[mask.astype(bool)]
 
         if stimuli:
             mask = st[self.STIMULUS_CODE].apply(
                 self.ontology.stimulus_has_any_tags, args=(stimuli,), tag_type="code")
-            st = st[mask]
+            st = st[mask.astype(bool)]
 
         if exclude_search:
             mask = ~st[self.STIMULUS_NAME].isin(self.ontology.search_names)
@@ -59,18 +68,18 @@ class EphysDataSet(object):
 
         if exclude_test:
             mask = ~st[self.STIMULUS_NAME].isin(self.ontology.test_names)
-            st = st[mask]
+            st = st[mask.astype(bool)]
 
         if sweep_number is not None:
             mask = st[self.SWEEP_NUMBER] == sweep_number
-            st = st[mask]
+            st = st[mask.astype(bool)]
 
         return st
 
     def get_sweep_number_by_stimulus_names(self, stimulus_names):
 
         sweeps = self.filtered_sweep_table(
-            stimuli=stimulus_names).sort_values(by='sweep_number')
+            stimuli=stimulus_names).sort_values(by=self.SWEEP_NUMBER)
 
         if len(sweeps) > 1:
             logging.warning(
