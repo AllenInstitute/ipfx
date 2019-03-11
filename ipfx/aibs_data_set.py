@@ -21,7 +21,14 @@ class AibsDataSet(EphysDataSet):
             self.notebook = lab_notebook_reader.create_lab_notebook_reader(nwb_file, h5_file)
             sweep_info = self.extract_sweep_meta_data()
 
-        self.sweep_table = pd.DataFrame.from_records(sweep_info)
+        self.build_sweep_table(sweep_info)
+
+    def build_sweep_table(self,sweep_meta_data):
+
+        if sweep_meta_data:
+            self.sweep_table = pd.DataFrame.from_records(sweep_meta_data)
+        else:
+            self.sweep_table = pd.DataFrame(columns=self.COLUMN_NAMES)
 
     def extract_sweep_meta_data(self):
         """
@@ -31,8 +38,6 @@ class AibsDataSet(EphysDataSet):
         sweep_props: list of dicts
             where each dict includes sweep properties
         """
-        logging.debug("Build sweep table")
-
         sweep_props = []
         # use same output strategy as h5-nwb converter
         # pick the sampling rate from the first iclamp sweep
