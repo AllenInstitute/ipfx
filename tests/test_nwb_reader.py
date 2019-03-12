@@ -95,8 +95,7 @@ def test_assumed_sweep_number_fallback(NWB_file):
     reader = create_nwb_reader(NWB_file)
     assert isinstance(reader, NwbPipelineReader)
 
-    with pytest.warns(UserWarning, match="Sweep number mismatch"):
-        assert reader.get_sweep_number("Sweep_10") == 10
+    assert reader.get_sweep_number("Sweep_10") == 10
 
 
 def test_valid_v1_full_Pipeline(fetch_pipeline_file):
