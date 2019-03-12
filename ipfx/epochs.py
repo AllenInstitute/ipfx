@@ -99,7 +99,7 @@ def get_stim_epoch_B(i):
     di_idx = np.flatnonzero(di)  # != 0)
 
     if len(di_idx) == 0:
-        raise ValueError("Empty stimulus trace")
+        return None, None
 
     if len(di_idx) >= 4:
         idx = 2  # skip the first up/down assuming that there is a test pulse
@@ -135,10 +135,13 @@ def get_experiment_epoch(i,hz):
     """
 
     stim_start_idx, stim_end_idx = get_stim_epoch(i)
-    expt_start_idx = stim_start_idx - int(PRESTIM_STABILITY_EPOCH * hz)
-    expt_end_idx = stim_end_idx + int(POSTSTIM_STABILITY_EPOCH * hz)
+    if stim_start_idx and stim_end_idx:
+        expt_start_idx = stim_start_idx - int(PRESTIM_STABILITY_EPOCH * hz)
+        expt_end_idx = stim_end_idx + int(POSTSTIM_STABILITY_EPOCH * hz)
 
-    return expt_start_idx,expt_end_idx
+        return expt_start_idx,expt_end_idx
+    else:
+        return None, None
 
 
 def find_stim_window(stim, idx0=0):
