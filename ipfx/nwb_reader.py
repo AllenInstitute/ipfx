@@ -77,9 +77,11 @@ class NwbReader(object):
             elif "sweep_number" in timeseries.attrs:
                 real_sweep_number = timeseries.attrs["sweep_number"]
 
-        if assumed_sweep_number is not None and assumed_sweep_number != real_sweep_number:
-            warnings.warn("Sweep number mismatch (real: {} vs assumed: {})".format
-                          (real_sweep_number, assumed_sweep_number))
+        if assumed_sweep_number is not None and real_sweep_number is not None:
+
+            if assumed_sweep_number != real_sweep_number:
+                warnings.warn("Sweep number mismatch (real: {} vs assumed: {})".format
+                              (real_sweep_number, assumed_sweep_number))
 
         if real_sweep_number is not None:
             return real_sweep_number
