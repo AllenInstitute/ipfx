@@ -82,6 +82,14 @@ The following command converts all ABF files which reside in `someFolder` to a s
 run_x_to_nwb_conversion.py --fileType ".abf" --overwrite someFolder
 ```
 
+#### Disabling compression
+
+The following command disables compression of the HDF5 datasets (intended for debugging purposes).
+
+```sh
+run_x_to_nwb_conversion.py --no-compression 2018_03_20_0000.abf
+```
+
 ### DAT specialities
 
 #### Required input files

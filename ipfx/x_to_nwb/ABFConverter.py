@@ -27,7 +27,7 @@ class ABFConverter:
     protocolStorageDir = None
     adcNamesWithRealData = ("IN 0", "IN 1", "IN 2", "IN 3")
 
-    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel):
+    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True):
         """
         Convert the given ABF file to NWB
 
@@ -35,6 +35,7 @@ class ABFConverter:
         inFileOrFolder        -- input file, or folder with multiple files, in ABF v2 format
         outFile               -- target filepath (must not exist)
         outputFeedbackChannel -- Output ADC data from feedback channels as well (useful for debugging only)
+        compression           -- Toggle compression for HDF5 datasets
         """
 
         inFiles = []
@@ -47,6 +48,7 @@ class ABFConverter:
             raise ValueError(f"{inFileOrFolder} is neither a folder nor a path.")
 
         self.outputFeedbackChannel = outputFeedbackChannel
+        self.compression = compression
 
         self._settings = self._getJSONFile(inFileOrFolder)
 
@@ -321,7 +323,7 @@ class ABFConverter:
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                     stimulus_description = ABFConverter._getProtocolName(abf.protocol)
                     scale_factor = self._getScaleFactor(stimulus_description)
-                    data = convertDataset(abf.sweepC * scale_factor)
+                    data = convertDataset(abf.sweepC * scale_factor, self.compression)
                     conversion, unit = parseUnit(abf.sweepUnitsC)
                     electrode = electrodes[channel]
                     gain = abf._dacSection.fDACScaleFactor[channel]
@@ -467,7 +469,7 @@ class ABFConverter:
 
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
-                    data = convertDataset(abf.sweepY)
+                    data = convertDataset(abf.sweepY, self.compression)
                     conversion, unit = parseUnit(abf.sweepUnitsY)
                     electrode = electrodes[channel]
                     gain = abf._adcSection.fADCProgrammableGain[channel]
