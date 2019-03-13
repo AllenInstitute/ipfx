@@ -1,7 +1,7 @@
 import warnings
 import logging
 import re
-
+import pandas as pd
 import numpy as np
 from ipfx.stimulus import StimulusOntology
 from ipfx.sweep import Sweep,SweepSet
@@ -39,6 +39,13 @@ class EphysDataSet(object):
         self.ontology = ontology if ontology else StimulusOntology()
         self.validate_stim = validate_stim
 
+    def build_sweep_table(self,sweep_meta_data=None):
+
+        if sweep_meta_data:
+            self.sweep_table = pd.DataFrame.from_records(sweep_meta_data)
+        else:
+            self.sweep_table = pd.DataFrame(columns=self.COLUMN_NAMES)
+
     def filtered_sweep_table(self,
                              current_clamp_only=False,
                              passing_only=False,
@@ -72,7 +79,8 @@ class EphysDataSet(object):
 
         if sweep_number is not None:
             mask = st[self.SWEEP_NUMBER] == sweep_number
-            st = st[mask.astype(bool)]
+            st = st[mask]
+
 
         return st
 
