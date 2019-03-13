@@ -31,6 +31,24 @@ def get_dataset():
     return dataset
 
 
+def get_empty_dataset():
+
+    default_ontology = StimulusOntology()
+    dataset = EphysDataSet(default_ontology)
+    dataset.build_sweep_table(sweep_meta_data=[])
+
+    return dataset
+
+
+def test_emtpy_table_has_header():
+
+    ds = get_empty_dataset()
+
+    assert list(ds.filtered_sweep_table(stimuli=['I_DONT_EXIST'])) == list(ds.sweep_table)
+
+    assert list(ds.filtered_sweep_table(sweep_number=7)) == list(ds.sweep_table)
+
+
 def test_get_sweep_number_by_stimulus_name_invalid_sweep():
 
     with pytest.raises(IndexError):

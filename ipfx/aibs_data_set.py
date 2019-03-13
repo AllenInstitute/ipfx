@@ -1,4 +1,3 @@
-import pandas as pd
 import logging
 
 from .ephys_data_set import EphysDataSet
@@ -23,12 +22,6 @@ class AibsDataSet(EphysDataSet):
 
         self.build_sweep_table(sweep_info)
 
-    def build_sweep_table(self,sweep_meta_data):
-
-        if sweep_meta_data:
-            self.sweep_table = pd.DataFrame.from_records(sweep_meta_data)
-        else:
-            self.sweep_table = pd.DataFrame(columns=self.COLUMN_NAMES)
 
     def extract_sweep_meta_data(self):
         """

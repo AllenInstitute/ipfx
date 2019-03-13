@@ -51,6 +51,19 @@ def test_valid_v1_but_unknown_sweep_naming():
         create_nwb_reader(filename)
 
 
+def test_valid_v1_with_no_sweeps():
+
+    filename = os.path.join(TEST_DATA_PATH, 'no_sweeps.nwb')
+
+    with h5py.File(filename, 'w') as fh:
+        dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
+        dset[:] = str("NWB-1")
+        fh.create_group("acquisition/timeseries")
+
+    reader = create_nwb_reader(filename)
+    assert isinstance(reader, NwbMiesReader)
+
+
 def test_valid_v1_skeleton_MIES():
     filename = os.path.join(TEST_DATA_PATH, 'valid_v1_MIES.nwb')
 
