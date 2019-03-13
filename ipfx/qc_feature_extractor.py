@@ -298,7 +298,7 @@ def current_clamp_sweep_qc_features(sweep_data,sweep_info,ontology):
     hz = sweep_data.sampling_rate
 
     expt_start_idx, _ = ep.get_experiment_epoch(current, hz)
-    _, sweep_end_idx = ep.get_sweep_epoch(voltage)
+    _, sweep_end_idx = ep.get_recording_epoch(voltage)
 
     # measure Vm and noise before stimulus
     idx0, idx1 = ep.get_first_vm_noise_epoch(expt_start_idx, hz)  # count from the beginning of the experiment
@@ -358,12 +358,12 @@ def completed_experiment(i,v,hz):
 
     LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
 
-    _, sweep_end_ix = ep.get_sweep_epoch(v)
+    _, rec_end_ix = ep.get_recording_epoch(v)
     _, expt_end_ix = ep.get_experiment_epoch(i, hz)
 
-    if sweep_end_ix >= expt_end_ix:
+    if rec_end_ix >= expt_end_ix:
         return True
-    elif (sweep_end_ix / hz) > LONG_RESPONSE_DURATION:
+    elif (rec_end_ix / hz) > LONG_RESPONSE_DURATION:
         return True
     else:
         return False

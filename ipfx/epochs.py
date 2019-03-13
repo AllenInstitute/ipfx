@@ -51,23 +51,39 @@ def get_stability_vm_epoch(stim_start, hz):
     return stim_start-1-num_steps, stim_start-1
 
 
-def get_sweep_epoch(response):
+def get_recording_epoch(response):
     """
-    Find sweep epoch defined as interval from the beginning of recordign to last non-zero value
-
-    Parameters
-    ----------
-    response    : float np.array
+    Detect response epoch defined as interval from start to the last non-zero value of the response
 
     Returns
     -------
-    (start_index,end_index): int tuple with start,end indices of the epoch
+    start,end: int indices of the epoch
+    """
+
+    if len(np.flatnonzero(response)) == 0:
+        end_idx = 0
+    else:
+        end_idx = np.flatnonzero(response)[-1]
+
+    return 0, end_idx
+
+
+def get_sweep_epoch(response):
+    """
+    Defined as interval including entire sweep
+
+    Parameters
+    ----------
+    response: float np.array
+
+    Returns
+    -------
+    (start_index,end_index): int tuple
+        with start,end indices of the epoch
 
     """
 
-    sweep_end_idx = np.flatnonzero(response)[-1]  # last non-zero index along the only dimension=0.
-
-    return 0, sweep_end_idx
+    return 0, len(response)-1
 
 
 def get_stim_epoch_A(i,test_pulse=True):

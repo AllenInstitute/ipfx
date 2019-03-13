@@ -68,23 +68,24 @@ class Sweep(object):
 
     def detect_sweep_epoch(self):
         """
-        Detect sweep epoch defined as interval including entire sweep
+        Detect sweep epoch
 
         Returns
         -------
         start,end: int indices of the epoch
         """
-        return 0, len(self.response)
+        return ep.get_sweep_epoch(self.response)
 
     def detect_recording_epoch(self):
         """
-        Detect response epoch defined as interval from start to the last non-zero value of the response
+        Detect recording epoch
 
         Returns
         -------
         start,end: int indices of the epoch
         """
-        return 0, np.flatnonzero(self.response)[-1]
+
+        return ep.get_recording_epoch(self.response)
 
     def detect_experiment_epoch(self):
         """
