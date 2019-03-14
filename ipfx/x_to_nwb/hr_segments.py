@@ -301,7 +301,9 @@ class ChirpSegment(Segment):
                  ).format(self.amplitude, self.startFreq, self.endFreq, self.kind)
 
     def getAmplitude(self, channelRec, segmentRec):
-        return channelRec.Chirp_Amplitude
+        # The amplitude is half of the peak-to-peak amplitude and that is
+        # stored in the DAT file.
+        return channelRec.Chirp_Amplitude * 0.5
 
     def createArray(self, sweep):
 
