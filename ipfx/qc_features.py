@@ -3,7 +3,7 @@ import numpy as np
 
 def measure_blowout(v, idx0):
 
-    return 1e3 * np.mean(v[idx0:]*1e-3)
+    return np.mean(v[idx0:])
 
 
 def measure_electrode_0(curr, hz, t=0.005):
