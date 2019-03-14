@@ -59,6 +59,7 @@ class Sweep(object):
             "sweep": self.detect_sweep_epoch,
             "recording": self.detect_recording_epoch,
             "experiment": self.detect_experiment_epoch,
+            "test": self.detect_test_epoch,
         }
 
         for epoch_name, epoch_detector in epoch_detectors.items():
@@ -97,6 +98,18 @@ class Sweep(object):
         """
 
         return ep.get_experiment_epoch(self._i, self.sampling_rate)
+
+    def detect_test_epoch(self):
+        """
+        Detect experiment epoch
+
+        Returns
+        -------
+        start,end: int indices of the epoch
+        """
+
+        return ep.get_test_epoch(self._i)
+
 
 
 class SweepSet(object):

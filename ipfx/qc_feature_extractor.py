@@ -27,8 +27,8 @@ def extract_blowout(data_set, tags):
     try:
         blowout_sweep_number = data_set.get_sweep_number_by_stimulus_names(ontology.blowout_names)
         blowout_data = data_set.sweep(blowout_sweep_number)
-        expt_start_idx, _ = ep.get_experiment_epoch(blowout_data.i, blowout_data.sampling_rate)
-        blowout_mv = qcf.measure_blowout(blowout_data.v, expt_start_idx)
+        _,test_end_idx = blowout_data.epochs["test"]
+        blowout_mv = qcf.measure_blowout(blowout_data.v, test_end_idx)
 
     except IndexError as e:
         tags.append("Blowout is not available")

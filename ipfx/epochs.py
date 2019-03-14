@@ -133,6 +133,27 @@ def get_stim_epoch(i,test_pulse=True):
     return get_stim_epoch_B(i)
 
 
+def get_test_epoch(i):
+
+    di = np.diff(i)
+    di_idx = np.flatnonzero(di)  # != 0)
+
+    if len(di_idx) == 0:
+        return None, None
+
+    elif len(di_idx) == 1:
+        raise Exception("Cannot detect and end to the test pulse")
+    else:
+        start_pulse_idx = di_idx[0] + 1  # shift by one to compensate for diff()
+        end_pulse_idx = di_idx[1]
+        padding = start_pulse_idx
+
+        start_idx = start_pulse_idx - padding
+        end_idx = end_pulse_idx + padding
+
+    return start_idx, end_idx
+
+
 def get_experiment_epoch(i,hz):
     """
     Find index range for the experiment epoch.
