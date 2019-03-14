@@ -98,12 +98,17 @@ def createCycleID(numbers, total):
     return result
 
 
-def convertDataset(array):
+def convertDataset(array, compression):
     """
-    Convert to FP32 and request compression for the given array and return it wrapped.
+    Convert to FP32 and optionally request compression for the given array and return it wrapped.
     """
 
-    return H5DataIO(data=array.astype(np.float32), compression=True, chunks=True, shuffle=True, fletcher32=True)
+    data = array.astype(np.float32)
+
+    if compression:
+        return H5DataIO(data=data, compression=True, chunks=True, shuffle=True, fletcher32=True)
+
+    return data
 
 
 def getPackageInfo():

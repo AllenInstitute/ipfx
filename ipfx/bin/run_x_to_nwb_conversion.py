@@ -7,7 +7,7 @@ from ipfx.x_to_nwb.ABFConverter import ABFConverter
 from ipfx.x_to_nwb.DatConverter import DatConverter
 
 
-def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False, outputFeedbackChannel=False, multipleGroupsPerFile=False):
+def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False, outputFeedbackChannel=False, multipleGroupsPerFile=False, compression=True):
     """
     Convert the given file to a NeuroDataWithoutBorders file using pynwb
 
@@ -22,6 +22,7 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
     :param outputFeedbackChannel: Output ADC data which stems from stimulus feedback channels (ignored for DAT files)
     :param multipleGroupsPerFile: Write all Groups in the DAT file into one NWB
                                   file. By default we create one NWB per Group (ignored for ABF files).
+    :param compression: Toggle compression for HDF5 datasets
 
     :return: path of the created NWB file
     """
@@ -54,12 +55,12 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
         if outputMetadata:
             ABFConverter.outputMetadata(inFileOrFolder)
         else:
-            ABFConverter(inFileOrFolder, outFile, outputFeedbackChannel=outputFeedbackChannel)
+            ABFConverter(inFileOrFolder, outFile, outputFeedbackChannel=outputFeedbackChannel, compression=compression)
     elif ext == ".dat":
         if outputMetadata:
             DatConverter.outputMetadata(inFileOrFolder)
         else:
-            DatConverter(inFileOrFolder, outFile, multipleGroupsPerFile=multipleGroupsPerFile)
+            DatConverter(inFileOrFolder, outFile, multipleGroupsPerFile=multipleGroupsPerFile, compression=compression)
 
     else:
         raise ValueError(f"The extension {ext} is currently not supported.")
@@ -85,6 +86,10 @@ def main():
     parser.add_argument("--multipleGroupsPerFile", action="store_true", default=False,
                         help="Write all Groups from a DAT file into a single NWB file."
                         " By default we create one NWB file per Group.")
+    feature_parser = parser.add_mutually_exclusive_group(required=False)
+    feature_parser.add_argument('--compression', dest='compression', action='store_true', help="Enable compression for HDF5 datasets (default).")
+    feature_parser.add_argument('--no-compression', dest='compression', action='store_false', help="Disable compression for HDF5 datasets.")
+    parser.set_defaults(compression=True)
     parser.add_argument("filesOrFolders", nargs="+",
                         help="List of ABF files/folders to convert.")
 
@@ -98,9 +103,13 @@ def main():
 
     for fileOrFolder in args.filesOrFolders:
         print(f"Converting {fileOrFolder}")
-        convert(fileOrFolder, overwrite=args.overwrite, fileType=args.fileType,
+        convert(fileOrFolder,
+                overwrite=args.overwrite,
+                fileType=args.fileType,
                 outputMetadata=args.outputMetadata,
-                outputFeedbackChannel=args.outputFeedbackChannel, multipleGroupsPerFile=args.multipleGroupsPerFile)
+                outputFeedbackChannel=args.outputFeedbackChannel,
+                multipleGroupsPerFile=args.multipleGroupsPerFile,
+                compression=args.compression)
 
 
 if __name__ == "__main__":

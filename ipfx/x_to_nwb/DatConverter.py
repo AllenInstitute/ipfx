@@ -19,7 +19,7 @@ from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MO
 
 class DatConverter:
 
-    def __init__(self, inFile, outFile, multipleGroupsPerFile=False):
+    def __init__(self, inFile, outFile, multipleGroupsPerFile=False, compression=True):
         """
         Convert DAT files, created by PatchMaster, to NWB v2 files.
 
@@ -29,6 +29,7 @@ class DatConverter:
         outFile: name of the to-be-created NWB file, must not exist
         multipleGroupsPerFile: switch determining if multiple DAT groups per
                                file are created or not
+        compression: Toggle compression for HDF5 datasets
 
         Returns
         -------
@@ -39,6 +40,7 @@ class DatConverter:
             raise ValueError(f"The input file {inFile} does not exist.")
 
         self.bundle = Bundle(inFile)
+        self.compression = compression
 
         self._check()
 
@@ -487,7 +489,7 @@ class DatConverter:
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
 
                         sweepIndex = sweep.SweepCount - 1
-                        data = convertDataset(stimset[sweepIndex])
+                        data = convertDataset(stimset[sweepIndex], self.compression)
 
                         electrodeKey = DatConverter._generateElectrodeKey(trace)
                         electrode = electrodes[self.electrodeDict[electrodeKey]]
@@ -554,7 +556,7 @@ class DatConverter:
                                              total=self.totalSeriesCount)
                     for trace in sweep:
                         name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
-                        data = convertDataset(self.bundle.data[trace])
+                        data = convertDataset(self.bundle.data[trace], self.compression)
 
                         ampState = DatConverter._getAmplifierState(self.bundle, series, trace)
 
