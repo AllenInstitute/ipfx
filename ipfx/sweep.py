@@ -1,4 +1,3 @@
-import numpy as np
 import ipfx.epochs as ep
 
 
@@ -56,60 +55,15 @@ class Sweep(object):
         """
 
         epoch_detectors = {
-            "sweep": self.detect_sweep_epoch,
-            "recording": self.detect_recording_epoch,
-            "experiment": self.detect_experiment_epoch,
-            "test": self.detect_test_epoch,
+            "sweep": ep.get_sweep_epoch(self.response),
+            "recording": ep.get_recording_epoch(self.response),
+            "experiment": ep.get_experiment_epoch(self._i, self.sampling_rate),
+            "test": ep.get_test_epoch(self._i),
         }
 
         for epoch_name, epoch_detector in epoch_detectors.items():
             if epoch_name not in self.epochs:
-                start_idx, end_idx = epoch_detector()
-                self.epochs[epoch_name] = start_idx, end_idx
-
-    def detect_sweep_epoch(self):
-        """
-        Detect sweep epoch
-
-        Returns
-        -------
-        start,end: int indices of the epoch
-        """
-        return ep.get_sweep_epoch(self.response)
-
-    def detect_recording_epoch(self):
-        """
-        Detect recording epoch
-
-        Returns
-        -------
-        start,end: int indices of the epoch
-        """
-
-        return ep.get_recording_epoch(self.response)
-
-    def detect_experiment_epoch(self):
-        """
-        Detect experiment epoch
-
-        Returns
-        -------
-        start,end: int indices of the epoch
-        """
-
-        return ep.get_experiment_epoch(self._i, self.sampling_rate)
-
-    def detect_test_epoch(self):
-        """
-        Detect experiment epoch
-
-        Returns
-        -------
-        start,end: int indices of the epoch
-        """
-
-        return ep.get_test_epoch(self._i)
-
+                self.epochs[epoch_name] = epoch_detector
 
 
 class SweepSet(object):
