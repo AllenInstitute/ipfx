@@ -86,51 +86,36 @@ def get_sweep_epoch(response):
     return 0, len(response)-1
 
 
-def get_stim_epoch_A(i,test_pulse=True):
-
+def get_stim_epoch(i, test_pulse=True):
     """
-    Identify start index, and end index of a general stimulus.
+    Determine the start index, and end index of a general stimulus.
+
+    Parameters
+    ----------
+    i   : numpy array
+        current
+
+    test_pulse: bool
+        True if test pulse is assumed
+
+    Returns
+    -------
+    start,end: int tuple
     """
 
     di = np.diff(i)
     di_idx = np.flatnonzero(di)   # != 0
 
-    start_idx_idx = 2 if test_pulse else 0     # skip the first up/down (test pulse) if present
+    if test_pulse:
+        di_idx = di_idx[2:]     # drop the first up/down (test pulse) if present
 
-    if len(di_idx[start_idx_idx:]) == 0:    # if no stimulus is found
+    if len(di_idx) == 0:    # if no stimulus is found
         return None, None
 
-    start_idx = di_idx[start_idx_idx] + 1   # shift by one to compensate for diff()
+    start_idx = di_idx[0] + 1   # shift by one to compensate for diff()
     end_idx = di_idx[-1]
 
     return start_idx, end_idx
-
-
-def get_stim_epoch_B(i):
-    """
-    Identify start index, and end index of a general stimulus. Assume there is test pulse.
-    """
-
-    di = np.diff(i)
-    di_idx = np.flatnonzero(di)  # != 0)
-
-    if len(di_idx) == 0:
-        return None, None
-
-    if len(di_idx) >= 4:
-        idx = 2  # skip the first up/down assuming that there is a test pulse
-    else:
-        idx = 0
-
-    start_idx = di_idx[idx] + 1  # shift by one to compensate for diff()
-    end_idx = di_idx[-1]
-
-    return start_idx, end_idx
-
-
-def get_stim_epoch(i,test_pulse=True):
-
-    return get_stim_epoch_B(i)
 
 
 def get_test_epoch(i):
