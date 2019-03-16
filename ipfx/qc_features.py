@@ -11,7 +11,7 @@ def measure_electrode_0(curr, hz, t=0.005):
     n_time_steps = int(t * hz)
     # electrode 0 is the average current reading with zero voltage input
     # (ie, the equivalent of resting potential in current-clamp mode)
-    return 1e12 * np.mean(curr[0:n_time_steps]*1e-12)
+    return np.mean(curr[0:n_time_steps])
 
 
 def measure_seal(v, curr, t):
@@ -33,8 +33,16 @@ def measure_vm(vals):
         return 0, 0
     mean = np.mean(vals)
     rms = np.sqrt(np.mean(np.square(vals-mean)))
-    return mean, rms
-########################################################################
+    return float(mean), float(rms)
+
+
+def measure_vm_delta(mean_start, mean_end):
+
+    if mean_end is not None:
+        delta = abs(mean_start - mean_end)
+        return float(delta)
+    else:
+        return None
 
 
 def get_r_from_stable_pulse_response(v, i, t):
