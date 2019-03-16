@@ -59,6 +59,7 @@ class Sweep(object):
             "recording": ep.get_recording_epoch(self.response),
             "experiment": ep.get_experiment_epoch(self._i, self.sampling_rate),
             "test": ep.get_test_epoch(self._i),
+            "stim": ep.get_stim_epoch(self._i),
         }
 
         for epoch_name, epoch_detector in epoch_detectors.items():
