@@ -175,11 +175,10 @@ def qc_current_clamp_sweep(ontology, sweep, qc_criteria=None):
     if sweep["vm_delta_mv"] is not None and sweep["vm_delta_mv"] > qc_criteria["vm_delta_mv_max"]:
         fail_tags.append("Vm delta: %.3f above threshold:%.3f" % (sweep["vm_delta_mv"], qc_criteria["vm_delta_mv_max"]))
 
-    # fail sweeps if stimulus duration is zero
-    # Uncomment out the following 3 lines to have sweeps without stimulus fail QC
-    if sweep["stimulus_duration"] <= 0 and not ontology.stimulus_has_any_tags(sweep["stimulus_code"], ontology.extp_names):
-        fail_tags.append("No stimulus detected")
-    return len(fail_tags) > 0, fail_tags
+    if fail_tags:
+        logging.info("sweep: {}, {}, {}".format(sweep["sweep_number"], sweep["stimulus_name"], fail_tags))
+
+    return fail_tags
 
 
 def evaluate_blowout(blowout_mv, blowout_mv_min, blowout_mv_max, fail_tags):
