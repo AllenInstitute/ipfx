@@ -8,10 +8,21 @@ import time_series_utils as tsu
 NOISE_EPOCH = 0.0015
 PRESTIM_STABILITY_EPOCH = 0.5
 POSTSTIM_STABILITY_EPOCH = 0.5
-LONG_RESPONSE_DURATION = 5  # this will count long ramps as completed
 
 
-def get_last_vm_epoch(idx1, hz):
+def get_first_stability_epoch(stim_start_idx, hz):
+
+    num_steps = int(PRESTIM_STABILITY_EPOCH * hz)
+    if num_steps > stim_start_idx-1:
+        num_steps = stim_start_idx-1
+    elif num_steps <= 0:
+        return 0, 0
+    assert num_steps > 0, "Number of steps should be a positive integer"
+
+    return stim_start_idx-1-num_steps, stim_start_idx-1
+
+
+def get_last_stability_epoch(idx1, hz):
     """
     Get epoch lasting LAST_STABILITY_EPOCH before idx1
 
@@ -30,25 +41,14 @@ def get_last_vm_epoch(idx1, hz):
     return idx0, idx1
 
 
-def get_first_vm_noise_epoch(idx, hz):
+def get_first_noise_epoch(idx, hz):
 
     return idx, idx + int(NOISE_EPOCH * hz)
 
 
-def get_last_vm_noise_epoch(idx1, hz):
+def get_last_noise_epoch(idx1, hz):
 
     return idx1-int(NOISE_EPOCH * hz), idx1
-
-
-def get_stability_vm_epoch(stim_start, hz):
-    num_steps = int(PRESTIM_STABILITY_EPOCH * hz)
-    if num_steps > stim_start-1:
-        num_steps = stim_start-1
-    elif num_steps <= 0:
-        return 0, 0
-    assert num_steps > 0, "Number of steps should be a positive integer"
-
-    return stim_start-1-num_steps, stim_start-1
 
 
 def get_recording_epoch(response):
