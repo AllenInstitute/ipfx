@@ -36,9 +36,9 @@ def assign_sweep_states(sweep_states, sweep_features):
             logging.warning("Could not find QC state for sweep number %d", sn)
 
 
-def drop_incomplete_sweeps(sweep_features):
+def drop_tagged_sweeps(sweep_features):
 
-    sweep_features[:] = [sf for sf in sweep_features if sf["completed"]]
+    sweep_features[:] = [sf for sf in sweep_features if not sf["tags"]]
 
 
 def remove_sweep_feature(feature_name,sweep_features):
