@@ -246,53 +246,52 @@ def cell_qc_features(data_set, manual_values=None):
 
     return features, tags
 
-##############################
-
 
 def sweep_qc_features(data_set):
-    """Compute QC features for iclamp sweeps in the dataset
 
-    Parameters
-    ----------
-    data_set : EphysDataSet
-        dataset
-
-    Returns
-    -------
-    sweep_features : list of dicts
-        each dict includes features of a sweep
-
-    """
     ontology = data_set.ontology
     sweeps_features = []
     iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
                                                   exclude_test=True,
                                                   exclude_search=True,
                                                   )
-    if len(iclamp_sweeps.index)==0:
+    if len(iclamp_sweeps.index) == 0:
         logging.warning("No current clamp sweeps available to compute QC features")
 
     for sweep_info in iclamp_sweeps.to_dict(orient='records'):
-        sw_features = {}
+        sweep_features = {}
+        sweep_features.update(sweep_info)
 
         sweep_num = sweep_info['sweep_number']
         sweep = data_set.sweep(sweep_num)
-        if completed_experiment(sweep.i, sweep.v,sweep.sampling_rate):
-            qc_features = current_clamp_sweep_qc_features(sweep,sweep_info,ontology)
-            stim_features = current_clamp_sweep_stim_features(sweep)
-            qc_features["completed"] = True
-        else:
-            qc_features = dict()
-            stim_features = dict()
-            qc_features["completed"] = False
-            logging.info("sweep {}, {}, did not complete experiment".format(sweep_num, sweep_info["stimulus_name"]))
-        sw_features.update(sweep_info)
-        sw_features.update(qc_features)
-        sw_features.update(stim_features)
+        is_ramp = sweep_info['stimulus_name'] in ontology.ramp_names
+        tags = check_sweep_integrity(sweep, is_ramp)
+        sweep_features["tags"] = tags
 
-        sweeps_features.append(sw_features)
+        if not tags:
+            qc_features = current_clamp_sweep_qc_features(sweep, is_ramp)
+            sweep_features.update(qc_features)
+            stim_features = current_clamp_sweep_stim_features(sweep)
+            sweep_features.update(stim_features)
+        else:
+            logging.warning("sweep {}: {}".format(sweep_num, tags))
+
+        sweeps_features.append(sweep_features)
 
     return sweeps_features
+
+
+def check_sweep_integrity(sweep, is_ramp):
+
+    tags = []
+
+    if sweep.epochs["stim"] == (None, None):
+        tags.append("Stimulus pulse is missing")
+
+    if not is_ramp:
+        if sweep.epochs["recording"][1] < sweep.epochs["experiment"][1]:
+            tags.append("Recording stopped before completing the experiment epoch")
+    return tags
 
 
 def current_clamp_sweep_stim_features(sweep):
@@ -316,7 +315,7 @@ def current_clamp_sweep_stim_features(sweep):
     return stim_features
 
 
-def current_clamp_sweep_qc_features(sweep,sweep_info,ontology):
+def current_clamp_sweep_qc_features(sweep, is_ramp):
 
     qc_features = {}
 
