@@ -47,6 +47,16 @@ def remove_sweep_feature(feature_name,sweep_features):
         del sf[feature_name]
 
 
+def create_sweep_state(sweep_number, fail_tags):
+
+    sweep_state = {'sweep_number': sweep_number,
+                   'passed': not fail_tags,
+                   'reasons': fail_tags}
+
+    return sweep_state
+
+
+
 def extract_sweep_features_subset(feature_names, sweep_features):
     """
 
