@@ -79,8 +79,7 @@ def main():
 
     ju.write(os.path.join(cell_dir,'se_output.json'),se_output)
 
-    sp.drop_incomplete_sweeps(se_output["sweep_features"])
-    sp.remove_sweep_feature("completed", se_output["sweep_features"])
+    sp.drop_tagged_sweeps(se_output["sweep_features"])
 
     qc_input = generate_qc_input(se_input, se_output)
 
