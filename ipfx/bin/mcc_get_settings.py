@@ -6,9 +6,13 @@ Code for interfacing with the Multi Clamp Commander application from Axon/Molecu
 
 import ctypes as ct
 import os
+import time
 import json
 import datetime
 import argparse
+
+from watchdog.events import RegexMatchingEventHandler
+from watchdog.observers import Observer
 
 # Original code taken from https://github.com/tgbugs/inferno/core/mcc.py, commit 3d555888 (Update README.md, 2017-08-02)
 # Original License: MIT
@@ -1047,19 +1051,60 @@ def writeSettingsToFile(settingsFile, filename):
         print(f"Output written to {filename}")
 
 
+class SettingsFetcher(RegexMatchingEventHandler):
+
+    def __init__(self, settingsFile):
+        super().__init__(regexes=[".*\.abf"], ignore_directories=True, case_sensitive=False)
+
+        self.settingsFile = settingsFile
+
+    def on_created(self, event):
+
+        print(f"Fetching settings for file {event.src_path}.")
+
+        base, _ = os.path.splitext(event.src_path)
+        try:
+            writeSettingsToFile(self.settingsFile, base + ".json")
+        except Exception as e:
+            print(f"Ignoring exception {e}.")
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--filename", type=str, help="Name of the generated JSON file", default="mcc-output.json")
     parser.add_argument("--settingsFile", "--idChannelMappingFromFile", type=str,
                         help="JSON formatted file with the ADC name <-> Amplifier mapping and optional stimset scale factors.",
                         required=True)
+    feature_parser = parser.add_mutually_exclusive_group(required=True)
+    feature_parser.add_argument("--filename", type=str, help="Name of the generated JSON file", default="mcc-output.json")
+    feature_parser.add_argument("--watchFolder", type=str,
+                                help="Gather settings each time a new ABF file is created in this folder.")
 
     args = parser.parse_args()
 
     if not os.path.isfile(args.settingsFile):
         raise ValueError("The parameter settingsFile requires an existing file in JSON format.")
 
-    writeSettingsToFile(args.settingsFile, args.filename)
+    if not args.watchFolder:
+        writeSettingsToFile(args.settingsFile, args.filename)
+        return None
+
+    if not os.path.isdir(args.watchFolder):
+        raise ValueError("The parameter watchFolder requires an existing folder.")
+
+    eventHandler = SettingsFetcher(args.settingsFile)
+    observer = Observer()
+    observer.schedule(eventHandler, args.watchFolder, recursive=False)
+    observer.start()
+
+    print(f"Starting to watch {args.watchFolder} for ABF files to appear. Press Ctrl + Break to stop.")
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+
+    observer.join()
 
 
 if __name__ == '__main__':
