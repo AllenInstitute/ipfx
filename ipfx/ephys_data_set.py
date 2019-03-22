@@ -81,17 +81,19 @@ class EphysDataSet(object):
             mask = st[self.SWEEP_NUMBER] == sweep_number
             st = st[mask]
 
-
         return st
 
-    def get_sweep_number_by_stimulus_names(self, stimulus_names):
+    def get_sweep_number(self, stimuli, clamp_mode=None):
 
-        sweeps = self.filtered_sweep_table(
-            stimuli=stimulus_names).sort_values(by=self.SWEEP_NUMBER)
+        sweeps = self.filtered_sweep_table(stimuli=stimuli).sort_values(by=self.SWEEP_NUMBER)
+
+        if clamp_mode:
+            mask = sweeps[self.CLAMP_MODE] == clamp_mode
+            sweeps = sweeps[mask]
 
         if len(sweeps) > 1:
             logging.warning(
-                "Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimulus_names))
+                "Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimuli))
 
         if len(sweeps) == 0:
             raise IndexError
@@ -135,7 +137,6 @@ class EphysDataSet(object):
 
         epochs = sweep_data.get('epochs')
         clamp_mode = self.get_clamp_mode(sweep_meta_data['stimulus_units'])
-
         if clamp_mode == "VoltageClamp":
             v = sweep_data['stimulus']
             i = sweep_data['response']

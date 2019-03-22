@@ -63,7 +63,7 @@ def get_r_from_stable_pulse_response(v, i, t):
     dv = np.diff(v)
     up_idx = np.flatnonzero(dv > 0)
     down_idx = np.flatnonzero(dv < 0)
-    assert len(up_idx) == len(down_idx), "Truncated breakin sweep, truncated response to a square pulse"
+    assert len(up_idx) == len(down_idx), "Truncated square pulse"
     dt = t[1] - t[0]
     one_ms = int(0.001 / dt)
 
@@ -94,7 +94,7 @@ def get_r_from_peak_pulse_response(v, i, t):
     dv = np.diff(v)
     up_idx = np.flatnonzero(dv > 0)
     down_idx = np.flatnonzero(dv < 0)
-    assert len(up_idx) == len(down_idx), "Truncated breakin sweep, truncated response to a square pulse"
+    assert len(up_idx) == len(down_idx), "Truncated square pulse"
 
     dt = t[1] - t[0]
     one_ms = int(0.001 / dt)
