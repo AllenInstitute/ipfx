@@ -172,7 +172,7 @@ class ABFConverter:
 
                 if np.isnan(abf.sweepC).any():
                     raise ValueError(f"Found at least one 'Not a Number' "
-                                     "entry in stimulus channel {channel} of sweep {sweep}.")
+                                     f"entry in stimulus channel {channel} of sweep {sweep}.")
 
     def _checkAll(self):
         """
