@@ -1011,9 +1011,6 @@ class MultiClampControl:
 
 def parseSettingsFromFile(settingsFile):
 
-    if not os.path.isfile(settingsFile):
-        raise ValueError("The parameter settingsFile requires an existing file in JSON format.")
-
     with open(settingsFile) as fh:
         d = json.load(fh)
 
@@ -1023,14 +1020,7 @@ def parseSettingsFromFile(settingsFile):
     return uids, scaleFactors
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--filename", type=str, help="Name of the generated JSON file", default="mcc-output.json")
-    parser.add_argument("--settingsFile", "--idChannelMappingFromFile", type=str,
-                        help="JSON formatted file with the ADC name <-> Amplifier mapping and optional stimset scale factors.",
-                        required=True)
-
-    args = parser.parse_args()
+def writeSettingsToFile(settingsFile, filename):
 
     with MultiClampControl() as mcc:
         d = DataGatherer()
@@ -1038,7 +1028,7 @@ def main():
 
     data["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
 
-    uids, scaleFactors = parseSettingsFromFile(args.settingsFile)
+    uids, scaleFactors = parseSettingsFromFile(settingsFile)
 
     print(f"ADC name <-> Amplifier mapping: {uids}")
     print(f"Scale factors: {scaleFactors}")
@@ -1052,9 +1042,25 @@ def main():
 
     data["ScaleFactors"] = scaleFactors
 
-    with open(args.filename, mode="w", encoding="utf-8") as fh:
+    with open(filename, mode="w", encoding="utf-8") as fh:
         fh.write(json.dumps(data, sort_keys=True, indent=4))
-        print(f"Output written to {args.filename}")
+        print(f"Output written to {filename}")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--filename", type=str, help="Name of the generated JSON file", default="mcc-output.json")
+    parser.add_argument("--settingsFile", "--idChannelMappingFromFile", type=str,
+                        help="JSON formatted file with the ADC name <-> Amplifier mapping and optional stimset scale factors.",
+                        required=True)
+
+    args = parser.parse_args()
+
+    if not os.path.isfile(args.settingsFile):
+        raise ValueError("The parameter settingsFile requires an existing file in JSON format.")
+
+    writeSettingsToFile(args.settingsFile, args.filename)
+
 
 if __name__ == '__main__':
     main()
