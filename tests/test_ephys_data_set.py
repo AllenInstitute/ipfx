@@ -49,22 +49,22 @@ def test_emtpy_table_has_header():
     assert list(ds.filtered_sweep_table(sweep_number=7)) == list(ds.sweep_table)
 
 
-def test_get_sweep_number_by_stimulus_name_invalid_sweep():
+def test_get_sweep_number_invalid_sweep():
 
     with pytest.raises(IndexError):
         ds = get_dataset()
-        ds.get_sweep_number_by_stimulus_names(['I_DONT_EXIST'])
+        ds.get_sweep_number(['I_DONT_EXIST'])
 
 
-def test_get_sweep_number_by_stimulus_name_works_1():
+def test_get_sweep_number_works_1():
     ds = get_dataset()
-    sweeps = ds.get_sweep_number_by_stimulus_names(['C1LSFINEST'])
+    sweeps = ds.get_sweep_number(['C1LSFINEST'])
     assert sweeps == 0
 
 
-def test_get_sweep_number_by_stimulus_name_works_and_returns_only_the_last():
+def test_get_sweep_number_works_and_returns_only_the_last():
     ds = get_dataset()
-    sweeps = ds.get_sweep_number_by_stimulus_names(['EXTPBREAKN'])
+    sweeps = ds.get_sweep_number(['EXTPBREAKN'])
     assert sweeps == 6
 
 
