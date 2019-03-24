@@ -8,6 +8,7 @@ import re
 import os
 import glob
 import warnings
+import logging
 
 import numpy as np
 
@@ -20,6 +21,8 @@ from pynwb.icephys import IntracellularElectrode
 from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, createCycleID
+
+log = logging.getLogger(__name__)
 
 
 class ABFConverter:

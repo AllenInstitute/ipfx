@@ -2,6 +2,8 @@
 
 import os
 import argparse
+import logging
+log = logging.getLogger(__name__)
 
 from ipfx.x_to_nwb.ABFConverter import ABFConverter
 from ipfx.x_to_nwb.DatConverter import DatConverter
@@ -92,8 +94,18 @@ def main():
     parser.set_defaults(compression=True)
     parser.add_argument("filesOrFolders", nargs="+",
                         help="List of ABF files/folders to convert.")
+    parser.add_argument("--log", type=str, help="Log level for debugging, defaults to the root logger's value.")
 
     args = parser.parse_args()
+
+    if args.log:
+        numeric_level = getattr(logging, args.log.upper(), None)
+
+        if not isinstance(numeric_level, int):
+            raise ValueError(f"Invalid log level: {args.log}")
+
+        logger = logging.getLogger()
+        logger.setLevel(numeric_level)
 
     if args.protocolDir:
         if not os.path.exists(args.protocolDir):
