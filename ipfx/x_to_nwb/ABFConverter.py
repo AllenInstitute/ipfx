@@ -315,6 +315,10 @@ class ABFConverter:
         counter = 0
 
         for file_index, abf in enumerate(self.abfs):
+
+            stimulus_description = ABFConverter._getProtocolName(abf.protocol)
+            scale_factor = self._getScaleFactor(stimulus_description)
+
             for sweep in range(abf.sweepCount):
                 cycle_id = createCycleID([file_index, sweep], total=self.totalSeriesCount)
                 for channel in range(abf.channelCount):
@@ -324,8 +328,6 @@ class ABFConverter:
 
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
-                    stimulus_description = ABFConverter._getProtocolName(abf.protocol)
-                    scale_factor = self._getScaleFactor(stimulus_description)
                     data = convertDataset(abf.sweepC * scale_factor, self.compression)
                     conversion, unit = parseUnit(abf.sweepUnitsC)
                     electrode = electrodes[channel]
@@ -458,6 +460,10 @@ class ABFConverter:
         counter = 0
 
         for file_index, abf in enumerate(self.abfs):
+
+            starting_time = self._calculateStartingTime(abf)
+            stimulus_description = ABFConverter._getProtocolName(abf.protocol)
+
             for sweep in range(abf.sweepCount):
                 cycle_id = createCycleID([file_index, sweep], total=self.totalSeriesCount)
                 for channel in range(abf.channelCount):
@@ -477,8 +483,6 @@ class ABFConverter:
                     electrode = electrodes[channel]
                     gain = abf._adcSection.fADCProgrammableGain[channel]
                     resolution = np.nan
-                    starting_time = self._calculateStartingTime(abf)
-                    stimulus_description = ABFConverter._getProtocolName(abf.protocol)
                     rate = float(abf.dataRate)
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
