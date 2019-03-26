@@ -251,9 +251,8 @@ def sweep_qc_features(data_set):
 
     ontology = data_set.ontology
     sweeps_features = []
-    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True,
-                                                  exclude_test=True,
-                                                  exclude_search=True,
+    iclamp_sweeps = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
+                                                  stimuli_exclude=["Test", "Search"],
                                                   )
     if len(iclamp_sweeps.index) == 0:
         logging.warning("No current clamp sweeps available to compute QC features")
