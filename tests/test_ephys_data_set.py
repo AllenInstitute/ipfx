@@ -46,8 +46,6 @@ def test_emtpy_table_has_header():
 
     assert list(ds.filtered_sweep_table(stimuli=['I_DONT_EXIST'])) == list(ds.sweep_table)
 
-    assert list(ds.filtered_sweep_table(sweep_number=7)) == list(ds.sweep_table)
-
 
 def test_get_sweep_number_invalid_sweep():
 
@@ -68,7 +66,14 @@ def test_get_sweep_number_works_and_returns_only_the_last():
     assert sweeps == 6
 
 
-def test_filtered_sweep_table_works():
+def test_get_sweep_number_wrong_clamp_mode():
+
+    with pytest.raises(IndexError):
+        ds = get_dataset()
+        ds.get_sweep_number(['Long Square'], clamp_mode="VoltageClamp")
+
+
+def test_filtered_sweep_table_stimuli():
 
     ds = get_dataset()
     sweeps = ds.filtered_sweep_table(stimuli=['EXTPBREAKN'])
@@ -76,12 +81,10 @@ def test_filtered_sweep_table_works():
     assert sweeps["sweep_number"].tolist() == [5, 6]
 
 
-def test_filtered_sweep_table_works_with_sweep_number():
-
+def test_filtered_sweep_table_stimuli_exclude():
     ds = get_dataset()
-    sweeps = ds.filtered_sweep_table(sweep_number=0)
-
-    assert sweeps["sweep_number"].tolist() == [0]
+    sweeps = ds.filtered_sweep_table(stimuli_exclude=["Test"])
+    assert sweeps["sweep_number"].values == 0
 
 
 def test_get_sweep_meta_data():

@@ -45,17 +45,17 @@ def test_main_dat(ontology, NWB_file):
 
     dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
 
-    expected = {'stimulus_units': {0: 'V'},
-                'clamp_mode': {0: 'VoltageClamp'},
-                'sweep_number': {0: 10101},
-                'leak_pa': {0: None},
-                'stimulus_code_ext': {0: None},
-                'stimulus_scale_factor': {0: 5000000.0},
-                'stimulus_code': {0: u'extpinbath'},
-                'stimulus_name': {0: u'extpinbath stimulus'},
-                'bridge_balance_mohm': {0: None}
+    expected = {'stimulus_units': 'V',
+                'clamp_mode': 'VoltageClamp',
+                'sweep_number': 10101,
+                'leak_pa': None,
+                'stimulus_code_ext': None,
+                'stimulus_scale_factor': 5000000.0,
+                'stimulus_code': u'extpinbath',
+                'stimulus_name': u'extpinbath stimulus',
+                'bridge_balance_mohm': None
                 }
-    # only compare one sweep
-    sweep_table = dataset.filtered_sweep_table(sweep_number=10101)
 
-    compare_dicts(expected, sweep_table.to_dict())
+    # only compare one sweep
+    sweep_meta_data = dataset.get_sweep_meta_data(10101)
+    compare_dicts(expected, sweep_meta_data)
