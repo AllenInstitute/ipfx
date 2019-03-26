@@ -132,7 +132,7 @@ def get_test_epoch(i):
         start,end indices of the epoch
     """
     di = np.diff(i)
-    di_idx = np.flatnonzero(di)  # != 0)
+    di_idx = np.flatnonzero(di)
 
     if len(di_idx) == 0:
         return None, None
