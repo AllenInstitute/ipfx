@@ -172,7 +172,8 @@ class ABFConverter:
 
                 if np.isnan(abf.sweepC).any():
                     raise ValueError(f"Found at least one 'Not a Number' "
-                                     "entry in stimulus channel {channel} of sweep {sweep}.")
+                                     f"entry in stimulus channel {channel} of sweep {sweep} "
+                                     f"in file {abf.abfFilePath} using protocol {abf.protocol}.")
 
     def _checkAll(self):
         """
@@ -199,7 +200,7 @@ class ABFConverter:
             elif self.refabf.abfVersion != abf.abfVersion:
                 raise ValueError("abfVersion does not match.")
             elif self.refabf.channelList != abf.channelList:
-                raise ValueError(f"channelList does not match ({self.refabf.channelList} vs {abf.channelList}.")
+                raise ValueError(f"channelList does not match ({self.refabf.channelList} vs {abf.channelList}).")
 
     def _getOldestABF(self):
         """

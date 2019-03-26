@@ -12,7 +12,11 @@ import numpy as np
 
 from pynwb.icephys import CurrentClampStimulusSeries, VoltageClampStimulusSeries
 from pynwb.icephys import CurrentClampSeries, VoltageClampSeries
-from pynwb.form.backends.hdf5.h5_utils import H5DataIO
+
+try:
+    from pynwb.form.backends.hdf5.h5_utils import H5DataIO
+except ModuleNotFoundError:
+    from hdmf.backends.hdf5.h5_utils import H5DataIO
 
 PLACEHOLDER = "PLACEHOLDER"
 V_CLAMP_MODE = 0
