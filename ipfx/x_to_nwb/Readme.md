@@ -37,10 +37,10 @@ Example for `misc-settings.json`:
 }
 ```
 
-For converting an ABF file to NWB, we expect either one JSON file per ABF file
-when converting single files, or one JSON file per directory when converting
-whole directories. The JSON files must reside in the same directory as the ABF
-files.
+The JSON files must reside in the same directory as the ABF files.
+
+For continously gathering the amplifier settings when a new ABF file is created
+use the `--watchFolder` option.
 
 #### Required input files
 
