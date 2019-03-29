@@ -35,7 +35,7 @@ class EphysDataSet(object):
     VOLTAGE_CLAMP = "VoltageClamp"
     CURRENT_CLAMP = "CurrentClamp"
 
-    current_clamp_units = ('Amps', 'pA')
+    current_clamp_units = ('Amps', 'pA', 'A')
 
     def __init__(self, ontology=None, validate_stim=True):
         self.sweep_table = None
