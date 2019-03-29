@@ -35,8 +35,6 @@ class EphysDataSet(object):
     VOLTAGE_CLAMP = "VoltageClamp"
     CURRENT_CLAMP = "CurrentClamp"
 
-    current_clamp_units = ('Amps', 'pA', 'A')
-
     def __init__(self, ontology=None, validate_stim=True):
         self.sweep_table = None
         self.ontology = ontology if ontology else StimulusOntology()
@@ -132,7 +130,7 @@ class EphysDataSet(object):
         t = np.arange(0, len(sweep_data['stimulus'])) * dt
 
         epochs = sweep_data.get('epochs')
-        clamp_mode = self.get_clamp_mode(sweep_meta_data['stimulus_units'])
+        clamp_mode = sweep_meta_data['clamp_mode']
         if clamp_mode == "VoltageClamp":
             v = sweep_data['stimulus']
             i = sweep_data['response']
@@ -161,12 +159,6 @@ class EphysDataSet(object):
             raise
 
         return sweep
-
-    def get_clamp_mode(self, stimulus_unit):
-
-        clamp_mode = "CurrentClamp" if stimulus_unit in self.current_clamp_units else "VoltageClamp"
-
-        return clamp_mode
 
     def sweep_set(self, sweep_numbers):
         try:
