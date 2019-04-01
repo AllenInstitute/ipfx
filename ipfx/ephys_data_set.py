@@ -49,44 +49,6 @@ class EphysDataSet(object):
         else:
             self.sweep_table = pd.DataFrame(columns=self.COLUMN_NAMES)
 
-    def filtered_sweep_table_ori(self,
-                             clamp_mode=None,
-                             passing_only=False,
-                             stimuli=None,
-                             exclude_search=False,
-                             exclude_test=False,
-                             sweep_number=None,
-                             ):
-
-        st = self.sweep_table
-
-        if clamp_mode:
-            mask = st[self.CLAMP_MODE] == clamp_mode
-            st = st[mask.astype(bool)]
-
-        if passing_only:
-            mask = st[self.PASSED]
-            st = st[mask.astype(bool)]
-
-        if stimuli:
-            mask = st[self.STIMULUS_CODE].apply(
-                self.ontology.stimulus_has_any_tags, args=(stimuli,), tag_type="code")
-            st = st[mask.astype(bool)]
-
-        if exclude_search:
-            mask = ~st[self.STIMULUS_NAME].isin(self.ontology.search_names)
-            st = st[mask]
-
-        if exclude_test:
-            mask = ~st[self.STIMULUS_NAME].isin(self.ontology.test_names)
-            st = st[mask.astype(bool)]
-
-        if sweep_number is not None:
-            mask = st[self.SWEEP_NUMBER] == sweep_number
-            st = st[mask]
-
-        return st
-
     def filtered_sweep_table(self,
                              clamp_mode=None,
                              passing_only=False,
