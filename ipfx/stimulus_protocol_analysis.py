@@ -113,11 +113,14 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
     HERO_MIN_AMP_OFFSET = 39.0
     HERO_MAX_AMP_OFFSET = 61.0
 
-    def __init__(self, spx, sptx, subthresh_min_amp, tau_frac=0.1):
+    def __init__(self, spx, sptx, subthresh_min_amp, tau_frac=0.1,
+                 require_subthreshold=True, require_suprathreshold=True):
         super(LongSquareAnalysis, self).__init__(spx, sptx)
         self.subthresh_min_amp = subthresh_min_amp
         self.sptx.stim_amp_fn = stf._step_stim_amp
         self.tau_frac = tau_frac
+        self.require_subthreshold = require_subthreshold
+        self.require_suprathreshold = require_suprathreshold
 
     def analyze(self, sweep_set):
 
@@ -139,7 +142,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         spiking_sweep_features = self.suprathreshold_sweep_features()
 
         if len(spiking_sweep_features) == 0:
-            raise er.FeatureError("No spiking long square sweeps, cannot compute cell features.")
+            if self.require_suprathreshold:
+                raise er.FeatureError("No spiking long square sweeps, cannot compute cell features.")
+            else:
+                logging.info("No spiking long square sweeps: cannot compute related cell features.")
+                return features
 
         rheobase_sweep_features = self.find_rheobase_sweep(spiking_sweep_features)
 
@@ -165,7 +172,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         subthreshold_sweep_features = self.subthreshold_sweep_features()
 
         if len(subthreshold_sweep_features) == 0:
-            raise er.FeatureError("No subthreshold long square sweeps, cannot evaluate cell features.")
+            if self.require_subthreshold:
+                raise er.FeatureError("No subthreshold long square sweeps, cannot evaluate cell features.")
+            else:
+                logging.info("No subthreshold long square sweeps: cannot compute related cell features.")
+                return features
 
         sags = subthreshold_sweep_features["sag"]
         sag_eval_levels = np.array([ v[0] for v in subthreshold_sweep_features["peak_deflect"] ])

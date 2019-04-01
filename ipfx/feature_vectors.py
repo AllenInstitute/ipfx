@@ -98,9 +98,9 @@ def extract_feature_vectors(data_set,
 
 def extract_multipatch_feature_vectors(lsq_sweeps, lsq_start, lsq_end,
                                        target_sampling_rate=50000, ap_window_length=0.003):
-    lsq_spx, lsq_spfx = extractors_for_sweeps(sweep_set, start=lsq_start, end=lsq_end)
-    lsq_an = LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=-100)
-    lsq_features = lsq_an.analyze(sweep_set)
+    lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(lsq_sweeps, start=lsq_start, end=lsq_end)
+    lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=-100)
+    lsq_features = lsq_an.analyze(lsq_sweeps)
 
     all_features = feature_vectors(lsq_sweeps, None, None,
                                    lsq_features, None, None,
@@ -416,6 +416,58 @@ def first_ap_features(lsq_sweeps, ssq_sweeps, ramp_sweeps,
     return output_vector
 
 
+def noise_ap_features(noise_sweeps,
+                      stim_interval_list = [(2.02, 5.02), (10.02, 13.02), (18.02, 21.02)],
+                      target_sampling_rate=50000, window_length=0.003,
+                      skip_first_n=1):
+
+    # Noise sweeps have three intervals of stimulation
+    # so we need to find the spikes in each of them
+    features_list = []
+    for start, end in stim_interval_list:
+        spx, spfx = dsf.extractors_for_sweeps(noise_sweeps,
+                                              start=start,
+                                              end=end)
+
+        analysis = spa.StimulusProtocolAnalysis(spx, spfx)
+        features_list.append(analysis.analyze(noise_sweeps))
+
+    swp = noise_sweeps.sweeps[0]
+    sampling_rate = int(np.rint(1. / (swp.t[1] - swp.t[0])))
+    length_in_points = int(sampling_rate * window_length)
+    avg_ap_list = []
+    for i, sweep in enumerate(noise_sweeps.sweeps):
+        spike_indexes = np.array([])
+
+        # Accumulate the spike times from each interval
+        # excluding the initial `skip_first_n` (due to expected systematically different shapes)
+        for features in features_list:
+            spikes = features["spikes_set"][i]
+            if len(spikes) <= skip_first_n:
+                continue
+
+            spike_indexes = np.hstack([spike_indexes, spikes["threshold_index"].values[skip_first_n:]])
+
+        if len(spike_indexes) > 0:
+            avg_ap_list.append(avg_ap_waveform(sweep, spike_indexes, length_in_points))
+
+    grand_avg_ap = np.vstack(avg_ap_list).mean(axis=0)
+    if sampling_rate > target_sampling_rate:
+        sampling_factor = sampling_rate / target_sampling_rate
+        grand_avg_ap = subsample_average(grand_avg_ap, sampling_factor)
+
+    return np.hstack([grand_avg_ap, np.diff(grand_avg_ap)])
+
+
+def avg_ap_waveform(sweep, spike_indexes, length_in_points):
+    avg_waveform = np.zeros(length_in_points)
+    for si in spike_indexes.astype(int):
+        ei = si + length_in_points
+        avg_waveform += sweep.v[si:ei]
+
+    return avg_waveform / float(len(spike_indexes))
+
+
 def first_ap_waveform(sweep, spikes, length_in_points):
     start_index = spikes["threshold_index"].astype(int)[0]
     end_index = start_index + length_in_points
@@ -582,4 +634,5 @@ def inst_freq_feature(threshold_t, start, end):
     values = 1. / np.diff(threshold_t)
     values = np.append(values, 1. / (end - threshold_t[-2])) # last
     return values
+
 
