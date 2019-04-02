@@ -42,6 +42,9 @@ class NwbReader(object):
     def get_stim_code(self, sweep_name):
         raise NotImplementedError
 
+    def get_starting_time(self, sweep_name):
+        raise NotImplementedError
+
     @staticmethod
     def get_long_unit_name(unit):
         if unit.startswith('A'):
@@ -350,6 +353,14 @@ class NwbPipelineReader(NwbReader):
 
                     return stim_code
 
+    def get_starting_time(self,sweep_name):
+        with h5py.File(self.nwb_file, 'r') as f:
+
+            sweep_ts = f[self.acquisition_path][sweep_name]
+            starting_time = sweep_ts["starting_time"].value
+
+        return starting_time
+
 
 class NwbMiesReader(NwbReader):
     """
@@ -391,6 +402,7 @@ class NwbMiesReader(NwbReader):
     def get_sweep_number(self, sweep_name):
 
         assumed_sweep_number = int(sweep_name.split('_')[1])
+
         return self.get_real_sweep_number(sweep_name, assumed_sweep_number)
 
     def get_stim_code(self, sweep_name):
@@ -409,6 +421,14 @@ class NwbMiesReader(NwbReader):
                     stim_code = stim_code[:-5]
 
         return stim_code
+
+    def get_starting_time(self,sweep_name):
+        with h5py.File(self.nwb_file, 'r') as f:
+
+            sweep_ts = f[self.acquisition_path][sweep_name]
+            starting_time = sweep_ts["starting_time"].value[0]
+
+        return starting_time
 
 
 def get_nwb_version(nwb_file):
