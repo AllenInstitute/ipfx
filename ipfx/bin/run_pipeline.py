@@ -25,6 +25,7 @@ def run_pipeline(input_nwb_file,
 
     sp.drop_tagged_sweeps(se_output["sweep_features"])
     sp.remove_sweep_feature("tags",se_output["sweep_features"])
+    sp.remove_sweep_feature("starting_time",se_output["sweep_features"])
 
     qc_output = run_qc(stimulus_ontology_file,
                        se_output["cell_features"],
