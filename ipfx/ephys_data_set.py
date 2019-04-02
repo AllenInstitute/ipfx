@@ -15,16 +15,16 @@ class EphysDataSet(object):
     STIMULUS_NAME = 'stimulus_name'
     SWEEP_NUMBER = 'sweep_number'
     PASSED = 'passed'
+    CLAMP_MODE = 'clamp_mode'
 
     COLUMN_NAMES = [STIMULUS_UNITS,
                     STIMULUS_CODE,
                     STIMULUS_AMPLITUDE,
                     STIMULUS_NAME,
+                    CLAMP_MODE,
                     SWEEP_NUMBER,
                     PASSED
                     ]
-
-    CLAMP_MODE = 'clamp_mode'
 
     LONG_SQUARE = 'long_square'
     COARSE_LONG_SQUARE = 'coarse_long_square'
@@ -34,8 +34,6 @@ class EphysDataSet(object):
 
     VOLTAGE_CLAMP = "VoltageClamp"
     CURRENT_CLAMP = "CurrentClamp"
-
-    current_clamp_units = ('Amps', 'pA')
 
     def __init__(self, ontology=None, validate_stim=True):
         self.sweep_table = None
@@ -48,44 +46,6 @@ class EphysDataSet(object):
             self.sweep_table = pd.DataFrame.from_records(sweep_meta_data)
         else:
             self.sweep_table = pd.DataFrame(columns=self.COLUMN_NAMES)
-
-    def filtered_sweep_table_ori(self,
-                             clamp_mode=None,
-                             passing_only=False,
-                             stimuli=None,
-                             exclude_search=False,
-                             exclude_test=False,
-                             sweep_number=None,
-                             ):
-
-        st = self.sweep_table
-
-        if clamp_mode:
-            mask = st[self.CLAMP_MODE] == clamp_mode
-            st = st[mask.astype(bool)]
-
-        if passing_only:
-            mask = st[self.PASSED]
-            st = st[mask.astype(bool)]
-
-        if stimuli:
-            mask = st[self.STIMULUS_CODE].apply(
-                self.ontology.stimulus_has_any_tags, args=(stimuli,), tag_type="code")
-            st = st[mask.astype(bool)]
-
-        if exclude_search:
-            mask = ~st[self.STIMULUS_NAME].isin(self.ontology.search_names)
-            st = st[mask]
-
-        if exclude_test:
-            mask = ~st[self.STIMULUS_NAME].isin(self.ontology.test_names)
-            st = st[mask.astype(bool)]
-
-        if sweep_number is not None:
-            mask = st[self.SWEEP_NUMBER] == sweep_number
-            st = st[mask]
-
-        return st
 
     def filtered_sweep_table(self,
                              clamp_mode=None,
@@ -170,7 +130,7 @@ class EphysDataSet(object):
         t = np.arange(0, len(sweep_data['stimulus'])) * dt
 
         epochs = sweep_data.get('epochs')
-        clamp_mode = self.get_clamp_mode(sweep_meta_data['stimulus_units'])
+        clamp_mode = sweep_meta_data['clamp_mode']
         if clamp_mode == "VoltageClamp":
             v = sweep_data['stimulus']
             i = sweep_data['response']
@@ -200,12 +160,6 @@ class EphysDataSet(object):
 
         return sweep
 
-    def get_clamp_mode(self, stimulus_unit):
-
-        clamp_mode = "CurrentClamp" if stimulus_unit in self.current_clamp_units else "VoltageClamp"
-
-        return clamp_mode
-
     def sweep_set(self, sweep_numbers):
         try:
             return SweepSet([self.sweep(sn) for sn in sweep_numbers])
@@ -231,6 +185,7 @@ class EphysDataSet(object):
                  EphysDataSet.STIMULUS_AMPLITUDE: s['stimulus_absolute_amplitude'],
                  EphysDataSet.STIMULUS_CODE: re.sub(r"\[\d+\]", "", s['stimulus_description']),
                  EphysDataSet.STIMULUS_NAME: s['stimulus_name'],
+                 EphysDataSet.CLAMP_MODE: s['clamp_mode'],
                  EphysDataSet.PASSED: True} for s in sweep_list]
 
     def get_sweep_data(self, sweep_number):
