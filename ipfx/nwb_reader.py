@@ -149,10 +149,12 @@ class NwbReader(object):
 
             sweep_map.append(sweep_record)
 
-        if sweep_map:
-            self.drop_reacquired_sweeps(sweep_map)
+        self.sweep_map_table = pd.DataFrame.from_records(sweep_map)
 
-    def drop_reacquired_sweeps(self, sweep_map):
+        if sweep_map:
+            self.drop_reacquired_sweeps()
+
+    def drop_reacquired_sweeps(self):
         """
         If sweep was re-acquired, then drop earlier acquired sweep with the same sweep_number
 
@@ -164,7 +166,6 @@ class NwbReader(object):
         -------
 
         """
-        self.sweep_map_table = pd.DataFrame.from_records(sweep_map)
         self.sweep_map_table.sort_values(by="starting_time")
         self.sweep_map_table.drop_duplicates(subset="sweep_number", keep="last", inplace=True)
 

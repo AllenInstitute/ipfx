@@ -12,6 +12,7 @@ class AibsDataSet(EphysDataSet):
         super(AibsDataSet, self).__init__(ontology, validate_stim)
 
         self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
+        self.nwb_data.build_sweep_map()
 
         if sweep_info is not None:
             sweep_info = self.modify_api_sweep_info(sweep_info) if api_sweeps else sweep_info

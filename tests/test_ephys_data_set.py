@@ -9,16 +9,16 @@ from helpers_for_tests import compare_dicts
 
 
 def get_sweep_table_dict():
-    return {'bridge_balance_mohm': [15.6288156509,15.6288156509, np.nan, np.nan],
-            'clamp_mode': ['CurrentClamp', 'CurrentClamp', 'VoltageClamp', 'VoltageClamp'],
-            'leak_pa': [-5.20449542999, -6.20449542999, np.nan, np.nan],
-            'stimulus_code': ['C1LSFINEST150112', 'C1LSFINEST150112', 'EXTPBREAKN141203', 'EXTPBREAKN141203'],
-            'stimulus_code_ext': ['C1LSFINEST150112[0]','C1LSFINEST150112[0]', 'EXTPBREAKN141203[0]', 'EXTPBREAKN141203[0]'],
-            'stimulus_name': ["Long Square", "Long Square", "Test", "Test"],
-            'stimulus_scale_factor': [10.0, 10.0, 0.5, 0.5],
-            'stimulus_units': ['pA', 'pA', 'mV', 'mV'],
-            'starting_time': [11.23, 39.45, 45.9, 82.01],
-            'sweep_number': [0, 0, 5, 6]}
+    return {'bridge_balance_mohm': [15.6288156509, np.nan, np.nan],
+            'clamp_mode': ['CurrentClamp', 'VoltageClamp', 'VoltageClamp'],
+            'leak_pa': [-5.20449542999, np.nan, np.nan],
+            'stimulus_code': ['C1LSFINEST150112', 'EXTPBREAKN141203', 'EXTPBREAKN141203'],
+            'stimulus_code_ext': ['C1LSFINEST150112[0]', 'EXTPBREAKN141203[0]', 'EXTPBREAKN141203[0]'],
+            'stimulus_name': ["Long Square", "Test", "Test"],
+            'stimulus_scale_factor': [10.0, 0.5, 0.5],
+            'stimulus_units': ['pA', 'mV', 'mV'],
+            'starting_time': [11.23, 45.9, 82.01],
+            'sweep_number': [0, 5, 6]}
 
 
 def get_sweep_record(d, idx):
@@ -62,21 +62,6 @@ def test_get_sweep_number_invalid_sweep():
         ds.get_sweep_number(['I_DONT_EXIST'])
 
 
-def test_remove_earlier_duplicate_sweep_numbers():
-
-    d = get_sweep_table_dict()
-
-    ds = get_dataset()
-    actual = ds.get_sweep_meta_data(0)
-    expected = get_sweep_record(d, 1)
-
-    print expected
-    print actual
-    compare_dicts(expected, actual)
-
-    assert len(ds.sweep_table.index) == 3
-
-
 def test_get_sweep_number_works_1():
     ds = get_dataset()
     sweeps = ds.get_sweep_number(['C1LSFINEST'])
@@ -113,7 +98,7 @@ def test_filtered_sweep_table_stimuli_exclude():
 def test_get_sweep_meta_data():
 
     d = get_sweep_table_dict()
-    expected = get_sweep_record(d, 2)
+    expected = get_sweep_record(d, 1)
 
     ds = get_dataset()
     actual = ds.get_sweep_meta_data(5)

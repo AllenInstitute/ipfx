@@ -208,7 +208,7 @@ def test_valid_v1_full_Pipeline(fetch_pipeline_file):
 def test_valid_v1_full_MIES_1(NWB_file):
 
     reader = create_nwb_reader(NWB_file)
-
+    reader.build_sweep_map()
     assert isinstance(reader, NwbMiesReader)
 
     sweep_names_ref = [u'data_00000_AD0']
@@ -254,6 +254,8 @@ def test_valid_v1_full_MIES_1(NWB_file):
 def test_valid_v1_full_MIES_2(NWB_file):
 
     reader = create_nwb_reader(NWB_file)
+    reader.build_sweep_map()
+
     assert isinstance(reader, NwbMiesReader)
 
     sweep_names_ref = [u'data_00000_AD0']
@@ -300,7 +302,7 @@ def test_valid_v1_full_MIES_2(NWB_file):
 def test_valid_v1_full_MIES_3(NWB_file):
 
     reader = create_nwb_reader(NWB_file)
-
+    reader.build_sweep_map()
     assert isinstance(reader, NwbMiesReader)
 
     sweep_names_ref = [u'data_00000_AD0']
