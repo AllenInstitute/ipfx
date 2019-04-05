@@ -37,7 +37,7 @@ class AibsDataSet(EphysDataSet):
 
             sweep_record['starting_time'] = self.nwb_data.get_starting_time(sweep_name)
             sweep_record['sweep_number'] = sweep_num
-            sweep_record['clamp_mode'] = self.get_clamp_mode(sweep_name)
+            sweep_record['clamp_mode'] = self.nwb_data.get_clamp_mode(sweep_name)
             sweep_record['stimulus_units'] = self.get_stim_units(sweep_name)
             sweep_record["bridge_balance_mohm"] = self.notebook.get_value("Bridge Bal Value", sweep_num, None)
             sweep_record["leak_pa"] = self.notebook.get_value("I-Clamp Holding Level", sweep_num, None)
@@ -90,21 +90,6 @@ class AibsDataSet(EphysDataSet):
             return 'mV'
         else:
             raise Exception("Unknown clamp mode")
-
-    def get_clamp_mode(self, sweep_name):
-        attrs = self.nwb_data.get_sweep_attrs(sweep_name)
-        ancestry = attrs["ancestry"]
-
-        if "CurrentClamp" in ancestry[-1]:
-            return 'CurrentClamp'
-        elif "VoltageClamp" in ancestry[-1]:
-            return 'VoltageClamp'
-        else:
-            # it's probably OK to skip this sweep and put a 'continue'
-            #   here instead of an exception, but wait until there's
-            #   an actual error and investigate the data before doing so
-            raise Exception(
-                "Unable to determine clamp mode in " + sweep_name)
 
     def get_sweep_data(self, sweep_number):
         return self.nwb_data.get_sweep_data(sweep_number)

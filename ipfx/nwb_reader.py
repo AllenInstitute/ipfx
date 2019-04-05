@@ -108,6 +108,21 @@ class NwbReader(object):
 
         return attrs
 
+    def get_clamp_mode(self, sweep_name):
+        attrs = self.get_sweep_attrs(sweep_name)
+        ancestry = attrs["ancestry"]
+
+        if "CurrentClamp" in ancestry[-1]:
+            return 'CurrentClamp'
+        elif "VoltageClamp" in ancestry[-1]:
+            return 'VoltageClamp'
+        else:
+            # it's probably OK to skip this sweep and put a 'continue'
+            #   here instead of an exception, but wait until there's
+            #   an actual error and investigate the data before doing so
+            raise Exception(
+                "Unable to determine clamp mode in " + sweep_name)
+
     def get_sweep_names(self):
 
         with h5py.File(self.nwb_file, 'r') as f:
