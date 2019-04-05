@@ -8,6 +8,7 @@ import re
 import os
 import glob
 import warnings
+import logging
 
 import numpy as np
 
@@ -20,6 +21,8 @@ from pynwb.icephys import IntracellularElectrode
 from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, createCycleID
+
+log = logging.getLogger(__name__)
 
 
 class ABFConverter:
@@ -50,7 +53,7 @@ class ABFConverter:
         self.outputFeedbackChannel = outputFeedbackChannel
         self.compression = compression
 
-        self._settings = self._getJSONFile(inFileOrFolder)
+        self._settings = self._getJSONFiles(inFileOrFolder)
 
         self.abfs = []
 
@@ -104,35 +107,61 @@ class ABFConverter:
 
         return re.sub(r"_IN\d+$", "", protocolName)
 
-    def _getJSONFile(self, inFileOrFolder):
+    def _getJSONFiles(self, inFileOrFolder):
         """
-        Search the JSON file with all miscellaneous settings.
-        If `inFileOrFolder` is a folder we need one JSON file in that folder,
-        if `inFileOrFolder` is a file the JSON file must have the same
-        basename. For all other cases we warn and return nothing.
+        Search the JSON files with all miscellaneous settings.
+        If `inFileOrFolder` is a folder we need one JSON file in that folder or
+        multiple JSON files with the same basename as the ABF files.
+        If `inFileOrFolder` is a file the JSON file must have the same
+        basename.
+
+        Returns a dict with the abf file/folder name as key and a dictinonary with
+        the settings as value.
         """
+
+        d = {}
+
+        def loadJSON(filename):
+            log.debug(f"Using JSON settings file {filename}.")
+            with open(filename) as fh:
+                return json.load(fh)
+
+        def addDictEntry(d, filename):
+            base, _ = os.path.splitext(filename)
+            settings = base + ".json"
+
+            if os.path.isfile(settings):
+                d[filename] = loadJSON(settings)
+                return None
+
+            warnings.warn(f"Could not find the JSON file {settings} with settings.")
 
         if os.path.isfile(inFileOrFolder):
-            settings = os.path.splitext(inFileOrFolder)[0] + ".json"
+            log.debug("Searching JSON files for file conversion.")
+            addDictEntry(d, inFileOrFolder)
+            return d
 
-            if not os.path.isfile(settings):
-                warnings.warn(f"Could not find the JSON file {settings} with settings.")
-                return None
-
-        elif os.path.isdir(inFileOrFolder):
+        if os.path.isdir(inFileOrFolder):
             files = glob.glob(os.path.join(inFileOrFolder, "*.json"))
 
-            if len(files) != 1:
-                warnings.warn(f"Could not find exactly one JSON file with "
-                              f"settings in folder {inFileOrFolder}.")
-                return None
+            numFiles = len(files)
 
-            settings = files[0]
-        else:
-            return None
+            log.debug(f"Found {numFiles} JSON files for folder conversion.")
 
-        with open(settings) as fh:
-            return json.load(fh)
+            if numFiles == 0:
+                warnings.warn(f"Could not find any JSON file with settings.")
+                return d
+            elif numFiles == 1:
+                # compatibility with old datasets with only one JSON file per folder
+                d[inFileOrFolder] = loadJSON(files[0])
+                return d
+
+            # iterate over all ABF files
+            files = glob.glob(os.path.join(inFileOrFolder, "*.abf"))
+            for f in files:
+                addDictEntry(d, f)
+
+            return d
 
     def _check(self, abf):
         """
@@ -313,6 +342,10 @@ class ABFConverter:
         counter = 0
 
         for file_index, abf in enumerate(self.abfs):
+
+            stimulus_description = ABFConverter._getProtocolName(abf.protocol)
+            scale_factor = self._getScaleFactor(abf, stimulus_description)
+
             for sweep in range(abf.sweepCount):
                 cycle_id = createCycleID([file_index, sweep], total=self.totalSeriesCount)
                 for channel in range(abf.channelCount):
@@ -322,8 +355,6 @@ class ABFConverter:
 
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
-                    stimulus_description = ABFConverter._getProtocolName(abf.protocol)
-                    scale_factor = self._getScaleFactor(stimulus_description)
                     data = convertDataset(abf.sweepC * scale_factor, self.compression)
                     conversion, unit = parseUnit(abf.sweepUnitsC)
                     electrode = electrodes[channel]
@@ -358,18 +389,41 @@ class ABFConverter:
 
         return series
 
-    def _getScaleFactor(self, stimset):
+    def _findSettingsEntry(self, abf):
         """
-        Return the stimulus scale factor for the given stimset.
+        Return the settings dictionary for the given abf file, either the file
+        specific, or the global one for the folder, or None as first tuple element.
+        The second element is the source of the data.
+        """
+
+        if self._settings is None:
+            return None, None
+
+        filename = abf.abfFilePath
+
+        try:
+            return self._settings[filename], filename
+        except KeyError:
+            dirname = os.path.dirname(filename)
+
+            try:
+                return self._settings[dirname], dirname
+            except KeyError:
+                return None, None
+
+    def _getScaleFactor(self, abf, stimset):
+        """
+        Return the stimulus scale factor for the stimset of the abf file.
         """
 
         try:
-            return float(self._settings["ScaleFactors"][stimset])
+            settings, _ = self._findSettingsEntry(abf)
+            return float(settings["ScaleFactors"][stimset])
         except (TypeError, KeyError) as e:
-            warnings.warn(f"Could not find the scale factor for the stimset {stimset} using 1.0 as fallback.")
+            warnings.warn(f"Could not find the scale factor for the stimset {stimset}, using 1.0 as fallback.")
             return 1.0
 
-    def _getAmplifierSettings(self, clampMode, adcName):
+    def _getAmplifierSettings(self, abf, clampMode, adcName):
         """
         Return a dict with the amplifier settings read out form the JSON file.
         Unset values are returned as `NaN`.
@@ -379,16 +433,19 @@ class ABFConverter:
 
         try:
             # JSON stores adcName without spaces
+
+            amplifier = "unknown"
+            abfSettings, _ = self._findSettingsEntry(abf)
             adcNameWOSpace = adcName.replace(" ", "")
-            amplifier = self._settings["uids"][adcNameWOSpace]
-            settings = self._settings[amplifier]
+            amplifier = abfSettings["uids"][adcNameWOSpace]
+            settings = abfSettings[amplifier]
 
             if settings["GetMode"] != clampMode:
                 warnings.warn(f"Stored clamp mode {settings['GetMode']} does not match requested "
                               f"clamp mode {clampMode} of channel {adcName}.")
                 settings = None
         except (TypeError, KeyError) as e:
-            warnings.warn(f"Could not find settings for amplifier of channel {adcName}.")
+            warnings.warn(f"Could not find settings for amplifier {amplifier} of channel {adcName}.")
             settings = None
 
         if settings:
@@ -456,6 +513,12 @@ class ABFConverter:
         counter = 0
 
         for file_index, abf in enumerate(self.abfs):
+
+            starting_time = self._calculateStartingTime(abf)
+            stimulus_description = ABFConverter._getProtocolName(abf.protocol)
+            _, jsonSource = self._findSettingsEntry(abf)
+            log.debug(f"Using JSON settings for {jsonSource}.")
+
             for sweep in range(abf.sweepCount):
                 cycle_id = createCycleID([file_index, sweep], total=self.totalSeriesCount)
                 for channel in range(abf.channelCount):
@@ -475,8 +538,6 @@ class ABFConverter:
                     electrode = electrodes[channel]
                     gain = abf._adcSection.fADCProgrammableGain[channel]
                     resolution = np.nan
-                    starting_time = self._calculateStartingTime(abf)
-                    stimulus_description = ABFConverter._getProtocolName(abf.protocol)
                     rate = float(abf.dataRate)
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
@@ -487,7 +548,7 @@ class ABFConverter:
                                              sort_keys=True, indent=4)
 
                     clampMode = self._getClampMode(abf, channel)
-                    settings = self._getAmplifierSettings(clampMode, adcName)
+                    settings = self._getAmplifierSettings(abf, clampMode, adcName)
                     seriesClass = getAcquiredSeriesClass(clampMode)
 
                     if clampMode == V_CLAMP_MODE:

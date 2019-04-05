@@ -80,13 +80,21 @@ def test_get_sweep_number_wrong_clamp_mode():
         ds = get_dataset()
         ds.get_sweep_number(['Long Square'], clamp_mode="VoltageClamp")
 
-
 def test_filtered_sweep_table_stimuli():
-
     ds = get_dataset()
     sweeps = ds.filtered_sweep_table(stimuli=['EXTPBREAKN'])
-
     assert sweeps["sweep_number"].tolist() == [5, 6]
+
+
+def test_filtered_sweep_table_stimuli_exclude():
+    ds = get_dataset()
+    sweeps = ds.filtered_sweep_table(stimuli_exclude=["Test"])
+    assert sweeps["sweep_number"].values == 0
+
+def test_filtered_sweep_table_works_cc():
+    ds = get_dataset()
+    sweeps = ds.filtered_sweep_table(clamp_mode="CurrentClamp")
+    assert sweeps["sweep_number"].tolist() == [0]
 
 
 def test_filtered_sweep_table_stimuli_exclude():
@@ -143,7 +151,8 @@ def test_modify_api_sweep_info():
           "stimulus_units": "abcd",
           "stimulus_absolute_amplitude": 456,
           "stimulus_description": "efgh[4711]",
-          "stimulus_name": "hijkl"
+          "stimulus_name": "hijkl",
+          "clamp_mode": "mnopqr"
           }]
 
     ds = get_dataset()
@@ -154,6 +163,7 @@ def test_modify_api_sweep_info():
                  EphysDataSet.STIMULUS_AMPLITUDE: 456,
                  EphysDataSet.STIMULUS_CODE: "efgh",
                  EphysDataSet.STIMULUS_NAME: "hijkl",
+                 EphysDataSet.CLAMP_MODE: "mnopqr",
                  EphysDataSet.PASSED: True}]
 
     assert len(expected) == len(result)

@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 import json
 import warnings
+import logging
 
 import numpy as np
 
@@ -15,6 +16,8 @@ from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
 from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, getStimulusRecordIndex, createCycleID, clampModeToString
+
+log = logging.getLogger(__name__)
 
 
 class DatConverter:

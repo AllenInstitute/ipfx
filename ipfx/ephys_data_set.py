@@ -15,16 +15,16 @@ class EphysDataSet(object):
     STIMULUS_NAME = 'stimulus_name'
     SWEEP_NUMBER = 'sweep_number'
     PASSED = 'passed'
+    CLAMP_MODE = 'clamp_mode'
 
     COLUMN_NAMES = [STIMULUS_UNITS,
                     STIMULUS_CODE,
                     STIMULUS_AMPLITUDE,
                     STIMULUS_NAME,
+                    CLAMP_MODE,
                     SWEEP_NUMBER,
                     PASSED
                     ]
-
-    CLAMP_MODE = 'clamp_mode'
 
     LONG_SQUARE = 'long_square'
     COARSE_LONG_SQUARE = 'coarse_long_square'
@@ -194,6 +194,7 @@ class EphysDataSet(object):
                  EphysDataSet.STIMULUS_AMPLITUDE: s['stimulus_absolute_amplitude'],
                  EphysDataSet.STIMULUS_CODE: re.sub(r"\[\d+\]", "", s['stimulus_description']),
                  EphysDataSet.STIMULUS_NAME: s['stimulus_name'],
+                 EphysDataSet.CLAMP_MODE: s['clamp_mode'],
                  EphysDataSet.PASSED: True} for s in sweep_list]
 
     def get_sweep_data(self, sweep_number):

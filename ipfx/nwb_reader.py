@@ -244,8 +244,8 @@ class NwbXReader(NwbReader):
         sweep_number: int
         """
 
-        if not isinstance(sweep_number, (int, np.uint64)):
-            raise ValueError("sweep_number must be an integer")
+        if not isinstance(sweep_number, (int, np.uint64, np.int64)):
+            raise ValueError("sweep_number must be an integer but it is {}".format(type(sweep_number)))
 
         def getRawDataSourceType(experiment_description):
             """
