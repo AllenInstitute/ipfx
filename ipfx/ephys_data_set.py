@@ -47,9 +47,6 @@ class EphysDataSet(object):
         if sweep_meta_data:
 
             self.sweep_table = pd.DataFrame.from_records(sweep_meta_data)
-            if "starting_time" in self.sweep_table.columns:
-                self.sweep_table.sort_values(by="starting_time")
-                self.sweep_table.drop_duplicates(subset="sweep_number", keep="last", inplace=True)
         else:
             self.sweep_table = pd.DataFrame(columns=self.COLUMN_NAMES)
 

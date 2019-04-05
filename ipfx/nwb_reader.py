@@ -1,6 +1,6 @@
 import re
 import warnings
-
+import pandas as pd
 import h5py
 import numpy as np
 from pynwb import NWBHDF5IO
@@ -129,6 +129,63 @@ class NwbReader(object):
             sweep_names = [e for e in f[self.acquisition_path].keys()]
 
         return sweep_names
+
+
+    def build_sweep_map(self):
+        """
+        Table for mapping sweep_number to sweep name
+        Returns
+        -------
+
+        """
+        sweep_map = []
+        for sweep_name in self.get_sweep_names():
+
+            sweep_record = {}
+
+            sweep_record["sweep_name"] = sweep_name
+            sweep_record["sweep_number"] = self.get_sweep_number(sweep_name)
+            sweep_record["starting_time"] = self.get_starting_time(sweep_name)
+
+            sweep_map.append(sweep_record)
+
+        if sweep_map:
+            self.drop_reacquired_sweeps(sweep_map)
+
+    def drop_reacquired_sweeps(self, sweep_map):
+        """
+        If sweep was re-acquired, then drop earlier acquired sweep with the same sweep_number
+
+        Parameters
+        ----------
+        sweep_map
+
+        Returns
+        -------
+
+        """
+        self.sweep_map_table = pd.DataFrame.from_records(sweep_map)
+        self.sweep_map_table.sort_values(by="starting_time")
+        self.sweep_map_table.drop_duplicates(subset="sweep_number", keep="last", inplace=True)
+
+    def get_sweep_name(self,sweep_number):
+        """
+        Parameters
+        ----------
+        sweep_number: int
+            real sweep number
+
+        Returns
+        -------
+        sweep_name: str
+            name of the acquisition dataset
+        """
+        if sweep_number is not None:
+            mask = self.sweep_map_table["sweep_number"] == sweep_number
+            st = self.sweep_map_table[mask]
+            return st.to_dict(orient='records')[0]["sweep_name"]
+        else:
+            raise ValueError("Invalid sweep number {}".format(sweep_number))
 
     def get_pipeline_version(self):
         """ Returns the AI pipeline version number, stored in the
@@ -390,11 +447,14 @@ class NwbMiesReader(NwbReader):
 
     def get_sweep_data(self, sweep_number):
 
+        sweep_name = self.get_sweep_name(sweep_number)
+        sweep_running_number = int(sweep_name.split('_')[1])
+
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_response = f[self.acquisition_path]["data_%05d_AD0" % sweep_number]
+            sweep_response = f[self.acquisition_path]["data_%05d_AD0" % sweep_running_number]
             response_dataset = sweep_response["data"]
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
-            sweep_stimulus = f[self.stimulus_path]["data_%05d_DA0" % sweep_number]
+            sweep_stimulus = f[self.stimulus_path]["data_%05d_DA0" % sweep_running_number]
             stimulus_dataset = sweep_stimulus["data"]
 
             response = response_dataset.value
