@@ -453,11 +453,13 @@ class NwbMiesReader(NwbReader):
 
     def get_sweep_data(self, sweep_number):
 
+        sweep_map = self.get_sweep_map(sweep_number)
+
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_response = f[self.acquisition_path]["data_%05d_AD0" % sweep_number]
+            sweep_response = f[self.acquisition_path][sweep_map["acquisition_group"]]
             response_dataset = sweep_response["data"]
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
-            sweep_stimulus = f[self.stimulus_path]["data_%05d_DA0" % sweep_number]
+            sweep_stimulus = f[self.stimulus_path][sweep_map["stimulus_group"]]
             stimulus_dataset = sweep_stimulus["data"]
 
             response = response_dataset.value
