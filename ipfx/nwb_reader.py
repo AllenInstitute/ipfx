@@ -322,7 +322,7 @@ class NwbPipelineReader(NwbReader):
     def __init__(self, nwb_file):
         NwbReader.__init__(self, nwb_file)
         self.acquisition_path = "acquisition/timeseries"
-        self.stimulus_path = "stimulus/timeseries"
+        self.stimulus_path = "stimulus/presentation"
         self.nwb_major_version = 1
         self.build_sweep_map()
 
@@ -366,7 +366,7 @@ class NwbPipelineReader(NwbReader):
             #   SI unit. For those files, return uncorrected data.
             #   For newer files (1.1 and later), apply conversion value.
 
-            stimulus_dataset = swp[self.stimulus_path]['data']
+            stimulus_dataset = swp['stimulus/timeseries']['data']
             stimulus_conversion = float(stimulus_dataset.attrs["conversion"])
 
             response_dataset = swp['response/timeseries']['data']
@@ -399,7 +399,7 @@ class NwbPipelineReader(NwbReader):
             else:
                 raise ValueError("Unknown stimulus unit")
 
-            hz = 1.0 * swp[self.stimulus_path]['starting_time'].attrs['rate']
+            hz = 1.0 * swp['stimulus/timeseries']['starting_time'].attrs['rate']
 
             return {
                 'stimulus': stimulus,
