@@ -1,6 +1,6 @@
 import re
 import warnings
-
+import pandas as pd
 import h5py
 import numpy as np
 from pynwb import NWBHDF5IO
@@ -90,6 +90,9 @@ class NwbReader(object):
 
         raise ValueError("Could not find a source/sweep_number attribute/dataset.")
 
+    def get_starting_time(self, data_set_name):
+        NotImplementedError
+
     def get_sweep_attrs(self, sweep_name):
 
         with h5py.File(self.nwb_file, 'r') as f:
@@ -105,12 +108,89 @@ class NwbReader(object):
 
         return attrs
 
+    def build_sweep_map(self):
+        """
+        Build table for mapping sweep_number to the names of stimulus and acquisition groups in the nwb file
+        Returns
+        -------
+        """
+
+        sweep_map = []
+
+        for stim_group, acq_group in zip(self.get_stimulus_groups(), self.get_acquisition_groups()):
+
+            sweep_record = {}
+
+            sweep_record["acquisition_group"] = acq_group
+            sweep_record["stimulus_group"] = stim_group
+            sweep_record["sweep_number"] = self.get_sweep_number(acq_group)
+            sweep_record["starting_time"] = self.get_starting_time(acq_group)
+
+            sweep_map.append(sweep_record)
+
+        self.sweep_map_table = pd.DataFrame.from_records(sweep_map)
+
+        if sweep_map:
+            self.drop_reacquired_sweeps()
+
+    def drop_reacquired_sweeps(self):
+        """
+        If sweep was re-acquired, then drop earlier acquired sweep with the same sweep_number
+        """
+        self.sweep_map_table.sort_values(by="starting_time")
+        duplicates = self.sweep_map_table.duplicated(subset="sweep_number",keep="last")
+        reacquired_sweep_numbers = self.sweep_map_table[duplicates]["sweep_number"].values
+
+        warnings.warn("Sweeps {} were reacquired. Keeping acquisitions of these sweeps with the latest staring time.".
+                      format(reacquired_sweep_numbers))
+
+        self.sweep_map_table.drop_duplicates(subset="sweep_number", keep="last",inplace=True)
+
+        self.sweep_map_table.to_csv("sweep_mappig.csv", sep=" ", na_rep="NA")
+
     def get_sweep_names(self):
 
         with h5py.File(self.nwb_file, 'r') as f:
             sweep_names = [e for e in f[self.acquisition_path].keys()]
 
         return sweep_names
+
+    def get_sweep_map(self, sweep_number):
+        """
+        Parameters
+        ----------
+        sweep_number: int
+            real sweep number
+        Returns
+        -------
+        sweep_map: dict
+        """
+        if sweep_number is not None:
+            mask = self.sweep_map_table["sweep_number"] == sweep_number
+            st = self.sweep_map_table[mask]
+            return st.to_dict(orient='records')[0]
+        else:
+            raise ValueError("Invalid sweep number {}".format(sweep_number))
+
+    def get_acquisition_groups(self):
+
+        with h5py.File(self.nwb_file, 'r') as f:
+            if self.acquisition_path in f:
+                acquisition_groups = [e for e in f[self.acquisition_path].keys()]
+            else:
+                acquisition_groups = []
+
+        return acquisition_groups
+
+    def get_stimulus_groups(self):
+
+        with h5py.File(self.nwb_file, 'r') as f:
+            if self.stimulus_path in f:
+                stimulus_groups = [e for e in f[self.stimulus_path].keys()]
+            else:
+                stimulus_groups = []
+        return stimulus_groups
+
 
     def get_pipeline_version(self):
         """ Returns the AI pipeline version number, stored in the
@@ -244,6 +324,7 @@ class NwbPipelineReader(NwbReader):
         self.acquisition_path = "acquisition/timeseries"
         self.stimulus_path = "stimulus/timeseries"
         self.nwb_major_version = 1
+        self.build_sweep_map()
 
     def get_sweep_data(self, sweep_number):
         """
@@ -350,6 +431,13 @@ class NwbPipelineReader(NwbReader):
 
                     return stim_code
 
+    def get_starting_time(self, data_set_name):
+        with h5py.File(self.nwb_file, 'r') as f:
+            sweep_ts = f[self.acquisition_path][data_set_name]
+            starting_time = sweep_ts["starting_time"].value
+
+        return starting_time
+
 
 class NwbMiesReader(NwbReader):
     """
@@ -361,6 +449,7 @@ class NwbMiesReader(NwbReader):
         self.acquisition_path = "acquisition/timeseries"
         self.stimulus_path = "stimulus/presentation"
         self.nwb_major_version = 1
+        self.build_sweep_map()
 
     def get_sweep_data(self, sweep_number):
 
@@ -409,6 +498,14 @@ class NwbMiesReader(NwbReader):
                     stim_code = stim_code[:-5]
 
         return stim_code
+
+    def get_starting_time(self, data_set_name):
+        with h5py.File(self.nwb_file, 'r') as f:
+            sweep_ts = f[self.acquisition_path][data_set_name]
+            starting_time = sweep_ts["starting_time"].value[0]
+
+        return starting_time
+
 
 
 def get_nwb_version(nwb_file):
