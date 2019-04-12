@@ -37,10 +37,11 @@ class HBGDataSet(EphysDataSet):
 
             return value
 
-        for sweep_name in self.nwb_data.get_sweep_names():
+        for index, sweep_map in self.nwb_data.sweep_map_table.iterrows():
             sweep_record = {}
-            attrs = self.nwb_data.get_sweep_attrs(sweep_name)
-            sweep_record["sweep_number"] = self.nwb_data.get_sweep_number(sweep_name)
+            sweep_num = sweep_map["sweep_number"]
+            attrs = self.nwb_data.get_sweep_attrs(sweep_num)
+            sweep_record["sweep_number"] = sweep_num
 
             timeSeriesType = attrs["neurodata_type"]
 
@@ -58,7 +59,7 @@ class HBGDataSet(EphysDataSet):
             sweep_record["stimulus_scale_factor"] = get_finite_or_none(attrs, "gain")
 
             sweep_record["stimulus_code_ext"] = None  # not required anymore
-            sweep_record["stimulus_code"] = self.nwb_data.get_stim_code(sweep_name)
+            sweep_record["stimulus_code"] = self.nwb_data.get_stim_code(sweep_num)
 
             if self.ontology:
                 sweep_record["stimulus_name"] = self.get_stimulus_name(sweep_record["stimulus_code"])
