@@ -22,7 +22,6 @@ class AibsDataSet(EphysDataSet):
 
         self.build_sweep_table(sweep_info)
 
-
     def extract_sweep_meta_data(self):
         """
 
@@ -32,17 +31,14 @@ class AibsDataSet(EphysDataSet):
             where each dict includes sweep properties
         """
         sweep_props = []
-        # use same output strategy as h5-nwb converter
-        # pick the sampling rate from the first iclamp sweep
-        # TODO: figure this out for multipatch
-        for sweep_name in self.nwb_data.get_sweep_names():
+        for index, sweep_map in self.nwb_data.sweep_map_table.iterrows():
             sweep_record = {}
-            attrs = self.nwb_data.get_sweep_attrs(sweep_name)
+            sweep_num = sweep_map["sweep_number"]
+            attrs = self.nwb_data.get_sweep_attrs(sweep_num)
             ancestry = attrs["ancestry"]
             sweep_record['clamp_mode'] = ancestry[-1]
-            sweep_num = self.nwb_data.get_sweep_number(sweep_name)
             sweep_record['sweep_number'] = sweep_num
-            stim_code = self.nwb_data.get_stim_code(sweep_name)
+            stim_code = self.nwb_data.get_stim_code(sweep_num)
             if not stim_code:
                 stim_code = self.notebook.get_value("Stim Wave Name", sweep_num, "")
                 logging.debug("Reading stim_code from Labnotebook")
@@ -61,8 +57,7 @@ class AibsDataSet(EphysDataSet):
                 # it's probably OK to skip this sweep and put a 'continue'
                 #   here instead of an exception, but wait until there's
                 #   an actual error and investigate the data before doing so
-                raise Exception(
-                    "Unable to determine clamp mode in " + sweep_name)
+                raise Exception("Unable to determine clamp mode in {}".format(sweep_num))
 
             # bridge balance
             bridge_balance = self.notebook.get_value(
@@ -77,8 +72,7 @@ class AibsDataSet(EphysDataSet):
             # ephys stim info
             scale_factor = self.notebook.get_value("Scale Factor", sweep_num, None)
             if scale_factor is None:
-                raise Exception(
-                    "Unable to read scale factor for " + sweep_name)
+                raise Exception("Unable to read scale factor for {}".format(sweep_num))
 
             sweep_record["stimulus_scale_factor"] = scale_factor
 
@@ -93,6 +87,7 @@ class AibsDataSet(EphysDataSet):
             sweep_props.append(sweep_record)
 
         return sweep_props
+
 
     def get_sweep_data(self, sweep_number):
         return self.nwb_data.get_sweep_data(sweep_number)

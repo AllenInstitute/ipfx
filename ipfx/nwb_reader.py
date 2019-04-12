@@ -39,7 +39,7 @@ class NwbReader(object):
     def get_sweep_number(self, sweep_name):
         raise NotImplementedError
 
-    def get_stim_code(self, sweep_name):
+    def get_stim_code(self, sweep_number):
         raise NotImplementedError
 
     @staticmethod
@@ -93,10 +93,12 @@ class NwbReader(object):
     def get_starting_time(self, data_set_name):
         NotImplementedError
 
-    def get_sweep_attrs(self, sweep_name):
+    def get_sweep_attrs(self, sweep_number):
+
+        acquisition_group = self.get_sweep_map(sweep_number)["acquisition_group"]
 
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_ts = f[self.acquisition_path][sweep_name]
+            sweep_ts = f[self.acquisition_path][acquisition_group]
             attrs = dict(sweep_ts.attrs)
 
             if self.nwb_major_version == 2:
@@ -145,8 +147,6 @@ class NwbReader(object):
                       format(reacquired_sweep_numbers))
 
         self.sweep_map_table.drop_duplicates(subset="sweep_number", keep="last",inplace=True)
-
-        self.sweep_map_table.to_csv("sweep_mappig.csv", sep=" ", na_rep="NA")
 
     def get_sweep_names(self):
 
@@ -234,12 +234,13 @@ class NwbXReader(NwbReader):
         self.acquisition_path = "acquisition"
         self.stimulus_path = "stimulus"
         self.nwb_major_version = 2
+        self.build_sweep_map()
 
     def get_sweep_number(self, sweep_name):
         return self.get_real_sweep_number(sweep_name)
 
-    def get_stim_code(self, sweep_name):
-        return self.get_sweep_attrs(sweep_name)["stimulus_description"]
+    def get_stim_code(self, sweep_number):
+        return self.get_sweep_attrs(sweep_number)["stimulus_description"]
 
     def get_sweep_data(self, sweep_number):
         """
@@ -413,13 +414,15 @@ class NwbPipelineReader(NwbReader):
         assumed_sweep_number = int(sweep_name.split('_')[-1])
         return self.get_real_sweep_number(sweep_name, assumed_sweep_number)
 
-    def get_stim_code(self, sweep_name):
+    def get_stim_code(self, sweep_number):
+
+        acquisition_group = self.get_sweep_map(sweep_number)["acquisition_group"]
 
         names = ["aibs_stimulus_name", "aibs_stimulus_description"]
 
         with h5py.File(self.nwb_file, 'r') as f:
 
-            sweep_ts = f[self.acquisition_path][sweep_name]
+            sweep_ts = f[self.acquisition_path][acquisition_group]
 
             for stimulus_description in names:
                 if stimulus_description in sweep_ts.keys():
@@ -484,13 +487,15 @@ class NwbMiesReader(NwbReader):
         assumed_sweep_number = int(sweep_name.split('_')[1])
         return self.get_real_sweep_number(sweep_name, assumed_sweep_number)
 
-    def get_stim_code(self, sweep_name):
+    def get_stim_code(self, sweep_number):
+
+        acquisition_group = self.get_sweep_map(sweep_number)["acquisition_group"]
 
         stimulus_description = "stimulus_description"
 
         with h5py.File(self.nwb_file, 'r') as f:
 
-            sweep_ts = f[self.acquisition_path][sweep_name]
+            sweep_ts = f[self.acquisition_path][acquisition_group]
             # look for the stimulus description
             if stimulus_description in sweep_ts.keys():
                 stim_code_raw = sweep_ts[stimulus_description].value
