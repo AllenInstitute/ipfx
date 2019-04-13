@@ -51,7 +51,6 @@ class NwbReader(object):
         else:
             raise ValueError("Unit {} not recognized from TimeSeries".format(unit))
 
-
     def get_real_sweep_number(self, sweep_name, assumed_sweep_number=None):
         """
         Return the real sweep number for the given sweep_name. Falls back to
@@ -77,18 +76,14 @@ class NwbReader(object):
             elif "sweep_number" in timeseries.attrs:
                 real_sweep_number = timeseries.attrs["sweep_number"]
 
-        if assumed_sweep_number is not None and real_sweep_number is not None:
+            if real_sweep_number is None:
+                warnings.warn("Sweep number not found, returning: None")
 
-            if assumed_sweep_number != real_sweep_number:
-                warnings.warn("Sweep number mismatch (real: {} vs assumed: {})".format
-                              (real_sweep_number, assumed_sweep_number))
-
-        if real_sweep_number is not None:
             return real_sweep_number
-        elif assumed_sweep_number is not None:
-            return assumed_sweep_number
 
         raise ValueError("Could not find a source/sweep_number attribute/dataset.")
+
+
 
     def get_starting_time(self, data_set_name):
         NotImplementedError
@@ -143,8 +138,9 @@ class NwbReader(object):
         duplicates = self.sweep_map_table.duplicated(subset="sweep_number",keep="last")
         reacquired_sweep_numbers = self.sweep_map_table[duplicates]["sweep_number"].values
 
-        warnings.warn("Sweeps {} were reacquired. Keeping acquisitions of these sweeps with the latest staring time.".
-                      format(reacquired_sweep_numbers))
+        if len(reacquired_sweep_numbers) == 0:
+            warnings.warn("Sweeps {} were reacquired. Keeping acquisitions of sweeps with the latest staring time.".
+                          format(reacquired_sweep_numbers))
 
         self.sweep_map_table.drop_duplicates(subset="sweep_number", keep="last",inplace=True)
 
@@ -411,8 +407,12 @@ class NwbPipelineReader(NwbReader):
 
     def get_sweep_number(self, sweep_name):
 
-        assumed_sweep_number = int(sweep_name.split('_')[-1])
-        return self.get_real_sweep_number(sweep_name, assumed_sweep_number)
+        sweep_number = self.get_real_sweep_number(sweep_name)
+        if sweep_number is None:
+            sweep_number = int(sweep_name.split('_')[-1])
+
+        return sweep_number
+
 
     def get_stim_code(self, sweep_number):
 
@@ -484,8 +484,11 @@ class NwbMiesReader(NwbReader):
 
     def get_sweep_number(self, sweep_name):
 
-        assumed_sweep_number = int(sweep_name.split('_')[1])
-        return self.get_real_sweep_number(sweep_name, assumed_sweep_number)
+        sweep_number = self.get_real_sweep_number(sweep_name)
+        if sweep_number is None:
+            sweep_number = int(sweep_name.split('_')[1])
+
+        return sweep_number
 
     def get_stim_code(self, sweep_number):
 
