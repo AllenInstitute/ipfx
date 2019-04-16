@@ -16,16 +16,16 @@ def custom_formatwarning(msg, *args, **kwargs):
 warnings.formatwarning = custom_formatwarning
 
 
-def get_scalar_string(string_from_nwb):
+def get_scalar_value(dataset_from_nwb):
     """
-    Some strings in NWB are stored with dimension scalar some with dimension 1.
-    Use this function to retrieve the string itself.
+    Some values in NWB are stored as scalar whereas others as np.ndarrays with dimension 1.
+    Use this function to retrieve the scalar value itself.
     """
 
-    if isinstance(string_from_nwb, np.ndarray):
-        return np.asscalar(string_from_nwb)
+    if isinstance(dataset_from_nwb, np.ndarray):
+        return np.asscalar(dataset_from_nwb)
 
-    return string_from_nwb
+    return dataset_from_nwb
 
 
 class NwbReader(object):
@@ -63,7 +63,7 @@ class NwbReader(object):
             real_sweep_number = None
 
             def read_sweep_from_source(source):
-                source = get_scalar_string(source)
+                source = get_scalar_value(source)
                 for x in source.split(";"):
                     result = re.search(r"^Sweep=(\d+)$", x)
                     if result:
@@ -81,12 +81,11 @@ class NwbReader(object):
 
             return real_sweep_number
 
-        raise ValueError("Could not find a source/sweep_number attribute/dataset.")
-
-
 
     def get_starting_time(self, data_set_name):
-        NotImplementedError
+        with h5py.File(self.nwb_file, 'r') as f:
+            sweep_ts = f[self.acquisition_path][data_set_name]
+            return get_scalar_value(sweep_ts["starting_time"].value)
 
     def get_sweep_attrs(self, sweep_number):
 
@@ -413,7 +412,6 @@ class NwbPipelineReader(NwbReader):
 
         return sweep_number
 
-
     def get_stim_code(self, sweep_number):
 
         acquisition_group = self.get_sweep_map(sweep_number)["acquisition_group"]
@@ -427,19 +425,12 @@ class NwbPipelineReader(NwbReader):
             for stimulus_description in names:
                 if stimulus_description in sweep_ts.keys():
                     stim_code_raw = sweep_ts[stimulus_description].value
-                    stim_code = get_scalar_string(stim_code_raw)
+                    stim_code = get_scalar_value(stim_code_raw)
 
                     if stim_code[-5:] == "_DA_0":
                         return stim_code[:-5]
 
                     return stim_code
-
-    def get_starting_time(self, data_set_name):
-        with h5py.File(self.nwb_file, 'r') as f:
-            sweep_ts = f[self.acquisition_path][data_set_name]
-            starting_time = sweep_ts["starting_time"].value
-
-        return starting_time
 
 
 class NwbMiesReader(NwbReader):
@@ -502,20 +493,12 @@ class NwbMiesReader(NwbReader):
             # look for the stimulus description
             if stimulus_description in sweep_ts.keys():
                 stim_code_raw = sweep_ts[stimulus_description].value
-                stim_code = get_scalar_string(stim_code_raw)
+                stim_code = get_scalar_value(stim_code_raw)
 
                 if stim_code[-5:] == "_DA_0":
                     stim_code = stim_code[:-5]
 
         return stim_code
-
-    def get_starting_time(self, data_set_name):
-        with h5py.File(self.nwb_file, 'r') as f:
-            sweep_ts = f[self.acquisition_path][data_set_name]
-            starting_time = sweep_ts["starting_time"].value[0]
-
-        return starting_time
-
 
 
 def get_nwb_version(nwb_file):
@@ -525,7 +508,7 @@ def get_nwb_version(nwb_file):
 
     with h5py.File(nwb_file, 'r') as f:
         if "nwb_version" in f:         # In v1 this is a dataset
-            nwb_version = get_scalar_string(f["nwb_version"].value)
+            nwb_version = get_scalar_value(f["nwb_version"].value)
             if nwb_version is not None and re.match("^NWB-1", nwb_version):
                 return {"major": 1, "full": nwb_version}
 
