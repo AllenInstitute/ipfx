@@ -250,6 +250,32 @@ def test_valid_v1_full_MIES_1(NWB_file):
     assert sweep_data_ref == sweep_data
 
 
+@pytest.mark.parametrize('NWB_file', ['Pvalb-IRES-Cre;Ai14-415796.02.01.01.nwb'], indirect=True)
+def test_sweep_map_sweep_numbers(NWB_file):
+
+    sweep_numbers_ref = np.arange(0,71)
+    reader = create_nwb_reader(NWB_file)
+
+    sweep_map_table = reader.sweep_map_table
+    sweep_numbers = sweep_map_table["sweep_number"].values
+    print sweep_numbers_ref
+
+    assert (sweep_numbers == sweep_numbers_ref).all()
+
+
+@pytest.mark.parametrize('NWB_file', ['Pvalb-IRES-Cre;Ai14-415796.02.01.01.nwb'], indirect=True)
+def test_sweep_map_sweep_0(NWB_file):
+
+    reader = create_nwb_reader(NWB_file)
+    sweep_map_ref = {'acquisition_group': u'data_00046_AD0',
+                     'stimulus_group': u'data_00046_DA0',
+                     'sweep_number': 0,
+                     'starting_time': 2740.1590003967285}
+
+    sweep_map = reader.get_sweep_map(0)
+    assert sweep_map == sweep_map_ref
+
+
 @pytest.mark.parametrize('NWB_file', ['H18.03.315.11.11.01.05.nwb'], indirect=True)
 def test_valid_v1_full_MIES_2(NWB_file):
 
