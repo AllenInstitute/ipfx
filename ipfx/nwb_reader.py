@@ -137,7 +137,7 @@ class NwbReader(object):
         duplicates = self.sweep_map_table.duplicated(subset="sweep_number",keep="last")
         reacquired_sweep_numbers = self.sweep_map_table[duplicates]["sweep_number"].values
 
-        if len(reacquired_sweep_numbers) == 0:
+        if len(reacquired_sweep_numbers) > 0:
             warnings.warn("Sweeps {} were reacquired. Keeping acquisitions of sweeps with the latest staring time.".
                           format(reacquired_sweep_numbers))
 
