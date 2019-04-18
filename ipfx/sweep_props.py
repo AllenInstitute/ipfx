@@ -41,6 +41,11 @@ def drop_tagged_sweeps(sweep_features):
     sweep_features[:] = [sf for sf in sweep_features if not sf["tags"]]
 
 
+def drop_failed_sweeps(sweep_features):
+
+    sweep_features[:] = [sf for sf in sweep_features if sf["passed"]]
+
+
 def remove_sweep_feature(feature_name,sweep_features):
 
     for sf in sweep_features:

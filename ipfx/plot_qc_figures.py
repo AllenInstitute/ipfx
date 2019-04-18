@@ -447,8 +447,7 @@ def plot_instantaneous_threshold_thumbnail(data_set, sweep_numbers, cell_feature
 
 def plot_ramp_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
 
-    ramps_sweeps = data_set.filtered_sweep_table(passing_only=True,
-                                                 current_clamp=data_set.CURRENT_CLAMP,
+    ramps_sweeps = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
                                                  stimuli=data_set.ontology.ramp_names)
     ramps_sweeps = np.sort(ramps_sweeps['sweep_number'].values)
 
