@@ -202,6 +202,12 @@ class EphysDataSet(object):
         """
         raise NotImplementedError
 
+    def get_clamp_mode(self,stimulus_number):
+        raise NotImplementedError
+
+    def get_stimulus_code(self,stimulus_number):
+        raise NotImplementedError
+
     def get_stimulus_name(self, stim_code):
 
         if not self.ontology:

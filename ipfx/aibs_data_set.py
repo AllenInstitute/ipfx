@@ -34,60 +34,79 @@ class AibsDataSet(EphysDataSet):
         for index, sweep_map in self.nwb_data.sweep_map_table.iterrows():
             sweep_record = {}
             sweep_num = sweep_map["sweep_number"]
-            attrs = self.nwb_data.get_sweep_attrs(sweep_num)
-            ancestry = attrs["ancestry"]
-            sweep_record['clamp_mode'] = ancestry[-1]
             sweep_record['sweep_number'] = sweep_num
-            stim_code = self.nwb_data.get_stim_code(sweep_num)
-            if not stim_code:
-                stim_code = self.notebook.get_value("Stim Wave Name", sweep_num, "")
-                logging.debug("Reading stim_code from Labnotebook")
-                if len(stim_code) == 0:
-                    raise Exception(
-                        "Could not read stimulus wave name from lab notebook")
 
-            # stim units are based on timeseries type
-            if "CurrentClamp" in ancestry[-1]:
-                sweep_record['stimulus_units'] = 'pA'
-                sweep_record['clamp_mode'] = 'CurrentClamp'
-            elif "VoltageClamp" in ancestry[-1]:
-                sweep_record['stimulus_units'] = 'mV'
-                sweep_record['clamp_mode'] = 'VoltageClamp'
-            else:
-                # it's probably OK to skip this sweep and put a 'continue'
-                #   here instead of an exception, but wait until there's
-                #   an actual error and investigate the data before doing so
-                raise Exception("Unable to determine clamp mode in {}".format(sweep_num))
+            sweep_record['stimulus_units'] = self.get_stimulus_units(sweep_num)
+            sweep_record['clamp_mode'] = self.get_clamp_mode(sweep_num)
 
             # bridge balance
-            bridge_balance = self.notebook.get_value(
+            sweep_record["bridge_balance_mohm"] = self.notebook.get_value(
                 "Bridge Bal Value", sweep_num, None)
-            sweep_record["bridge_balance_mohm"] = bridge_balance
 
             # leak_pa (bias current)
-            bias_current = self.notebook.get_value(
+            sweep_record["leak_pa"] = self.notebook.get_value(
                 "I-Clamp Holding Level", sweep_num, None)
-            sweep_record["leak_pa"] = bias_current
 
             # ephys stim info
-            scale_factor = self.notebook.get_value("Scale Factor", sweep_num, None)
-            if scale_factor is None:
-                raise Exception("Unable to read scale factor for {}".format(sweep_num))
+            sweep_record["stimulus_scale_factor"] = self.notebook.get_value(
+                "Scale Factor", sweep_num, None)
 
-            sweep_record["stimulus_scale_factor"] = scale_factor
+            stim_code = self.get_stimulus_code(sweep_num)
+            stim_code_ext = self.get_stimulus_code_ext(stim_code, sweep_num)
 
-            # PBS-229 change stim name by appending set_sweep_count
-            cnt = self.notebook.get_value("Set Sweep Count", sweep_num, 0)
-            stim_code_ext = stim_code + "[%d]" % int(cnt)
-
-            sweep_record["stimulus_code_ext"] = stim_code_ext
             sweep_record["stimulus_code"] = stim_code
+            sweep_record["stimulus_code_ext"] = stim_code_ext
             sweep_record["stimulus_name"] = self.get_stimulus_name(stim_code)
 
             sweep_props.append(sweep_record)
 
         return sweep_props
 
+    def get_stimulus_code(self, sweep_num):
+
+        stim_code = self.nwb_data.get_stim_code(sweep_num)
+        if not stim_code:
+            stim_code = self.notebook.get_value("Stim Wave Name", sweep_num, "")
+            logging.debug("Reading stim_code from Labnotebook")
+            if len(stim_code) == 0:
+                raise Exception(
+                    "Could not read stimulus wave name from lab notebook")
+        return stim_code
+
+    def get_stimulus_code_ext(self, stim_code,sweep_num):
+        cnt = self.notebook.get_value("Set Sweep Count", sweep_num, 0)
+        stim_code_ext = stim_code + "[%d]" % int(cnt)
+
+        return stim_code_ext
+
+    def get_stimulus_units(self, sweep_num):
+
+        attrs = self.nwb_data.get_sweep_attrs(sweep_num)
+        ancestry = attrs["ancestry"]
+
+        # stim units are based on timeseries type
+        if "CurrentClamp" in ancestry[-1]:
+            units = 'pA'
+        elif "VoltageClamp" in ancestry[-1]:
+            units = 'mV'
+        else:
+            raise Exception("Unable to determine clamp mode in {}".format(sweep_num))
+
+        return units
+
+    def get_clamp_mode(self, sweep_num):
+
+        attrs = self.nwb_data.get_sweep_attrs(sweep_num)
+        ancestry = attrs["ancestry"]
+
+        if "CurrentClamp" in ancestry[-1]:
+            clamp_mode = self.CURRENT_CLAMP
+        elif "VoltageClamp" in ancestry[-1]:
+            clamp_mode = self.VOLTAGE_CLAMP
+        else:
+            raise Exception("Unable to determine clamp mode in {}".format(sweep_num))
+
+        return clamp_mode
 
     def get_sweep_data(self, sweep_number):
         return self.nwb_data.get_sweep_data(sweep_number)
