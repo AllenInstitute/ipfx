@@ -7,6 +7,7 @@ import ipfx.data_set_features as dsft
 from ipfx.stimulus import StimulusOntology
 from ipfx._schemas import FeatureExtractionParameters
 from ipfx.data_set_utils import create_data_set
+import ipfx.sweep_props as sp
 
 import allensdk.core.json_utilities as ju
 from allensdk.core.nwb_data_set import NwbDataSet
@@ -41,6 +42,10 @@ def run_feature_extraction(input_nwb_file,
                            cell_info):
 
     lu.log_pretty_header("Extract ephys features", level=1)
+
+    sp.drop_failed_sweeps(sweep_info)
+    if len(sweep_info) == 0:
+        raise er.FeatureError("There are no QC-passed sweeps available to analyze")
 
     ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
 

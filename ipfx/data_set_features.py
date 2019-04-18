@@ -273,11 +273,6 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     ontology = data_set.ontology
     # for logging purposes
     iclamp_sweeps = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP)
-    passed_iclamp_sweeps = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
-                                                         passing_only=True)
-
-    if len(passed_iclamp_sweeps) == 0:
-        raise er.FeatureError("There are no QC-passed sweeps available to analyze")
 
     # extract cell-level features
 
@@ -286,15 +281,12 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values
 
     lsq_sweep_numbers = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
-                                                      passing_only=True,
                                                       stimuli=ontology.long_square_names).sweep_number.sort_values().values
 
     ssq_sweep_numbers = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
-                                                      passing_only=True,
                                                       stimuli=ontology.short_square_names).sweep_number.sort_values().values
 
     ramp_sweep_numbers = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
-                                                       passing_only=True,
                                                        stimuli=ontology.ramp_names).sweep_number.sort_values().values
 
     if subthresh_min_amp is None:

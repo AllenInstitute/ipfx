@@ -14,7 +14,6 @@ class EphysDataSet(object):
     STIMULUS_AMPLITUDE = 'stimulus_amplitude'
     STIMULUS_NAME = 'stimulus_name'
     SWEEP_NUMBER = 'sweep_number'
-    PASSED = 'passed'
     CLAMP_MODE = 'clamp_mode'
 
     COLUMN_NAMES = [STIMULUS_UNITS,
@@ -23,7 +22,6 @@ class EphysDataSet(object):
                     STIMULUS_NAME,
                     CLAMP_MODE,
                     SWEEP_NUMBER,
-                    PASSED
                     ]
 
     LONG_SQUARE = 'long_square'
@@ -49,7 +47,6 @@ class EphysDataSet(object):
 
     def filtered_sweep_table(self,
                              clamp_mode=None,
-                             passing_only=False,
                              stimuli=None,
                              stimuli_exclude=None,
                              ):
@@ -58,10 +55,6 @@ class EphysDataSet(object):
 
         if clamp_mode:
             mask = st[self.CLAMP_MODE] == clamp_mode
-            st = st[mask.astype(bool)]
-
-        if passing_only:
-            mask = st[self.PASSED]
             st = st[mask.astype(bool)]
 
         if stimuli:
