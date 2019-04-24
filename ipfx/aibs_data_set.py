@@ -18,26 +18,25 @@ class AibsDataSet(EphysDataSet):
             sweep_info = sp.modify_sweep_info_keys(sweep_info) if api_sweeps else sweep_info
         else:
             self.notebook = lab_notebook_reader.create_lab_notebook_reader(nwb_file, h5_file)
-            sweep_info = self.extract_sweep_meta_data()
+            sweep_info = self.extract_sweep_stim_info()
 
         self.build_sweep_table(sweep_info)
 
-    def extract_sweep_meta_data(self):
+    def extract_sweep_stim_info(self):
         """
 
         Returns
         -------
-        sweep_props: list of dicts
+        sweep_info: list of dicts
             where each dict includes sweep properties
         """
-        sweep_props = []
+        sweep_info = []
         for index, sweep_map in self.nwb_data.sweep_map_table.iterrows():
             sweep_record = {}
             sweep_num = sweep_map["sweep_number"]
             sweep_record['sweep_number'] = sweep_num
 
             sweep_record['stimulus_units'] = self.get_stimulus_units(sweep_num)
-            sweep_record['clamp_mode'] = self.get_clamp_mode(sweep_num)
 
             # bridge balance
             sweep_record["bridge_balance_mohm"] = self.notebook.get_value(
@@ -58,9 +57,9 @@ class AibsDataSet(EphysDataSet):
             sweep_record["stimulus_code_ext"] = stim_code_ext
             sweep_record["stimulus_name"] = self.get_stimulus_name(stim_code)
 
-            sweep_props.append(sweep_record)
+            sweep_info.append(sweep_record)
 
-        return sweep_props
+        return sweep_info
 
     def get_stimulus_code(self, sweep_num):
 

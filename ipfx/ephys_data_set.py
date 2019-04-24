@@ -99,7 +99,7 @@ class EphysDataSet(object):
 
         return sweeps.sweep_number.values[-1]
 
-    def get_sweep_meta_data(self, sweep_number):
+    def get_sweep_record(self, sweep_number):
         """
         Parameters
         ----------
@@ -107,7 +107,7 @@ class EphysDataSet(object):
 
         Returns
         -------
-        sweep_meta_data: dict of sweep properties
+        sweep_record: dict of sweep properties
         """
 
         st = self.sweep_table
@@ -133,13 +133,13 @@ class EphysDataSet(object):
         """
 
         sweep_data = self.get_sweep_data(sweep_number)
-        sweep_meta_data = self.get_sweep_meta_data(sweep_number)
+        sweep_record = self.get_sweep_record(sweep_number)
         sampling_rate = sweep_data['sampling_rate']
         dt = 1. / sampling_rate
         t = np.arange(0, len(sweep_data['stimulus'])) * dt
 
         epochs = sweep_data.get('epochs')
-        clamp_mode = sweep_meta_data['clamp_mode']
+        clamp_mode = sweep_record['clamp_mode']
         if clamp_mode == "VoltageClamp":
             v = sweep_data['stimulus']
             i = sweep_data['response']
@@ -178,7 +178,7 @@ class EphysDataSet(object):
     def aligned_sweeps(self, sweep_numbers, stim_onset_delta):
         raise NotImplementedError
 
-    def extract_sweep_meta_data(self):
+    def extract_sweep_stim_info(self):
         """
         Returns
         -------
