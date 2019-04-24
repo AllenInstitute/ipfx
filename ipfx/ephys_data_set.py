@@ -1,6 +1,5 @@
 import warnings
 import logging
-import re
 import pandas as pd
 import numpy as np
 from ipfx.stimulus import StimulusOntology
@@ -172,14 +171,6 @@ class EphysDataSet(object):
 
         raise NotImplementedError
 
-    def modify_api_sweep_info(self, sweep_list):
-        return [{EphysDataSet.SWEEP_NUMBER: s['sweep_number'],
-                 EphysDataSet.STIMULUS_UNITS: s['stimulus_units'],
-                 EphysDataSet.STIMULUS_AMPLITUDE: s['stimulus_absolute_amplitude'],
-                 EphysDataSet.STIMULUS_CODE: re.sub(r"\[\d+\]", "", s['stimulus_description']),
-                 EphysDataSet.STIMULUS_NAME: s['stimulus_name'],
-                 EphysDataSet.CLAMP_MODE: s['clamp_mode'],
-                 EphysDataSet.PASSED: True} for s in sweep_list]
 
     def get_sweep_data(self, sweep_number):
         """
