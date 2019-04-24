@@ -37,12 +37,29 @@ class EphysDataSet(object):
         self.ontology = ontology if ontology else StimulusOntology()
         self.validate_stim = validate_stim
 
-    def build_sweep_table(self,sweep_meta_data=None):
+    def build_sweep_table(self, sweep_info=None):
 
-        if sweep_meta_data:
-            self.sweep_table = pd.DataFrame.from_records(sweep_meta_data)
+        if sweep_info:
+            self.add_clamp_mode(sweep_info)
+            self.sweep_table = pd.DataFrame.from_records(sweep_info)
         else:
             self.sweep_table = pd.DataFrame(columns=self.COLUMN_NAMES)
+
+    def add_clamp_mode(self, sweep_info):
+        """
+        Check if clamp mode is available and otherwise detect it
+        Parameters
+        ----------
+        sweep_info
+
+        Returns
+        -------
+
+        """
+
+        for sweep_record in sweep_info:
+            sweep_number = sweep_record["sweep_number"]
+            sweep_record[self.CLAMP_MODE] = self.get_clamp_mode(sweep_number)
 
     def filtered_sweep_table(self,
                              clamp_mode=None,
