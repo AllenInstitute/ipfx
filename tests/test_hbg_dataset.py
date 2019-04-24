@@ -57,5 +57,28 @@ def test_main_dat(ontology, NWB_file):
                 }
 
     # only compare one sweep
-    sweep_meta_data = dataset.get_sweep_meta_data(10101)
-    compare_dicts(expected, sweep_meta_data)
+    sweep_record = dataset.get_sweep_record(10101)
+    compare_dicts(expected, sweep_record)
+
+
+@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
+def test_get_clamp_mode(ontology, NWB_file):
+
+    dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
+    assert dataset.get_clamp_mode(10101) == dataset.VOLTAGE_CLAMP
+
+
+@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
+def test_get_stimulus_units(ontology, NWB_file):
+
+    dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
+    assert dataset.get_stimulus_units(10101) == "V"
+
+
+@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
+def test_get_stimulus_code(ontology, NWB_file):
+
+    dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
+    assert dataset.get_stimulus_code(10101) == u'extpinbath'
+
+

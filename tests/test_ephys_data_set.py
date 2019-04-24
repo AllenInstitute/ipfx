@@ -35,7 +35,7 @@ def get_empty_dataset():
 
     default_ontology = StimulusOntology()
     dataset = EphysDataSet(default_ontology)
-    dataset.build_sweep_table(sweep_meta_data=[])
+    dataset.build_sweep_table(sweep_info=[])
 
     return dataset
 
@@ -91,7 +91,7 @@ def test_filtered_sweep_table_stimuli_exclude():
     assert sweeps["sweep_number"].values == 0
 
 
-def test_get_sweep_meta_data():
+def test_get_sweep_record():
 
     d = get_sweep_table_dict()
     expected = {}
@@ -99,7 +99,7 @@ def test_get_sweep_meta_data():
         expected[k] = d[k][1]
 
     ds = get_dataset()
-    actual = ds.get_sweep_meta_data(5)
+    actual = ds.get_sweep_record(5)
     compare_dicts(expected, actual)
 
 
@@ -129,35 +129,22 @@ def test_aligned_sweeps_raises():
         ds = get_dataset()
         ds.aligned_sweeps([5], 0.0)
 
-
-def test_extract_sweep_meta_data_raises():
+def test_get_stimulus_code_raises():
     with pytest.raises(NotImplementedError):
         ds = get_dataset()
-        ds.extract_sweep_meta_data()
+        ds.get_stimulus_code(0)
+
+def test_get_clamp_mode_raises():
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.get_clamp_mode(0)
+
+def test_extract_sweep_stim_info_raises():
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.extract_sweep_stim_info()
 
 
-def test_modify_api_sweep_info():
-    d = [{"sweep_number": 123,
-          "stimulus_units": "abcd",
-          "stimulus_absolute_amplitude": 456,
-          "stimulus_description": "efgh[4711]",
-          "stimulus_name": "hijkl",
-          "clamp_mode": "mnopqr"
-          }]
-
-    ds = get_dataset()
-    result = ds.modify_api_sweep_info(d)
-
-    expected = [{EphysDataSet.SWEEP_NUMBER: 123,
-                 EphysDataSet.STIMULUS_UNITS: "abcd",
-                 EphysDataSet.STIMULUS_AMPLITUDE: 456,
-                 EphysDataSet.STIMULUS_CODE: "efgh",
-                 EphysDataSet.STIMULUS_NAME: "hijkl",
-                 EphysDataSet.CLAMP_MODE: "mnopqr",
-                 EphysDataSet.PASSED: True}]
-
-    assert len(expected) == len(result)
-    compare_dicts(expected[0], result[0])
 
 
 def test_get_stimulus_name():
