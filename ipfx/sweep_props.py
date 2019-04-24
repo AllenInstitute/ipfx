@@ -1,4 +1,7 @@
 import logging
+import re
+
+from .ephys_data_set import EphysDataSet
 
 
 def override_auto_sweep_states(manual_sweep_states,sweep_states):
@@ -108,3 +111,11 @@ def count_sweep_states(sweep_states):
 
     return num_passed_sweeps, num_sweeps
 
+
+def modify_sweep_info_keys(sweep_list):
+    return [{EphysDataSet.SWEEP_NUMBER: s['sweep_number'],
+             EphysDataSet.STIMULUS_UNITS: s['stimulus_units'],
+             EphysDataSet.STIMULUS_AMPLITUDE: s['stimulus_absolute_amplitude'],
+             EphysDataSet.STIMULUS_CODE: re.sub(r"\[\d+\]", "", s['stimulus_description']),
+             EphysDataSet.STIMULUS_NAME: s['stimulus_name'],
+             } for s in sweep_list]

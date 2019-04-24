@@ -4,6 +4,7 @@ from .ephys_data_set import EphysDataSet
 
 import ipfx.lab_notebook_reader as lab_notebook_reader
 import ipfx.nwb_reader as nwb_reader
+import ipfx.sweep_props as sp
 
 
 class AibsDataSet(EphysDataSet):
@@ -13,9 +14,8 @@ class AibsDataSet(EphysDataSet):
 
         self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
 
-        if sweep_info is not None:
-            sweep_info = self.modify_api_sweep_info(
-                sweep_info) if api_sweeps else sweep_info
+        if sweep_info:
+            sweep_info = sp.modify_sweep_info_keys(sweep_info) if api_sweeps else sweep_info
         else:
             self.notebook = lab_notebook_reader.create_lab_notebook_reader(nwb_file, h5_file)
             sweep_info = self.extract_sweep_meta_data()
