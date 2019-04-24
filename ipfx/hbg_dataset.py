@@ -11,19 +11,16 @@ class HBGDataSet(EphysDataSet):
         super(HBGDataSet, self).__init__(ontology, validate_stim)
         self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
 
-        if sweep_info is not None:
-            sweep_info = self.modify_api_sweep_info(
-                sweep_info) if api_sweeps else sweep_info
-        else:
-            sweep_info = self.extract_sweep_meta_data()
+        if sweep_info is None:
+            sweep_info = self.extract_sweep_stim_info()
 
-        self.sweep_table = pd.DataFrame.from_records(sweep_info)
+        self.build_sweep_table(sweep_info)
 
-    def extract_sweep_meta_data(self):
+    def extract_sweep_stim_info(self):
 
         logging.debug("Build sweep table")
 
-        sweep_props = []
+        sweep_info = []
 
         def get_finite_or_none(d, key):
 
