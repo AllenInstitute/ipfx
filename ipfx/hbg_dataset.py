@@ -40,33 +40,57 @@ class HBGDataSet(EphysDataSet):
         for index, sweep_map in self.nwb_data.sweep_map_table.iterrows():
             sweep_record = {}
             sweep_num = sweep_map["sweep_number"]
-            attrs = self.nwb_data.get_sweep_attrs(sweep_num)
             sweep_record["sweep_number"] = sweep_num
 
-            timeSeriesType = attrs["neurodata_type"]
+            attrs = self.nwb_data.get_sweep_attrs(sweep_num)
 
-            if "CurrentClamp" in timeSeriesType:
-                sweep_record["stimulus_units"] = "A"
-                sweep_record["clamp_mode"] = "CurrentClamp"
-            elif "VoltageClamp" in timeSeriesType:
-                sweep_record["stimulus_units"] = "V"
-                sweep_record["clamp_mode"] = "VoltageClamp"
-            else:
-                raise ValueError("Unexpected TimeSeries type {}.".format(timeSeriesType))
+            sweep_record["stimulus_units"] = self.get_stimulus_units(sweep_num)
 
             sweep_record["bridge_balance_mohm"] = get_finite_or_none(attrs, "bridge_balance")
             sweep_record["leak_pa"] = get_finite_or_none(attrs, "bias_current")
             sweep_record["stimulus_scale_factor"] = get_finite_or_none(attrs, "gain")
 
+            sweep_record["stimulus_code"] = self.get_stimulus_code(sweep_num)
             sweep_record["stimulus_code_ext"] = None  # not required anymore
-            sweep_record["stimulus_code"] = self.nwb_data.get_stim_code(sweep_num)
 
             if self.ontology:
                 sweep_record["stimulus_name"] = self.get_stimulus_name(sweep_record["stimulus_code"])
 
-            sweep_props.append(sweep_record)
+            sweep_info.append(sweep_record)
 
-        return sweep_props
+        return sweep_info
 
     def get_sweep_data(self, sweep_number):
         return self.nwb_data.get_sweep_data(sweep_number)
+
+    def get_stimulus_units(self, sweep_num):
+
+        attrs = self.nwb_data.get_sweep_attrs(sweep_num)
+        timeSeriesType = attrs["neurodata_type"]
+
+        if "CurrentClamp" in timeSeriesType:
+            units = "A"
+        elif "VoltageClamp" in timeSeriesType:
+            units = "V"
+        else:
+            raise ValueError("Unexpected TimeSeries type {}.".format(timeSeriesType))
+
+        return units
+
+    def get_clamp_mode(self, sweep_num):
+
+        attrs = self.nwb_data.get_sweep_attrs(sweep_num)
+        timeSeriesType = attrs["neurodata_type"]
+
+        if "CurrentClamp" in timeSeriesType:
+            clamp_mode = self.CURRENT_CLAMP
+        elif "VoltageClamp" in timeSeriesType:
+            clamp_mode = self.VOLTAGE_CLAMP
+        else:
+            raise ValueError("Unexpected TimeSeries type {}.".format(timeSeriesType))
+
+        return clamp_mode
+
+    def get_stimulus_code(self, sweep_num):
+
+        return self.nwb_data.get_stim_code(sweep_num)
