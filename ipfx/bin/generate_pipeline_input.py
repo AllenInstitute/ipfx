@@ -1,4 +1,4 @@
-import ipfx.qc_protocol as qcp
+import ipfx.qc_feature_evaluator as qcp
 import allensdk.core.json_utilities as ju
 import os.path
 from generate_se_input import generate_se_input, parse_args

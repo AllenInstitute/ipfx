@@ -2,13 +2,6 @@
 
 The script `run_x_to_nwb_conversion.py` allows to convert ABF/DAT files to NeurodataWithoutBorders v2 files.
 
-NWB currently does not offer support for grouping different TimeSeries'
-together. We work around that by setting the string "cycle_id" in the description
-of the TimeSeries to something unique for TimeSeries' which belong together.
-Software reading NWB file can use that information to group the TimeSeries back
-together. The string "cycle_id" should be treated as opaque and is subject to
-change at any time.
-
 ### ABF specialities
 
 As of 9/2018 PClamp/Clampex does not record all required amplifier settings.
@@ -44,10 +37,10 @@ Example for `misc-settings.json`:
 }
 ```
 
-For converting an ABF file to NWB, we expect either one JSON file per ABF file
-when converting single files, or one JSON file per directory when converting
-whole directories. The JSON files must reside in the same directory as the ABF
-files.
+The JSON files must reside in the same directory as the ABF files.
+
+For continously gathering the amplifier settings when a new ABF file is created
+use the `--watchFolder` option.
 
 #### Required input files
 
@@ -80,6 +73,14 @@ The following command converts all ABF files which reside in `someFolder` to a s
 
 ```sh
 run_x_to_nwb_conversion.py --fileType ".abf" --overwrite someFolder
+```
+
+#### Disabling compression
+
+The following command disables compression of the HDF5 datasets (intended for debugging purposes).
+
+```sh
+run_x_to_nwb_conversion.py --no-compression 2018_03_20_0000.abf
 ```
 
 ### DAT specialities

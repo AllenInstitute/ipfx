@@ -1,6 +1,6 @@
 import logging
 from ipfx.stimulus import StimulusOntology
-import ipfx.qc_features as qcf
+import ipfx.qc_feature_extractor as qcfe
 import allensdk.core.json_utilities as ju
 
 import argschema as ags
@@ -42,8 +42,12 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
                          h5_file=input_h5_file,
                          ontology=ont)
 
-    cell_features, cell_tags = qcf.cell_qc_features(ds, manual_values)
-    sweep_features = qcf.sweep_qc_features(ds)
+    cell_features, cell_tags = qcfe.cell_qc_features(ds, manual_values)
+
+    for tag in cell_tags:
+        logging.warning(tag)
+
+    sweep_features = qcfe.sweep_qc_features(ds)
 
     return dict(cell_features=cell_features,
                 cell_tags=cell_tags,

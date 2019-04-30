@@ -67,6 +67,18 @@ class StimulusOntology(object):
         self.extp_names = ( 'EXTP', )
 
     def find(self, tag, tag_type=None):
+        """
+        Find stimuli matching a given tag
+        Parameters
+        ----------
+        tag: str
+        tag_type: str
+
+        Returns
+        -------
+        matching_stims: list of Stimuli objects
+
+        """
         matching_stims = [ s for s in self.stimuli if s.has_tag(tag, tag_type=tag_type) ]
 
         if not matching_stims:
@@ -85,6 +97,20 @@ class StimulusOntology(object):
         return matching_stims[0]
 
     def stimulus_has_any_tags(self, stim, tags, tag_type=None):
+        """
+        Find stimulus based on a tag stim and then check if it has any tags
+        Parameters
+        ----------
+        stim: str
+            tag to find stimulus
+        tags: str
+            tags to check in any belong to the stimulus
+        tag_type
+
+        Returns
+        -------
+        bool: True if any tags match, otherwise False
+        """
         matching_stim = self.find(stim, tag_type)
 
         if len(matching_stim) > 1:

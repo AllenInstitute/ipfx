@@ -1,6 +1,6 @@
 import re
 import warnings
-
+import pandas as pd
 import h5py
 import numpy as np
 from pynwb import NWBHDF5IO
@@ -16,16 +16,16 @@ def custom_formatwarning(msg, *args, **kwargs):
 warnings.formatwarning = custom_formatwarning
 
 
-def get_scalar_string(string_from_nwb):
+def get_scalar_value(dataset_from_nwb):
     """
-    Some strings in NWB are stored with dimension scalar some with dimension 1.
-    Use this function to retrieve the string itself.
+    Some values in NWB are stored as scalar whereas others as np.ndarrays with dimension 1.
+    Use this function to retrieve the scalar value itself.
     """
 
-    if isinstance(string_from_nwb, np.ndarray):
-        return np.asscalar(string_from_nwb)
+    if isinstance(dataset_from_nwb, np.ndarray):
+        return np.asscalar(dataset_from_nwb)
 
-    return string_from_nwb
+    return dataset_from_nwb
 
 
 class NwbReader(object):
@@ -39,7 +39,7 @@ class NwbReader(object):
     def get_sweep_number(self, sweep_name):
         raise NotImplementedError
 
-    def get_stim_code(self, sweep_name):
+    def get_stim_code(self, sweep_number):
         raise NotImplementedError
 
     @staticmethod
@@ -50,7 +50,6 @@ class NwbReader(object):
             return "Volts"
         else:
             raise ValueError("Unit {} not recognized from TimeSeries".format(unit))
-
 
     def get_real_sweep_number(self, sweep_name, assumed_sweep_number=None):
         """
@@ -64,7 +63,7 @@ class NwbReader(object):
             real_sweep_number = None
 
             def read_sweep_from_source(source):
-                source = get_scalar_string(source)
+                source = get_scalar_value(source)
                 for x in source.split(";"):
                     result = re.search(r"^Sweep=(\d+)$", x)
                     if result:
@@ -77,21 +76,23 @@ class NwbReader(object):
             elif "sweep_number" in timeseries.attrs:
                 real_sweep_number = timeseries.attrs["sweep_number"]
 
-        if assumed_sweep_number is not None and assumed_sweep_number != real_sweep_number:
-            warnings.warn("Sweep number mismatch (real: {} vs assumed: {})".format
-                          (real_sweep_number, assumed_sweep_number))
+            if real_sweep_number is None:
+                warnings.warn("Sweep number not found, returning: None")
 
-        if real_sweep_number is not None:
             return real_sweep_number
-        elif assumed_sweep_number is not None:
-            return assumed_sweep_number
 
-        raise ValueError("Could not find a source/sweep_number attribute/dataset.")
 
-    def get_sweep_attrs(self, sweep_name):
+    def get_starting_time(self, data_set_name):
+        with h5py.File(self.nwb_file, 'r') as f:
+            sweep_ts = f[self.acquisition_path][data_set_name]
+            return get_scalar_value(sweep_ts["starting_time"].value)
+
+    def get_sweep_attrs(self, sweep_number):
+
+        acquisition_group = self.get_sweep_map(sweep_number)["acquisition_group"]
 
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_ts = f[self.acquisition_path][sweep_name]
+            sweep_ts = f[self.acquisition_path][acquisition_group]
             attrs = dict(sweep_ts.attrs)
 
             if self.nwb_major_version == 2:
@@ -103,12 +104,88 @@ class NwbReader(object):
 
         return attrs
 
+    def build_sweep_map(self):
+        """
+        Build table for mapping sweep_number to the names of stimulus and acquisition groups in the nwb file
+        Returns
+        -------
+        """
+
+        sweep_map = []
+
+        for stim_group, acq_group in zip(self.get_stimulus_groups(), self.get_acquisition_groups()):
+
+            sweep_record = {}
+
+            sweep_record["acquisition_group"] = acq_group
+            sweep_record["stimulus_group"] = stim_group
+            sweep_record["sweep_number"] = self.get_sweep_number(acq_group)
+            sweep_record["starting_time"] = self.get_starting_time(acq_group)
+
+            sweep_map.append(sweep_record)
+
+        self.sweep_map_table = pd.DataFrame.from_records(sweep_map)
+
+        if sweep_map:
+            self.drop_reacquired_sweeps()
+
+    def drop_reacquired_sweeps(self):
+        """
+        If sweep was re-acquired, then drop earlier acquired sweep with the same sweep_number
+        """
+        self.sweep_map_table.sort_values(by="starting_time")
+        duplicates = self.sweep_map_table.duplicated(subset="sweep_number",keep="last")
+        reacquired_sweep_numbers = self.sweep_map_table[duplicates]["sweep_number"].values
+
+        if len(reacquired_sweep_numbers) > 0:
+            warnings.warn("Sweeps {} were reacquired. Keeping acquisitions of sweeps with the latest staring time.".
+                          format(reacquired_sweep_numbers))
+
+        self.sweep_map_table.drop_duplicates(subset="sweep_number", keep="last",inplace=True)
+
     def get_sweep_names(self):
 
         with h5py.File(self.nwb_file, 'r') as f:
             sweep_names = [e for e in f[self.acquisition_path].keys()]
 
         return sweep_names
+
+    def get_sweep_map(self, sweep_number):
+        """
+        Parameters
+        ----------
+        sweep_number: int
+            real sweep number
+        Returns
+        -------
+        sweep_map: dict
+        """
+        if sweep_number is not None:
+            mask = self.sweep_map_table["sweep_number"] == sweep_number
+            st = self.sweep_map_table[mask]
+            return st.to_dict(orient='records')[0]
+        else:
+            raise ValueError("Invalid sweep number {}".format(sweep_number))
+
+    def get_acquisition_groups(self):
+
+        with h5py.File(self.nwb_file, 'r') as f:
+            if self.acquisition_path in f:
+                acquisition_groups = [e for e in f[self.acquisition_path].keys()]
+            else:
+                acquisition_groups = []
+
+        return acquisition_groups
+
+    def get_stimulus_groups(self):
+
+        with h5py.File(self.nwb_file, 'r') as f:
+            if self.stimulus_path in f:
+                stimulus_groups = [e for e in f[self.stimulus_path].keys()]
+            else:
+                stimulus_groups = []
+        return stimulus_groups
+
 
     def get_pipeline_version(self):
         """ Returns the AI pipeline version number, stored in the
@@ -152,12 +229,13 @@ class NwbXReader(NwbReader):
         self.acquisition_path = "acquisition"
         self.stimulus_path = "stimulus"
         self.nwb_major_version = 2
+        self.build_sweep_map()
 
     def get_sweep_number(self, sweep_name):
         return self.get_real_sweep_number(sweep_name)
 
-    def get_stim_code(self, sweep_name):
-        return self.get_sweep_attrs(sweep_name)["stimulus_description"]
+    def get_stim_code(self, sweep_number):
+        return self.get_sweep_attrs(sweep_number)["stimulus_description"]
 
     def get_sweep_data(self, sweep_number):
         """
@@ -166,8 +244,8 @@ class NwbXReader(NwbReader):
         sweep_number: int
         """
 
-        if not isinstance(sweep_number, (int, np.uint64)):
-            raise ValueError("sweep_number must be an integer")
+        if not isinstance(sweep_number, (int, np.uint64, np.int64)):
+            raise ValueError("sweep_number must be an integer but it is {}".format(type(sweep_number)))
 
         def getRawDataSourceType(experiment_description):
             """
@@ -240,8 +318,9 @@ class NwbPipelineReader(NwbReader):
     def __init__(self, nwb_file):
         NwbReader.__init__(self, nwb_file)
         self.acquisition_path = "acquisition/timeseries"
-        self.stimulus_path = "stimulus/timeseries"
+        self.stimulus_path = "stimulus/presentation"
         self.nwb_major_version = 1
+        self.build_sweep_map()
 
     def get_sweep_data(self, sweep_number):
         """
@@ -283,7 +362,7 @@ class NwbPipelineReader(NwbReader):
             #   SI unit. For those files, return uncorrected data.
             #   For newer files (1.1 and later), apply conversion value.
 
-            stimulus_dataset = swp[self.stimulus_path]['data']
+            stimulus_dataset = swp['stimulus/timeseries']['data']
             stimulus_conversion = float(stimulus_dataset.attrs["conversion"])
 
             response_dataset = swp['response/timeseries']['data']
@@ -316,7 +395,7 @@ class NwbPipelineReader(NwbReader):
             else:
                 raise ValueError("Unknown stimulus unit")
 
-            hz = 1.0 * swp[self.stimulus_path]['starting_time'].attrs['rate']
+            hz = 1.0 * swp['stimulus/timeseries']['starting_time'].attrs['rate']
 
             return {
                 'stimulus': stimulus,
@@ -327,21 +406,26 @@ class NwbPipelineReader(NwbReader):
 
     def get_sweep_number(self, sweep_name):
 
-        assumed_sweep_number = int(sweep_name.split('_')[-1])
-        return self.get_real_sweep_number(sweep_name, assumed_sweep_number)
+        sweep_number = self.get_real_sweep_number(sweep_name)
+        if sweep_number is None:
+            sweep_number = int(sweep_name.split('_')[-1])
 
-    def get_stim_code(self, sweep_name):
+        return sweep_number
+
+    def get_stim_code(self, sweep_number):
+
+        acquisition_group = self.get_sweep_map(sweep_number)["acquisition_group"]
 
         names = ["aibs_stimulus_name", "aibs_stimulus_description"]
 
         with h5py.File(self.nwb_file, 'r') as f:
 
-            sweep_ts = f[self.acquisition_path][sweep_name]
+            sweep_ts = f[self.acquisition_path][acquisition_group]
 
             for stimulus_description in names:
                 if stimulus_description in sweep_ts.keys():
                     stim_code_raw = sweep_ts[stimulus_description].value
-                    stim_code = get_scalar_string(stim_code_raw)
+                    stim_code = get_scalar_value(stim_code_raw)
 
                     if stim_code[-5:] == "_DA_0":
                         return stim_code[:-5]
@@ -359,14 +443,17 @@ class NwbMiesReader(NwbReader):
         self.acquisition_path = "acquisition/timeseries"
         self.stimulus_path = "stimulus/presentation"
         self.nwb_major_version = 1
+        self.build_sweep_map()
 
     def get_sweep_data(self, sweep_number):
 
+        sweep_map = self.get_sweep_map(sweep_number)
+
         with h5py.File(self.nwb_file, 'r') as f:
-            sweep_response = f[self.acquisition_path]["data_%05d_AD0" % sweep_number]
+            sweep_response = f[self.acquisition_path][sweep_map["acquisition_group"]]
             response_dataset = sweep_response["data"]
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
-            sweep_stimulus = f[self.stimulus_path]["data_%05d_DA0" % sweep_number]
+            sweep_stimulus = f[self.stimulus_path][sweep_map["stimulus_group"]]
             stimulus_dataset = sweep_stimulus["data"]
 
             response = response_dataset.value
@@ -388,20 +475,25 @@ class NwbMiesReader(NwbReader):
 
     def get_sweep_number(self, sweep_name):
 
-        assumed_sweep_number = int(sweep_name.split('_')[1])
-        return self.get_real_sweep_number(sweep_name, assumed_sweep_number)
+        sweep_number = self.get_real_sweep_number(sweep_name)
+        if sweep_number is None:
+            sweep_number = int(sweep_name.split('_')[1])
 
-    def get_stim_code(self, sweep_name):
+        return sweep_number
+
+    def get_stim_code(self, sweep_number):
+
+        acquisition_group = self.get_sweep_map(sweep_number)["acquisition_group"]
 
         stimulus_description = "stimulus_description"
 
         with h5py.File(self.nwb_file, 'r') as f:
 
-            sweep_ts = f[self.acquisition_path][sweep_name]
+            sweep_ts = f[self.acquisition_path][acquisition_group]
             # look for the stimulus description
             if stimulus_description in sweep_ts.keys():
                 stim_code_raw = sweep_ts[stimulus_description].value
-                stim_code = get_scalar_string(stim_code_raw)
+                stim_code = get_scalar_value(stim_code_raw)
 
                 if stim_code[-5:] == "_DA_0":
                     stim_code = stim_code[:-5]
@@ -416,7 +508,7 @@ def get_nwb_version(nwb_file):
 
     with h5py.File(nwb_file, 'r') as f:
         if "nwb_version" in f:         # In v1 this is a dataset
-            nwb_version = get_scalar_string(f["nwb_version"].value)
+            nwb_version = get_scalar_value(f["nwb_version"].value)
             if nwb_version is not None and re.match("^NWB-1", nwb_version):
                 return {"major": 1, "full": nwb_version}
 
@@ -429,15 +521,32 @@ def get_nwb_version(nwb_file):
 
 
 def get_nwb1_flavor(nwb_file):
+    """
+    Determine the flavor of nwb file;
+    'Mies':  generated by the MIES hardware with sweeps named as 'data_*'
+    'Pipeline': processed by the pipeline to create epoch information and to rename sweeps as 'Sweep_*'
+    If sweeps are not present, then assume the original 'Mies' format, since processing had no effect
 
+    Parameters
+    ----------
+    nwb_file: str
+        file name
+
+    Returns
+    -------
+    str
+    """
     with h5py.File(nwb_file, 'r') as f:
         if "acquisition/timeseries" in f:
             sweep_names = [e for e in f["acquisition/timeseries"].keys()]
-            sweep_naming_convention = sweep_names[0].split('_')[0]
+            if sweep_names:
+                sweep_naming_convention = sweep_names[0].split('_')[0]
 
-            if sweep_naming_convention == "Sweep":
-                return "Pipeline"
-            elif sweep_naming_convention == "data":
+                if sweep_naming_convention == "Sweep":
+                    return "Pipeline"
+                elif sweep_naming_convention == "data":
+                    return "Mies"
+            else:
                 return "Mies"
         else:
             sweep_naming_convention = None

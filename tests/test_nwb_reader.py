@@ -51,6 +51,19 @@ def test_valid_v1_but_unknown_sweep_naming():
         create_nwb_reader(filename)
 
 
+def test_valid_v1_with_no_sweeps():
+
+    filename = os.path.join(TEST_DATA_PATH, 'no_sweeps.nwb')
+
+    with h5py.File(filename, 'w') as fh:
+        dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
+        dset[:] = str("NWB-1")
+        fh.create_group("acquisition/timeseries")
+
+    reader = create_nwb_reader(filename)
+    assert isinstance(reader, NwbMiesReader)
+
+
 def test_valid_v1_skeleton_MIES():
     filename = os.path.join(TEST_DATA_PATH, 'valid_v1_MIES.nwb')
 
@@ -95,8 +108,7 @@ def test_assumed_sweep_number_fallback(NWB_file):
     reader = create_nwb_reader(NWB_file)
     assert isinstance(reader, NwbPipelineReader)
 
-    with pytest.warns(UserWarning, match="Sweep number mismatch"):
-        assert reader.get_sweep_number("Sweep_10") == 10
+    assert reader.get_sweep_number("Sweep_10") == 10
 
 
 def test_valid_v1_full_Pipeline(fetch_pipeline_file):
@@ -164,7 +176,7 @@ def test_valid_v1_full_Pipeline(fetch_pipeline_file):
 
     assert reader.get_sweep_number("Sweep_10") == 10
 
-    assert reader.get_stim_code("Sweep_10") == "Short Square"
+    assert reader.get_stim_code(10) == "Short Square"
 
     sweep_attrs_ref = {
         u'ancestry': np.array(['TimeSeries', 'PatchClampSeries', 'CurrentClampSeries'], dtype='|S18'),
@@ -175,7 +187,7 @@ def test_valid_v1_full_Pipeline(fetch_pipeline_file):
         u'neurodata_type': u'TimeSeries',
         u'source': u''}
 
-    sweep_attrs = reader.get_sweep_attrs("Sweep_10")
+    sweep_attrs = reader.get_sweep_attrs(10)
     compare_dicts(sweep_attrs_ref, sweep_attrs)
 
     # assume the data itself is correct and replace it with None
@@ -208,7 +220,7 @@ def test_valid_v1_full_MIES_1(NWB_file):
 
     assert reader.get_sweep_number("data_00000_AD0") == 0
 
-    assert reader.get_stim_code("data_00000_AD0") == "StimulusSetA"
+    assert reader.get_stim_code(0) == "StimulusSetA"
 
     # ignore very long comment
     sweep_attrs_ref = {u'ancestry': np.array([u'TimeSeries', u'PatchClampSeries', u'VoltageClampSeries'], dtype=object),
@@ -219,7 +231,7 @@ def test_valid_v1_full_MIES_1(NWB_file):
                        u'neurodata_type': u'TimeSeries',
                        u'source': u'Device=ITC18USB_Dev_0;Sweep=0;AD=0;ElectrodeNumber=0;ElectrodeName=0'}
 
-    sweep_attrs = reader.get_sweep_attrs("data_00000_AD0")
+    sweep_attrs = reader.get_sweep_attrs(0)
     sweep_attrs['comment'] = None
 
     compare_dicts(sweep_attrs_ref, sweep_attrs)
@@ -238,6 +250,32 @@ def test_valid_v1_full_MIES_1(NWB_file):
     assert sweep_data_ref == sweep_data
 
 
+@pytest.mark.parametrize('NWB_file', ['Pvalb-IRES-Cre;Ai14-415796.02.01.01.nwb'], indirect=True)
+def test_sweep_map_sweep_numbers(NWB_file):
+
+    sweep_numbers_ref = np.arange(0,71)
+    reader = create_nwb_reader(NWB_file)
+
+    sweep_map_table = reader.sweep_map_table
+    sweep_numbers = sweep_map_table["sweep_number"].values
+    print sweep_numbers_ref
+
+    assert (sweep_numbers == sweep_numbers_ref).all()
+
+
+@pytest.mark.parametrize('NWB_file', ['Pvalb-IRES-Cre;Ai14-415796.02.01.01.nwb'], indirect=True)
+def test_sweep_map_sweep_0(NWB_file):
+
+    reader = create_nwb_reader(NWB_file)
+    sweep_map_ref = {'acquisition_group': u'data_00046_AD0',
+                     'stimulus_group': u'data_00046_DA0',
+                     'sweep_number': 0,
+                     'starting_time': 2740.1590003967285}
+
+    sweep_map = reader.get_sweep_map(0)
+    assert sweep_map == sweep_map_ref
+
+
 @pytest.mark.parametrize('NWB_file', ['H18.03.315.11.11.01.05.nwb'], indirect=True)
 def test_valid_v1_full_MIES_2(NWB_file):
 
@@ -253,7 +291,7 @@ def test_valid_v1_full_MIES_2(NWB_file):
 
     assert reader.get_sweep_number("data_00000_AD0") == 0
 
-    assert reader.get_stim_code("data_00000_AD0") == "EXTPSMOKET180424"
+    assert reader.get_stim_code(0) == "EXTPSMOKET180424"
 
     # ignore very long comment
     sweep_attrs_ref = {u'ancestry': np.array([u'TimeSeries', u'PatchClampSeries', u'VoltageClampSeries'], dtype=object),
@@ -265,7 +303,7 @@ def test_valid_v1_full_MIES_2(NWB_file):
                        u'neurodata_type': u'TimeSeries',
                        u'source': u'Device=ITC18USB_Dev_0;Sweep=0;AD=0;ElectrodeNumber=0;ElectrodeName=0'}
 
-    sweep_attrs = reader.get_sweep_attrs("data_00000_AD0")
+    sweep_attrs = reader.get_sweep_attrs(0)
     sweep_attrs['comment'] = None
 
     compare_dicts(sweep_attrs_ref, sweep_attrs)
@@ -300,7 +338,7 @@ def test_valid_v1_full_MIES_3(NWB_file):
 
     assert reader.get_sweep_number("data_00000_AD0") == 0
 
-    assert reader.get_stim_code("data_00000_AD0") == "EXTPSMOKET180424"
+    assert reader.get_stim_code(0) == "EXTPSMOKET180424"
 
     # ignore very long comment
     sweep_attrs_ref = {u'ancestry': np.array([u'TimeSeries', u'PatchClampSeries', u'VoltageClampSeries'], dtype=object),
@@ -312,7 +350,7 @@ def test_valid_v1_full_MIES_3(NWB_file):
                        u'neurodata_type': u'TimeSeries',
                        u'source': u'Device=ITC18USB_Dev_0;Sweep=0;AD=0;ElectrodeNumber=0;ElectrodeName=0'}
 
-    sweep_attrs = reader.get_sweep_attrs("data_00000_AD0")
+    sweep_attrs = reader.get_sweep_attrs(0)
     sweep_attrs['comment'] = None
 
     compare_dicts(sweep_attrs_ref, sweep_attrs)
@@ -346,7 +384,7 @@ def test_valid_v2_full_ABF(NWB_file):
 
     assert reader.get_sweep_number("index_0") == 0
 
-    assert reader.get_stim_code("index_0") == "RAMP1"
+    assert reader.get_stim_code(0) == "RAMP1"
 
     # ignore very long description
     sweep_attrs_ref = {u'bias_current': np.nan,
@@ -362,7 +400,7 @@ def test_valid_v2_full_ABF(NWB_file):
                        u'stimulus_description': u'RAMP1',
                        u'sweep_number': 0}
 
-    sweep_attrs = reader.get_sweep_attrs("index_0")
+    sweep_attrs = reader.get_sweep_attrs(0)
     sweep_attrs['description'] = None
 
     compare_dicts(sweep_attrs_ref, sweep_attrs)
@@ -395,7 +433,7 @@ def test_valid_v2_full_DAT(NWB_file):
 
     assert reader.get_sweep_number("index_00") == 10101
 
-    assert reader.get_stim_code("index_00") == "extpinbath"
+    assert reader.get_stim_code(10101) == "extpinbath"
 
     # ignore very long description
     sweep_attrs_ref = {u'capacitance_fast': 0.0,
@@ -415,7 +453,7 @@ def test_valid_v2_full_DAT(NWB_file):
                        u'whole_cell_capacitance_comp': np.nan,
                        u'whole_cell_series_resistance_comp': np.nan}
 
-    sweep_attrs = reader.get_sweep_attrs("index_00")
+    sweep_attrs = reader.get_sweep_attrs(10101)
     sweep_attrs['description'] = None
 
     compare_dicts(sweep_attrs_ref, sweep_attrs)

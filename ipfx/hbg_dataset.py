@@ -11,19 +11,16 @@ class HBGDataSet(EphysDataSet):
         super(HBGDataSet, self).__init__(ontology, validate_stim)
         self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
 
-        if sweep_info is not None:
-            sweep_info = self.modify_api_sweep_info(
-                sweep_info) if api_sweeps else sweep_info
-        else:
-            sweep_info = self.extract_sweep_meta_data()
+        if sweep_info is None:
+            sweep_info = self.extract_sweep_stim_info()
 
-        self.sweep_table = pd.DataFrame.from_records(sweep_info)
+        self.build_sweep_table(sweep_info)
 
-    def extract_sweep_meta_data(self):
+    def extract_sweep_stim_info(self):
 
         logging.debug("Build sweep table")
 
-        sweep_props = []
+        sweep_info = []
 
         def get_finite_or_none(d, key):
 
@@ -37,35 +34,60 @@ class HBGDataSet(EphysDataSet):
 
             return value
 
-        for sweep_name in self.nwb_data.get_sweep_names():
+        for index, sweep_map in self.nwb_data.sweep_map_table.iterrows():
             sweep_record = {}
-            attrs = self.nwb_data.get_sweep_attrs(sweep_name)
-            sweep_record["sweep_number"] = self.nwb_data.get_sweep_number(sweep_name)
+            sweep_num = sweep_map["sweep_number"]
+            sweep_record["sweep_number"] = sweep_num
 
-            timeSeriesType = attrs["neurodata_type"]
+            attrs = self.nwb_data.get_sweep_attrs(sweep_num)
 
-            if "CurrentClamp" in timeSeriesType:
-                sweep_record["stimulus_units"] = "A"
-                sweep_record["clamp_mode"] = "CurrentClamp"
-            elif "VoltageClamp" in timeSeriesType:
-                sweep_record["stimulus_units"] = "V"
-                sweep_record["clamp_mode"] = "VoltageClamp"
-            else:
-                raise ValueError("Unexpected TimeSeries type {}.".format(timeSeriesType))
+            sweep_record["stimulus_units"] = self.get_stimulus_units(sweep_num)
 
             sweep_record["bridge_balance_mohm"] = get_finite_or_none(attrs, "bridge_balance")
             sweep_record["leak_pa"] = get_finite_or_none(attrs, "bias_current")
             sweep_record["stimulus_scale_factor"] = get_finite_or_none(attrs, "gain")
 
+            sweep_record["stimulus_code"] = self.get_stimulus_code(sweep_num)
             sweep_record["stimulus_code_ext"] = None  # not required anymore
-            sweep_record["stimulus_code"] = self.nwb_data.get_stim_code(sweep_name)
 
             if self.ontology:
                 sweep_record["stimulus_name"] = self.get_stimulus_name(sweep_record["stimulus_code"])
 
-            sweep_props.append(sweep_record)
+            sweep_info.append(sweep_record)
 
-        return sweep_props
+        return sweep_info
 
     def get_sweep_data(self, sweep_number):
         return self.nwb_data.get_sweep_data(sweep_number)
+
+    def get_stimulus_units(self, sweep_num):
+
+        attrs = self.nwb_data.get_sweep_attrs(sweep_num)
+        timeSeriesType = attrs["neurodata_type"]
+
+        if "CurrentClamp" in timeSeriesType:
+            units = "A"
+        elif "VoltageClamp" in timeSeriesType:
+            units = "V"
+        else:
+            raise ValueError("Unexpected TimeSeries type {}.".format(timeSeriesType))
+
+        return units
+
+    def get_clamp_mode(self, sweep_num):
+
+        attrs = self.nwb_data.get_sweep_attrs(sweep_num)
+        timeSeriesType = attrs["neurodata_type"]
+
+        if "CurrentClamp" in timeSeriesType:
+            clamp_mode = self.CURRENT_CLAMP
+        elif "VoltageClamp" in timeSeriesType:
+            clamp_mode = self.VOLTAGE_CLAMP
+        else:
+            raise ValueError("Unexpected TimeSeries type {}.".format(timeSeriesType))
+
+        return clamp_mode
+
+    def get_stimulus_code(self, sweep_num):
+
+        return self.nwb_data.get_stim_code(sweep_num)

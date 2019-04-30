@@ -118,7 +118,7 @@ def extract_sweep_features(data_set, sweep_table):
     sweep_groups = sweep_table.groupby(data_set.STIMULUS_NAME)[data_set.SWEEP_NUMBER]
 
     # extract sweep-level features
-    lu.log_pretty_header("Analyzing cell features:",level=2)
+    lu.log_pretty_header("Analyzing sweep features:",level=2)
 
     sweep_features = {}
 
@@ -272,27 +272,21 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     """
     ontology = data_set.ontology
     # for logging purposes
-    iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True)
-    passed_iclamp_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, passing_only=True)
-
-    if len(passed_iclamp_sweeps) == 0:
-        raise er.FeatureError("There are no QC-passed sweeps available to analyze")
+    iclamp_sweeps = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP)
 
     # extract cell-level features
 
-    clsq_sweeps = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=ontology.coarse_long_square_names)
+    clsq_sweeps = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
+                                                stimuli=ontology.coarse_long_square_names)
     clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values
 
-    lsq_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True,
-                                                      passing_only=True,
+    lsq_sweep_numbers = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
                                                       stimuli=ontology.long_square_names).sweep_number.sort_values().values
 
-    ssq_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True,
-                                                      passing_only=True,
+    ssq_sweep_numbers = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
                                                       stimuli=ontology.short_square_names).sweep_number.sort_values().values
 
-    ramp_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True,
-                                                       passing_only=True,
+    ramp_sweep_numbers = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
                                                        stimuli=ontology.ramp_names).sweep_number.sort_values().values
 
     if subthresh_min_amp is None:

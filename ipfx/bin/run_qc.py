@@ -2,7 +2,7 @@
 import logging
 
 from ipfx.stimulus import StimulusOntology
-import ipfx.qc_protocol as qcp
+import ipfx.qc_feature_evaluator as qcp
 
 import argschema as ags
 from ipfx._schemas import QcParameters
@@ -41,34 +41,46 @@ def run_qc(stimulus_ontology_file, cell_features, sweep_features, qc_criteria):
                                                  sweep_features,
                                                  qc_criteria)
 
-    sweep_qc_summary(sweep_features, sweep_states)
+    qc_summary(sweep_features, sweep_states, cell_features, cell_state)
 
     return dict(cell_state=cell_state, sweep_states=sweep_states)
 
 
-def sweep_qc_summary(sweep_features, sweep_states):
+def qc_summary(sweep_features, sweep_states, cell_features, cell_state):
     """
-    Create a table of sweep feaures including the sweep_state (passed:True/False)
+    Output QC summary
 
     Parameters
     ----------
-    sweep_features: dict
-    sweep_states: dict
+    sweep_features: list of dicts
+    sweep_states: list of dict
+    cell_features: list of dicts
+    cell_state: dict
 
     Returns
     -------
 
     """
+    lu.log_pretty_header("QC Summary:",level=2)
+
+    logging.info("Cell State:")
+    for k,v in cell_state.items():
+        logging.info("%s:%s" % (k,v))
+
+    logging.info("Sweep States:")
+
     sp.assign_sweep_states(sweep_states, sweep_features)
     sweep_table = pd.DataFrame(sweep_features)
 
-    lu.log_pretty_header("QC Summary:",level=2)
+    if sweep_features:
+        for stimulus_name, sg_table in sweep_table.groupby("stimulus_name"):
+            passed_sweep_numbers = sg_table[sg_table.passed == True].sweep_number.sort_values().values
+            failed_sweep_numbers = sg_table[sg_table.passed == False].sweep_number.sort_values().values
 
-    for stimulus_name, sg_table in sweep_table.groupby("stimulus_name"):
-        passed_sweep_numbers = sg_table[sg_table.passed == True].sweep_number.sort_values().values
-        failed_sweep_numbers = sg_table[sg_table.passed == False].sweep_number.sort_values().values
+            logging.info("{} sweeps passed: {}, failed {}".format(stimulus_name, passed_sweep_numbers,failed_sweep_numbers))
+    else:
+        logging.warning("No current clamp sweeps available for QC")
 
-        logging.info("{} sweeps passed: {}, failed {}".format(stimulus_name, passed_sweep_numbers,failed_sweep_numbers))
 
 
 def main():

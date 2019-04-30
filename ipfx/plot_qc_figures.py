@@ -158,10 +158,9 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
 
 def plot_sweep_figures(data_set, image_dir, sizes):
 
-    iclamp_sweep_numbers = data_set.filtered_sweep_table(current_clamp_only=True, passing_only=False)['sweep_number'].values
+    iclamp_sweep_numbers = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP)['sweep_number'].values
     iclamp_sweep_numbers.sort()
     image_file_sets = {}
-
 
     b, a = sg.bessel(4, 0.1, "low")
 
@@ -448,8 +447,7 @@ def plot_instantaneous_threshold_thumbnail(data_set, sweep_numbers, cell_feature
 
 def plot_ramp_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files):
 
-    ramps_sweeps = data_set.filtered_sweep_table(passing_only=True,
-                                                 current_clamp_only=True,
+    ramps_sweeps = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
                                                  stimuli=data_set.ontology.ramp_names)
     ramps_sweeps = np.sort(ramps_sweeps['sweep_number'].values)
 

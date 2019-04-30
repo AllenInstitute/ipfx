@@ -2,6 +2,7 @@ import os, json
 import logging
 import numpy as np
 import ipfx.qc_features as qcf
+import ipfx.sweep_props as sp
 
 DEFAULT_QC_CRITERIA_FILE = os.path.join(os.path.dirname(__file__), 'defaults/qc_criteria.json')
 
@@ -39,19 +40,34 @@ def qc_experiment(ontology, cell_features, sweep_features, qc_criteria=None):
 
     sweep_states = qc_sweeps(ontology,sweep_features,qc_criteria)
 
+    num_passed_sweeps, num_sweeps = sp.count_sweep_states(sweep_states)
+
+    if num_sweeps == 0:
+        cell_state["fail_tags"].append("No sweep states available")
+
+    if num_passed_sweeps == 0:
+        msg = "No current clamps sweeps passed QC"
+        logging.warning(msg)
+        cell_state["fail_tags"].append(msg)
+
+    if cell_state["fail_tags"]:
+        cell_state["failed_qc"] = True
+    else:
+        cell_state["failed_qc"] = False
+
     return cell_state, sweep_states
 
 
-def qc_sweeps(ontology,sweep_features,qc_criteria):
+def qc_sweeps(ontology, sweep_features, qc_criteria):
 
     sweep_states = []
 
     for sweep in sweep_features:
+
         sweep_num = sweep["sweep_number"]
-        failed, fail_tags = qc_current_clamp_sweep(ontology, sweep, qc_criteria)
-        sweep_state = { 'sweep_number': sweep_num, 'passed': not failed, 'reasons': fail_tags }
-        if failed:
-            logging.info("sweep: {}, {}, {}".format(sweep_num, sweep["stimulus_name"], fail_tags))
+        is_ramp = ontology.stimulus_has_any_tags(sweep["stimulus_code"], ontology.ramp_names)
+        fail_tags = qc_current_clamp_sweep(sweep, is_ramp, qc_criteria)
+        sweep_state = sp.create_sweep_state(sweep_num, fail_tags)
         sweep_states.append(sweep_state)
 
     return sweep_states
@@ -106,21 +122,17 @@ def qc_cell(cell_data, qc_criteria=None):
                                              cell_fail_tags)
 
     cell_state["fail_tags"] = cell_fail_tags
-    if cell_fail_tags:
-        cell_state["failed_qc"] = True
-    else:
-        cell_state["failed_qc"] = False
 
     return cell_state
 
 
-def qc_current_clamp_sweep(ontology, sweep, qc_criteria=None):
+def qc_current_clamp_sweep(sweep, is_ramp, qc_criteria=None):
     """QC for the current-clamp sweeps
 
     Parameters
     ----------
-    ontology: StimulusOntology object
-        stimulus ontology
+    is_ramp: bool
+        True for Ramp otherwise False
     sweep : dict
         features of a sweep
     qc_criteria : dict
@@ -128,10 +140,10 @@ def qc_current_clamp_sweep(ontology, sweep, qc_criteria=None):
 
     Returns
     -------
-        fails   : int
-            number of fails
-        fail_tags : list of str
-            tags of the failed sweeps
+    fails   : int
+        number of fails
+    fail_tags : list of str
+        tags of the failed sweeps
 
     """
     if qc_criteria is None:
@@ -140,21 +152,17 @@ def qc_current_clamp_sweep(ontology, sweep, qc_criteria=None):
     # keep track of failures
     fail_tags = []
 
-#    if sweep["stimulus_units"] not in ontology.current_clamp_units:
-#        return {}
-
     if sweep["pre_noise_rms_mv"] > qc_criteria["pre_noise_rms_mv_max"]:
         fail_tags.append("pre-noise: %.3f exceeded qc threshold: %.3f" %(sweep["pre_noise_rms_mv"],qc_criteria["pre_noise_rms_mv_max"]))
 
     # check Vm and noise at end of recording
     # do not check for ramps, because they do not have enough time to recover
-    is_ramp = ontology.stimulus_has_any_tags(sweep["stimulus_code"], ontology.ramp_names)
 
-    if is_ramp:
-        logging.info("sweep %d skipping vrest criteria on ramp", sweep["sweep_number"])
-    else:
+    if not is_ramp:
         if sweep["post_noise_rms_mv"] > qc_criteria["post_noise_rms_mv_max"]:
             fail_tags.append("post-noise: %.3f exceeded qc threshold: %.3f" % (sweep["post_noise_rms_mv"],qc_criteria["post_noise_rms_mv_max"]))
+    else:
+        logging.info("sweep %d skipping vrest criteria on ramp", sweep["sweep_number"])
 
     if sweep["slow_noise_rms_mv"] > qc_criteria["slow_noise_rms_mv_max"]:
         fail_tags.append("slow noise: %.3f above threshold: %.3f" % (sweep["slow_noise_rms_mv"], qc_criteria["slow_noise_rms_mv_max"]) )
@@ -162,17 +170,15 @@ def qc_current_clamp_sweep(ontology, sweep, qc_criteria=None):
     if sweep["vm_delta_mv"] is not None and sweep["vm_delta_mv"] > qc_criteria["vm_delta_mv_max"]:
         fail_tags.append("Vm delta: %.3f above threshold:%.3f" % (sweep["vm_delta_mv"], qc_criteria["vm_delta_mv_max"]))
 
-    # fail sweeps if stimulus duration is zero
-    # Uncomment out the following 3 lines to have sweeps without stimulus fail QC
-    if sweep["stimulus_duration"] <= 0 and not ontology.stimulus_has_any_tags(sweep["stimulus_code"], ontology.extp_names):
-        fail_tags.append("No stimulus detected")
-    return len(fail_tags) > 0, fail_tags
+    if fail_tags:
+        logging.info("sweep: {}, {}, {}".format(sweep["sweep_number"], sweep["stimulus_name"], fail_tags))
+
+    return fail_tags
 
 
 def evaluate_blowout(blowout_mv, blowout_mv_min, blowout_mv_max, fail_tags):
     if blowout_mv is None or np.isnan(blowout_mv):
-        fail_tags.append("Missing blowout value (%s)" % str(blowout_mv))
-        return True
+        return False
 
     if blowout_mv < blowout_mv_min or blowout_mv > blowout_mv_max:
         fail_tags.append("blowout outside of range")

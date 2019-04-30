@@ -31,42 +31,67 @@ def get_dataset():
     return dataset
 
 
-def test_get_sweep_number_by_stimulus_name_invalid_sweep():
+def get_empty_dataset():
+
+    default_ontology = StimulusOntology()
+    dataset = EphysDataSet(default_ontology)
+    dataset.build_sweep_table(sweep_info=[])
+
+    return dataset
+
+
+def test_emtpy_table_has_header():
+
+    ds = get_empty_dataset()
+
+    assert list(ds.filtered_sweep_table(stimuli=['I_DONT_EXIST'])) == list(ds.sweep_table)
+
+
+def test_get_sweep_number_invalid_sweep():
 
     with pytest.raises(IndexError):
         ds = get_dataset()
-        ds.get_sweep_number_by_stimulus_names(['I_DONT_EXIST'])
+        ds.get_sweep_number(['I_DONT_EXIST'])
 
 
-def test_get_sweep_number_by_stimulus_name_works_1():
+def test_get_sweep_number_works_1():
     ds = get_dataset()
-    sweeps = ds.get_sweep_number_by_stimulus_names(['C1LSFINEST'])
+    sweeps = ds.get_sweep_number(['C1LSFINEST'])
     assert sweeps == 0
 
 
-def test_get_sweep_number_by_stimulus_name_works_and_returns_only_the_last():
+def test_get_sweep_number_works_and_returns_only_the_last():
     ds = get_dataset()
-    sweeps = ds.get_sweep_number_by_stimulus_names(['EXTPBREAKN'])
+    sweeps = ds.get_sweep_number(['EXTPBREAKN'])
     assert sweeps == 6
 
 
-def test_filtered_sweep_table_works():
+def test_get_sweep_number_wrong_clamp_mode():
 
+    with pytest.raises(IndexError):
+        ds = get_dataset()
+        ds.get_sweep_number(['Long Square'], clamp_mode="VoltageClamp")
+
+
+def test_filtered_sweep_table_stimuli():
     ds = get_dataset()
     sweeps = ds.filtered_sweep_table(stimuli=['EXTPBREAKN'])
-
     assert sweeps["sweep_number"].tolist() == [5, 6]
 
 
-def test_filtered_sweep_table_works_with_sweep_number():
-
+def test_filtered_sweep_table_works_cc():
     ds = get_dataset()
-    sweeps = ds.filtered_sweep_table(sweep_number=0)
-
+    sweeps = ds.filtered_sweep_table(clamp_mode="CurrentClamp")
     assert sweeps["sweep_number"].tolist() == [0]
 
 
-def test_get_sweep_meta_data():
+def test_filtered_sweep_table_stimuli_exclude():
+    ds = get_dataset()
+    sweeps = ds.filtered_sweep_table(stimuli_exclude=["Test"])
+    assert sweeps["sweep_number"].values == 0
+
+
+def test_get_sweep_record():
 
     d = get_sweep_table_dict()
     expected = {}
@@ -74,7 +99,7 @@ def test_get_sweep_meta_data():
         expected[k] = d[k][1]
 
     ds = get_dataset()
-    actual = ds.get_sweep_meta_data(5)
+    actual = ds.get_sweep_record(5)
     compare_dicts(expected, actual)
 
 
@@ -104,33 +129,22 @@ def test_aligned_sweeps_raises():
         ds = get_dataset()
         ds.aligned_sweeps([5], 0.0)
 
-
-def test_extract_sweep_meta_data_raises():
+def test_get_stimulus_code_raises():
     with pytest.raises(NotImplementedError):
         ds = get_dataset()
-        ds.extract_sweep_meta_data()
+        ds.get_stimulus_code(0)
+
+def test_get_clamp_mode_raises():
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.get_clamp_mode(0)
+
+def test_extract_sweep_stim_info_raises():
+    with pytest.raises(NotImplementedError):
+        ds = get_dataset()
+        ds.extract_sweep_stim_info()
 
 
-def test_modify_api_sweep_info():
-    d = [{"sweep_number": 123,
-          "stimulus_units": "abcd",
-          "stimulus_absolute_amplitude": 456,
-          "stimulus_description": "efgh[4711]",
-          "stimulus_name": "hijkl"
-          }]
-
-    ds = get_dataset()
-    result = ds.modify_api_sweep_info(d)
-
-    expected = [{EphysDataSet.SWEEP_NUMBER: 123,
-                 EphysDataSet.STIMULUS_UNITS: "abcd",
-                 EphysDataSet.STIMULUS_AMPLITUDE: 456,
-                 EphysDataSet.STIMULUS_CODE: "efgh",
-                 EphysDataSet.STIMULUS_NAME: "hijkl",
-                 EphysDataSet.PASSED: True}]
-
-    assert len(expected) == len(result)
-    compare_dicts(expected[0], result[0])
 
 
 def test_get_stimulus_name():

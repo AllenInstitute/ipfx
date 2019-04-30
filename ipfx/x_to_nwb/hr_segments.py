@@ -96,38 +96,15 @@ class Segment(ABC):
         if not Segment._hasDelta(deltaDict):
             return val
 
-        if deltaDict["mode"] == "Inc":
+        if deltaDict["mode"] != "LogInc" and deltaDict["mode"] != "Inc":
+            raise ValueError(f"Increment mode {deltaDict['mode']} is not supported.")
+
+        if deltaDict["factor"] == 1.0:
             return val + deltaDict["inc"] * sweepNo
         elif deltaDict["mode"] == "LogInc":
-            # PatchMaster manual 10.10.3 "Increment Modes" distinguishes two different
-            # Logaritmic increment modes X * Factor and dX * Factor (X is either V/I/T).
-            #
-            # X             : Voltage/Current/Time
-            # X_{factor}    : V/I/t-fact.
-            # X_{incr}      : V/I/t-incr.
-            # X_{0/1/2/...} : Value at the 0/1/2/... sweep
-            # i             : Sweep index starting at 0 (in the manual it starts at 1)
-            #
-            # X * Factor:
-            #   X_{i} = X * X_{factor}^{i} + i * X_{incr}
-            #
-            # dX * Factor:
-            #   X_{factor} == 1:
-            #     X_{i} = X + i * X_{incr}
-            #
-            #   X_{factor} != 1:
-            #     i == 0:
-            #       X_{0} = X
-            #     i > 0:
-            #       X_{i} = X + X_{factor}^{i - 1} * X_{incr}
-            #
-            # TODO
-            # how to distinguish these two modes?
-            # we just return NaN for now
-
-            return float('nan')
+            return val + deltaDict["inc"] * math.exp(math.log(deltaDict["factor"]) * (sweepNo - 1))
         else:
-            raise ValueError(f"Increment mode {deltaDict['mode']} is not supported.")
+            return val + deltaDict["inc"] * sweepNo + val * (math.exp(math.log(deltaDict["factor"]) * sweepNo) - 1.0)
 
     def applyAmplitudeScale(self, amplitude):
         """
@@ -324,7 +301,9 @@ class ChirpSegment(Segment):
                  ).format(self.amplitude, self.startFreq, self.endFreq, self.kind)
 
     def getAmplitude(self, channelRec, segmentRec):
-        return channelRec.Chirp_Amplitude
+        # The amplitude is half of the peak-to-peak amplitude and that is
+        # stored in the DAT file.
+        return channelRec.Chirp_Amplitude * 0.5
 
     def createArray(self, sweep):
 

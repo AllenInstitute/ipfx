@@ -3,6 +3,8 @@ from run_sweep_extraction import run_sweep_extraction
 from generate_se_input import generate_se_input, parse_args
 import ipfx.sweep_props as sp
 import allensdk.core.json_utilities as ju
+import ipfx.logging_utils as lu
+
 
 QC_INPUT_FEATURES = ["stimulus_units",
                    "stimulus_duration",
@@ -67,6 +69,8 @@ def main():
     if not os.path.exists(cell_dir):
         os.makedirs(cell_dir)
 
+    lu.configure_logger(cell_dir)
+
     ju.write(os.path.join(cell_dir,'se_input.json'), se_input)
 
     se_output = run_sweep_extraction(se_input["input_nwb_file"],
@@ -75,8 +79,7 @@ def main():
 
     ju.write(os.path.join(cell_dir,'se_output.json'),se_output)
 
-    sp.drop_incomplete_sweeps(se_output["sweep_features"])
-    sp.remove_sweep_feature("completed", se_output["sweep_features"])
+    sp.drop_tagged_sweeps(se_output["sweep_features"])
 
     qc_input = generate_qc_input(se_input, se_output)
 

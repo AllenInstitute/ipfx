@@ -8,6 +8,7 @@ from run_feature_extraction import run_feature_extraction
 
 import allensdk.core.json_utilities as ju
 import ipfx.sweep_props as sp
+import ipfx.logging_utils as lu
 
 
 def run_pipeline(input_nwb_file,
@@ -22,13 +23,20 @@ def run_pipeline(input_nwb_file,
                                      input_h5_file,
                                      stimulus_ontology_file)
 
-    sp.drop_incomplete_sweeps(se_output["sweep_features"])
-    sp.remove_sweep_feature("completed", se_output["sweep_features"])
+    sp.drop_tagged_sweeps(se_output["sweep_features"])
+    sp.remove_sweep_feature("tags",se_output["sweep_features"])
 
     qc_output = run_qc(stimulus_ontology_file,
                        se_output["cell_features"],
                        se_output["sweep_features"],
                        qc_criteria)
+
+    if qc_output["cell_state"]["failed_qc"]:
+        logging.warning("Failed QC. No ephys features extracted.")
+
+        return dict(sweep_extraction=se_output,
+                    qc=qc_output,
+                    )
 
     sp.override_auto_sweep_states(manual_sweep_states, qc_output["sweep_states"])
     sp.assign_sweep_states(qc_output["sweep_states"], se_output["sweep_features"])
@@ -40,10 +48,11 @@ def run_pipeline(input_nwb_file,
                                        se_output['sweep_features'],
                                        se_output['cell_features'],
                                        )
-    logging.info("Analysis completed!")
-    return dict( sweep_extraction=se_output,
-                 qc=qc_output,
-                 feature_extraction=fx_output )
+
+    return dict(sweep_extraction=se_output,
+                qc=qc_output,
+                feature_extraction=fx_output
+                )
 
 
 def main():
@@ -67,6 +76,7 @@ def main():
 
     ju.write(module.args["output_json"], output)
 
+    lu.log_pretty_header("Analysis completed!", level=1)
 
 
 if __name__ == "__main__": main()
