@@ -267,11 +267,12 @@ def sweep_qc_features(data_set):
         tags = check_sweep_integrity(sweep, is_ramp)
         sweep_features["tags"] = tags
 
+        stim_features = current_clamp_sweep_stim_features(sweep)
+        sweep_features.update(stim_features)
+
         if not tags:
             qc_features = current_clamp_sweep_qc_features(sweep, is_ramp)
             sweep_features.update(qc_features)
-            stim_features = current_clamp_sweep_stim_features(sweep)
-            sweep_features.update(stim_features)
         else:
             logging.warning("sweep {}: {}".format(sweep_num, tags))
 
