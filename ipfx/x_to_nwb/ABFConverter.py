@@ -204,6 +204,24 @@ class ABFConverter:
                                      f"entry in stimulus channel {channel} of sweep {sweep} "
                                      f"in file {abf.abfFilePath} using protocol {abf.protocol}.")
 
+    def _reduceChannelList(self, abf):
+        """
+        Return a reduced channel list taking into account the feedback channel export setting.
+        """
+
+        if self.outputFeedbackChannel:
+            return abf.channelList
+
+        cleanChanneList = []
+
+        for channel in range(abf.channelCount):
+            adcName = abf.adcNames[channel]
+
+            if adcName in ABFConverter.adcNamesWithRealData:
+                cleanChanneList.append(abf.channelList[channel])
+
+        return cleanChanneList
+
     def _checkAll(self):
         """
         Check that all loaded ABF files have a minimum list of properties in common.
@@ -229,8 +247,11 @@ class ABFConverter:
                 raise ValueError(f"Creator Version does not match in {source}.")
             elif self.refabf.abfVersion != abf.abfVersion:
                 raise ValueError(f"abfVersion does not match in {source}.")
-            elif self.refabf.channelList != abf.channelList:
-                raise ValueError(f"channelList does not match in {source}.")
+
+            refChannelList = self._reduceChannelList(self.refabf)
+            channelList = self._reduceChannelList(abf)
+            if refChannelList != channelList:
+                raise ValueError(f"channelList ({refChannelList} vs {channelList} does not match in {source}.")
 
     def _getOldestABF(self):
         """
