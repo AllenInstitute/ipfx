@@ -88,6 +88,8 @@ def main():
     parser.add_argument("--multipleGroupsPerFile", action="store_true", default=False,
                         help="Write all Groups from a DAT file into a single NWB file."
                         " By default we create one NWB file per Group.")
+    parser.add_argument("--realDataChannel", type=str, action="append",
+                        help=f"Define additional channels which hold non-feedback channel data. The default is {ABFConverter.adcNamesWithRealData}.")
     feature_parser = parser.add_mutually_exclusive_group(required=False)
     feature_parser.add_argument('--compression', dest='compression', action='store_true', help="Enable compression for HDF5 datasets (default).")
     feature_parser.add_argument('--no-compression', dest='compression', action='store_false', help="Disable compression for HDF5 datasets.")
@@ -112,6 +114,9 @@ def main():
             raise ValueError("Protocol directory does not exist")
 
         ABFConverter.protocolStorageDir = args.protocolDir
+
+    if args.realDataChannel:
+        ABFConverter.adcNamesWithRealData.append(args.realDataChannel)
 
     for fileOrFolder in args.filesOrFolders:
         print(f"Converting {fileOrFolder}")
