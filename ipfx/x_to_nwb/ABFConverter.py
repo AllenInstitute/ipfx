@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 class ABFConverter:
 
     protocolStorageDir = None
-    adcNamesWithRealData = ("IN 0", "IN 1", "IN 2", "IN 3")
+    adcNamesWithRealData = ["IN 0", "IN 1", "IN 2", "IN 3"]
 
     def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True):
         """
