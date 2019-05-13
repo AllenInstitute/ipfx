@@ -218,18 +218,19 @@ class ABFConverter:
         """
 
         for abf in self.abfs:
+            source = f"({self.refabf.abfFilePath} vs {abf.abfFilePath})"
             if self.refabf._protocolSection.sDigitizerType != abf._protocolSection.sDigitizerType:
-                raise ValueError("Digitizer type does not match.")
+                raise ValueError(f"Digitizer type does not match in {source}.")
             elif self.refabf._adcSection.sTelegraphInstrument[0] != abf._adcSection.sTelegraphInstrument[0]:
-                raise ValueError("Telegraph instrument does not match.")
+                raise ValueError(f"Telegraph instrument does not match in {source}.")
             elif self.refabf._stringsIndexed.uCreatorName != abf._stringsIndexed.uCreatorName:
-                raise ValueError("Creator Name does not match.")
+                raise ValueError(f"Creator Name does not match in {source}.")
             elif self.refabf.creatorVersion != abf.creatorVersion:
-                raise ValueError("Creator Version does not match.")
+                raise ValueError(f"Creator Version does not match in {source}.")
             elif self.refabf.abfVersion != abf.abfVersion:
-                raise ValueError("abfVersion does not match.")
+                raise ValueError(f"abfVersion does not match in {source}.")
             elif self.refabf.channelList != abf.channelList:
-                raise ValueError(f"channelList does not match ({self.refabf.channelList} vs {abf.channelList}).")
+                raise ValueError(f"channelList does not match in {source}.")
 
     def _getOldestABF(self):
         """
