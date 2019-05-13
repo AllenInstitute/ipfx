@@ -419,7 +419,7 @@ class ABFConverter:
         try:
             settings, _ = self._findSettingsEntry(abf)
             return float(settings["ScaleFactors"][stimset])
-        except (TypeError, KeyError) as e:
+        except (TypeError, KeyError):
             warnings.warn(f"Could not find the scale factor for the stimset {stimset}, using 1.0 as fallback.")
             return 1.0
 
@@ -444,7 +444,7 @@ class ABFConverter:
                 warnings.warn(f"Stored clamp mode {settings['GetMode']} does not match requested "
                               f"clamp mode {clampMode} of channel {adcName}.")
                 settings = None
-        except (TypeError, KeyError) as e:
+        except (TypeError, KeyError):
             warnings.warn(f"Could not find settings for amplifier {amplifier} of channel {adcName}.")
             settings = None
 
