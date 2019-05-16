@@ -109,3 +109,6 @@ class AibsDataSet(EphysDataSet):
 
     def get_sweep_data(self, sweep_number):
         return self.nwb_data.get_sweep_data(sweep_number)
+
+    def get_recording_date(self):
+        return self.nwb_data.get_recording_date()

@@ -188,6 +188,8 @@ class EphysDataSet(object):
 
         raise NotImplementedError
 
+    def get_recording_date(self):
+        raise NotImplementedError
 
     def get_sweep_data(self, sweep_number):
         """

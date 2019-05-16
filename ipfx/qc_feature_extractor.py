@@ -67,6 +67,18 @@ def extract_electrode_0(data_set, tags):
     return e0
 
 
+def extract_recording_date(data_set, tags):
+
+    try:
+        recording_date = data_set.get_recording_date()
+
+    except KeyError as e:
+        tags.append("Recording date is missing")
+        recording_date = None
+
+    return recording_date
+
+
 def extract_clamp_seal(data_set, tags, manual_values=None):
     """
 
@@ -234,6 +246,8 @@ def cell_qc_features(data_set, manual_values=None):
     features['blowout_mv'] = extract_blowout(data_set, tags)
 
     features['electrode_0_pa'] = extract_electrode_0(data_set, tags)
+
+    features['recording_date'] = extract_recording_date(data_set, tags)
 
     features["seal_gohm"] = extract_clamp_seal(data_set, tags, manual_values)
 
