@@ -1,6 +1,7 @@
 import re
 import warnings
 import pandas as pd
+from dateutil import parser
 import h5py
 import numpy as np
 from pynwb import NWBHDF5IO
@@ -41,6 +42,29 @@ class NwbReader(object):
 
     def get_stim_code(self, sweep_number):
         raise NotImplementedError
+
+    def get_recording_date(self):
+        """
+        Extract recording datetime from a session_start_time in nwb
+        Use last value if more than one is present
+
+        Returns
+        -------
+        recording_date: str
+            use date format "%Y-%m-%d %H:%M:%S", drop timezone info
+        """
+
+        with h5py.File(self.nwb_file, 'r') as f:
+            if isinstance(f["session_start_time"].value,np.ndarray): # if ndarray
+                session_start_time = f["session_start_time"].value[-1]
+            else:
+                session_start_time = f["session_start_time"].value # otherwise
+
+            datetime_object = parser.parse(session_start_time)
+
+        recording_date = datetime_object.strftime("%Y-%m-%d %H:%M:%S")
+
+        return recording_date
 
     @staticmethod
     def get_long_unit_name(unit):

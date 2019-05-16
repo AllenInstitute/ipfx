@@ -63,6 +63,20 @@ def test_valid_v1_with_no_sweeps():
     reader = create_nwb_reader(filename)
     assert isinstance(reader, NwbMiesReader)
 
+@pytest.mark.parametrize('NWB_file', ['2018_03_20_0005.nwb'], indirect=True)
+def test_get_recording_date(NWB_file):
+    reader = create_nwb_reader(NWB_file)
+
+    assert "2018-03-20 20:59:48" == reader.get_recording_date()
+
+@pytest.mark.parametrize('NWB_file', ['valid_v1_MIES.nwb'], indirect=True)
+def test_missing_recording_date(NWB_file):
+
+    reader = create_nwb_reader(NWB_file)
+
+    with pytest.raises(KeyError):
+        reader.get_recording_date()
+
 
 def test_valid_v1_skeleton_MIES():
     filename = os.path.join(TEST_DATA_PATH, 'valid_v1_MIES.nwb')

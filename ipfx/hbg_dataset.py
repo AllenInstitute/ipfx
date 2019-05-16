@@ -91,3 +91,6 @@ class HBGDataSet(EphysDataSet):
     def get_stimulus_code(self, sweep_num):
 
         return self.nwb_data.get_stim_code(sweep_num)
+
+    def get_recording_date(self):
+        return self.nwb_data.get_recording_date()
