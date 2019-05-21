@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 class ABFConverter:
 
     protocolStorageDir = None
-    adcNamesWithRealData = ("IN 0", "IN 1", "IN 2", "IN 3")
+    adcNamesWithRealData = ["IN 0", "IN 1", "IN 2", "IN 3"]
 
     def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True):
         """
@@ -204,6 +204,24 @@ class ABFConverter:
                                      f"entry in stimulus channel {channel} of sweep {sweep} "
                                      f"in file {abf.abfFilePath} using protocol {abf.protocol}.")
 
+    def _reduceChannelList(self, abf):
+        """
+        Return a reduced channel list taking into account the feedback channel export setting.
+        """
+
+        if self.outputFeedbackChannel:
+            return abf.channelList
+
+        cleanChanneList = []
+
+        for channel in range(abf.channelCount):
+            adcName = abf.adcNames[channel]
+
+            if adcName in ABFConverter.adcNamesWithRealData:
+                cleanChanneList.append(abf.channelList[channel])
+
+        return cleanChanneList
+
     def _checkAll(self):
         """
         Check that all loaded ABF files have a minimum list of properties in common.
@@ -218,18 +236,22 @@ class ABFConverter:
         """
 
         for abf in self.abfs:
+            source = f"({self.refabf.abfFilePath} vs {abf.abfFilePath})"
             if self.refabf._protocolSection.sDigitizerType != abf._protocolSection.sDigitizerType:
-                raise ValueError("Digitizer type does not match.")
+                raise ValueError(f"Digitizer type does not match in {source}.")
             elif self.refabf._adcSection.sTelegraphInstrument[0] != abf._adcSection.sTelegraphInstrument[0]:
-                raise ValueError("Telegraph instrument does not match.")
+                raise ValueError(f"Telegraph instrument does not match in {source}.")
             elif self.refabf._stringsIndexed.uCreatorName != abf._stringsIndexed.uCreatorName:
-                raise ValueError("Creator Name does not match.")
+                raise ValueError(f"Creator Name does not match in {source}.")
             elif self.refabf.creatorVersion != abf.creatorVersion:
-                raise ValueError("Creator Version does not match.")
+                raise ValueError(f"Creator Version does not match in {source}.")
             elif self.refabf.abfVersion != abf.abfVersion:
-                raise ValueError("abfVersion does not match.")
-            elif self.refabf.channelList != abf.channelList:
-                raise ValueError(f"channelList does not match ({self.refabf.channelList} vs {abf.channelList}).")
+                raise ValueError(f"abfVersion does not match in {source}.")
+
+            refChannelList = self._reduceChannelList(self.refabf)
+            channelList = self._reduceChannelList(abf)
+            if refChannelList != channelList:
+                raise ValueError(f"channelList ({refChannelList} vs {channelList} does not match in {source}.")
 
     def _getOldestABF(self):
         """
@@ -419,7 +441,7 @@ class ABFConverter:
         try:
             settings, _ = self._findSettingsEntry(abf)
             return float(settings["ScaleFactors"][stimset])
-        except (TypeError, KeyError) as e:
+        except (TypeError, KeyError):
             warnings.warn(f"Could not find the scale factor for the stimset {stimset}, using 1.0 as fallback.")
             return 1.0
 
@@ -444,7 +466,7 @@ class ABFConverter:
                 warnings.warn(f"Stored clamp mode {settings['GetMode']} does not match requested "
                               f"clamp mode {clampMode} of channel {adcName}.")
                 settings = None
-        except (TypeError, KeyError) as e:
+        except (TypeError, KeyError):
             warnings.warn(f"Could not find settings for amplifier {amplifier} of channel {adcName}.")
             settings = None
 

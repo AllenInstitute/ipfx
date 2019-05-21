@@ -67,6 +67,18 @@ def extract_electrode_0(data_set, tags):
     return e0
 
 
+def extract_recording_date(data_set, tags):
+
+    try:
+        recording_date = data_set.get_recording_date()
+
+    except KeyError as e:
+        tags.append("Recording date is missing")
+        recording_date = None
+
+    return recording_date
+
+
 def extract_clamp_seal(data_set, tags, manual_values=None):
     """
 
@@ -235,6 +247,8 @@ def cell_qc_features(data_set, manual_values=None):
 
     features['electrode_0_pa'] = extract_electrode_0(data_set, tags)
 
+    features['recording_date'] = extract_recording_date(data_set, tags)
+
     features["seal_gohm"] = extract_clamp_seal(data_set, tags, manual_values)
 
     ir, sr = extract_input_and_access_resistance(data_set, tags)
@@ -267,11 +281,12 @@ def sweep_qc_features(data_set):
         tags = check_sweep_integrity(sweep, is_ramp)
         sweep_features["tags"] = tags
 
+        stim_features = current_clamp_sweep_stim_features(sweep)
+        sweep_features.update(stim_features)
+
         if not tags:
             qc_features = current_clamp_sweep_qc_features(sweep, is_ramp)
             sweep_features.update(qc_features)
-            stim_features = current_clamp_sweep_stim_features(sweep)
-            sweep_features.update(stim_features)
         else:
             logging.warning("sweep {}: {}".format(sweep_num, tags))
 
