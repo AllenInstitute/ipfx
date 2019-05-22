@@ -14,7 +14,7 @@ import h5py
 
 
 class CollectFeatureVectorParameters(ags.ArgSchema):
-    output_dir = ags.fields.OutputDir(default="/allen/programs/celltypes/workgroups/ivscc/nathang/fv_output/")
+    output_dir = ags.fields.OutputDir(default=None)
     input = ags.fields.InputFile(default=None, allow_none=True)
     project = ags.fields.String(default="T301")
     include_failed_sweeps = ags.fields.Boolean(default=False)
@@ -96,7 +96,6 @@ def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_ce
         specimen_ids = project_specimen_ids(project, passed_only=not include_failed_cells)
 
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
-
     get_data_partial = partial(data_for_specimen_id,
                                passed_only=not include_failed_sweeps,
                                ap_window_length=ap_window_length)
@@ -105,7 +104,6 @@ def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_ce
         results = pool.map(get_data_partial, specimen_ids)
     else:
         results = map(get_data_partial, specimen_ids)
-
     filtered_set = [(i, r) for i, r in zip(specimen_ids, results) if not "error" in r.keys()]
     error_set = [{"id": i, "error": d} for i, d in zip(specimen_ids, results) if "error" in d.keys()]
     if len(filtered_set) == 0:
@@ -117,7 +115,6 @@ def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_ce
 
     used_ids, results = zip(*filtered_set)
     logging.info("Finished with {:d} processed specimens".format(len(used_ids)))
-
     k_sizes = {}
     for k in results[0].keys():
         if k not in k_sizes and results[0][k] is not None:

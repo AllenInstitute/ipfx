@@ -20,7 +20,7 @@ from run_feature_vector_extraction import project_specimen_ids, categorize_iclam
 
 
 class CollectFeatureParameters(ags.ArgSchema):
-    output_file = ags.fields.OutputFile(default="/allen/programs/celltypes/workgroups/ivscc/nathang/features_T301.csv")
+    output_file = ags.fields.OutputFile(default=None)
     input = ags.fields.InputFile(default=None, allow_none=True)
     project = ags.fields.String(default="T301")
     include_failed_sweeps = ags.fields.Boolean(default=False)
