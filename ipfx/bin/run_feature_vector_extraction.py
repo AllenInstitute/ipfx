@@ -43,7 +43,7 @@ def project_specimen_ids(project, passed_only=True):
 def categorize_iclamp_sweeps(data_set, stimuli_names, passed_only=False):
     # TODO - deal with pass/fail status
 
-    iclamp_st = data_set.filtered_sweep_table(current_clamp_only=True, stimuli=stimuli_names)
+    iclamp_st = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP, stimuli=stimuli_names)
     return iclamp_st["sweep_number"].sort_values().values
 
 
