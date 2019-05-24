@@ -71,7 +71,7 @@ def data_for_specimen_id(specimen_id, passed_only, ap_window_length=0.005):
     return result
 
 
-def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_cells=False,
+def run_feature_vector_extraction(ids=None, project="T301", include_failed_sweeps=True, include_failed_cells=False,
          output_dir="", run_parallel=True, ap_window_length=0.003, **kwargs):
     if ids is not None:
         specimen_ids = ids
@@ -93,9 +93,6 @@ def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_ce
         logging.info("No specimens had results")
         return
 
-    with open(os.path.join(output_dir, "fv_errors_{:s}.json".format(project)), "w") as f:
-        json.dump(error_set, f, indent=4)
-
     used_ids, results = zip(*filtered_set)
     logging.info("Finished with {:d} processed specimens".format(len(used_ids)))
     k_sizes = {}
@@ -110,15 +107,21 @@ def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_ce
             print k, np.array(used_ids)[missing]
         np.save(os.path.join(output_dir, "fv_{:s}_{:s}.npy".format(k, project)), data)
 
+    with open(os.path.join(output_dir, "fv_errors_{:s}.json".format(project)), "w") as f:
+        json.dump(error_set, f, indent=4)
+
     np.save(os.path.join(output_dir, "fv_ids_{:s}.npy".format(project)), used_ids)
 
 
-if __name__ == "__main__":
+def main():
     module = ags.ArgSchemaParser(schema_type=CollectFeatureVectorParameters)
 
     if module.args["input"]: # input file should be list of IDs on each line
         with open(module.args["input"], "r") as f:
             ids = [int(line.strip("\n")) for line in f]
-        main(ids=ids, **module.args)
+        run_feature_vector_extraction(ids=ids, **module.args)
     else:
-        main(**module.args)
+        run_feature_vector_extraction(**module.args)
+
+
+if __name__ == "__main__": main()

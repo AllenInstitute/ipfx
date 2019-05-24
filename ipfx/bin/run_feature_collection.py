@@ -272,7 +272,7 @@ def lin_sqrt_fit(x, y):
     return np.array((np.sqrt(m), -c / m))
 
 
-def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_cells=False,
+def run_feature_collection(ids=None, project="T301", include_failed_sweeps=True, include_failed_cells=False,
          output_file="", run_parallel=True, **kwargs):
     if ids is not None:
         specimen_ids = ids
@@ -294,12 +294,15 @@ def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_ce
     df.set_index("specimen_id").to_csv(output_file)
 
 
-if __name__ == "__main__":
+def main():
+
     module = ags.ArgSchemaParser(schema_type=CollectFeatureParameters)
 
     if module.args["input"]: # input file should be list of IDs on each line
         with open(module.args["input"], "r") as f:
             ids = [int(line.strip("\n")) for line in f]
-        main(ids=ids, **module.args)
+        run_feature_collection(ids=ids, **module.args)
     else:
-        main(**module.args)
+        run_feature_collection(**module.args)
+
+if __name__ == "__main__": main()
