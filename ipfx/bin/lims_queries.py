@@ -3,10 +3,29 @@ import logging
 import pg8000
 
 
-def _connect(user="limsreader", host="limsdb2", database="lims2", password="limsro", port=5432):
+USER = "limsreader"
+HOST = "limsdb2"
+DATABASE = "lims2"
+PASSWORD = "limsro"
+PORT = 5432
+
+
+def _connect(user=USER, host=HOST, database=DATABASE, password=PASSWORD, port=PORT):
 
     conn = pg8000.connect(user=user, host=host, database=database, password=password, port=port)
     return conn, conn.cursor()
+
+
+def able_to_connect_to_lims():
+
+    try:
+        conn, cursor = _connect()
+        cursor.close()
+        conn.close()
+        return True
+
+    except Exception:
+        return False
 
 
 def _select(cursor, query):
@@ -15,8 +34,8 @@ def _select(cursor, query):
     return [ dict(zip(columns, c)) for c in cursor.fetchall() ]
 
 
-def query(query, user="limsreader", host="limsdb2", database="lims2", password="limsro", port=5432):
-    conn, cursor = _connect(user, host, database, password, port)
+def query(query):
+    conn, cursor = _connect()
     try:
         results = _select(cursor, query)
     finally:
