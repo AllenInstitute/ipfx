@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import scipy
 import argschema as ags
-import lims_utils
+import lims_queries as lq
 import ipfx.stim_features as stf
 import ipfx.data_set_features as dsf
 import ipfx.stimulus_protocol_analysis as spa
@@ -16,7 +16,7 @@ from functools import partial
 import os
 import json
 import h5py
-from run_feature_vector_extraction import project_specimen_ids, categorize_iclamp_sweeps
+from run_feature_vector_extraction import categorize_iclamp_sweeps
 
 
 class CollectFeatureParameters(ags.ArgSchema):
@@ -29,8 +29,8 @@ class CollectFeatureParameters(ags.ArgSchema):
 
 
 def data_for_specimen_id(specimen_id, passed_only):
-    name, roi_id, specimen_id = lims_utils.get_specimen_info_from_lims_by_id(specimen_id)
-    nwb_path = lims_utils.get_nwb_path_from_lims(roi_id)
+    name, roi_id, specimen_id = lq.get_specimen_info_from_lims_by_id(specimen_id)
+    nwb_path = lq.get_nwb_path_from_lims(roi_id)
     if len(nwb_path) == 0: # could not find an NWB file
         logging.debug("No NWB file for {:d}".format(specimen_id))
         return {"error": {"type": "no_nwb", "details": ""}}
@@ -39,7 +39,7 @@ def data_for_specimen_id(specimen_id, passed_only):
     h5_path = None
     with h5py.File(nwb_path, "r") as h5:
         if "general/labnotebook" not in h5:
-            h5_path = lims_utils.get_igorh5_path_from_lims(roi_id)
+            h5_path = lq.get_igorh5_path_from_lims(roi_id)
 
     try:
         data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
@@ -277,7 +277,7 @@ def main(ids=None, project="T301", include_failed_sweeps=True, include_failed_ce
     if ids is not None:
         specimen_ids = ids
     else:
-        specimen_ids = project_specimen_ids(project, passed_only=not include_failed_cells)
+        specimen_ids = lq.project_specimen_ids(project, passed_only=not include_failed_cells)
 
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
 
