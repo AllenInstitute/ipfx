@@ -178,7 +178,6 @@ def project_specimen_ids(project, passed_only=True):
 
     if passed_only:
         SQL += "AND err.workflow_state = 'manual_passed'"
-    print SQL
 
     results = query(SQL)
     sp_ids = [d["id"] for d in results]
