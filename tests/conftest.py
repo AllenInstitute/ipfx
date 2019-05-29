@@ -5,6 +5,7 @@ import io
 import os
 import sys
 from .helpers_for_tests import download_file
+import ipfx.bin.lims_queries as lq
 
 
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
@@ -55,3 +56,21 @@ collect_ignore = []
 if sys.version_info[0] < 3:
     collect_ignore.append("test_x_nwb.py")
     collect_ignore.append("test_x_nwb_helper.py")
+
+
+def pytest_collection_modifyitems(config, items):
+    """
+    A pytest magic function. This function is called post-collection and gives us a hook for modifying the
+    collected items.
+
+    """
+
+    skip_requires_lims_test = pytest.mark.skipif(
+        not lq.able_to_connect_to_lims(),
+        reason='This test requires connection to lims'
+    )
+
+    for item in items:
+        if 'requires_lims' in item.keywords:
+            item.add_marker(skip_requires_lims_test)
+

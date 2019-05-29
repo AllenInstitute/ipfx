@@ -4,15 +4,12 @@ from ipfx.bin.run_feature_vector_extraction import run_feature_vector_extraction
 from ipfx.bin.run_feature_collection import run_feature_collection
 import pandas as pd
 import pytest
-import ipfx.bin.lims_queries as lq
 
 
 TEST_OUTPUT_DIR = "/allen/aibs/informatics/module_test_data/ipfx/test_feature_vector"
 
-if not lq.able_to_connect_to_lims():
-    pytest.skip("cannot connect to LIMS", allow_module_level=True)
 
-
+@pytest.mark.requires_lims
 @pytest.mark.regression
 def test_feature_vector_extraction(tmpdir_factory):
 
@@ -37,6 +34,7 @@ def test_feature_vector_extraction(tmpdir_factory):
         assert np.array_equal(test_data, temp_data)
 
 
+@pytest.mark.requires_lims
 @pytest.mark.regression
 def test_feature_collection(tmpdir_factory):
 
