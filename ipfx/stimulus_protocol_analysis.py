@@ -100,8 +100,8 @@ class RampAnalysis(StimulusProtocolAnalysis):
 
     def as_dict(self, features, extra_params=None):
         out = features.copy()
-        out.pop("sweeps")
-        out.pop("spikes_set")
+        del out["sweeps"]
+        del out["spikes_set"]
 
         for k in [ "spiking_sweeps" ]:
             out[k] = self._sweeps_to_dict(out[k], extra_params)
@@ -213,7 +213,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
     def as_dict(self, features, extra_params=None):
         out = features.copy()
-        out.pop("spikes_set")
+        del out["spikes_set"]
 
         for k in [ "sweeps", "subthreshold_membrane_property_sweeps", "subthreshold_sweeps", "spiking_sweeps" ]:
             out[k] = self._sweeps_to_dict(out[k], extra_params)
@@ -288,11 +288,10 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
 
         return features
 
-
     def as_dict(self, features, extra_params=None):
         out = features.copy()
-        out.pop("sweeps")
-        out.pop("spikes_set")
+        del out["sweeps"]
+        del out["spikes_set"]
         for k in [ "common_amp_sweeps" ]:
             out[k] = self._sweeps_to_dict(out[k], extra_params)
         return out
