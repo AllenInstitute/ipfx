@@ -65,11 +65,10 @@ class StimulusProtocolAnalysis(object):
         output = {}
         for mf in features_list:
             mfd = [ spikes[mf].values[0] for spikes in spikes_set if len(spikes) > 0 ]
-            output[mf] = np.mean(mfd)
+            output[mf] = np.nanmean(mfd)
         return output
 
     def analyze_basic_features(self, sweep_set, extra_sweep_features=None):
-
         self._spikes_set = []
         for sweep in sweep_set.sweeps:
             self._spikes_set.append(self.spx.process(sweep.t, sweep.v, sweep.i))
@@ -82,7 +81,8 @@ class StimulusProtocolAnalysis(object):
         self._sweep_features = None
 
     def analyze(self, sweep_set, extra_sweep_features=None):
-        return {}
+        self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_features)
+        return {"spikes_set": self._spikes_set, "sweeps": self._sweep_features}
 
     def as_dict(self, features, extra_params=None):
         return {}
@@ -90,9 +90,7 @@ class StimulusProtocolAnalysis(object):
 
 class RampAnalysis(StimulusProtocolAnalysis):
     def analyze(self, sweep_set):
-        self.analyze_basic_features(sweep_set)
-
-        features = {}
+        features = super(RampAnalysis, self).analyze(sweep_set)
 
         spiking_sweep_features = self.suprathreshold_sweep_features()
         features["spiking_sweeps"] = spiking_sweep_features
@@ -102,6 +100,9 @@ class RampAnalysis(StimulusProtocolAnalysis):
 
     def as_dict(self, features, extra_params=None):
         out = features.copy()
+        out.pop("sweeps")
+        out.pop("spikes_set")
+
         for k in [ "spiking_sweeps" ]:
             out[k] = self._sweeps_to_dict(out[k], extra_params)
 
@@ -115,20 +116,20 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
     HERO_MIN_AMP_OFFSET = 39.0
     HERO_MAX_AMP_OFFSET = 61.0
 
-    def __init__(self, spx, sptx, subthresh_min_amp, tau_frac=0.1):
+    def __init__(self, spx, sptx, subthresh_min_amp, tau_frac=0.1,
+                 require_subthreshold=True, require_suprathreshold=True):
         super(LongSquareAnalysis, self).__init__(spx, sptx)
         self.subthresh_min_amp = subthresh_min_amp
         self.sptx.stim_amp_fn = stf._step_stim_amp
         self.tau_frac = tau_frac
+        self.require_subthreshold = require_subthreshold
+        self.require_suprathreshold = require_suprathreshold
 
     def analyze(self, sweep_set):
 
         extra_sweep_feature_names = ['peak_deflect','stim_amp','v_baseline','sag']
-        self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_feature_names)
+        features = super(LongSquareAnalysis, self).analyze(sweep_set, extra_sweep_features=extra_sweep_feature_names)
 
-        features = {}
-
-        features["sweeps"] = self.all_sweep_features()
         features["v_baseline"] = np.nanmean(self._sweep_features["v_baseline"].values)
 
         spiking_features = self.analyze_suprathreshold(sweep_set)
@@ -144,7 +145,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         spiking_sweep_features = self.suprathreshold_sweep_features()
 
         if len(spiking_sweep_features) == 0:
-            raise er.FeatureError("No spiking long square sweeps, cannot compute cell features.")
+            if self.require_suprathreshold:
+                raise er.FeatureError("No spiking long square sweeps, cannot compute cell features.")
+            else:
+                logging.info("No spiking long square sweeps: cannot compute related cell features.")
+                return features
 
         rheobase_sweep_features = self.find_rheobase_sweep(spiking_sweep_features)
 
@@ -170,7 +175,11 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         subthreshold_sweep_features = self.subthreshold_sweep_features()
 
         if len(subthreshold_sweep_features) == 0:
-            raise er.FeatureError("No subthreshold long square sweeps, cannot evaluate cell features.")
+            if self.require_subthreshold:
+                raise er.FeatureError("No subthreshold long square sweeps, cannot evaluate cell features.")
+            else:
+                logging.info("No subthreshold long square sweeps: cannot compute related cell features.")
+                return features
 
         sags = subthreshold_sweep_features["sag"]
         sag_eval_levels = np.array([ v[0] for v in subthreshold_sweep_features["peak_deflect"] ])
@@ -204,6 +213,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
     def as_dict(self, features, extra_params=None):
         out = features.copy()
+        out.pop("spikes_set")
 
         for k in [ "sweeps", "subthreshold_membrane_property_sweeps", "subthreshold_sweeps", "spiking_sweeps" ]:
             out[k] = self._sweeps_to_dict(out[k], extra_params)
@@ -234,7 +244,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
         if not sweep_features_range.empty:
             hero_features = sweep_features_range.iloc[0]
-            logging.info("Found hero sweep with amp %f in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_features["stim_amp"], hero_min, hero_max,rheo_amp))
+            logging.debug("Found hero sweep with amp %f in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_features["stim_amp"], hero_min, hero_max,rheo_amp))
         else:
             logging.debug("Cannot find hero sweep in the range of stim amplitudes: [%f,%f] pA, rheobase amp: %f" % (hero_min, hero_max,rheo_amp))
             index_hero = abs(hero_min - spiking_features["stim_amp"]).idxmin()
@@ -254,9 +264,7 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
 
     def analyze(self, sweep_set):
         extra_sweep_features = [ "stim_amp" ]
-        self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_features)
-
-        features = {}
+        features = super(ShortSquareAnalysis, self).analyze(sweep_set, extra_sweep_features=extra_sweep_features)
 
         spiking_sweep_features = self.suprathreshold_sweep_features()
 
@@ -283,6 +291,8 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
 
     def as_dict(self, features, extra_params=None):
         out = features.copy()
+        out.pop("sweeps")
+        out.pop("spikes_set")
         for k in [ "common_amp_sweeps" ]:
             out[k] = self._sweeps_to_dict(out[k], extra_params)
         return out

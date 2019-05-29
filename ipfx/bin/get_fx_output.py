@@ -1,4 +1,4 @@
-import allensdk.internal.core.lims_utilities as lu
+import lims_queries as lq
 import glob
 import os
 import pandas as pd
@@ -29,7 +29,7 @@ def get_fx_output_json(specimen_id):
     where sp.id = %d
     """ % specimen_id
 
-    res = lu.query(query)
+    res = lq.query(query)
     if res:
         err_dir = res[0]["storage_directory"]
 
