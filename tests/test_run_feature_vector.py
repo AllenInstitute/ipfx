@@ -4,6 +4,7 @@ from ipfx.bin.run_feature_vector_extraction import run_feature_vector_extraction
 from ipfx.bin.run_feature_collection import run_feature_collection
 import pandas as pd
 import pytest
+from dictdiffer import diff
 
 
 TEST_OUTPUT_DIR = "/allen/aibs/informatics/module_test_data/ipfx/test_feature_vector"
@@ -47,9 +48,11 @@ def test_feature_collection(tmpdir_factory):
     run_feature_collection(ids=[500844783, 509604672],
                            output_file=temp_output_file)
 
-    test_table = pd.read_csv(test_output_file, sep=",")
-    temp_table = pd.read_csv(temp_output_file, sep=",")
+    test_table = pd.read_csv(test_output_file, sep=",").to_dict()
+    temp_table = pd.read_csv(temp_output_file, sep=",").to_dict()
 
-    assert test_table.equals(temp_table)
+    output_diff = list(diff(test_table, temp_table, tolerance=0.001))
+
+    assert len(output_diff) == 0
 
 
