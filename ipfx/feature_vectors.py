@@ -526,9 +526,7 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
     sweep_table = features["spiking_sweeps"]
     mask_supra = sweep_table["stim_amp"] >= features["rheobase_i"]
     sweep_indexes = consolidated_long_square_indexes(sweep_table.loc[mask_supra, :])
-    print "sweep_indexes", sweep_indexes
     amps = np.rint(sweep_table.loc[sweep_indexes, "stim_amp"].values - features["rheobase_i"])
-    print "amps", amps
     spike_data = features["spikes_set"]
 
     # PSTH Calculation
