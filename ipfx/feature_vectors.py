@@ -97,19 +97,51 @@ def extract_feature_vectors(data_set,
     return all_features
 
 
-def extract_multipatch_feature_vectors(lsq_sweeps, lsq_start, lsq_end,
+def extract_multipatch_feature_vectors(lsq_supra_sweeps, lsq_supra_start, lsq_supra_end,
+                                       lsq_sub_sweeps, lsq_sub_start, lsq_sub_end,
                                        target_sampling_rate=50000, ap_window_length=0.003):
-    lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(lsq_sweeps, start=lsq_start, end=lsq_end)
-    lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=-100)
-    lsq_features = lsq_an.analyze(lsq_sweeps)
+    lsq_supra_spx, lsq_supra_spfx = dsf.extractors_for_sweeps(lsq_supra_sweeps, start=lsq_supra_start, end=lsq_supra_end)
+    lsq_supra_an = spa.LongSquareAnalysis(lsq_supra_spx, lsq_supra_spfx, subthresh_min_amp=-100., require_subthreshold=False)
+    lsq_supra_features = lsq_supra_an.analyze(lsq_supra_sweeps)
 
-    all_features = feature_vectors(lsq_sweeps, None, None,
-                                   lsq_features, None, None,
-                                   lsq_start, lsq_end,
-                                   lsq_spx,
-                                   target_sampling_rate=target_sampling_rate,
-                                   ap_window_length=ap_window_length)
+    lsq_sub_spx, lsq_sub_spfx = dsf.extractors_for_sweeps(lsq_sub_sweeps, start=lsq_sub_start, end=lsq_sub_end)
+    lsq_sub_an = spa.LongSquareAnalysis(lsq_sub_spx, lsq_sub_spfx, subthresh_min_amp=-100., require_suprathreshold=False)
+    lsq_sub_features = lsq_sub_an.analyze(lsq_sub_sweeps)
+
+    all_features = feature_vectors_multipatch(
+        lsq_supra_sweeps, lsq_supra_features,
+        lsq_supra_start, lsq_supra_end,
+        lsq_sub_sweeps, lsq_sub_features,
+        lsq_sub_start, lsq_sub_end,
+        lsq_supra_spx,
+        target_sampling_rate=target_sampling_rate,
+        ap_window_length=ap_window_length
+    )
     return all_features
+
+
+def feature_vectors_multipatch(lsq_supra_sweeps, lsq_supra_features,
+                               lsq_supra_start, lsq_supra_end,
+                               lsq_sub_sweeps, lsq_sub_features,
+                               lsq_sub_start, lsq_sub_end,
+                               lsq_spike_extractor,
+                               amp_tolerance=4.,
+                               feature_width=20, rate_width=50,
+                               target_sampling_rate=50000, ap_window_length=0.003):
+    """Feature vectors from stimulus set features"""
+
+    result = {}
+    result["step_subthresh"] = step_subthreshold(lsq_sub_sweeps, lsq_sub_features, lsq_sub_start, lsq_sub_end)
+    result["subthresh_norm"] = subthresh_norm(lsq_sub_sweeps, lsq_sub_features, lsq_sub_start, lsq_sub_end)
+    result["isi_shape"] = isi_shape(lsq_supra_sweeps, lsq_supra_features, duration=lsq_supra_end - lsq_supra_start)
+    result["first_ap"] = first_ap_features(lsq_supra_sweeps, None, None,
+                                           lsq_supra_features, None, None,
+                                           target_sampling_rate=target_sampling_rate,
+                                           window_length=ap_window_length)
+    result["spiking"] = spiking_features(lsq_supra_sweeps, lsq_supra_features, lsq_spike_extractor,
+                                         0., 1.,
+                                         feature_width, rate_width, amp_tolerance=amp_tolerance)
+    return result
 
 
 def feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
@@ -259,7 +291,7 @@ def subthresh_norm(sweep_set, features, start, end,
     return subsampled_v
 
 
-def isi_shape(sweep_set, features, n_points=100, min_spike=5):
+def isi_shape(sweep_set, features, duration=1., n_points=100, min_spike=5):
     """ Average interspike voltage trajectory with normalized duration, aligned to threshold
 
         Parameters
@@ -274,7 +306,7 @@ def isi_shape(sweep_set, features, n_points=100, min_spike=5):
         isi_norm : averaged, threshold-aligned, and duration-normalized voltage trace
     """
     sweep_table = features["sweeps"]
-    mask_supra = sweep_table["stim_amp"] >= features["rheobase_i"]
+    mask_supra = sweep_table["stim_amp"].values >= features["rheobase_i"]
     amps = np.rint(sweep_table.loc[mask_supra, "stim_amp"].values - features["rheobase_i"])
 
     # Pick out the sweep to get the ISI shape
@@ -285,7 +317,7 @@ def isi_shape(sweep_set, features, n_points=100, min_spike=5):
     # (3) if not (1) or (2), lowest amplitude sweep with 1 spike (use 100 ms after spike or end of trace)
 
     only_one_spike = False
-    n_spikes = sweep_table.loc[mask_supra, "avg_rate"].values
+    n_spikes = sweep_table.loc[mask_supra, "avg_rate"].values * duration
 
     mask_spikes = n_spikes >= min_spike
     if np.any(mask_spikes):
@@ -298,7 +330,8 @@ def isi_shape(sweep_set, features, n_points=100, min_spike=5):
         isi_index = np.argmin(amps)
 
     isi_sweep = np.array(sweep_set.sweeps)[mask_supra][isi_index]
-    isi_spikes = np.array(features["spikes_set"])[mask_supra][isi_index]
+    spikes_set_index = np.arange(len(sweep_set.sweeps))[mask_supra][isi_index]
+    isi_spikes = features["spikes_set"][spikes_set_index]
     if only_one_spike:
         threshold_v = isi_spikes["threshold_v"][0]
         fast_trough_index = isi_spikes["fast_trough_index"].astype(int)[0]
@@ -478,6 +511,7 @@ def first_ap_waveform(sweep, spikes, length_in_points):
 def spiking_features(sweep_set, features, spike_extractor, start, end,
                      feature_width=20, rate_width=50,
                      amp_interval=20, max_above_rheo=100,
+                     amp_tolerance=0.,
                      spike_feature_list=[
                         "upstroke_downstroke_ratio",
                         "peak_v",
@@ -492,17 +526,21 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
     sweep_table = features["spiking_sweeps"]
     mask_supra = sweep_table["stim_amp"] >= features["rheobase_i"]
     sweep_indexes = consolidated_long_square_indexes(sweep_table.loc[mask_supra, :])
+    print "sweep_indexes", sweep_indexes
     amps = np.rint(sweep_table.loc[sweep_indexes, "stim_amp"].values - features["rheobase_i"])
-
-    spike_data = np.array(features["spikes_set"])
+    print "amps", amps
+    spike_data = features["spikes_set"]
 
     # PSTH Calculation
     rate_data = {}
     for amp, swp_ind in zip(amps, sweep_indexes):
-        if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):
+        if (amp > max_above_rheo) or (amp < 0):
+            continue
+        amp_level = int(np.rint(amp / float(amp_interval)))
+
+        if (np.abs(amp - amp_level * amp_interval) > amp_tolerance):
             continue
 
-        amp_level = int(np.rint(amp / float(amp_interval)))
         thresh_t = spike_data[swp_ind]["threshold_t"]
         spike_count = np.ones_like(thresh_t)
         bin_number = int(1. / 0.001) / rate_width + 1
@@ -522,10 +560,12 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
     # Instantaneous frequency
     feature_data = {}
     for amp, swp_ind in zip(amps, sweep_indexes):
-        if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):
+        if (amp > max_above_rheo) or (amp < 0):
             continue
-
         amp_level = int(np.rint(amp / float(amp_interval)))
+
+        if (np.abs(amp - amp_level * amp_interval) > amp_tolerance):
+            continue
 
         swp = sweep_set.sweeps[swp_ind]
         start_index = tsu.find_time_index(swp.t, start)
@@ -555,9 +595,12 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
     for feature in spike_feature_list:
         feature_data = {}
         for amp, swp_ind in zip(amps, sweep_indexes):
-            if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):
+            if (amp > max_above_rheo) or (amp < 0):
                 continue
             amp_level = int(np.rint(amp / float(amp_interval)))
+
+            if (np.abs(amp - amp_level * amp_interval) > amp_tolerance):
+                continue
 
             thresh_t = spike_data[swp_ind]["threshold_t"].values
             if feature not in spike_data[swp_ind].columns:
