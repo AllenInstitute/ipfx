@@ -24,7 +24,7 @@ def get_scalar_value(dataset_from_nwb):
     """
 
     if isinstance(dataset_from_nwb, np.ndarray):
-        return np.asscalar(dataset_from_nwb)
+        return dataset_from_nwb.item()
 
     return dataset_from_nwb
 
