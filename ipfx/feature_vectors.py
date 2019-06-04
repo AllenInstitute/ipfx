@@ -293,9 +293,9 @@ def subthresh_norm(sweep_set, features, start, end,
 
 
 def subthresh_depol_norm(sweep_set, features, start, end,
-    extend_duration=0.2, subsample_interval=0.01):
+    extend_duration=0.2, subsample_interval=0.01, steady_state_interval=0.1):
     """ Largest positive-going subthreshold step response that does not evoke spikes,
-        normalized to baseline and peak deflection
+        normalized to baseline and steady-state at end of step
 
         Parameters
         ----------
@@ -313,16 +313,32 @@ def subthresh_depol_norm(sweep_set, features, start, end,
     sweep_table = features["subthreshold_sweeps"]
     amps = np.rint(sweep_table["stim_amp"].values)
     if np.sum(amps > 0) == 0:
-        print("No subthreshold depolarizing sweeps found")
-        return None
+        logging.debug("No subthreshold depolarizing sweeps found - returning all-zeros response")
+        logging.debug(features["sweeps"])
+
+        # create all-zeros response of appropriate length
+        swp = sweep_set.sweeps[0]
+        delta_t = swp.t[1] - swp.t[0]
+        start_index = tsu.find_time_index(swp.t, start - extend_duration)
+        delta_t = swp.t[1] - swp.t[0]
+        subsample_width = int(np.round(old_div(subsample_interval, delta_t)))
+        end_index = tsu.find_time_index(swp.t, end + extend_duration)
+        subsampled_v = subsample_average(swp.v[start_index:end_index], subsample_width)
+        subsampled_v = np.zeros_like(subsampled_v)
+        return subsampled_v
 
     subthresh_sweep_ind = sweep_table.index.tolist()
     subthresh_sweeps = np.array(sweep_set.sweeps)[subthresh_sweep_ind]
     max_sweep_ind = np.argmax(amps)
-    base = sweep_table.at[sweep_table.index[max_sweep_ind], "v_baseline"]
-    deflect_v, deflect_ind = sweep_table.at[sweep_table.index[max_sweep_ind], "peak_deflect"]
     swp = subthresh_sweeps[max_sweep_ind]
-    delta = deflect_v - base
+
+    base = sweep_table.at[sweep_table.index[max_sweep_ind], "v_baseline"]
+
+    interval_start_index = tsu.find_time_index(swp.t, end - steady_state_interval)
+    interval_end_index = tsu.find_time_index(swp.t, end)
+    steady_state_v = swp.v[interval_start_index:interval_end_index].mean()
+
+    delta = steady_state_v - base
 
     start_index = tsu.find_time_index(swp.t, start - extend_duration)
     delta_t = swp.t[1] - swp.t[0]
