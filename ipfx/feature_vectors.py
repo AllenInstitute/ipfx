@@ -310,7 +310,6 @@ def subthresh_depol_norm(sweep_set, features, start, end,
         -------
         subsampled_v : subsampled, normalized voltage trace
     """
-    print("in subthresh_depol_norm")
     sweep_table = features["subthreshold_sweeps"]
     amps = np.rint(sweep_table["stim_amp"].values)
     if np.sum(amps > 0) == 0:
