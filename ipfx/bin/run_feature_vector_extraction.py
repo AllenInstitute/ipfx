@@ -19,20 +19,67 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
     output_dir = ags.fields.OutputDir(default=None)
     input = ags.fields.InputFile(default=None, allow_none=True)
     project = ags.fields.String(default="T301")
-    include_failed_sweeps = ags.fields.Boolean(default=False)
+    sweep_qc_option = ags.fields.String(default=None, allow_none=True)
     include_failed_cells = ags.fields.Boolean(default=False)
     run_parallel = ags.fields.Boolean(default=True)
     ap_window_length = ags.fields.Float(description="Duration after threshold for AP shape (s)", default=0.003)
 
 
-def categorize_iclamp_sweeps(data_set, stimuli_names, passed_only=False):
+def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, specimen_id=None):
     # TODO - deal with pass/fail status
 
+    passed_sql = """
+    select swp.sweep_number from ephys_sweeps swp
+    where swp.specimen_id = %s
+    and swp.sweep_number = any(%s)
+    and swp.workflow_state like '%%passed'
+    """
+
     iclamp_st = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP, stimuli=stimuli_names)
-    return iclamp_st["sweep_number"].sort_values().values
+
+    if sweep_qc_option is None:
+        return iclamp_st["sweep_number"].sort_values().values
+    elif sweep_qc_option == "passed_only":
+        sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
+        results = lq.query(passed_sql, (specimen_id, sweep_num_list))
+        passed_sweep_nums = np.array([r[0] for r in results])
+        return np.sort(passed_sweep_nums)
+    elif sweep_qc_option == "passed_except_delta_vm":
+        # get straight-up passed sweeps
+        sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
+        results = lq.query(passed_sql, (specimen_id, sweep_num_list))
+        passed_sweep_nums = np.array([r[0] for r in results])
+
+        # also get sweeps that only fail due to delta Vm
+        failed_sweep_list = list(set(sweep_num_list) - set(passed_sweep_nums))
+        if len(failed_sweep_list) == 0:
+            return np.sort(passed_sweep_nums)
+        passed_except_delta_vm_sql = """
+            select swp.sweep_number, tag.name
+            from ephys_sweeps swp
+            join ephys_sweep_tags_ephys_sweeps estes on estes.ephys_sweep_id = swp.id
+            join ephys_sweep_tags tag on tag.id = estes.ephys_sweep_tag_id
+            where swp.specimen_id = %s
+            and swp.sweep_number = any(%s)
+        """
+        results = lq.query(passed_except_delta_vm_sql, (specimen_id, failed_sweep_list))
+        df = pd.DataFrame(results, columns=["sweep_number", "tag"])
+
+        # not all cells have tagged QC status - if there are no tags assume the
+        # fail call is correct and exclude those sweeps
+        tagged_mask = np.array([sn in df["sweep_number"].tolist() for sn in failed_sweep_list])
+
+        # otherwise, check for having an error tag that isn't 'Vm delta'
+        # and exclude those sweeps
+        has_non_delta_tags = np.array([np.any((df["sweep_number"].values == sn) &
+            (df["tag"].values != "Vm delta")) for sn in failed_sweep_list])
+
+        also_passing_nums = np.array(failed_sweep_list)[tagged_mask & ~has_non_delta_tags]
+
+        return np.sort(np.hstack([passed_sweep_nums, also_passing_nums]))
 
 
-def data_for_specimen_id(specimen_id, passed_only, ap_window_length=0.005):
+def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
     name, roi_id, specimen_id = lq.get_specimen_info_from_lims_by_id(specimen_id)
     nwb_path = lq.get_nwb_path_from_lims(roi_id)
 
@@ -55,9 +102,15 @@ def data_for_specimen_id(specimen_id, passed_only, ap_window_length=0.005):
         return {"error": {"type": "dataset", "details": traceback.format_exc(limit=1)}}
 
     try:
-        lsq_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.long_square_names)
-        ssq_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.short_square_names)
-        ramp_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.ramp_names)
+        lsq_sweep_numbers = categorize_iclamp_sweeps(data_set,
+            ontology.long_square_names, sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id)
+        ssq_sweep_numbers = categorize_iclamp_sweeps(data_set,
+            ontology.short_square_names, sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id)
+        ramp_sweep_numbers = categorize_iclamp_sweeps(data_set,
+            ontology.ramp_names, sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id)
     except Exception as detail:
         logging.warn("Exception when processing specimen {:d}".format(specimen_id))
         logging.warn(detail)
@@ -74,7 +127,7 @@ def data_for_specimen_id(specimen_id, passed_only, ap_window_length=0.005):
     return result
 
 
-def run_feature_vector_extraction(ids=None, project="T301", include_failed_sweeps=True, include_failed_cells=False,
+def run_feature_vector_extraction(ids=None, project="T301", sweep_qc_option=None, include_failed_cells=False,
          output_dir="", run_parallel=True, ap_window_length=0.003, **kwargs):
     if ids is not None:
         specimen_ids = ids
@@ -83,7 +136,7 @@ def run_feature_vector_extraction(ids=None, project="T301", include_failed_sweep
 
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
     get_data_partial = partial(data_for_specimen_id,
-                               passed_only=not include_failed_sweeps,
+                               sweep_qc_option=sweep_qc_option,
                                ap_window_length=ap_window_length)
     if run_parallel:
         pool = Pool()
