@@ -28,16 +28,20 @@ def able_to_connect_to_lims():
         return False
 
 
-def _select(cursor, query):
-    cursor.execute(query)
+def _select(cursor, query, parameters=None):
+    if parameters is None:
+        cursor.execute(query)
+    else:
+        pg8000.paramstyle = 'numeric'
+        cursor.execute(query, parameters)
     columns = [ to_str(d[0]) for d in cursor.description ]
     return [ dict(zip(columns, c)) for c in cursor.fetchall() ]
 
 
-def query(query):
+def query(query, parameters=None):
     conn, cursor = _connect()
     try:
-        results = _select(cursor, query)
+        results = _select(cursor, query, parameters=parameters)
     finally:
         cursor.close()
         conn.close()
@@ -118,8 +122,8 @@ def get_stimuli_description():
 def get_specimen_info_from_lims_by_id(specimen_id):
 
     result = query("""
-                  SELECT s.name, s.ephys_roi_result_id, s.id 
-                  FROM specimens s 
+                  SELECT s.name, s.ephys_roi_result_id, s.id
+                  FROM specimens s
                   WHERE s.id = %s
                   """ % specimen_id)[0]
 
