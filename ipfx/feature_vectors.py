@@ -311,7 +311,12 @@ def subthresh_depol_norm(sweep_set, features, start, end,
         -------
         subsampled_v : subsampled, normalized voltage trace
     """
-    sweep_table = features["subthreshold_sweeps"]
+    if "subthreshold_sweeps" in features.keys():
+        sweep_table = features["subthreshold_sweeps"]
+    else:
+        all_sweeps_table = features["sweeps"]
+        sweep_table = all_sweeps_table.loc[all_sweeps_table["avg_rate"] == 0, :]
+
     amps = np.rint(sweep_table["stim_amp"].values)
     if np.sum(amps > 0) == 0:
         logging.debug("No subthreshold depolarizing sweeps found - returning all-zeros response")
