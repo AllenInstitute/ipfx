@@ -133,6 +133,7 @@ def feature_vectors_multipatch(lsq_supra_sweeps, lsq_supra_features,
     result = {}
     result["step_subthresh"] = step_subthreshold(lsq_sub_sweeps, lsq_sub_features, lsq_sub_start, lsq_sub_end)
     result["subthresh_norm"] = subthresh_norm(lsq_sub_sweeps, lsq_sub_features, lsq_sub_start, lsq_sub_end)
+    result["subthresh_depol_norm"] = subthresh_depol_norm(lsq_supra_sweeps, lsq_supra_features, lsq_supra_start, lsq_supra_end)
     result["isi_shape"] = isi_shape(lsq_supra_sweeps, lsq_supra_features, duration=lsq_supra_end - lsq_supra_start)
     result["first_ap"] = first_ap_features(lsq_supra_sweeps, None, None,
                                            lsq_supra_features, None, None,
@@ -314,7 +315,7 @@ def subthresh_depol_norm(sweep_set, features, start, end,
     amps = np.rint(sweep_table["stim_amp"].values)
     if np.sum(amps > 0) == 0:
         logging.debug("No subthreshold depolarizing sweeps found - returning all-zeros response")
-        logging.debug(features["sweeps"])
+        logging.debug(features["sweeps"][["stim_amp", "avg_rate"]])
 
         # create all-zeros response of appropriate length
         swp = sweep_set.sweeps[0]
