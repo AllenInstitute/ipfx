@@ -16,7 +16,7 @@ test_specimens = pd.read_csv(TEST_SPECIMENS_FILE, sep=" ")
 test_specimens_params = [tuple(sp) for sp in test_specimens.values]
 
 
-@pytest.mark.regression
+@pytest.mark.slow
 @pytest.mark.parametrize('input_json,output_json', test_specimens_params)
 def test_pipeline_output(input_json, output_json, tmpdir_factory):
     """
