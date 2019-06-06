@@ -1,3 +1,4 @@
+from builtins import str
 import os
 import numpy as np
 from ipfx.bin.run_feature_vector_extraction import run_feature_vector_extraction
