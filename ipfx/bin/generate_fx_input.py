@@ -1,11 +1,12 @@
+from __future__ import absolute_import
 import os
 import allensdk.core.json_utilities as ju
 import ipfx.sweep_props as sp
-from run_sweep_extraction import run_sweep_extraction
-from generate_qc_input import generate_qc_input
-from generate_se_input import generate_se_input, parse_args
-from run_qc import run_qc
-import lims_queries as lq
+from .run_sweep_extraction import run_sweep_extraction
+from .generate_qc_input import generate_qc_input
+from .generate_se_input import generate_se_input, parse_args
+from .run_qc import run_qc
+from . import lims_queries as lq
 import ipfx.logging_utils as lu
 
 

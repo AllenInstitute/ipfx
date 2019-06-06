@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # Allen Institute Software License - This software license is the 2-clause BSD
 # license plus a third clause that prohibits redistribution for commercial
 # purposes without further permission.
@@ -35,14 +36,14 @@
 #
 import numpy as np
 import logging
-from feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
+from .feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
 from . import ephys_data_set as eds
 from . import spike_features as spkf
 from . import stimulus_protocol_analysis as spa
 from . import stim_features as stf
 from . import feature_record as fr
-import error as er
-import logging_utils as lu
+from . import error as er
+from . import logging_utils as lu
 
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 

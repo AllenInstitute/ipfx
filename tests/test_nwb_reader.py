@@ -1,9 +1,11 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import os
 import pytest
 import h5py
 import numpy as np
 from ipfx.nwb_reader import create_nwb_reader, NwbMiesReader, NwbPipelineReader, NwbXReader
-from helpers_for_tests import compare_dicts
+from .helpers_for_tests import compare_dicts
 from allensdk.api.queries.cell_types_api import CellTypesApi
 
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
@@ -264,7 +266,7 @@ def test_sweep_map_sweep_numbers(NWB_file):
 
     sweep_map_table = reader.sweep_map_table
     sweep_numbers = sweep_map_table["sweep_number"].values
-    print sweep_numbers_ref
+    print(sweep_numbers_ref)
 
     assert (sweep_numbers == sweep_numbers_ref).all()
 

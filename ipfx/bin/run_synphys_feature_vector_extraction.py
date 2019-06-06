@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from ipfx.ephys_data_set import Sweep, SweepSet
 import ipfx.feature_vectors as fv
@@ -113,7 +114,7 @@ def main(nwb_file, output_dir, project, **kwargs):
         if data.shape[0] < len(used_ids):
             logging.warn("Missing data!")
             missing = np.array([k not in r for r in results])
-            print k, np.array(used_ids)[missing]
+            print(k, np.array(used_ids)[missing])
         np.save(os.path.join(output_dir, "fv_{:s}_{:s}.npy".format(k, project)), data)
 
     np.save(os.path.join(output_dir, "fv_ids_{:s}.npy".format(project)), used_ids)

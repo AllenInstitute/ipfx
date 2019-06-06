@@ -1,3 +1,4 @@
+from __future__ import print_function
 import pytest
 import pandas as pd
 import os
@@ -33,13 +34,14 @@ def test_pipeline_output(input_json, output_json, tmpdir_factory):
     -------
 
     """
-    print(input_json, output_json)
+    print((input_json, output_json))
 
     pipeline_input = ju.read(input_json)
     test_dir = str(tmpdir_factory.mktemp("test_specimens"))
 
     pipeline_input["output_nwb_file"] = os.path.join(test_dir, "output.nwb")  # Modify path for the test output
-    pipeline_input["qc_figs_dir"] = os.path.join(test_dir, "qc_figs")
+#    pipeline_input["qc_figs_dir"] = os.path.join(test_dir, "qc_figs")
+    pipeline_input["qc_figs_dir"] = None
 
     test_pipeline_output = run_pipeline(pipeline_input["input_nwb_file"],
                                         pipeline_input.get("input_h5_file", None),

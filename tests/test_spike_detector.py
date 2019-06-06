@@ -1,3 +1,4 @@
+from __future__ import print_function
 import pytest
 import ipfx.spike_detector as spkd
 import numpy as np
@@ -98,12 +99,12 @@ def test_find_clipped_spikes(spike_test_pair):
     v = data[:, 1]
 
     clipped = spkd.find_clipped_spikes(v, t, spike_indexes, peak_indexes, end_index=3550, tol=1)
-    print(clipped, np.array([False, True]))
-    print(clipped.dtype, np.array([False, True]).dtype)
+    print((clipped, np.array([False, True])))
+    print((clipped.dtype, np.array([False, True]).dtype))
     assert np.array_equal(clipped, [False, True])  # last spike is clipped
 
     clipped = spkd.find_clipped_spikes(v, t, spike_indexes, peak_indexes, end_index=3600, tol=1)
-    print(clipped, np.array([False, False]))
+    print((clipped, np.array([False, False])))
     assert np.array_equal(clipped, [False, False])  # last spike is Ok
 
     spike_indexes = np.array([])

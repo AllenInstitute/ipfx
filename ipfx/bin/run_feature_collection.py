@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 import numpy as np
 import pandas as pd
 import scipy
 import argschema as ags
-import lims_queries as lq
+from . import lims_queries as lq
 import ipfx.stim_features as stf
 import ipfx.data_set_features as dsf
 import ipfx.stimulus_protocol_analysis as spa
@@ -16,7 +17,7 @@ from functools import partial
 import os
 import json
 import h5py
-from run_feature_vector_extraction import categorize_iclamp_sweeps
+from .run_feature_vector_extraction import categorize_iclamp_sweeps
 
 
 class CollectFeatureParameters(ags.ArgSchema):

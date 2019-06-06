@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 import pytest
 
 from ipfx.aibs_data_set import AibsDataSet
 from ipfx.aibs_data_set import EphysDataSet
 import ipfx.sweep_props as sp
-from helpers_for_tests import compare_dicts
+from .helpers_for_tests import compare_dicts
 
 
 @pytest.mark.parametrize('NWB_file', ['H18.03.315.11.11.01.05.nwb'], indirect=True)
