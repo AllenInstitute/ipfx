@@ -259,7 +259,8 @@ def subsample_average(x, width):
 
 
 def subthresh_norm(sweep_set, features, start, end,
-                   extend_duration=0.2, subsample_interval=0.01):
+                   extend_duration=0.2, subsample_interval=0.01,
+                   coarse_target_amp=-100.):
     """ Largest amplitude subthreshold step response normalized to baseline and peak deflection
 
         Parameters
@@ -275,7 +276,8 @@ def subthresh_norm(sweep_set, features, start, end,
         -------
         subsampled_v : subsampled, normalized voltage trace
     """
-    subthresh_df = features["subthreshold_membrane_property_sweeps"]
+    subthresh_df = features["subthreshold_sweeps"]
+    subthresh_df = subthresh_df.loc[subthresh_df["stim_amp"] < 0] # only consider hyperpolarizing steps
     subthresh_sweep_ind = subthresh_df.index.tolist()
     subthresh_sweeps = np.array(sweep_set.sweeps)[subthresh_sweep_ind]
     subthresh_amps = np.rint(subthresh_df["stim_amp"].values)
@@ -283,10 +285,10 @@ def subthresh_norm(sweep_set, features, start, end,
     # PRE QC ISSUE: Check for bad amps; shouldn't have to do this in general
     subthresh_amps[subthresh_amps < -1000] = np.inf
 
-    min_sweep_ind = np.argmin(subthresh_amps)
-    swp = subthresh_sweeps[min_sweep_ind]
-    base = subthresh_df.at[subthresh_df.index[min_sweep_ind], "v_baseline"]
-    deflect_v, deflect_ind = subthresh_df.at[subthresh_df.index[min_sweep_ind], "peak_deflect"]
+    sweep_ind = np.argmin(np.abs(subthresh_amps - coarse_target_amp))
+    swp = subthresh_sweeps[sweep_ind]
+    base = subthresh_df.at[subthresh_df.index[sweep_ind], "v_baseline"]
+    deflect_v, deflect_ind = subthresh_df.at[subthresh_df.index[sweep_ind], "peak_deflect"]
     delta = base - deflect_v
 
     start_index = tsu.find_time_index(swp.t, start - extend_duration)
