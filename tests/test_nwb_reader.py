@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import range
 import os
 import pytest
 import h5py
@@ -47,7 +48,7 @@ def test_valid_v1_but_unknown_sweep_naming():
 
     with h5py.File(filename, 'w') as fh:
         dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
-        dset[:] = str("NWB-1")
+        dset[:] = "NWB-1"
 
     with pytest.raises(ValueError, match=r'sweep naming convention'):
         create_nwb_reader(filename)
@@ -59,7 +60,7 @@ def test_valid_v1_with_no_sweeps():
 
     with h5py.File(filename, 'w') as fh:
         dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
-        dset[:] = str("NWB-1")
+        dset[:] = "NWB-1"
         fh.create_group("acquisition/timeseries")
 
     reader = create_nwb_reader(filename)
@@ -77,7 +78,7 @@ def test_valid_v1_skeleton_MIES():
 
     with h5py.File(filename, 'w') as fh:
         dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
-        dset[:] = str("NWB-1")
+        dset[:] = "NWB-1"
 
         dset = fh.create_dataset(
             "acquisition/timeseries/data_00000", (1, ), dtype="f")
@@ -91,7 +92,7 @@ def test_valid_v1_skeleton_Pipeline():
 
     with h5py.File(filename, 'w') as fh:
         dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
-        dset[:] = str("NWB-1")
+        dset[:] = "NWB-1"
 
         dset = fh.create_dataset(
             "acquisition/timeseries/Sweep_0", (1, ), dtype="f")
@@ -104,7 +105,7 @@ def test_valid_v1_skeleton_X_NWB():
     filename = os.path.join(TEST_DATA_PATH, 'valid_v2.nwb')
 
     with h5py.File(filename, 'w') as fh:
-        fh.attrs["nwb_version"] = str("2")
+        fh.attrs["nwb_version"] = "2"
 
     reader = create_nwb_reader(filename)
     assert isinstance(reader, NwbXReader)

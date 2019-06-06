@@ -1,3 +1,4 @@
+from builtins import range
 import numbers
 
 import numpy as np
@@ -21,7 +22,7 @@ def compare_dicts(d_ref, d):
     """
 
     assert sorted(d_ref.keys()) == sorted(d.keys())
-    for k, v in d_ref.items():
+    for k, v in list(d_ref.items()):
         if isinstance(v, np.ndarray):
             array_ref = d_ref[k]
             array = d[k]
