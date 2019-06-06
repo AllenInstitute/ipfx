@@ -131,7 +131,7 @@ def feature_vectors_multipatch(lsq_supra_sweeps, lsq_supra_features,
     """Feature vectors from stimulus set features"""
 
     result = {}
-    result["step_subthresh"] = step_subthreshold(lsq_sub_sweeps, lsq_sub_features, lsq_sub_start, lsq_sub_end)
+    result["step_subthresh"] = step_subthreshold(lsq_sub_sweeps, lsq_sub_features, lsq_sub_start, lsq_sub_end, amp_tolerance=amp_tolerance)
     result["subthresh_norm"] = subthresh_norm(lsq_sub_sweeps, lsq_sub_features, lsq_sub_start, lsq_sub_end)
     result["subthresh_depol_norm"] = subthresh_depol_norm(lsq_supra_sweeps, lsq_supra_features, lsq_supra_start, lsq_supra_end)
     result["isi_shape"] = isi_shape(lsq_supra_sweeps, lsq_supra_features, duration=lsq_supra_end - lsq_supra_start)
@@ -153,7 +153,7 @@ def feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
     """Feature vectors from stimulus set features"""
 
     result = {}
-    result["step_subthresh"] = step_subthreshold(lsq_sweeps, lsq_features, lsq_start, lsq_end)
+    result["step_subthresh"] = step_subthreshold(lsq_sweeps, lsq_features, lsq_start, lsq_end, amp_tolerance=5)
     result["subthresh_norm"] = subthresh_norm(lsq_sweeps, lsq_features, lsq_start, lsq_end)
     result["subthresh_depol_norm"] = subthresh_depol_norm(lsq_sweeps, lsq_features, lsq_start, lsq_end)
     result["isi_shape"] = isi_shape(lsq_sweeps, lsq_features)
@@ -169,7 +169,8 @@ def feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
 
 def step_subthreshold(sweep_set, features, start, end,
                       extend_duration=0.2, subsample_interval=0.01,
-                      low_amp=-90., high_amp=10., amp_step=20.):
+                      low_amp=-90., high_amp=10., amp_step=20.,
+                      amp_tolerance=0.):
     """ Subsample set of subthreshold step responses including regions before and after step
 
         Parameters
@@ -185,7 +186,8 @@ def step_subthreshold(sweep_set, features, start, end,
         -------
         output_vector : subsampled, concatenated voltage trace
     """
-    subthresh_df = features["subthreshold_membrane_property_sweeps"]
+    subthresh_df = features["subthreshold_sweeps"]
+    subthresh_df = subthresh_df.loc[subthresh_df["stim_amp"] < 0] # only consider hyperpolarizing steps
     subthresh_sweep_ind = subthresh_df.index.tolist()
     subthresh_sweeps = np.array(sweep_set.sweeps)[subthresh_sweep_ind]
     subthresh_amps = np.rint(subthresh_df["stim_amp"].values)
@@ -204,13 +206,18 @@ def step_subthreshold(sweep_set, features, start, end,
     n_individual = len(subsampled_v)
     neighbor_amps = sorted([a for a in subthresh_amps if a >= low_amp and a <= high_amp])
     output_vector = np.zeros(len(use_amps) * n_individual)
+    available_amps = np.array(subthresh_data.keys())
     for i, amp in enumerate(use_amps):
-        if amp in subthresh_data:
-            output_vector[i * n_individual:(i + 1) * n_individual] = subthresh_data[amp]
+        amp_diffs = np.array(np.abs(available_amps - amp))
+
+        if np.any(amp_diffs <= amp_tolerance):
+            matching_amp = available_amps[np.argmin(amp_diffs)]
+            logging.debug("found amp of {} to match {} (tol={})".format(matching_amp, amp, amp_tolerance))
+            output_vector[i * n_individual:(i + 1) * n_individual] = subthresh_data[matching_amp]
         else:
             lower_amp = 0
             upper_amp = 0
-            for a in neighbor_amps:
+            for a in available_amps:
                 if a < amp:
                     if lower_amp == 0:
                         lower_amp = a
@@ -221,7 +228,7 @@ def step_subthreshold(sweep_set, features, start, end,
                         upper_amp = a
                     elif a < upper_amp:
                         upper_amp = a
-
+            logging.debug("interpolating for amp {} with lower {} and upper {}".format(amp, lower_amp, upper_amp))
             avg = np.zeros_like(subsampled_v)
             if lower_amp != 0 and upper_amp != 0:
                 avg = (subthresh_data[lower_amp] + subthresh_data[upper_amp]) / 2.
