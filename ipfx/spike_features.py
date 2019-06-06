@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # Allen Institute Software License - This software license is the 2-clause BSD
 # license plus a third clause that prohibits redistribution for commercial
 # purposes without further permission.
@@ -38,9 +39,9 @@ import logging
 import numpy as np
 from scipy.optimize import curve_fit
 from functools import partial
-import time_series_utils as tsu
-import spike_detector as spkd
-import error as er
+from . import time_series_utils as tsu
+from . import spike_detector as spkd
+from . import error as er
 
 def find_widths(v, t, spike_indexes, peak_indexes, trough_indexes, clipped=None):
     """Find widths at half-height for spikes.

@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 import ipfx.qc_feature_evaluator as qcp
 import allensdk.core.json_utilities as ju
 import os.path
-from generate_se_input import generate_se_input, parse_args
-import lims_queries as lq
+from .generate_se_input import generate_se_input, parse_args
+from . import lims_queries as lq
 
 
 def generate_pipeline_input(cell_dir=None,

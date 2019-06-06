@@ -1,3 +1,4 @@
+from __future__ import print_function
 import allensdk.core.json_utilities as ju
 import numpy as np
 import sys
@@ -18,9 +19,9 @@ def validate_feature_set(features, d1, d2):
 
         if isinstance(v1, unicode):
             if v1 != v2:
-                print(f, v1, v2)
+                print((f, v1, v2))
         elif not nullisclose(v1, v2):
-            print(f, v1, v2)
+            print((f, v1, v2))
 
 
 def get_pipeline_output_json(storage_dir,err_id):
@@ -73,7 +74,7 @@ def validate_pipeline(input_json, output_json):
 
     pipeline_output_json = get_pipeline_output_json(storage_dir,err_id)
 
-    print "pipeline output json:", pipeline_output_json
+    print("pipeline output json:", pipeline_output_json)
 
     pipeline_output = ju.read(pipeline_output_json)
     test_output = ju.read(output_json)
@@ -126,7 +127,7 @@ def validate_fx(test_output_json="test/fx_output.json"):
 
 
 def main():
-    print "Validating experiment..."
+    print("Validating experiment...")
     pij, poj = sys.argv[1:3]
     #validate_se()
     #validate_fx()

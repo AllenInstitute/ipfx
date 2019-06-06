@@ -1,7 +1,9 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import numpy as np
 import ipfx.feature_vectors as fv
 import argschema as ags
-import lims_queries as lq
+from . import lims_queries as lq
 from ipfx.aibs_data_set import AibsDataSet
 import warnings
 import logging
@@ -104,7 +106,7 @@ def run_feature_vector_extraction(ids=None, project="T301", include_failed_sweep
         if len(data) < len(used_ids):
             logging.warn("Missing data!")
             missing = np.array([k not in r for r in results])
-            print k, np.array(used_ids)[missing]
+            print(k, np.array(used_ids)[missing])
         np.save(os.path.join(output_dir, "fv_{:s}_{:s}.npy".format(k, project)), data)
 
     with open(os.path.join(output_dir, "fv_errors_{:s}.json".format(project)), "w") as f:

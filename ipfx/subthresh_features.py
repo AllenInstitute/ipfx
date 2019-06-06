@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 import numpy as np
 import logging
-import time_series_utils as tsu
+from . import time_series_utils as tsu
 from scipy.optimize import curve_fit
-import error as er
+from . import error as er
 
 def baseline_voltage(t, v, start, baseline_interval=0.1, baseline_detect_thresh=0.3, filter_frequency=1.0):
     # Look at baseline interval before start if start is defined

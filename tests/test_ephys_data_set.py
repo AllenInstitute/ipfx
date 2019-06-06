@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import pandas as pd
 import numpy as np
 import pytest
@@ -5,7 +6,7 @@ import pytest
 from ipfx.stimulus import StimulusOntology
 from ipfx.ephys_data_set import EphysDataSet
 
-from helpers_for_tests import compare_dicts
+from .helpers_for_tests import compare_dicts
 
 
 def get_sweep_table_dict():

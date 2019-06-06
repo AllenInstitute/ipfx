@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 import numpy as np
 import warnings
 import logging
 from . import spike_features as spkf
-import error as er
+from . import error as er
 
 
 def basic_spike_train_features(t, spikes_df, start, end):

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import numpy as np
 import pandas as pd
 import logging
@@ -5,8 +6,8 @@ from collections import Counter
 from . import stim_features as stf
 from . import subthresh_features as subf
 from . import spike_train_features as strf
-from ephys_data_set import SweepSet
-import error as er
+from .ephys_data_set import SweepSet
+from . import error as er
 
 
 class StimulusProtocolAnalysis(object):

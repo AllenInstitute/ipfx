@@ -1,7 +1,9 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import allensdk.core.json_utilities as ju
 import re
 import os
-import lims_queries as lq
+from . import lims_queries as lq
 
 NAME = 'name'
 CODE = 'code'

@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import allensdk.core.json_utilities as ju
 import os
-import make_stimulus_ontology as mso
-import lims_queries as lq
+from . import make_stimulus_ontology as mso
+from . import lims_queries as lq
 import argparse
 
 

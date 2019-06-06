@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 import numpy as np
-import time_series_utils as tsu
+from . import time_series_utils as tsu
 
 
 def get_stim_characteristics(i, t, test_pulse=True):

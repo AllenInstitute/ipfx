@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
@@ -93,7 +94,7 @@ def main():
     """
 
     nwb_file = sys.argv[1]
-    print "plotting file: %s" % nwb_file
+    print("plotting file: %s" % nwb_file)
 
     data_set = create_data_set(nwb_file=nwb_file,validate_stim=False)
 
