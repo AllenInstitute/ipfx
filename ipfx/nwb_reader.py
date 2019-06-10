@@ -56,10 +56,10 @@ class NwbReader(object):
         """
 
         with h5py.File(self.nwb_file, 'r') as f:
-            if isinstance(f["session_start_time"].value,np.ndarray): # if ndarray
-                session_start_time = f["session_start_time"].value[-1]
+            if isinstance(f["session_start_time"][()],np.ndarray): # if ndarray
+                session_start_time = f["session_start_time"][()][-1]
             else:
-                session_start_time = f["session_start_time"].value # otherwise
+                session_start_time = f["session_start_time"][()] # otherwise
 
             datetime_object = parser.parse(session_start_time)
 
@@ -95,7 +95,7 @@ class NwbReader(object):
                         return int(result.group(1))
 
             if "source" in timeseries:
-                real_sweep_number = read_sweep_from_source(timeseries["source"].value)
+                real_sweep_number = read_sweep_from_source(timeseries["source"][()])
             elif "source" in timeseries.attrs:
                 real_sweep_number = read_sweep_from_source(timeseries.attrs["source"])
             elif "sweep_number" in timeseries.attrs:
@@ -110,7 +110,7 @@ class NwbReader(object):
     def get_starting_time(self, data_set_name):
         with h5py.File(self.nwb_file, 'r') as f:
             sweep_ts = f[self.acquisition_path][data_set_name]
-            return get_scalar_value(sweep_ts["starting_time"].value)
+            return get_scalar_value(sweep_ts["starting_time"][()])
 
     def get_sweep_attrs(self, sweep_number):
 
@@ -125,7 +125,7 @@ class NwbReader(object):
                     if entry in ("data", "electrode"):
                         continue
 
-                    attrs[entry] = sweep_ts[entry].value
+                    attrs[entry] = sweep_ts[entry][()]
 
         return attrs
 
@@ -395,11 +395,11 @@ class NwbPipelineReader(NwbReader):
 
             major, minor = self.get_pipeline_version()
             if (major == 1 and minor > 0) or major > 1:
-                stimulus = stimulus_dataset.value * stimulus_conversion
-                response = response_dataset.value * response_conversion
+                stimulus = stimulus_dataset[...] * stimulus_conversion
+                response = response_dataset[...] * response_conversion
             else:   # old file version
-                stimulus = stimulus_dataset.value
-                response = response_dataset.value
+                stimulus = stimulus_dataset[...]
+                response = response_dataset[...]
 
             if 'unit' in stimulus_dataset.attrs:
                 unit = stimulus_dataset.attrs["unit"].decode('UTF-8')
@@ -449,7 +449,7 @@ class NwbPipelineReader(NwbReader):
 
             for stimulus_description in names:
                 if stimulus_description in sweep_ts.keys():
-                    stim_code_raw = sweep_ts[stimulus_description].value
+                    stim_code_raw = sweep_ts[stimulus_description][()]
                     stim_code = get_scalar_value(stim_code_raw)
 
                     if stim_code[-5:] == "_DA_0":
@@ -481,8 +481,8 @@ class NwbMiesReader(NwbReader):
             sweep_stimulus = f[self.stimulus_path][sweep_map["stimulus_group"]]
             stimulus_dataset = sweep_stimulus["data"]
 
-            response = response_dataset.value
-            stimulus = stimulus_dataset.value
+            response = response_dataset[...]
+            stimulus = stimulus_dataset[...]
 
             if 'unit' in stimulus_dataset.attrs:
                 unit = stimulus_dataset.attrs["unit"]
@@ -517,7 +517,7 @@ class NwbMiesReader(NwbReader):
             sweep_ts = f[self.acquisition_path][acquisition_group]
             # look for the stimulus description
             if stimulus_description in sweep_ts.keys():
-                stim_code_raw = sweep_ts[stimulus_description].value
+                stim_code_raw = sweep_ts[stimulus_description][()]
                 stim_code = get_scalar_value(stim_code_raw)
 
                 if stim_code[-5:] == "_DA_0":
@@ -533,7 +533,7 @@ def get_nwb_version(nwb_file):
 
     with h5py.File(nwb_file, 'r') as f:
         if "nwb_version" in f:         # In v1 this is a dataset
-            nwb_version = get_scalar_value(f["nwb_version"].value)
+            nwb_version = get_scalar_value(f["nwb_version"][()])
             nwb_version_str = to_str(nwb_version)
             if nwb_version is not None and re.match("^NWB-1", nwb_version_str):
                 return {"major": 1, "full": nwb_version}
