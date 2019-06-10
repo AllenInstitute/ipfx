@@ -3,9 +3,9 @@ import logging
 import argschema as ags
 from ipfx._schemas import PipelineParameters
 
-from .run_sweep_extraction import run_sweep_extraction
-from .run_qc import run_qc
-from .run_feature_extraction import run_feature_extraction
+from ipfx.bin.run_sweep_extraction import run_sweep_extraction
+from ipfx.bin.run_qc import run_qc
+from ipfx.bin.run_feature_extraction import run_feature_extraction
 
 import allensdk.core.json_utilities as ju
 import ipfx.sweep_props as sp

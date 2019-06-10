@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import scipy
 import argschema as ags
-from . import lims_queries as lq
+from ipfx.bin import lims_queries as lq
 import ipfx.stim_features as stf
 import ipfx.data_set_features as dsf
 import ipfx.stimulus_protocol_analysis as spa
@@ -17,7 +17,7 @@ from functools import partial
 import os
 import json
 import h5py
-from .run_feature_vector_extraction import categorize_iclamp_sweeps
+from ipfx.bin.run_feature_vector_extraction import categorize_iclamp_sweeps
 
 
 class CollectFeatureParameters(ags.ArgSchema):
@@ -146,11 +146,11 @@ def extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_
 
             first_spike_lsq_sweep_features = first_spike_lsq(spike_data[swp_ind])
             features.update({"ap_1_{:s}_{:d}_long_square".format(f, amp_label): v
-                             for f, v in first_spike_lsq_sweep_features.iteritems()})
+                             for f, v in first_spike_lsq_sweep_features.items()})
 
             mean_spike_lsq_sweep_features = mean_spike_lsq(spike_data[swp_ind])
             features.update({"ap_mean_{:s}_{:d}_long_square".format(f, amp_label): v
-                             for f, v in mean_spike_lsq_sweep_features.iteritems()})
+                             for f, v in mean_spike_lsq_sweep_features.items()})
 
             sweep_feature_list = [
                 "first_isi",
@@ -182,7 +182,7 @@ def first_spike_ramp(ramp_analyzer,
                         "fast_trough_v",
                     ]):
     first_spike_features = ramp_analyzer.mean_features_first_spike(ramp_analyzer._spikes_set, feature_list)
-    return {"ap_1_" + f + "_ramp": v for f, v in first_spike_features.iteritems()}
+    return {"ap_1_" + f + "_ramp": v for f, v in first_spike_features.items()}
 
 
 def first_spike_ssq(ssq_analyzer,
@@ -196,7 +196,7 @@ def first_spike_ssq(ssq_analyzer,
                         "fast_trough_v",
                     ]):
     first_spike_features = ssq_analyzer.mean_features_first_spike(ssq_analyzer._spikes_set, feature_list)
-    return {"ap_1_" + f + "_short_square": v for f, v in first_spike_features.iteritems()}
+    return {"ap_1_" + f + "_short_square": v for f, v in first_spike_features.items()}
 
 
 def first_spike_lsq(spike_data,

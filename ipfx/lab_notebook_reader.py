@@ -1,5 +1,7 @@
 import h5py
 import math
+from ipfx.py2to3 import to_str
+
 
 class LabNotebookReader(object):
     def __init__(self):
@@ -63,7 +65,7 @@ class LabNotebookReader(object):
             if int(swp) == int(sweep_num):
                 if enable_col is not None: # and sample[enable_col][0] != 1.0:
                     # this shouldn't happen, but if it does then bitch
-                    #   as this situation hasn't been tested (eg, is 
+                    #   as this situation hasn't been tested (eg, is
                     #   enabled indicated by 1.0, or "1.0" or "true" or ??)
                     Exception("Enable flag not expected for text values")
                     #continue # 'enable' flag present and it's turned off
@@ -80,37 +82,37 @@ class LabNotebookReader(object):
         #   (#fields * 9) and stores the key names. the second looks
         #   to store units for those keys. The third is numeric text
         #   but it's role isn't clear
-        numeric_fields = self.colname_number[0]
-        text_fields = self.colname_text[0]
+        numeric_fields = [to_str(c) for c in self.colname_number[0]]
+        text_fields = [to_str(c) for c in self.colname_text[0]]
         # val_number has 3 dimensions -- the first has a shape of
         #   (#fields * 9). there are many hundreds of elements in this
         #   dimension. they look to represent the full array of values
         #   (for each field for each multipatch) for a given point in
         #   time, and thus given sweep
         if name in numeric_fields:
-            sweep_idx = numeric_fields.tolist().index("SweepNum")
+            sweep_idx = numeric_fields.index("SweepNum")
             enable_idx = None
             if name in self.enabled:
                 enable_col = self.enabled[name]
-                enable_idx = numeric_fields.tolist().index(enable_col)
-            field_idx = numeric_fields.tolist().index(name)
+                enable_idx = numeric_fields.index(enable_col)
+            field_idx = numeric_fields.index(name)
             return self.get_numeric_value(name, field_idx, sweep_idx, enable_idx, sweep_num, default_val)
         elif name in text_fields:
             # first check to see if file includes old version of column name
             if "Sweep #" in text_fields:
-                sweep_idx = text_fields.tolist().index("Sweep #")
+                sweep_idx = text_fields.index("Sweep #")
             else:
-                sweep_idx = text_fields.tolist().index("SweepNum")
+                sweep_idx = text_fields.index("SweepNum")
             enable_idx = None
             if name in self.enabled:
                 enable_col = self.enabled[name]
-                enable_idx = text_fields.tolist().index(enable_col)
-            field_idx = text_fields.tolist().index(name)
+                enable_idx = text_fields.index(enable_col)
+            field_idx = text_fields.index(name)
             return self.get_text_value(name, field_idx, sweep_idx, enable_idx, sweep_num, default_val)
         else:
             return default_val
-            
-        
+
+
 
 """ Loads lab notebook data out of a first-generation IVSCC NWB file,
     that was manually translated from the IGOR h5 dump.
@@ -119,7 +121,7 @@ class LabNotebookReader(object):
 class LabNotebookReaderIvscc(LabNotebookReader):
     def __init__(self, nwb_file, h5_file):
         LabNotebookReader.__init__(self)
-        # for lab notebook, select first group 
+        # for lab notebook, select first group
         h5 = h5py.File(h5_file, "r")
         #
         # TODO FIXME check notebook version... but how?
@@ -143,7 +145,7 @@ class LabNotebookReaderIvscc(LabNotebookReader):
 class LabNotebookReaderIgorNwb(LabNotebookReader):
     def __init__(self, nwb_file):
         LabNotebookReader.__init__(self)
-        # for lab notebook, select first group 
+        # for lab notebook, select first group
         # NOTE this probably won't work for multipatch
         h5 = h5py.File(nwb_file, "r")
         #
@@ -161,7 +163,7 @@ class LabNotebookReaderIgorNwb(LabNotebookReader):
         #
         self.register_enabled_names()
 
-        
+
 
 # creates LabNotebookReader appropriate to ivscc-NWB file version
 def create_lab_notebook_reader(nwb_file, h5_file=None):

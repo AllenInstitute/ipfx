@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import numpy as np
 import ipfx.feature_vectors as fv
 import argschema as ags
-from . import lims_queries as lq
+import ipfx.bin.lims_queries as lq
 from ipfx.aibs_data_set import AibsDataSet
 import warnings
 import logging
@@ -35,6 +35,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, passed_only=False):
 def data_for_specimen_id(specimen_id, passed_only, ap_window_length=0.005):
     name, roi_id, specimen_id = lq.get_specimen_info_from_lims_by_id(specimen_id)
     nwb_path = lq.get_nwb_path_from_lims(roi_id)
+
     if len(nwb_path) == 0: # could not find an NWB file
         logging.debug("No NWB file for {:d}".format(specimen_id))
         return {"error": {"type": "no_nwb", "details": ""}}
@@ -98,6 +99,7 @@ def run_feature_vector_extraction(ids=None, project="T301", include_failed_sweep
     used_ids, results = zip(*filtered_set)
     logging.info("Finished with {:d} processed specimens".format(len(used_ids)))
     k_sizes = {}
+
     for k in results[0].keys():
         if k not in k_sizes and results[0][k] is not None:
             k_sizes[k] = len(results[0][k])

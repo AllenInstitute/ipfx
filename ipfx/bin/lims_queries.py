@@ -1,7 +1,7 @@
 import os
 import logging
 import pg8000
-
+from ipfx.py2to3 import to_str
 
 USER = "limsreader"
 HOST = "limsdb2"
@@ -30,7 +30,7 @@ def able_to_connect_to_lims():
 
 def _select(cursor, query):
     cursor.execute(query)
-    columns = [ d[0] for d in cursor.description ]
+    columns = [ to_str(d[0]) for d in cursor.description ]
     return [ dict(zip(columns, c)) for c in cursor.fetchall() ]
 
 
@@ -55,7 +55,7 @@ def get_input_nwb_file(specimen_id):
     where sp.id = %d
     """ % specimen_id
     res = query(sql)[0]
-    res = { k.decode('UTF-8'):v for k,v in res.items() }
+    res = { k:v for k,v in res.items() }
 
     # if the input_v2_json does not exist, then use input_v1_json instead:
     if os.path.isfile(res["input_v2_json"]):

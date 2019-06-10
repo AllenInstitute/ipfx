@@ -7,6 +7,7 @@ import numpy as np
 from pynwb import NWBHDF5IO
 from pynwb.icephys import (CurrentClampSeries, CurrentClampStimulusSeries, VoltageClampSeries,
                            VoltageClampStimulusSeries, IZeroClampSeries)
+from ipfx.py2to3 import to_str
 
 
 def custom_formatwarning(msg, *args, **kwargs):
@@ -229,8 +230,8 @@ class NwbReader(object):
                     # keys are even numbered, corresponding values are in
                     #   odd indices
                     for i in range(len(info)):
-                        if info[i] == 'version':
-                            version = info[i+1]
+                        if to_str(info[i]) == 'version':
+                            version = to_str(info[i+1])
                             break
             toks = version.split('.')
             if len(toks) >= 2:
@@ -484,7 +485,7 @@ class NwbMiesReader(NwbReader):
             stimulus = stimulus_dataset.value
 
             if 'unit' in stimulus_dataset.attrs:
-                unit = stimulus_dataset.attrs["unit"].decode('UTF-8')
+                unit = stimulus_dataset.attrs["unit"]
 
                 unit_str = NwbReader.get_long_unit_name(unit)
             else:
@@ -533,7 +534,8 @@ def get_nwb_version(nwb_file):
     with h5py.File(nwb_file, 'r') as f:
         if "nwb_version" in f:         # In v1 this is a dataset
             nwb_version = get_scalar_value(f["nwb_version"].value)
-            if nwb_version is not None and re.match("^NWB-1", nwb_version):
+            nwb_version_str = to_str(nwb_version)
+            if nwb_version is not None and re.match("^NWB-1", nwb_version_str):
                 return {"major": 1, "full": nwb_version}
 
         elif "nwb_version" in f.attrs:   # but in V2 this is an attribute
