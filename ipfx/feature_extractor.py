@@ -143,7 +143,7 @@ class SpikeFeatureExtractor(object):
         spikes_df = DataFrame(data=thresholds, columns=["threshold_index"])
         spikes_df["clipped"] = clipped
 
-        for k, all_vals in six.iteritems(vit_data_indexes):
+        for k, all_vals in vit_data_indexes.items():
             valid_ind = ~np.isnan(all_vals)
             vals = all_vals[valid_ind].astype(int)
             spikes_df[k + "_index"] = np.nan
@@ -160,7 +160,7 @@ class SpikeFeatureExtractor(object):
                 if len(vals) > 0:
                     spikes_df.loc[valid_ind, k + "_i"] = i[vals]
 
-        for k, all_vals in six.iteritems(dvdt_data_indexes):
+        for k, all_vals in dvdt_data_indexes.items():
             valid_ind = ~np.isnan(all_vals)
             vals = all_vals[valid_ind].astype(int)
             spikes_df[k + "_index"] = np.nan
@@ -173,7 +173,7 @@ class SpikeFeatureExtractor(object):
 
         spikes_df["isi_type"] = isi_types
 
-        for k, all_vals in six.iteritems(trough_detail_indexes):
+        for k, all_vals in trough_detail_indexes.items():
             valid_ind = ~np.isnan(all_vals)
             vals = all_vals[valid_ind].astype(int)
             spikes_df[k + "_index"] = np.nan

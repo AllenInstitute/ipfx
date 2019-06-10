@@ -306,7 +306,7 @@ def isi_shape(sweep_set, features, n_points=100, min_spike=5):
         end_index = tsu.find_time_index(isi_sweep.t, isi_sweep.t[fast_trough_index] + 0.1)
         isi_raw = isi_sweep.v[fast_trough_index:end_index] - threshold_v
 
-        width = len(isi_raw) / n_points
+        width = len(isi_raw) // n_points
         isi_raw = isi_raw[:width * n_points] # ensure division will work
         isi_norm = subsample_average(isi_raw, width)
 
@@ -319,7 +319,7 @@ def isi_shape(sweep_set, features, n_points=100, min_spike=5):
     isi_list = []
     for start_index, end_index, thresh_v in zip(fast_trough_indexes[:-1], threshold_indexes[1:], threshold_voltages[:-1]):
         isi_raw = isi_sweep.v[int(start_index):int(end_index)] - thresh_v
-        width = len(isi_raw) / n_points
+        width = len(isi_raw) // n_points
         if width == 0:
             # trace is shorter than 100 points - probably in a burst, so we'll skip
             continue
@@ -517,7 +517,7 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
         rate_data[amp_level] = output
 
     # Combine all levels into single vector & imterpolate to fill missing sweeps
-    output_vector = combine_and_interpolate(rate_data, max_level=max_above_rheo / amp_interval)
+    output_vector = combine_and_interpolate(rate_data, max_level=max_above_rheo // amp_interval)
 
     # Instantaneous frequency
     feature_data = {}
@@ -549,7 +549,7 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
                                         freq,
                                         bins=bins)[0]
         feature_data[amp_level] = output
-    output_vector = np.append(output_vector, combine_and_interpolate(feature_data, max_level=max_above_rheo / amp_interval))
+    output_vector = np.append(output_vector, combine_and_interpolate(feature_data, max_level=max_above_rheo // amp_interval))
 
     # Spike-level feature calculation
     for feature in spike_feature_list:

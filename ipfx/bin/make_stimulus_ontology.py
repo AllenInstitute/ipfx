@@ -16,7 +16,7 @@ def make_stimulus_ontology(stims):
 
     ontology = []
 
-    stims = [{k.decode("UTF-8"): v for k, v in stim.items()} for stim in stims]
+    stims = [{k: v for k, v in stim.items()} for stim in stims]
 
     for stim in stims:
         tags = set()

@@ -47,7 +47,8 @@ def test_valid_v1_but_unknown_sweep_naming():
     filename = os.path.join(TEST_DATA_PATH, 'invalid_sweep_naming_convention.nwb')
 
     with h5py.File(filename, 'w') as fh:
-        dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
+        dt = h5py.special_dtype(vlen=bytes)
+        dset = fh.create_dataset("nwb_version", (1,), dtype=dt)
         dset[:] = "NWB-1"
 
     with pytest.raises(ValueError, match=r'sweep naming convention'):
@@ -59,7 +60,8 @@ def test_valid_v1_with_no_sweeps():
     filename = os.path.join(TEST_DATA_PATH, 'no_sweeps.nwb')
 
     with h5py.File(filename, 'w') as fh:
-        dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
+        dt = h5py.special_dtype(vlen=bytes)
+        dset = fh.create_dataset("nwb_version", (1,), dtype=dt)
         dset[:] = "NWB-1"
         fh.create_group("acquisition/timeseries")
 
@@ -77,7 +79,8 @@ def test_valid_v1_skeleton_MIES():
     filename = os.path.join(TEST_DATA_PATH, 'valid_v1_MIES.nwb')
 
     with h5py.File(filename, 'w') as fh:
-        dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
+        dt = h5py.special_dtype(vlen=bytes)
+        dset = fh.create_dataset("nwb_version", (1,), dtype=dt)
         dset[:] = "NWB-1"
 
         dset = fh.create_dataset(
@@ -91,7 +94,8 @@ def test_valid_v1_skeleton_Pipeline():
     filename = os.path.join(TEST_DATA_PATH, 'valid_v1_Pipeline.nwb')
 
     with h5py.File(filename, 'w') as fh:
-        dset = fh.create_dataset("nwb_version", (1,), dtype="S5")
+        dt = h5py.special_dtype(vlen=bytes)
+        dset = fh.create_dataset("nwb_version", (1,), dtype=dt)
         dset[:] = "NWB-1"
 
         dset = fh.create_dataset(

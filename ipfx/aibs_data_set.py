@@ -5,6 +5,7 @@ from .ephys_data_set import EphysDataSet
 import ipfx.lab_notebook_reader as lab_notebook_reader
 import ipfx.nwb_reader as nwb_reader
 import ipfx.sweep_props as sp
+from ipfx.py2to3 import to_str
 
 
 class AibsDataSet(EphysDataSet):
@@ -70,7 +71,7 @@ class AibsDataSet(EphysDataSet):
             if len(stim_code) == 0:
                 raise Exception(
                     "Could not read stimulus wave name from lab notebook")
-        return stim_code
+        return to_str(stim_code)
 
     def get_stimulus_code_ext(self, stim_code,sweep_num):
         cnt = self.notebook.get_value("Set Sweep Count", sweep_num, 0)
@@ -82,11 +83,11 @@ class AibsDataSet(EphysDataSet):
 
         attrs = self.nwb_data.get_sweep_attrs(sweep_num)
         ancestry = attrs["ancestry"]
-
         # stim units are based on timeseries type
-        if "CurrentClamp" in ancestry[-1]:
+        time_series_type = to_str(ancestry[-1])
+        if "CurrentClamp" in time_series_type:
             units = 'pA'
-        elif "VoltageClamp" in ancestry[-1]:
+        elif "VoltageClamp" in time_series_type:
             units = 'mV'
         else:
             raise Exception("Unable to determine clamp mode in {}".format(sweep_num))
@@ -98,9 +99,10 @@ class AibsDataSet(EphysDataSet):
         attrs = self.nwb_data.get_sweep_attrs(sweep_num)
         ancestry = attrs["ancestry"]
 
-        if "CurrentClamp" in ancestry[-1]:
+        time_series_type = to_str(ancestry[-1])
+        if "CurrentClamp" in time_series_type:
             clamp_mode = self.CURRENT_CLAMP
-        elif "VoltageClamp" in ancestry[-1]:
+        elif "VoltageClamp" in time_series_type:
             clamp_mode = self.VOLTAGE_CLAMP
         else:
             raise Exception("Unable to determine clamp mode in {}".format(sweep_num))
