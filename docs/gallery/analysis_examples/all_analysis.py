@@ -4,6 +4,7 @@ All Analysis
 
 Run all analyses on NWB file
 """
+from __future__ import print_function
 
 import os
 import matplotlib.pyplot as plt
