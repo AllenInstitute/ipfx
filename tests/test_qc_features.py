@@ -15,7 +15,7 @@ def test_measure_blowout():
 def test_measure_electrode_0():
     a = np.array([1, 1, 1, 1])
     b = qcf.measure_electrode_0(a, 1)
-    assert np.isnan(b)
+    assert b is None
 
     b = qcf.measure_electrode_0(a, 1000)
     assert b == 1

@@ -11,8 +11,10 @@ def measure_electrode_0(curr, hz, t=0.005):
     n_time_steps = int(t * hz)
     # electrode 0 is the average current reading with zero voltage input
     # (ie, the equivalent of resting potential in current-clamp mode)
-    return np.mean(curr[0:n_time_steps])
-
+    if n_time_steps:
+        return np.mean(curr[0:n_time_steps])
+    else:
+        return None
 
 def measure_seal(v, curr, t):
 
