@@ -4,7 +4,9 @@ Long Square Analysis
 
 Detect Long Square Features
 """
+from __future__ import print_function
 
+from builtins import str
 from ipfx.aibs_data_set import AibsDataSet
 import ipfx.ephys_features as ft
 import ipfx.ephys_extractor as efex
