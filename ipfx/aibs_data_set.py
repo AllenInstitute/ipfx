@@ -63,6 +63,17 @@ class AibsDataSet(EphysDataSet):
         return sweep_info
 
     def get_stimulus_code(self, sweep_num):
+        """
+
+        Parameters
+        ----------
+        sweep_num: int
+            sweep number
+
+        Returns
+        -------
+
+        """
 
         stim_code = self.nwb_data.get_stim_code(sweep_num)
         if not stim_code:
