@@ -80,6 +80,16 @@ class AibsDataSet(EphysDataSet):
         return stim_code_ext
 
     def get_stimulus_units(self, sweep_num):
+        """
+        
+        Parameters
+        ----------
+        sweep_num
+
+        Returns
+        -------
+
+        """
 
         attrs = self.nwb_data.get_sweep_attrs(sweep_num)
         ancestry = attrs["ancestry"]
