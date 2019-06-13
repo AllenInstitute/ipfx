@@ -5,7 +5,7 @@ import os
 import pytest
 import h5py
 import numpy as np
-from ipfx.nwb_reader import create_nwb_reader, NwbMiesReader, NwbPipelineReader, NwbXReader
+from ipfx.nwb_reader import create_nwb_reader, NwbMiesReader, NwbPipelineReader, NwbXReader, NwbReader
 from .helpers_for_tests import compare_dicts
 from allensdk.api.queries.cell_types_api import CellTypesApi
 
@@ -483,3 +483,32 @@ def test_valid_v2_full_DAT(NWB_file):
     sweep_data['stimulus'] = None
 
     assert sweep_data_ref == sweep_data
+
+
+@pytest.mark.parametrize('stim_attrs, stim_unit',
+                          [
+                              ({"conversion": 1.0E-12, "resolution": 0.0, "units": "Amps"}, "Amps"),
+                              ({"conversion": 1.0E-12, "resolution": 0.0, "unit": "Amps"}, "Amps"),
+                              ({"conversion": 1.0E-12, "resolution": 0.0, "unit": "A"}, "A"),
+                              ({"conversion": 1.0E-12, "resolution": 0.0, "Unit": "Amps"}, None),
+                              ({"conversion": 1.0E-12, "resolution": 0.0}, None),
+                          ]
+                         )
+def test_get_unit_name(stim_attrs, stim_unit):
+
+    assert stim_unit == NwbReader.get_unit_name(stim_attrs)
+
+
+@pytest.mark.parametrize('unit_name, long_unit_name',
+                         [
+                             (None, "Unknown"),
+                             ("A", "Amps"),
+                             ("Amps", "Amps"),
+                             ("V", "Volts"),
+                             ("Volts", "Volts")
+                         ]
+                         )
+def test_get_long_unit_name(unit_name, long_unit_name):
+
+    assert long_unit_name == NwbReader.get_long_unit_name(unit_name)
+
