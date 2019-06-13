@@ -27,7 +27,7 @@ def create_data_set(sweep_info=None, nwb_file=None, ontology=None, api_sweeps=Tr
                           api_sweeps=api_sweeps,
                           validate_stim=validate_stim)
 
-    elif nwb_version["major"] == 1:
+    elif nwb_version["major"] == 1 or nwb_version["major"] == 0:
         return AibsDataSet(sweep_info=sweep_info,
                            nwb_file=nwb_file,
                            ontology=ontology,

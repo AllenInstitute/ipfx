@@ -532,13 +532,13 @@ def get_nwb_version(nwb_file):
     """
 
     with h5py.File(nwb_file, 'r') as f:
-        if "nwb_version" in f:         # In v1 this is a dataset
+        if "nwb_version" in f:         # In version 0 and 1 this is a dataset
             nwb_version = get_scalar_value(f["nwb_version"][()])
             nwb_version_str = to_str(nwb_version)
-            if nwb_version is not None and re.match("^NWB-1", nwb_version_str):
-                return {"major": 1, "full": nwb_version}
+            if nwb_version is not None and re.match("^NWB-", nwb_version_str):
+                return {"major": int(nwb_version_str[4]), "full": nwb_version_str}
 
-        elif "nwb_version" in f.attrs:   # but in V2 this is an attribute
+        elif "nwb_version" in f.attrs:   # but in version 2 this is an attribute
             nwb_version = f.attrs["nwb_version"]
             if nwb_version is not None and re.match("^2", nwb_version):
                 return {"major": 2, "full": nwb_version}
@@ -596,7 +596,7 @@ def create_nwb_reader(nwb_file):
 
     if nwb_version["major"] == 2:
         return NwbXReader(nwb_file)
-    elif nwb_version["major"] == 1:
+    elif nwb_version["major"] == 1 or nwb_version["major"] == 0:
         nwb1_flavor = get_nwb1_flavor(nwb_file)
         if nwb1_flavor == "Mies":
             return NwbMiesReader(nwb_file)
