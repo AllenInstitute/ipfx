@@ -68,7 +68,20 @@ class NwbReader(object):
         return recording_date
 
     @staticmethod
+    def get_unit_name(stim_attrs):
+        if 'unit' in stim_attrs:
+            unit = to_str(stim_attrs["unit"])
+        elif 'units' in stim_attrs:
+            unit = to_str(stim_attrs["units"])
+        else:
+            unit = None
+
+        return unit
+
+    @staticmethod
     def get_long_unit_name(unit):
+        if not unit:
+            return "Unknown"
         if unit.startswith('A'):
             return "Amps"
         elif unit.startswith('V'):
@@ -401,13 +414,8 @@ class NwbPipelineReader(NwbReader):
                 stimulus = stimulus_dataset[...]
                 response = response_dataset[...]
 
-            if 'unit' in stimulus_dataset.attrs:
-                unit = stimulus_dataset.attrs["unit"].decode('UTF-8')
-
-                unit_str = NwbReader.get_long_unit_name(unit)
-            else:
-                unit = None
-                unit_str = 'Unknown'
+            unit = NwbReader.get_unit_name(stimulus_dataset.attrs)
+            unit_str = NwbReader.get_long_unit_name(unit)
 
             if unit_str == "Amps":
                 response *= 1e3,  # voltage, convert units V->mV
@@ -484,13 +492,8 @@ class NwbMiesReader(NwbReader):
             response = response_dataset[...]
             stimulus = stimulus_dataset[...]
 
-            if 'unit' in stimulus_dataset.attrs:
-                unit = stimulus_dataset.attrs["unit"]
-
-                unit_str = NwbReader.get_long_unit_name(unit)
-            else:
-                unit = None
-                unit_str = 'Unknown'
+            unit = NwbReader.get_unit_name(stimulus_dataset.attrs)
+            unit_str = NwbReader.get_long_unit_name(unit)
 
         return {"stimulus": stimulus,
                 "response": response,
