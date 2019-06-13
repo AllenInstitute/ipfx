@@ -27,12 +27,19 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
 
 
 def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, specimen_id=None):
+    exist_sql = """
+        select swp.sweep_number from ephys_sweeps swp
+        where swp.specimen_id = :1
+        and swp.sweep_number = any(:2)
+    """
+
     passed_sql = """
         select swp.sweep_number from ephys_sweeps swp
         where swp.specimen_id = :1
         and swp.sweep_number = any(:2)
         and swp.workflow_state like '%%passed'
     """
+
     passed_except_delta_vm_sql = """
         select swp.sweep_number, tag.name
         from ephys_sweeps swp
@@ -47,17 +54,34 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
     if sweep_qc_option is None:
         return iclamp_st["sweep_number"].sort_values().values
     elif sweep_qc_option == "passed_only":
+        # check that sweeps exist in LIMS
         sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
+        results = lq.query(exist_sql, (specimen_id, sweep_num_list))
+        res_nums = pd.DataFrame(results, columns=["sweep_number"])["sweep_number"].tolist()
+        for swp_num in sweep_num_list:
+            if swp_num not in res_nums:
+                print("Could not find sweep {:d} from specimen {:d} in LIMS".format(swp_num, specimen_id))
+
+        # Get passed sweeps
         results = lq.query(passed_sql, (specimen_id, sweep_num_list))
         results_df = pd.DataFrame(results)
         passed_sweep_nums = results_df["sweep_number"].values
+        passed_sweep_nums = np.array([r[0] for r in results])
         return np.sort(passed_sweep_nums)
     elif sweep_qc_option == "passed_except_delta_vm":
-        # get straight-up passed sweeps
+        # check that sweeps exist in LIMS
         sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
+        results = lq.query(exist_sql, (specimen_id, sweep_num_list))
+        res_nums = pd.DataFrame(results, columns=["sweep_number"])["sweep_number"].tolist()
+        for swp_num in sweep_num_list:
+            if swp_num not in res_nums:
+                print("Could not find sweep {:d} from specimen {:d} in LIMS".format(swp_num, specimen_id))
+
+        # get straight-up passed sweeps
         results = lq.query(passed_sql, (specimen_id, sweep_num_list))
         results_df = pd.DataFrame(results)
         passed_sweep_nums = results_df["sweep_number"].values
+        passed_sweep_nums = np.array([r[0] for r in results])
 
         # also get sweeps that only fail due to delta Vm
         failed_sweep_list = list(set(sweep_num_list) - set(passed_sweep_nums))
@@ -78,6 +102,8 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
         also_passing_nums = np.array(failed_sweep_list)[tagged_mask & ~has_non_delta_tags]
 
         return np.sort(np.hstack([passed_sweep_nums, also_passing_nums]))
+    else:
+        raise ValueError("Invalid QC option {}".format(sweep_qc_option))
 
 
 def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
@@ -88,22 +114,30 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
         return {"error": {"type": "no_ephys_roi_result", "details": ""}}
 
     nwb_path = lq.get_nwb_path_from_lims(roi_id)
-
-    if len(nwb_path) == 0: # could not find an NWB file
+    if (nwb_path is None) or (len(nwb_path) == 0): # could not find an NWB file
         logging.debug("No NWB file for {:d}".format(specimen_id))
         return {"error": {"type": "no_nwb", "details": ""}}
 
     # Check if NWB has lab notebook information, or if additional hdf5 file is needed
     h5_path = None
-    with h5py.File(nwb_path, "r") as h5:
-        if "general/labnotebook" not in h5:
-            h5_path = lq.get_igorh5_path_from_lims(roi_id)
+    try:
+        with h5py.File(nwb_path, "r") as h5:
+            if "general/labnotebook" not in h5:
+                try:
+                    h5_path = lq.get_igorh5_path_from_lims(roi_id)
+                except Exception as detail:
+                    logging.warn("Exception when loading h5 file for {:d}".format(specimen_id))
+                    logging.warn(detail)
+                    return {"error": {"type": "dataset", "details": traceback.format_exc(limit=1)}}
+    except:
+        logging.debug("Could not open NWB file for {:d}".format(specimen_id))
+        return {"error": {"type": "no_nwb", "details": ""}}
 
     try:
         data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
         ontology = data_set.ontology
     except Exception as detail:
-        logging.warn("Exception when processing specimen {:d}".format(specimen_id))
+        logging.warn("Exception when loading specimen {:d}".format(specimen_id))
         logging.warn(detail)
         return {"error": {"type": "dataset", "details": traceback.format_exc(limit=1)}}
 
@@ -118,17 +152,17 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
             ontology.ramp_names, sweep_qc_option=sweep_qc_option,
             specimen_id=specimen_id)
     except Exception as detail:
-        logging.warn("Exception when processing specimen {:d}".format(specimen_id))
+        logging.warn("Exception when identifying sweeps from specimen {:d}".format(specimen_id))
         logging.warn(detail)
         return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=1)}}
 
-    try:
-        result = fv.extract_feature_vectors(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_numbers,
+#     try:
+    result = fv.extract_feature_vectors(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_numbers,
                                             ap_window_length=ap_window_length)
-    except Exception as detail:
-        logging.warn("Exception when processing specimen {:d}".format(specimen_id))
-        logging.warn(detail)
-        return {"error": {"type": "processing", "details": traceback.format_exc(limit=1)}}
+#     except Exception as detail:
+#         logging.warn("Exception when processing specimen {:d}".format(specimen_id))
+#         logging.warn(detail)
+#         return {"error": {"type": "processing", "details": traceback.format_exc(limit=1)}}
 
     return result
 
@@ -144,6 +178,7 @@ def run_feature_vector_extraction(ids=None, project="T301", sweep_qc_option=None
     get_data_partial = partial(data_for_specimen_id,
                                sweep_qc_option=sweep_qc_option,
                                ap_window_length=ap_window_length)
+    specimen_ids = specimen_ids[:10]
     if run_parallel:
         pool = Pool()
         results = pool.map(get_data_partial, specimen_ids)
