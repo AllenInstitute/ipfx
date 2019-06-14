@@ -64,7 +64,7 @@ def test_truncated_pulse():
 
     v = [0, 0, 1, 1, 0, 0, 2, 2, 0, 0, 0, 2, 2, 2]
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match="Truncated square pulse"):
         qcf.get_square_pulse_idx(v)
 
 
@@ -72,5 +72,5 @@ def test_negative_pulse():
 
     v = [0, 0, 1, 1, 0, 0, -2, -2, 0, 0, 0, 0, 2, 2, 2, 0, 0]
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match="Negative square pulse"):
         qcf.get_square_pulse_idx(v)
