@@ -206,7 +206,7 @@ def step_subthreshold(sweep_set, features, start, end,
     n_individual = len(subsampled_v)
     neighbor_amps = sorted([a for a in subthresh_amps if a >= low_amp and a <= high_amp])
     output_vector = np.zeros(len(use_amps) * n_individual)
-    available_amps = np.array(subthresh_data.keys())
+    available_amps = np.array(list(subthresh_data.keys()))
     for i, amp in enumerate(use_amps):
         amp_diffs = np.array(np.abs(available_amps - amp))
 
