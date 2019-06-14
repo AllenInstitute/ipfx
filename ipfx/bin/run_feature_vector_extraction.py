@@ -64,9 +64,8 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
 
         # Get passed sweeps
         results = lq.query(passed_sql, (specimen_id, sweep_num_list))
-        results_df = pd.DataFrame(results)
+        results_df = pd.DataFrame(results, columns=["sweep_number"])
         passed_sweep_nums = results_df["sweep_number"].values
-        passed_sweep_nums = np.array([r[0] for r in results])
         return np.sort(passed_sweep_nums)
     elif sweep_qc_option == "passed_except_delta_vm":
         # check that sweeps exist in LIMS
@@ -79,9 +78,8 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
 
         # get straight-up passed sweeps
         results = lq.query(passed_sql, (specimen_id, sweep_num_list))
-        results_df = pd.DataFrame(results)
+        results_df = pd.DataFrame(results, columns=["sweep_number"])
         passed_sweep_nums = results_df["sweep_number"].values
-        passed_sweep_nums = np.array([r[0] for r in results])
 
         # also get sweeps that only fail due to delta Vm
         failed_sweep_list = list(set(sweep_num_list) - set(passed_sweep_nums))
@@ -96,7 +94,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
 
         # otherwise, check for having an error tag that isn't 'Vm delta'
         # and exclude those sweeps
-        has_non_delta_tags = np.array([np.any((df["sweep_number"].values == sn) &
+        has_non_delta_tags = np.array([np.any((results_df["sweep_number"].values == sn) &
             (results_df["name"].values != "Vm delta")) for sn in failed_sweep_list])
 
         also_passing_nums = np.array(failed_sweep_list)[tagged_mask & ~has_non_delta_tags]
