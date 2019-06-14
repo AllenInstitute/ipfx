@@ -150,17 +150,17 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
             ontology.ramp_names, sweep_qc_option=sweep_qc_option,
             specimen_id=specimen_id)
     except Exception as detail:
-        logging.warn("Exception when identifying sweeps from specimen {:d}".format(specimen_id))
-        logging.warn(detail)
-        return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=1)}}
+        logging.warning("Exception when identifying sweeps from specimen {:d}".format(specimen_id))
+        logging.warning(detail)
+        return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=None)}}
 
-#     try:
-    result = fv.extract_feature_vectors(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_numbers,
-                                            ap_window_length=ap_window_length)
-#     except Exception as detail:
-#         logging.warn("Exception when processing specimen {:d}".format(specimen_id))
-#         logging.warn(detail)
-#         return {"error": {"type": "processing", "details": traceback.format_exc(limit=1)}}
+    try:
+        result = fv.extract_feature_vectors(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_numbers,
+                                                ap_window_length=ap_window_length)
+    except Exception as detail:
+        logging.warn("Exception when processing specimen {:d}".format(specimen_id))
+        logging.warn(detail)
+        return {"error": {"type": "processing", "details": traceback.format_exc(limit=1)}}
 
     return result
 
