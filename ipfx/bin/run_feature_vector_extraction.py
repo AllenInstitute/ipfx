@@ -178,7 +178,7 @@ def run_feature_vector_extraction(ids=None, project="T301", sweep_qc_option=None
     get_data_partial = partial(data_for_specimen_id,
                                sweep_qc_option=sweep_qc_option,
                                ap_window_length=ap_window_length)
-    specimen_ids = specimen_ids[:10]
+
     if run_parallel:
         pool = Pool()
         results = pool.map(get_data_partial, specimen_ids)
