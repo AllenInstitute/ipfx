@@ -1,7 +1,7 @@
 from builtins import zip
 import ipfx.qc_features as qcf
 import numpy as np
-
+import pytest
 
 def test_measure_blowout():
     a = np.array([0, 0, 1, 1])
@@ -22,8 +22,8 @@ def test_measure_electrode_0():
 
 
 def test_measure_seal():
-    i = np.array([0, 0, 0, 0, 1, 1, 1, 0])
-    v = np.array([0, 0, 0, 0, 1, 1, 1, 0])
+    i = np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0])
+    v = np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0])
     t = np.arange(len(v)) * 1E-3
     b = qcf.measure_seal(v, i, t)
     assert np.allclose([b], [1.0])
@@ -49,3 +49,28 @@ def test_measure_input_resistance():
 
     ir_tested = qcf.get_r_from_stable_pulse_response(voltage, current, time)
     assert np.isclose(ir_tested, ir)
+
+
+def test_get_square_pulse_idx():
+
+        v = [0, 0, 1, 1, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 2, 2, 2, 0, 0]
+        up_idx = [6,11,15]
+        down_idx = [7,12,17]
+
+        assert up_idx,down_idx == qcf.get_square_pulse_idx(v)
+
+
+def test_truncated_pulse():
+
+    v = [0, 0, 1, 1, 0, 0, 2, 2, 0, 0, 0, 2, 2, 2]
+
+    with pytest.raises(AssertionError):
+        qcf.get_square_pulse_idx(v)
+
+
+def test_negative_pulse():
+
+    v = [0, 0, 1, 1, 0, 0, -2, -2, 0, 0, 0, 0, 2, 2, 2, 0, 0]
+
+    with pytest.raises(AssertionError):
+        qcf.get_square_pulse_idx(v)
