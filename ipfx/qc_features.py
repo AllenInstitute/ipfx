@@ -136,6 +136,6 @@ def get_square_pulse_idx(v):
     assert len(up_idx) == len(down_idx), "Truncated square pulse"
 
     for up_ix, down_ix in zip(up_idx, down_idx):
-        assert up_ix < down_ix, "Negative pulse"
+        assert up_ix < down_ix, "Negative square pulse"
 
     return up_idx, down_idx
