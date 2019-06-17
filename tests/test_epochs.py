@@ -38,13 +38,44 @@ import pytest
                              (
                                  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                                  4,
-                                 (None, None)
+                                 None
                              ),
 
                          ]
                          )
 def test_get_experiment_epoch(i, sampling_rate, expt_epoch):
     assert expt_epoch == ep.get_experiment_epoch(i, sampling_rate)
+
+
+@pytest.mark.parametrize('i,'
+                         'sampling_rate,'
+                         'test_epoch',
+                         [
+                             #   test pulse with square stim
+                             (
+                                 [0, 0, 1, 1, 0, 0, 0, 0, 2, 2, 2, 2, 2, 0],
+                                 4,
+                                 (0, 5)
+                             ),
+
+                             #   missing test pulse
+                             (
+                                 [0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0],
+                                 4,
+                                 None
+                             ),
+
+                             #   zero array
+                             (
+                                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                 4,
+                                 None
+                             ),
+
+                         ]
+                         )
+def test_get_test_epoch(i, sampling_rate, test_epoch):
+    assert test_epoch == ep.get_test_epoch(i, sampling_rate)
 
 
 @pytest.mark.parametrize('i,'
@@ -76,7 +107,7 @@ def test_get_experiment_epoch(i, sampling_rate, expt_epoch):
                              #   zero array
                              (
                                  [0, 0, 0, 0, 0, 0, 0],
-                                 (None, None)
+                                 None
                              ),
 
                          ]

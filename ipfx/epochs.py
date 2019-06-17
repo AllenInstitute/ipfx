@@ -132,8 +132,9 @@ def get_test_epoch(i,hz):
     -------
     start_idx,end_idx: int tuple
         start,end indices of the epoch
+    hz: float
+        sampling rate
     """
-
 
     di = np.diff(i)
     di_idx = np.flatnonzero(di)
