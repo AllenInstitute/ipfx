@@ -9,7 +9,6 @@ class Sweep(object):
         self.sampling_rate = sampling_rate
         self.sweep_number = sweep_number
         self.clamp_mode = clamp_mode
-
         if epochs:
             self.epochs = epochs
         else:
@@ -54,12 +53,18 @@ class Sweep(object):
 
         """
 
+        if "test" not in self.epochs:
+            self.epochs["test"] = ep.get_test_epoch(self.stimulus,self.sampling_rate)
+        if self.epochs["test"]:
+            test_pulse = True
+        else:
+            test_pulse = False
+
         epoch_detectors = {
             "sweep": ep.get_sweep_epoch(self.response),
             "recording": ep.get_recording_epoch(self.response),
-            "experiment": ep.get_experiment_epoch(self._i, self.sampling_rate),
-            "test": ep.get_test_epoch(self._i),
-            "stim": ep.get_stim_epoch(self._i),
+            "experiment": ep.get_experiment_epoch(self._i, self.sampling_rate,test_pulse),
+            "stim": ep.get_stim_epoch(self.stimulus, test_pulse),
         }
 
         for epoch_name, epoch_detector in epoch_detectors.items():
