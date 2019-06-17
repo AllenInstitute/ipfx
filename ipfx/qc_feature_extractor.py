@@ -29,7 +29,6 @@ def extract_blowout(data_set, tags):
         blowout_data = data_set.sweep(blowout_sweep_number)
         _,test_end_idx = blowout_data.epochs["test"]
         blowout_mv = qcf.measure_blowout(blowout_data.v, test_end_idx)
-
     except IndexError as e:
         tags.append("Blowout is not available")
         blowout_mv = None
@@ -299,8 +298,8 @@ def check_sweep_integrity(sweep, is_ramp):
 
     tags = []
 
-    if sweep.epochs["stim"] == (None, None):
-        tags.append("Stimulus pulse is missing")
+    if not sweep.epochs["test"]:
+        tags.append("Test pulse is missing")
 
     if not is_ramp:
         if sweep.epochs["recording"][1] < sweep.epochs["experiment"][1]:

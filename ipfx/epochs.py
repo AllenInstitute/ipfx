@@ -9,6 +9,7 @@ from . import time_series_utils as tsu
 NOISE_EPOCH = 0.0015
 PRESTIM_STABILITY_EPOCH = 0.5
 POSTSTIM_STABILITY_EPOCH = 0.5
+TEST_PULSE_MAX_TIME = 0.4
 
 
 def get_first_stability_epoch(stim_start_idx, hz):
@@ -110,7 +111,7 @@ def get_stim_epoch(i, test_pulse=True):
         di_idx = di_idx[2:]     # drop the first up/down (test pulse) if present
 
     if len(di_idx) == 0:    # if no stimulus is found
-        return None, None
+        return None
 
     start_idx = di_idx[0] + 1   # shift by one to compensate for diff()
     end_idx = di_idx[-1]
@@ -118,7 +119,7 @@ def get_stim_epoch(i, test_pulse=True):
     return start_idx, end_idx
 
 
-def get_test_epoch(i):
+def get_test_epoch(i,hz):
     """
     Find index range of the test epoch
 
@@ -132,11 +133,16 @@ def get_test_epoch(i):
     start_idx,end_idx: int tuple
         start,end indices of the epoch
     """
+
+
     di = np.diff(i)
     di_idx = np.flatnonzero(di)
 
     if len(di_idx) == 0:
-        return None, None
+        return None
+
+    if di_idx[0] >= TEST_PULSE_MAX_TIME*hz:
+        return None
 
     if len(di_idx) == 1:
         raise Exception("Cannot detect and end to the test pulse")
@@ -151,7 +157,7 @@ def get_test_epoch(i):
     return start_idx, end_idx
 
 
-def get_experiment_epoch(i,hz):
+def get_experiment_epoch(i, hz, test_pulse=True):
     """
     Find index range for the experiment epoch.
     The start index of the experiment epoch is defined as stim_start_idx - PRESTIM_DURATION*sampling_rate
@@ -161,6 +167,7 @@ def get_experiment_epoch(i,hz):
     ----------
     i   :   float np.array of current
     hz  :   float sampling rate
+    test_pulse: bool True if present, False otherwise
 
     Returns
     -------
@@ -168,13 +175,15 @@ def get_experiment_epoch(i,hz):
 
     """
 
-    stim_start_idx, stim_end_idx = get_stim_epoch(i)
-    if stim_start_idx and stim_end_idx:
+    stim_epoch = get_stim_epoch(i,test_pulse)
+
+    if stim_epoch:
+        stim_start_idx,stim_end_idx = stim_epoch
         expt_start_idx = stim_start_idx - int(PRESTIM_STABILITY_EPOCH * hz)
         expt_end_idx = stim_end_idx + int(POSTSTIM_STABILITY_EPOCH * hz)
 
         return expt_start_idx,expt_end_idx
     else:
-        return None, None
+        return None
 
 
