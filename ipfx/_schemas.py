@@ -14,11 +14,11 @@ class SweepFeatures(DefaultSchema):
 
 class CellFeatures(DefaultSchema):
     blowout_mv = Float(description="blash", required=False, allow_none=True)
-    seal_gohm = Float(description="blash")
-    electrode_0_pa = Float(description="blash")
-    input_access_resistance_ratio = Float(description="blash")
-    input_resistance_mohm = Float(description="blash")
-    initial_access_resistance_mohm = Float(description="blash")
+    seal_gohm = Float(description="blash", allow_none=True)
+    electrode_0_pa = Float(description="blash", allow_none=True)
+    input_access_resistance_ratio = Float(description="blash", allow_none=True)
+    input_resistance_mohm = Float(description="blash", allow_none=True)
+    initial_access_resistance_mohm = Float(description="blash", allow_none=True)
 
 class FxSweepFeatures(SweepFeatures):
     passed = Boolean(description="qc passed or failed", required=True)
