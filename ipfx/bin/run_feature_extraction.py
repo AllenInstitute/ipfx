@@ -69,7 +69,7 @@ def run_feature_extraction(input_nwb_file,
                          }
 
     except (er.FeatureError,IndexError) as e:
-        cell_state = {"failed_fx":True, "fail_fx_message": e}
+        cell_state = {"failed_fx":True, "fail_fx_message": str(e)}
         logging.warning(e)
         feature_data = {'cell_state': cell_state}
 
