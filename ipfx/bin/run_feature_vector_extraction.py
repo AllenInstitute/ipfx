@@ -58,23 +58,28 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
         sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
         results = lq.query(exist_sql, (specimen_id, sweep_num_list))
         res_nums = pd.DataFrame(results, columns=["sweep_number"])["sweep_number"].tolist()
+        not_checked_list = []
         for swp_num in sweep_num_list:
             if swp_num not in res_nums:
-                print("Could not find sweep {:d} from specimen {:d} in LIMS".format(swp_num, specimen_id))
+                logging.info("Could not find sweep {:d} from specimen {:d} in LIMS for QC check".format(swp_num, specimen_id))
+                not_checked_list.append(swp_num)
 
         # Get passed sweeps
         results = lq.query(passed_sql, (specimen_id, sweep_num_list))
         results_df = pd.DataFrame(results, columns=["sweep_number"])
         passed_sweep_nums = results_df["sweep_number"].values
-        return np.sort(passed_sweep_nums)
+        return np.sort(np.hstack([passed_sweep_nums, np.array(not_checked_list)])) # deciding to keep non-checked sweeps for now
     elif sweep_qc_option == "passed_except_delta_vm":
         # check that sweeps exist in LIMS
         sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
         results = lq.query(exist_sql, (specimen_id, sweep_num_list))
         res_nums = pd.DataFrame(results, columns=["sweep_number"])["sweep_number"].tolist()
+
+        not_checked_list = []
         for swp_num in sweep_num_list:
             if swp_num not in res_nums:
-                print("Could not find sweep {:d} from specimen {:d} in LIMS".format(swp_num, specimen_id))
+                logging.info("Could not find sweep {:d} from specimen {:d} in LIMS for QC check".format(swp_num, specimen_id))
+                not_checked_list.append(swp_num)
 
         # get straight-up passed sweeps
         results = lq.query(passed_sql, (specimen_id, sweep_num_list))
@@ -99,7 +104,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
 
         also_passing_nums = np.array(failed_sweep_list)[tagged_mask & ~has_non_delta_tags]
 
-        return np.sort(np.hstack([passed_sweep_nums, also_passing_nums]))
+        return np.sort(np.hstack([passed_sweep_nums, also_passing_nums, np.array(not_checked_list)]))
     else:
         raise ValueError("Invalid QC option {}".format(sweep_qc_option))
 
@@ -109,12 +114,12 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
     name, roi_id, specimen_id = lq.get_specimen_info_from_lims_by_id(specimen_id)
     if roi_id is None:
         logging.debug("No ephys ROI result found for {:d}".format(specimen_id))
-        return {"error": {"type": "no_ephys_roi_result", "details": ""}}
+        return {"error": {"type": "no_ephys_roi_result", "details": "roi ID was None"}}
 
     nwb_path = lq.get_nwb_path_from_lims(roi_id)
     if (nwb_path is None) or (len(nwb_path) == 0): # could not find an NWB file
         logging.debug("No NWB file for {:d}".format(specimen_id))
-        return {"error": {"type": "no_nwb", "details": ""}}
+        return {"error": {"type": "no_nwb", "details": "empty nwb path"}}
 
     # Check if NWB has lab notebook information, or if additional hdf5 file is needed
     h5_path = None
@@ -124,9 +129,9 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
                 try:
                     h5_path = lq.get_igorh5_path_from_lims(roi_id)
                 except Exception as detail:
-                    logging.warn("Exception when loading h5 file for {:d}".format(specimen_id))
-                    logging.warn(detail)
-                    return {"error": {"type": "dataset", "details": traceback.format_exc(limit=1)}}
+                    logging.warning("Exception when loading h5 file for {:d}".format(specimen_id))
+                    logging.warning(detail)
+                    return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
     except:
         logging.debug("Could not open NWB file for {:d}".format(specimen_id))
         return {"error": {"type": "no_nwb", "details": ""}}
@@ -135,9 +140,9 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
         data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
         ontology = data_set.ontology
     except Exception as detail:
-        logging.warn("Exception when loading specimen {:d}".format(specimen_id))
-        logging.warn(detail)
-        return {"error": {"type": "dataset", "details": traceback.format_exc(limit=1)}}
+        logging.warning("Exception when loading specimen {:d}".format(specimen_id))
+        logging.warning(detail)
+        return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
 
     try:
         lsq_sweep_numbers = categorize_iclamp_sweeps(data_set,
@@ -158,9 +163,9 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
         result = fv.extract_feature_vectors(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_numbers,
                                                 ap_window_length=ap_window_length)
     except Exception as detail:
-        logging.warn("Exception when processing specimen {:d}".format(specimen_id))
-        logging.warn(detail)
-        return {"error": {"type": "processing", "details": traceback.format_exc(limit=1)}}
+        logging.warning("Exception when processing specimen {:d}".format(specimen_id))
+        logging.warning(detail)
+        return {"error": {"type": "processing", "details": traceback.format_exc(limit=None)}}
 
     return result
 
@@ -198,7 +203,7 @@ def run_feature_vector_extraction(ids=None, project="T301", sweep_qc_option=None
         data = np.array([r[k] if k in r else np.nan * np.zeros(k_sizes[k])
                         for r in results])
         if len(data) < len(used_ids):
-            logging.warn("Missing data!")
+            logging.warning("Missing data!")
             missing = np.array([k not in r for r in results])
             print(k, np.array(used_ids)[missing])
         np.save(os.path.join(output_dir, "fv_{:s}_{:s}.npy".format(k, project)), data)

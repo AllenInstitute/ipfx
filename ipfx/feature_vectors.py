@@ -601,19 +601,25 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
     sweep_table = features["spiking_sweeps"]
     mask_supra = sweep_table["stim_amp"] >= features["rheobase_i"]
     sweep_indexes = consolidated_long_square_indexes(sweep_table.loc[mask_supra, :])
+    logging.debug("Identifying spiking sweeps using rheobase = {}".format(features["rheobase_i"]))
     amps = np.rint(sweep_table.loc[sweep_indexes, "stim_amp"].values - features["rheobase_i"])
+    logging.debug("Available amplitudes: {:s}".format(np.array2string(amps)))
     spike_data = features["spikes_set"]
+
+    sweeps_to_use = spiking_sweeps_at_levels(amps, sweep_indexes,
+        max_above_rheo, amp_interval, amp_tolerance)
+
+    # We want more than one sweep to line up with expected intervals
+    if len(sweeps_to_use) <= 1:
+        logging.debug("Found only one spiking sweep that matches expected amplitude levels; attempting to shift by 10 pA")
+        sweeps_to_use = spiking_sweeps_at_levels(amps - 10., sweep_indexes,
+        max_above_rheo, amp_interval, amp_tolerance)
+        if len(sweeps_to_use) <= 1:
+            raise er.FeatureError("Could not find enough spiking sweeps aligned with expected amplitude levels")
 
     # PSTH Calculation
     rate_data = {}
-    for amp, swp_ind in zip(amps, sweep_indexes):
-        if (amp > max_above_rheo) or (amp < 0):
-            continue
-        amp_level = int(np.rint(amp / float(amp_interval)))
-
-        if (np.abs(amp - amp_level * amp_interval) > amp_tolerance):
-            continue
-
+    for amp_level, amp, swp_ind in sweeps_to_use:
         thresh_t = spike_data[swp_ind]["threshold_t"]
         spike_count = np.ones_like(thresh_t)
         bin_number = int(1. / 0.001) // rate_width + 1
@@ -632,14 +638,7 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
 
     # Instantaneous frequency
     feature_data = {}
-    for amp, swp_ind in zip(amps, sweep_indexes):
-        if (amp > max_above_rheo) or (amp < 0):
-            continue
-        amp_level = int(np.rint(amp / float(amp_interval)))
-
-        if (np.abs(amp - amp_level * amp_interval) > amp_tolerance):
-            continue
-
+    for amp_level, amp, swp_ind in sweeps_to_use:
         swp = sweep_set.sweeps[swp_ind]
         start_index = tsu.find_time_index(swp.t, start)
         end_index = tsu.find_time_index(swp.t, end)
@@ -667,14 +666,7 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
     # Spike-level feature calculation
     for feature in spike_feature_list:
         feature_data = {}
-        for amp, swp_ind in zip(amps, sweep_indexes):
-            if (amp > max_above_rheo) or (amp < 0):
-                continue
-            amp_level = int(np.rint(amp / float(amp_interval)))
-
-            if (np.abs(amp - amp_level * amp_interval) > amp_tolerance):
-                continue
-
+        for amp_level, amp, swp_ind in sweeps_to_use:
             thresh_t = spike_data[swp_ind]["threshold_t"].values
             if feature not in spike_data[swp_ind].columns:
                 feature_values = np.zeros_like(thresh_t)
@@ -701,6 +693,24 @@ def spiking_features(sweep_set, features, spike_extractor, start, end,
     return output_vector
 
 
+def spiking_sweeps_at_levels(amps, sweep_indexes, max_above_rheo, amp_interval,
+        amp_tolerance):
+
+    sweeps_to_use = []
+    for amp, swp_ind in zip(amps, sweep_indexes):
+        if (amp > max_above_rheo) or (amp < 0):
+            logging.debug("Skipping amplitude {} (outside range)".format(amp))
+            continue
+        amp_level = int(np.rint(amp / float(amp_interval)))
+
+        if (np.abs(amp - amp_level * amp_interval) > amp_tolerance):
+            logging.debug("Skipping amplitude {} (mismatch with expected amplitude interval)".format(amp))
+            continue
+
+        logging.debug("Using amplitude {} for amp level {}".format(amp, amp_level))
+        sweeps_to_use.append((amp_level, amp, swp_ind))
+    return sweeps_to_use
+
 def consolidated_long_square_indexes(sweep_table):
     sweep_index_list = []
     amp_arr = sweep_table["stim_amp"].unique()
@@ -719,6 +729,8 @@ def consolidated_long_square_indexes(sweep_table):
 
 def combine_and_interpolate(data, max_level):
     output_vector = data[0]
+    if len(data) <= 1:
+        logging.warning("Data from only one spiking sweep found; interpolation may have problems")
     for i in range(1, max_level + 1):
         if i not in data:
             bigger_level = -1
