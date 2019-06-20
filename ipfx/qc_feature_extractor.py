@@ -298,12 +298,15 @@ def check_sweep_integrity(sweep, is_ramp):
 
     tags = []
 
-    if not sweep.epochs["test"]:
-        tags.append("Test pulse is missing")
+    for k,v in sweep.epochs.items():
+        if not v:
+            tags.append(F"{k} epoch is missing")
 
     if not is_ramp:
-        if sweep.epochs["recording"][1] < sweep.epochs["experiment"][1]:
-            tags.append("Recording stopped before completing the experiment epoch")
+        if sweep.epochs["recording"] and sweep.epochs["experiment"]:
+            if sweep.epochs["recording"][1] < sweep.epochs["experiment"][1]:
+                tags.append("Recording stopped before completing the experiment epoch")
+
     return tags
 
 
