@@ -323,8 +323,11 @@ def current_clamp_sweep_stim_features(sweep):
     stim_features['stimulus_amplitude'] = amp
     stim_features['stimulus_duration'] = dur
 
-    expt_start_idx, _ = ep.get_experiment_epoch(i, hz)
-    interval = stf.find_stim_interval(expt_start_idx, i, hz)
+    if sweep.epochs["experiment"]:
+        expt_start_idx, _ = sweep.epochs["experiment"]
+        interval = stf.find_stim_interval(expt_start_idx, i, hz)
+    else:
+        interval = None
 
     stim_features['stimulus_interval'] = interval
 
