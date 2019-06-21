@@ -193,8 +193,17 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         calc_subthresh_features = subthreshold_sweep_features[ (subthreshold_sweep_features["stim_amp"] < self.SUBTHRESH_MAX_AMP) & \
                                                             (subthreshold_sweep_features["stim_amp"] > self.subthresh_min_amp) ].copy()
 
-        calc_subthresh_ss = SweepSet([sweep_set.sweeps[i] for i in calc_subthresh_features.index.values])
+        if len(calc_subthresh_features) == 0:
+            error_string = F"No subthreshold long square sweeps with stim_amp " \
+                           F"in range [{self.subthresh_min_amp,self.SUBTHRESH_MAX_AMP}] " \
+                           F"Cannot evaluate cell features."
+            if self.require_subthreshold:
+                raise er.FeatureError(error_string)
+            else:
+                return features
 
+
+        calc_subthresh_ss = SweepSet([sweep_set.sweeps[i] for i in calc_subthresh_features.index.values])
         median_peak_time = np.median([s.t[subf.voltage_deflection(s.t, s.v, s.i, self.spx.start, self.spx.end, "min")[1]]
                                       for s in calc_subthresh_ss.sweeps])
         taus = [ subf.time_constant(s.t, s.v, s.i, self.spx.start, self.spx.end, median_peak_time, self.tau_frac, self.sptx.baseline_interval) for s in calc_subthresh_ss.sweeps ]
