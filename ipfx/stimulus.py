@@ -1,6 +1,7 @@
 import os
 import logging
 import allensdk.core.json_utilities as ju
+import warnings
 
 DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(os.path.dirname(__file__), 'defaults/stimulus_ontology.json')
 
@@ -37,7 +38,8 @@ class StimulusOntology(object):
         """
 
         if stim_ontology_tags is None:
-            logging.debug("loading default stimulus ontology: %s", DEFAULT_STIMULUS_ONTOLOGY_FILE)
+            warnings.warn(F"Stimulus ontology is not provided, loading default from : {DEFAULT_STIMULUS_ONTOLOGY_FILE}")
+
             stim_ontology_tags = ju.read(DEFAULT_STIMULUS_ONTOLOGY_FILE)
 
         self.stimuli = list(Stimulus(s) for s in stim_ontology_tags)
