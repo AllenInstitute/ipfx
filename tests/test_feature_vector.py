@@ -6,16 +6,18 @@ import ipfx.stim_features as stf
 import ipfx.stimulus_protocol_analysis as spa
 import ipfx.feature_vectors as fv
 import pytest
-
-@pytest.mark.skip
-def test_first_ap_waveform():
-    pass
+import os
 
 
-@pytest.mark.skip
-def test_isi_shape():
+TEST_OUTPUT_DIR = "/allen/aibs/informatics/module_test_data/ipfx/test_feature_vector"
 
-    nwb_file = "/allen/programs/celltypes/production/humancelltypes/prod79/Ephys_Roi_Result_737293859/H18.03.315.11.11.01.05.nwb"
+
+@pytest.fixture
+def feature_vector_input():
+
+    TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
+
+    nwb_file = os.path.join(TEST_DATA_PATH, "Pvalb-IRES-Cre;Ai14-415796.02.01.01.nwb")
     data_set = AibsDataSet(nwb_file= nwb_file)
     ontology = data_set.ontology
 
@@ -23,34 +25,49 @@ def test_isi_shape():
                                                       stimuli=ontology.long_square_names).sweep_number.sort_values().values
 
     lsq_sweeps = data_set.sweep_set(lsq_sweep_numbers)
-    print(lsq_sweep_numbers)
     lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(lsq_sweeps.sweeps[0].i,
                                                                lsq_sweeps.sweeps[0].t)
 
+    lsq_end = lsq_start + lsq_dur
     lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(lsq_sweeps,
                                                   start=lsq_start,
-                                                  end=lsq_start + lsq_dur,
+                                                  end=lsq_end,
                                                   **dsf.detection_parameters(data_set.LONG_SQUARE))
     lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=-100.)
 
     lsq_features = lsq_an.analyze(lsq_sweeps)
 
-
-    # Figure out the sampling rate & target length
-    swp = lsq_sweeps.sweeps[0]
-
-    sampling_rate = int(np.rint(1. / (swp.t[1] - swp.t[0])))
-    window_length = 0.003
-    length_in_points = int(sampling_rate * window_length)
-
-# Long squares
-    if lsq_sweeps is not None and lsq_features is not None:
-        rheo_ind = lsq_features["rheobase_sweep"].name
-
-        sweep = lsq_sweeps.sweeps[rheo_ind]
-        spikes = lsq_features["spikes_set"][rheo_ind]
-        print(rheo_ind, fv.first_ap_waveform(sweep, spikes, length_in_points))
+    return lsq_sweeps, lsq_features, lsq_start, lsq_end
 
 
-    assert 0
+def test_isi_shape(feature_vector_input):
+
+    sweeps, features, start, end = feature_vector_input
+
+    temp_data = fv.isi_shape(sweeps, features)
+
+    test_data = np.load(os.path.join(TEST_OUTPUT_DIR, "isi_shape.npy"))
+
+    assert np.array_equal(test_data, temp_data)
+
+
+def test_step_subthreshold(feature_vector_input):
+    sweeps, features, start, end = feature_vector_input
+
+    temp_data = fv.subthresh_depol_norm(sweeps, features, start, end)
+
+    test_data = np.load(os.path.join(TEST_OUTPUT_DIR, "step_subthresh.npy"))
+
+    assert np.array_equal(test_data, temp_data)
+
+
+def test_subthresh_depol_norm(feature_vector_input):
+
+    sweeps, features, start, end = feature_vector_input
+
+    temp_data = fv.subthresh_depol_norm(sweeps, features, start, end)
+
+    test_data = np.load(os.path.join(TEST_OUTPUT_DIR, "subthresh_depol_norm.npy"))
+
+    assert np.array_equal(test_data, temp_data)
 
