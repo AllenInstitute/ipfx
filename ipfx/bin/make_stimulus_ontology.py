@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import allensdk.core.json_utilities as ju
 import re
 import os
-from . import lims_queries as lq
+from ipfx.bin import lims_queries as lq
 
 NAME = 'name'
 CODE = 'code'
@@ -74,8 +74,6 @@ def make_stimulus_ontology_from_lims():
         return None
 
     ontology = make_stimulus_ontology(stimuli)
-
-    ontology.append([(CODE, 'C1NSSEED'), (NAME, 'Noise', 'Noise 1'), (CORE, 'Core 1')])
 
     return ontology
 
