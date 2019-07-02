@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import ipfx.feature_vectors as fv
 import argschema as ags
+from allensdk.core.cell_types_cache import CellTypesCache
 import ipfx.bin.lims_queries as lq
 from ipfx.aibs_data_set import AibsDataSet
 import warnings
@@ -148,9 +149,8 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
         raise ValueError("Invalid sweep-level QC option {}".format(sweep_qc_option))
 
 
-def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
-    logging.debug("specimen_id: {}".format(specimen_id))
-    name, roi_id, specimen_id = lq.get_specimen_info_from_lims_by_id(specimen_id)
+def lims_nwb_information(specimen_id):
+    _, roi_id, _ = lq.get_specimen_info_from_lims_by_id(specimen_id)
     if roi_id is None:
         logging.debug("No ephys ROI result found for {:d}".format(specimen_id))
         return {"error": {"type": "no_ephys_roi_result", "details": "roi ID was None"}}
@@ -174,6 +174,25 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
     except:
         logging.debug("Could not open NWB file for {:d}".format(specimen_id))
         return {"error": {"type": "no_nwb", "details": ""}}
+    return nwb_path, h5_path
+
+
+def sdk_nwb_information(specimen_id):
+    ctc = CellTypesCache()
+    nwb_data_set = ctc.get_ephys_data(specimen_id)
+    return nwb_data_set.file_name
+
+
+def data_for_specimen_id(specimen_id, sweep_qc_option, data_source, ap_window_length=0.005):
+    logging.debug("specimen_id: {}".format(specimen_id))
+
+    if data_source == "lims":
+        nwb_path, h5_path = lims_nwb_information(specimen_id)
+    elif data_source == "sdk":
+        nwb_path = sdk_nwb_information(specimen_id)
+        h5_path = None
+    else:
+        logging.error("invalid data source specified ({})".format(data_source))
 
     try:
         data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
