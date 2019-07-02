@@ -222,6 +222,7 @@ def run_feature_vector_extraction(output_dir, data_source, output_code, project,
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
     get_data_partial = partial(data_for_specimen_id,
                                sweep_qc_option=sweep_qc_option,
+                               data_source=data_source,
                                ap_window_length=ap_window_length)
 
     if run_parallel:
@@ -249,12 +250,12 @@ def run_feature_vector_extraction(output_dir, data_source, output_code, project,
             logging.warning("Missing data!")
             missing = np.array([k not in r for r in results])
             print(k, np.array(used_ids)[missing])
-        np.save(os.path.join(output_dir, "fv_{:s}_{:s}.npy".format(k, project)), data)
+        np.save(os.path.join(output_dir, "fv_{:s}_{:s}.npy".format(k, output_code)), data)
 
-    with open(os.path.join(output_dir, "fv_errors_{:s}.json".format(project)), "w") as f:
+    with open(os.path.join(output_dir, "fv_errors_{:s}.json".format(output_code)), "w") as f:
         json.dump(error_set, f, indent=4)
 
-    np.save(os.path.join(output_dir, "fv_ids_{:s}.npy".format(project)), used_ids)
+    np.save(os.path.join(output_dir, "fv_ids_{:s}.npy".format(output_code)), used_ids)
 
 
 def main():
