@@ -18,6 +18,8 @@ import os
 import json
 import h5py
 from ipfx.bin.run_feature_vector_extraction import categorize_iclamp_sweeps
+from ipfx.stimulus import StimulusOntology
+import allensdk.core.json_utilities as ju
 
 
 class CollectFeatureParameters(ags.ArgSchema):
@@ -43,8 +45,9 @@ def data_for_specimen_id(specimen_id, passed_only):
             h5_path = lq.get_igorh5_path_from_lims(roi_id)
 
     try:
-        data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
-        ontology = data_set.ontology
+
+        ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
+        data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path,ontology=ontology)
     except Exception as detail:
         logging.warn("Exception when processing specimen {:d}".format(specimen_id))
         logging.warn(detail)
