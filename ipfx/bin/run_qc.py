@@ -1,15 +1,15 @@
 #!/usr/bin/python
 import logging
-
 from ipfx.stimulus import StimulusOntology
 import ipfx.qc_feature_evaluator as qcp
-
+import ipfx.bin.make_stimulus_ontology as mso
 import argschema as ags
 from ipfx._schemas import QcParameters
 import allensdk.core.json_utilities as ju
 import ipfx.sweep_props as sp
 import pandas as pd
 import ipfx.logging_utils as lu
+
 
 def run_qc(stimulus_ontology_file, cell_features, sweep_features, qc_criteria):
     """
@@ -33,13 +33,18 @@ def run_qc(stimulus_ontology_file, cell_features, sweep_features, qc_criteria):
 
     lu.log_pretty_header("Perform QC checks", level=1)
 
-    logging.info("stimulus ontology file: %s", stimulus_ontology_file)
-    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
+    if stimulus_ontology_file:
+        mso.make_stimulus_ontology_from_lims(stimulus_ontology_file)
+    else:
+        stimulus_ontology_file = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
+
+    ont = StimulusOntology(ju.read(stimulus_ontology_file))
 
     cell_state, sweep_states = qcp.qc_experiment(ont,
                                                  cell_features,
                                                  sweep_features,
                                                  qc_criteria)
+
 
     qc_summary(sweep_features, sweep_states, cell_features, cell_state)
 
