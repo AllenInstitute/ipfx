@@ -1,10 +1,11 @@
 from __future__ import absolute_import
 import pytest
-
+from ipfx.stimulus import StimulusOntology
 from ipfx.aibs_data_set import AibsDataSet
 from ipfx.aibs_data_set import EphysDataSet
 import ipfx.sweep_props as sp
 from .helpers_for_tests import compare_dicts
+import allensdk.core.json_utilities as ju
 
 
 @pytest.mark.parametrize('NWB_file', ['H18.03.315.11.11.01.05.nwb'], indirect=True)
@@ -39,7 +40,10 @@ def test_modify_sweep_info_keys():
 
 @pytest.mark.parametrize('NWB_file', ['H18.03.315.11.11.01.05.nwb'], indirect=True)
 def test_get_clamp_mode(NWB_file):
-    dataset = AibsDataSet(nwb_file=NWB_file)
+
+    default_ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
+
+    dataset = AibsDataSet(nwb_file=NWB_file, ontology=default_ontology)
 
     assert dataset.get_clamp_mode(0) == dataset.VOLTAGE_CLAMP
 
@@ -47,19 +51,22 @@ def test_get_clamp_mode(NWB_file):
 @pytest.mark.parametrize('NWB_file', ['H18.03.315.11.11.01.05.nwb'], indirect=True)
 def test_get_stimulus_units(NWB_file):
 
-    dataset = AibsDataSet(nwb_file=NWB_file)
+    default_ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
+    dataset = AibsDataSet(nwb_file=NWB_file, ontology=default_ontology)
     assert dataset.get_stimulus_units(0) == "mV"
 
 
 @pytest.mark.parametrize('NWB_file', ['H18.03.315.11.11.01.05.nwb'], indirect=True)
 def test_get_stimulus_code(NWB_file):
 
-    dataset = AibsDataSet(nwb_file=NWB_file)
+    default_ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
+    dataset = AibsDataSet(nwb_file=NWB_file, ontology=default_ontology)
     assert dataset.get_stimulus_code(0) == "EXTPSMOKET180424"
 
 
 @pytest.mark.parametrize('NWB_file', ['H18.03.315.11.11.01.05.nwb'], indirect=True)
 def test_get_stimulus_code_ext(NWB_file):
-    dataset = AibsDataSet(nwb_file=NWB_file)
+    default_ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
+    dataset = AibsDataSet(nwb_file=NWB_file, ontology=default_ontology)
 
     assert dataset.get_stimulus_code_ext("EXTPSMOKET180424",0) == "EXTPSMOKET180424[0]"

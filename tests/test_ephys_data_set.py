@@ -5,6 +5,7 @@ import pytest
 
 from ipfx.stimulus import StimulusOntology
 from ipfx.ephys_data_set import EphysDataSet
+import allensdk.core.json_utilities as ju
 
 from .helpers_for_tests import compare_dicts
 
@@ -25,7 +26,7 @@ def get_dataset():
 
     d = get_sweep_table_dict()
     df = pd.DataFrame(d)
-    default_ontology = StimulusOntology()
+    default_ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
     dataset = EphysDataSet(default_ontology)
     dataset.sweep_table = df
 
@@ -34,7 +35,7 @@ def get_dataset():
 
 def get_empty_dataset():
 
-    default_ontology = StimulusOntology()
+    default_ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
     dataset = EphysDataSet(default_ontology)
     dataset.build_sweep_table(sweep_info=[])
 
