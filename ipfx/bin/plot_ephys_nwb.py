@@ -16,7 +16,7 @@ def plot_data_set(data_set, sweep_table, nwb_file_name):
 
     for fig_row, (stimulus_code, sweep_set_table) in enumerate(sweep_table.groupby("stimulus_code")):
         sweep_numbers = sweep_set_table["sweep_number"].sort_values().values
-        ss = data_set.sweep_set(sweep_numbers[0])
+        ss = data_set.sweep_set(sweep_numbers)
 
         ax_a = ax[fig_row,0]
         ax_i = ax[fig_row,1]
