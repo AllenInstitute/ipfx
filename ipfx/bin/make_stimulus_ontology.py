@@ -1,21 +1,17 @@
-from __future__ import print_function
-from __future__ import absolute_import
 import allensdk.core.json_utilities as ju
+from ipfx.stimulus import StimulusOntology
 import re
-import os
 from ipfx.bin import lims_queries as lq
-
-NAME = 'name'
-CODE = 'code'
-RES = 'resolution'
-CORE = 'core'
-HOLD = 'hold'
-
 
 def make_stimulus_ontology(stims):
 
-    ontology = []
+    NAME = 'name'
+    CODE = 'code'
+    RES = 'resolution'
+    CORE = 'core'
+    HOLD = 'hold'
 
+    ontology_tags = []
     stims = [{k: v for k, v in stim.items()} for stim in stims]
 
     for stim in stims:
@@ -61,39 +57,25 @@ def make_stimulus_ontology(stims):
             b = sname[idx + 1:]
             tags.add((HOLD, b.strip()))
 
-        ontology.append(list(tags))
+        ontology_tags.append(list(tags))
 
-    return ontology
+    return ontology_tags
 
 
-def make_stimulus_ontology_from_lims():
+def make_stimulus_ontology_from_lims(file_name):
 
-    stimuli = lq.get_stimuli_description()
-
-    if not stimuli:
-        return None
-
-    ontology = make_stimulus_ontology(stimuli)
-
-    return ontology
+    if lq.able_to_connect_to_lims():
+        stims = lq.get_stimuli_description()
+        stim_ontology = make_stimulus_ontology(stims)
+        ju.write(file_name, stim_ontology)
+    else:
+        raise Exception("Unable to connect to LIMS")
 
 
 def make_default_stimulus_ontology():
 
-    MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-    PACKAGE_DIR = os.path.dirname(MODULE_DIR)
-
-    stim_ontology_tags = make_stimulus_ontology_from_lims()
-
-    if not stim_ontology_tags:
-        return
-
-    stim_ontology_json = os.path.join(PACKAGE_DIR,"defaults/stimulus_ontology.json")
-
-    ju.write(stim_ontology_json, stim_ontology_tags)
-
-    for o in stim_ontology_tags:
-        print(o)
+    stimulus_ontology_file = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
+    make_stimulus_ontology_from_lims(stimulus_ontology_file)
 
 
 def main():
@@ -101,4 +83,7 @@ def main():
     make_default_stimulus_ontology()
 
 
-if __name__=="__main__": main()
+if __name__== "__main__": main()
+
+
+
