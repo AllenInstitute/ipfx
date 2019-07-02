@@ -32,9 +32,9 @@ class EphysDataSet(object):
     VOLTAGE_CLAMP = "VoltageClamp"
     CURRENT_CLAMP = "CurrentClamp"
 
-    def __init__(self, ontology=None, validate_stim=True):
+    def __init__(self, ontology, validate_stim=True):
         self.sweep_table = None
-        self.ontology = ontology if ontology else StimulusOntology()
+        self.ontology = ontology
         self.validate_stim = validate_stim
 
     def build_sweep_table(self, sweep_info=None):
