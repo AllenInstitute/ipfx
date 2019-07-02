@@ -2,11 +2,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 import numpy as np
 import pandas as pd
-import ipfx.feature_vectors as fv
 import argschema as ags
-from allensdk.core.cell_types_cache import CellTypesCache
-import ipfx.bin.lims_queries as lq
-from ipfx.aibs_data_set import AibsDataSet
 import warnings
 import logging
 import traceback
@@ -15,6 +11,17 @@ from functools import partial
 import os
 import json
 import h5py
+
+import ipfx.feature_vectors as fv
+import ipfx.bin.lims_queries as lq
+import ipfx.stim_features as stf
+import ipfx.stimulus_protocol_analysis as spa
+import ipfx.data_set_features as dsf
+import ipfx.time_series_utils as tsu
+
+from ipfx.aibs_data_set import AibsDataSet
+
+from allensdk.core.cell_types_cache import CellTypesCache
 
 
 class CollectFeatureVectorParameters(ags.ArgSchema):
@@ -183,9 +190,69 @@ def sdk_nwb_information(specimen_id):
     return nwb_data_set.file_name
 
 
-def data_for_specimen_id(specimen_id, sweep_qc_option, data_source, ap_window_length=0.005):
+def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthresh_min_amp=-100.):
+    if len(sweep_numbers) == 0:
+        raise er.FeatureError("No long_square sweeps available for feature extraction")
+
+    check_lsq_sweeps = data_set.sweep_set(sweep_numbers)
+    lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(check_lsq_sweeps.sweeps[0].i, check_lsq_sweeps.sweeps[0].t)
+    lsq_end = lsq_start + lsq_dur
+
+    # Check that all sweeps are long enough and not ended early
+    good_sweep_numbers = [n for n, s in zip(sweep_numbers, check_lsq_sweeps.sweeps)
+                              if s.t[-1] >= lsq_start + lsq_dur + extra_dur and not np.all(s.v[tsu.find_time_index(s.t, lsq_start + lsq_dur)-100:tsu.find_time_index(s.t, lsq_start + lsq_dur)] == 0)]
+    lsq_sweeps = data_set.sweep_set(good_sweep_numbers)
+
+    lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(
+        lsq_sweeps,
+        start = lsq_start,
+        end = lsq_end,
+        **dsf.detection_parameters(data_set.LONG_SQUARE)
+    )
+    lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx,
+        subthresh_min_amp=subthresh_min_amp)
+    lsq_features = lsq_an.analyze(lsq_sweeps)
+
+    return lsq_sweeps, lsq_features, lsq_start, lsq_end, lsq_spx
+
+
+def preprocess_short_square_sweeps(data_set, sweep_numbers):
+    if len(sweep_numbers) == 0:
+        raise er.FeatureError("No short square sweeps available for feature extraction")
+
+    ssq_sweeps = data_set.sweep_set(sweep_numbers)
+
+    ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
+    ssq_spx, ssq_spfx = dsf.extractors_for_sweeps(ssq_sweeps,
+                                                  est_window = [ssq_start, ssq_start + 0.001],
+                                                  **dsf.detection_parameters(data_set.SHORT_SQUARE))
+    ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
+    ssq_features = ssq_an.analyze(ssq_sweeps)
+
+    return ssq_sweeps, ssq_features
+
+
+def preprocess_ramp_sweeps(data_set, sweep_numbers):
+    if len(sweep_numbers) == 0:
+        raise er.FeatureError("No ramp sweeps available for feature extraction")
+
+    ramp_sweeps = data_set.sweep_set(sweep_numbers)
+
+    ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
+    ramp_spx, ramp_spfx = dsf.extractors_for_sweeps(ramp_sweeps,
+                                                start = ramp_start,
+                                                **dsf.detection_parameters(data_set.RAMP))
+    ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
+    ramp_features = ramp_an.analyze(ramp_sweeps)
+
+    return ramp_sweeps, ramp_features
+
+
+def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
+        ap_window_length=0.005, target_sampling_rate=50000):
     logging.debug("specimen_id: {}".format(specimen_id))
 
+    # Identify the paths to the electrophysiology NWB file (and ancillary file if needed)
     if data_source == "lims":
         nwb_path, h5_path = lims_nwb_information(specimen_id)
     elif data_source == "sdk":
@@ -194,6 +261,7 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source, ap_window_le
     else:
         logging.error("invalid data source specified ({})".format(data_source))
 
+    # Construct an AibsDataSet object
     try:
         data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
         ontology = data_set.ontology
@@ -202,18 +270,41 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source, ap_window_le
         logging.warning(detail)
         return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
 
+    # Identify and preprocess long square sweeps
     try:
         lsq_sweep_numbers = categorize_iclamp_sweeps(data_set,
             ontology.long_square_names, sweep_qc_option=sweep_qc_option,
             specimen_id=specimen_id)
+        (lsq_sweeps,
+        lsq_features,
+        lsq_start,
+        lsq_end,
+        lsq_spx) = preprocess_long_square_sweeps(data_set, lsq_sweep_numbers)
+    except Exception as detail:
+        logging.warning("Exception when preprocessing long square sweeps from specimen {:d}".format(specimen_id))
+        logging.warning(detail)
+        return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=None)}}
+
+    # Identify and preprocess short square sweeps
+    try:
         ssq_sweep_numbers = categorize_iclamp_sweeps(data_set,
             ontology.short_square_names, sweep_qc_option=sweep_qc_option,
             specimen_id=specimen_id)
+        ssq_sweeps, ssq_features = preprocess_short_square_sweeps(data_set,
+            ssq_sweep_numbers)
+    except Exception as detail:
+        logging.warning("Exception when preprocessing short square sweeps from specimen {:d}".format(specimen_id))
+        logging.warning(detail)
+        return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=None)}}
+
+    # Identify and process ramp sweeps
+    try:
         ramp_sweep_numbers = categorize_iclamp_sweeps(data_set,
             ontology.ramp_names, sweep_qc_option=sweep_qc_option,
             specimen_id=specimen_id)
+
     except Exception as detail:
-        logging.warning("Exception when identifying sweeps from specimen {:d}".format(specimen_id))
+        logging.warning("Exception when preprocessing ramp sweeps from specimen {:d}".format(specimen_id))
         logging.warning(detail)
         return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=None)}}
 
