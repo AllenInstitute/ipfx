@@ -12,10 +12,6 @@ def ontology():
                               ('code', 'C1NS2')]])
 
 
-def test_load_default_ontology():
-    StimulusOntology()
-
-
 def test_find(ontology):
     stims = ontology.find('C1NS1')
 
