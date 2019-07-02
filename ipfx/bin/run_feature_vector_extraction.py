@@ -17,13 +17,52 @@ import h5py
 
 
 class CollectFeatureVectorParameters(ags.ArgSchema):
-    output_dir = ags.fields.OutputDir(default=None)
-    input = ags.fields.InputFile(default=None, allow_none=True)
-    project = ags.fields.String(default="T301")
-    sweep_qc_option = ags.fields.String(default=None, allow_none=True)
-    include_failed_cells = ags.fields.Boolean(default=False)
-    run_parallel = ags.fields.Boolean(default=True)
-    ap_window_length = ags.fields.Float(description="Duration after threshold for AP shape (s)", default=0.003)
+    output_dir = ags.fields.OutputDir(
+        description="Destination directory for output files",
+        default=None
+    )
+    input = ags.fields.InputFile(
+        description=("Input file of specimen IDs (one per line)"
+            "- optional if LIMS is source"),
+        default=None,
+        allow_none=True
+    )
+    data_source = ags.fields.String(
+        description="Source of NWB files ('sdk' or 'lims')",
+        default="sdk",
+        validate=lambda x: x in ["sdk", "lims"]
+        )
+    output_code = ags.fields.String(
+        description="Code used for naming of output files",
+        default="test"
+    )
+    project = ags.fields.String(
+        description="Project code used for LIMS query",
+        default=None,
+        allow_none=True
+    )
+    sweep_qc_option = ags.fields.String(
+        description=("Sweep-level QC option - "
+            "'none': use all sweeps; "
+            "'lims-passed-only': check passed status with LIMS and "
+            "only used passed sweeps "
+            "'lims-passed-except-delta-vm': check status with LIMS and "
+            "use passed sweeps and sweeps where only failure criterion is delta_vm"
+            ),
+        default='none'
+    )
+    include_failed_cells = ags.fields.Boolean(
+        description="boolean - include cells with cell-level QC failure (LIMS only)",
+        default=False
+    )
+    run_parallel = ags.fields.Boolean(
+        description="boolean - use multiprocessing",
+        default=True
+    )
+    ap_window_length = ags.fields.Float(
+        description="Duration after threshold for AP shape (s)",
+        default=0.003
+    )
 
 
 def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, specimen_id=None):
@@ -51,9 +90,9 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
 
     iclamp_st = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP, stimuli=stimuli_names)
 
-    if sweep_qc_option is None:
+    if sweep_qc_option == "none":
         return iclamp_st["sweep_number"].sort_values().values
-    elif sweep_qc_option == "passed_only":
+    elif sweep_qc_option == "lims-passed-only":
         # check that sweeps exist in LIMS
         sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
         results = lq.query(exist_sql, (specimen_id, sweep_num_list))
@@ -69,7 +108,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
         results_df = pd.DataFrame(results, columns=["sweep_number"])
         passed_sweep_nums = results_df["sweep_number"].values
         return np.sort(np.hstack([passed_sweep_nums, np.array(not_checked_list)])) # deciding to keep non-checked sweeps for now
-    elif sweep_qc_option == "passed_except_delta_vm":
+    elif sweep_qc_option == "lims-passed-except-delta-vm":
         # check that sweeps exist in LIMS
         sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
         results = lq.query(exist_sql, (specimen_id, sweep_num_list))
@@ -106,7 +145,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
 
         return np.sort(np.hstack([passed_sweep_nums, also_passing_nums, np.array(not_checked_list)]))
     else:
-        raise ValueError("Invalid QC option {}".format(sweep_qc_option))
+        raise ValueError("Invalid sweep-level QC option {}".format(sweep_qc_option))
 
 
 def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
@@ -170,12 +209,15 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, ap_window_length=0.005):
     return result
 
 
-def run_feature_vector_extraction(ids=None, project="T301", sweep_qc_option=None, include_failed_cells=False,
-         output_dir="", run_parallel=True, ap_window_length=0.003, **kwargs):
+def run_feature_vector_extraction(output_dir, data_source, output_code, project,
+        sweep_qc_option, include_failed_cells, run_parallel,
+        ap_window_length, ids=None, **kwargs):
     if ids is not None:
         specimen_ids = ids
-    else:
+    elif data_source == "lims":
         specimen_ids = lq.project_specimen_ids(project, passed_only=not include_failed_cells)
+    else:
+        logging.error("Must specify input file if data source is not LIMS")
 
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
     get_data_partial = partial(data_for_specimen_id,
@@ -187,6 +229,7 @@ def run_feature_vector_extraction(ids=None, project="T301", sweep_qc_option=None
         results = pool.map(get_data_partial, specimen_ids)
     else:
         results = map(get_data_partial, specimen_ids)
+
     filtered_set = [(i, r) for i, r in zip(specimen_ids, results) if not "error" in r.keys()]
     error_set = [{"id": i, "error": d} for i, d in zip(specimen_ids, results) if "error" in d.keys()]
     if len(filtered_set) == 0:
