@@ -575,8 +575,24 @@ def noise_ap_features(noise_sweeps,
                       stim_interval_list = [(2.02, 5.02), (10.02, 13.02), (18.02, 21.02)],
                       target_sampling_rate=50000, window_length=0.003,
                       skip_first_n=1):
-    # Noise sweeps have three intervals of stimulation
-    # so we need to find the spikes in each of them
+    """Average AP waveforms in noise sweeps
+
+    Parameters
+    ----------
+    noise_sweeps: SweepSet
+    stim_interval_list: list of tuples of start and end times (in seconds)
+        of analysis intervals
+    target_sampling_rate: Hz (default 50000)
+    window_length: seconds (default 0.003)
+    skip_first_n: number of initial APs to exclude from average (default 1)
+
+    Returns
+    -------
+    ap_v: waveform of average AP
+    ap_dv: waveform of first derivative of ap_v
+    """
+    # Noise sweeps have multiple intervals of stimulation
+    # so we can find the spikes in each of them separately
     features_list = []
     for start, end in stim_interval_list:
         spx, spfx = dsf.extractors_for_sweeps(noise_sweeps,
@@ -610,7 +626,7 @@ def noise_ap_features(noise_sweeps,
         sampling_factor = sampling_rate // target_sampling_rate
         grand_avg_ap = _subsample_average(grand_avg_ap, sampling_factor)
 
-    return np.hstack([grand_avg_ap, np.diff(grand_avg_ap)])
+    return grand_avg_ap, np.diff(grand_avg_ap)
 
 
 def _avg_ap_waveform(sweep, spike_indexes, length_in_points):
@@ -754,6 +770,7 @@ def spiking_sweeps_at_levels(amps, sweep_indexes, max_above_rheo, amp_interval,
         logging.debug("Using amplitude {} for amp level {}".format(amp, amp_level))
         sweeps_to_use.append((amp_level, amp, swp_ind))
     return sweeps_to_use
+
 
 def consolidated_long_square_indexes(sweep_table):
     sweep_index_list = []
