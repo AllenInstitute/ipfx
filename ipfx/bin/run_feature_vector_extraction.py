@@ -187,7 +187,8 @@ def lims_nwb_information(specimen_id):
 def sdk_nwb_information(specimen_id):
     ctc = CellTypesCache()
     nwb_data_set = ctc.get_ephys_data(specimen_id)
-    return nwb_data_set.file_name
+    sweep_info = ctc.get_ephys_sweeps(specimen_id)
+    return nwb_data_set.file_name, sweep_info
 
 
 def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthresh_min_amp=-100.):
@@ -252,23 +253,27 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
         ap_window_length=0.005, target_sampling_rate=50000):
     logging.debug("specimen_id: {}".format(specimen_id))
 
-    # Identify the paths to the electrophysiology NWB file (and ancillary file if needed)
+    # Find or retrieve NWB file and ancillary info and construct an AibsDataSet object
     if data_source == "lims":
         nwb_path, h5_path = lims_nwb_information(specimen_id)
+        try:
+            data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
+            ontology = data_set.ontology
+        except Exception as detail:
+            logging.warning("Exception when loading specimen {:d} from LIMS".format(specimen_id))
+            logging.warning(detail)
+            return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
     elif data_source == "sdk":
-        nwb_path = sdk_nwb_information(specimen_id)
-        h5_path = None
+        nwb_path, sweep_info = sdk_nwb_information(specimen_id)
+        try:
+            data_set = AibsDataSet(nwb_file=nwb_path, sweep_info=sweep_info)
+            ontology = data_set.ontology
+        except Exception as detail:
+            logging.warning("Exception when loading specimen {:d} via Allen SDK".format(specimen_id))
+            logging.warning(detail)
+            return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
     else:
         logging.error("invalid data source specified ({})".format(data_source))
-
-    # Construct an AibsDataSet object
-    try:
-        data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
-        ontology = data_set.ontology
-    except Exception as detail:
-        logging.warning("Exception when loading specimen {:d}".format(specimen_id))
-        logging.warning(detail)
-        return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
 
     # Identify and preprocess long square sweeps
     try:
