@@ -45,7 +45,9 @@ def test_isi_shape(feature_vector_input):
 
     sweeps, features, start, end = feature_vector_input
 
-    temp_data = fv.isi_shape(sweeps, features)
+    isi_sweep, isi_sweep_spike_info = fv.identify_sweep_for_isi_shape(
+        sweeps, features, end - start)
+    temp_data = fv.isi_shape(isi_sweep, isi_sweep_spike_info, end)
 
     test_data = np.load(os.path.join(TEST_OUTPUT_DIR, "isi_shape.npy"))
 
