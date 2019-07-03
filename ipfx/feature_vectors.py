@@ -177,6 +177,7 @@ def identify_subthreshold_hyperpol_with_amplitudes(features, sweeps):
 
         Returns:
         amp_sweep_dict : dict of sweeps with amplitudes as keys
+        deflect_dict : dict of (base, deflect) tuples with amplitudes as keys
     """
 
     # Get non-spiking sweeps
@@ -189,9 +190,19 @@ def identify_subthreshold_hyperpol_with_amplitudes(features, sweeps):
     subthresh_sweep_ind = subthresh_df.index.tolist()
     subthresh_sweeps = np.array(sweeps.sweeps)[subthresh_sweep_ind]
     subthresh_amps = np.rint(subthresh_df["stim_amp"].values)
-    amp_sweep_dict = dict(zip(subthresh_amps, subthresh_sweeps))
+    subthresh_deflect = subthresh_df["peak_deflect"].values
+    subthresh_base = subthresh_df["v_baseline"].values
 
-    return amp_sweep_dict
+    mask = subthresh_amps < -1000 # TEMP QC ISSUE: Check for bad amps; shouldn't have to do this in general
+    subthresh_amps = subthresh_amps[~mask]
+    subthresh_sweeps = subthresh_sweeps[~mask]
+    subthresh_deflect = subthresh_deflect[~mask]
+    subthresh_base = subthresh_base[~mask]
+
+    amp_sweep_dict = dict(zip(subthresh_amps, subthresh_sweeps))
+    base_deflect_tuples = zip(subthresh_base, [d[0] for d in subthresh_deflect])
+    deflect_dict = dict(zip(subthresh_amps, base_deflect_tuples))
+    return amp_sweep_dict, deflect_dict
 
 
 def step_subthreshold(amp_sweep_dict, target_amps, start, end,
@@ -202,6 +213,7 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
         Parameters
         ----------
         amp_sweep_dict : dict of amplitude / sweep pairs
+
         target_amps: list of desired amplitudes for output vector
         features : output of LongSquareAnalysis.analyze()
         start : stimulus interval start (seconds)
@@ -279,17 +291,17 @@ def subsample_average(x, width):
     return avg
 
 
-def subthresh_norm(sweep_set, features, start, end,
-                   extend_duration=0.2, subsample_interval=0.01,
-                   coarse_target_amp=-100.):
-    """ Largest amplitude subthreshold step response normalized to baseline and peak deflection
+def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
+                   extend_duration=0.2, subsample_interval=0.01):
+    """ Subthreshold step response closest to target amplitude normalized to baseline and peak deflection
 
         Parameters
         ----------
-        sweep_set : SweepSet
-        features : output of LongSquareAnalysis.analyze()
+        amp_sweep_dict : dict of amplitude / sweep pairs
+        deflect_dict : dict of (baseline, deflect) tuples with amplitude keys
         start : stimulus interval start (seconds)
         end : stimulus interval end (seconds)
+        target_amp: search target for amplitude, pA (default -101)
         extend_duration: in seconds (default 0.2)
         subsample_interval: in seconds (default 0.01)
 
@@ -297,19 +309,12 @@ def subthresh_norm(sweep_set, features, start, end,
         -------
         subsampled_v : subsampled, normalized voltage trace
     """
-    subthresh_df = features["subthreshold_sweeps"]
-    subthresh_df = subthresh_df.loc[subthresh_df["stim_amp"] < 0] # only consider hyperpolarizing steps
-    subthresh_sweep_ind = subthresh_df.index.tolist()
-    subthresh_sweeps = np.array(sweep_set.sweeps)[subthresh_sweep_ind]
-    subthresh_amps = np.rint(subthresh_df["stim_amp"].values)
+    available_amps = np.array(list(amp_sweep_dict.keys()))
 
-    # PRE QC ISSUE: Check for bad amps; shouldn't have to do this in general
-    subthresh_amps[subthresh_amps < -1000] = np.inf
-
-    sweep_ind = np.argmin(np.abs(subthresh_amps - coarse_target_amp))
-    swp = subthresh_sweeps[sweep_ind]
-    base = subthresh_df.at[subthresh_df.index[sweep_ind], "v_baseline"]
-    deflect_v, deflect_ind = subthresh_df.at[subthresh_df.index[sweep_ind], "peak_deflect"]
+    sweep_ind = np.argmin(np.abs(available_amps - target_amp))
+    matching_amp = available_amps[sweep_ind]
+    swp = amp_sweep_dict[matching_amp]
+    base, deflect_v = deflect_dict[matching_amp]
     delta = base - deflect_v
 
     start_index = tsu.find_time_index(swp.t, start - extend_duration)
