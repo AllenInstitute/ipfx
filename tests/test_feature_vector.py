@@ -12,9 +12,6 @@ import os
 
 TEST_OUTPUT_DIR = "/allen/aibs/informatics/module_test_data/ipfx/test_feature_vector"
 
-random_sweep_list = []
-sampling_rate = 1
-clamp_mode = "CurrentClamp"
 
 @pytest.fixture
 def feature_vector_input():
@@ -74,6 +71,8 @@ def test_step_subthreshold_interpolation():
     t = np.arange(6)
     i = np.zeros_like(t)
     epochs = {"sweep": (0, 5), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
     for a in test_amps:
         v = np.hstack([np.zeros(2), np.ones(2) * a, np.zeros(2)])
         test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
