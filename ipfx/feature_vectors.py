@@ -10,93 +10,6 @@ from . import time_series_utils as tsu
 from . import error as er
 
 
-def extract_feature_vectors(data_set,
-                            ramp_sweep_numbers,
-                            short_square_sweep_numbers,
-                            long_square_sweep_numbers,
-                            use_lsq=True, use_ssq=True, use_ramp=True,
-                            target_sampling_rate=50000, ap_window_length=0.003):
-    """Extract feature vectors for downstream dimensionality reduction
-
-    Parameters
-    ----------
-    data_set : AibsDataSet
-    ramp_sweep_numbers :
-    short_square_sweep_numbers :
-    long_square_sweep_numbers :
-
-    Returns
-    -------
-    all_features : dictionary of feature vectors
-    """
-
-    # long squares
-    if use_lsq:
-        if len(long_square_sweep_numbers) == 0:
-            raise er.FeatureError("No long_square sweeps available for feature extraction")
-
-        check_lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
-        lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(check_lsq_sweeps.sweeps[0].i, check_lsq_sweeps.sweeps[0].t)
-
-        # Check that all sweeps are long enough and not ended early
-        extra_dur = 0.2
-        good_lsq_sweep_numbers = [n for n, s in zip(long_square_sweep_numbers, check_lsq_sweeps.sweeps)
-                                  if s.t[-1] >= lsq_start + lsq_dur + extra_dur and not np.all(s.v[tsu.find_time_index(s.t, lsq_start + lsq_dur)-100:tsu.find_time_index(s.t, lsq_start + lsq_dur)] == 0)]
-        lsq_sweeps = data_set.sweep_set(good_lsq_sweep_numbers)
-
-        lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(lsq_sweeps,
-                                                      start = lsq_start,
-                                                      end = lsq_start + lsq_dur,
-                                                      **dsf.detection_parameters(data_set.LONG_SQUARE))
-        lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=-100.)
-        lsq_features = lsq_an.analyze(lsq_sweeps)
-    else:
-        lsq_sweeps = None
-        lsq_features = None
-
-    # short squares
-    if use_ssq:
-        if len(short_square_sweep_numbers) == 0:
-            raise er.FeatureError("No short square sweeps available for feature extraction")
-
-        ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
-
-        ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
-        ssq_spx, ssq_spfx = dsf.extractors_for_sweeps(ssq_sweeps,
-                                                      est_window = [ssq_start, ssq_start+0.001],
-                                                      **dsf.detection_parameters(data_set.SHORT_SQUARE))
-        ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
-        ssq_features = ssq_an.analyze(ssq_sweeps)
-    else:
-        ssq_sweeps = None
-        ssq_features = None
-
-    # ramps
-    if use_ramp:
-        if len(ramp_sweep_numbers) == 0:
-            raise er.FeatureError("No ramp sweeps available for feature extraction")
-
-        ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
-
-        ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
-        ramp_spx, ramp_spfx = dsf.extractors_for_sweeps(ramp_sweeps,
-                                                    start = ramp_start,
-                                                    **dsf.detection_parameters(data_set.RAMP))
-        ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
-        ramp_features = ramp_an.analyze(ramp_sweeps)
-    else:
-        ramp_sweeps = None
-        ramp_features = None
-
-    all_features = feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
-                                   lsq_features, ssq_features, ramp_features,
-                                   lsq_start, lsq_start + lsq_dur,
-                                   lsq_spx,
-                                   target_sampling_rate=target_sampling_rate,
-                                   ap_window_length=ap_window_length)
-    return all_features
-
-
 def extract_multipatch_feature_vectors(lsq_supra_sweeps, lsq_supra_start, lsq_supra_end,
                                        lsq_sub_sweeps, lsq_sub_start, lsq_sub_end,
                                        target_sampling_rate=50000, ap_window_length=0.003):
@@ -142,28 +55,6 @@ def feature_vectors_multipatch(lsq_supra_sweeps, lsq_supra_features,
     result["spiking"] = spiking_features(lsq_supra_sweeps, lsq_supra_features, lsq_spike_extractor,
                                          0., 1.,
                                          feature_width, rate_width, amp_tolerance=amp_tolerance)
-    return result
-
-
-def feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
-                    lsq_features, ssq_features, ramp_features,
-                    lsq_start, lsq_end, lsq_spike_extractor,
-                    feature_width=20, rate_width=50,
-                    target_sampling_rate=50000, ap_window_length=0.003):
-    """Feature vectors from stimulus set features"""
-
-    result = {}
-    result["step_subthresh"] = step_subthreshold(lsq_sweeps, lsq_features, lsq_start, lsq_end, amp_tolerance=5)
-    result["subthresh_norm"] = subthresh_norm(lsq_sweeps, lsq_features, lsq_start, lsq_end)
-    result["subthresh_depol_norm"] = subthresh_depol_norm(lsq_sweeps, lsq_features, lsq_start, lsq_end)
-    result["isi_shape"] = isi_shape(lsq_sweeps, lsq_features)
-    result["first_ap"] = first_ap_features(lsq_sweeps, ssq_sweeps, ramp_sweeps,
-                                           lsq_features, ssq_features, ramp_features,
-                                           target_sampling_rate=target_sampling_rate,
-                                           window_length=ap_window_length)
-    result["spiking"] = spiking_features(lsq_sweeps, lsq_features, lsq_spike_extractor,
-                                         lsq_start, lsq_end,
-                                         feature_width, rate_width)
     return result
 
 
