@@ -205,6 +205,43 @@ def identify_subthreshold_hyperpol_with_amplitudes(features, sweeps):
     return amp_sweep_dict, deflect_dict
 
 
+def identify_subthreshold_depol_with_amplitudes(features, sweeps):
+    """ Identify subthreshold responses from depolarizing steps
+
+        Parameters
+        ----------
+        features : output of LongSquareAnalysis.analyze()
+        sweeps: SweepSet
+
+        Returns:
+        amp_sweep_dict : dict of sweeps with amplitudes as keys
+        deflect_dict : dict of (base, deflect) tuples with amplitudes as keys
+    """
+    if "subthreshold_sweeps" in features:
+        sweep_table = features["subthreshold_sweeps"]
+    else:
+        all_sweeps_table = features["sweeps"]
+        sweep_table = all_sweeps_table.loc[all_sweeps_table["avg_rate"] == 0, :]
+
+    amps = np.rint(sweep_table["stim_amp"].values)
+    subthresh_sweep_ind = sweep_table.index.tolist()
+    subthresh_sweeps = np.array(sweeps.sweeps)[subthresh_sweep_ind]
+
+    subthresh_depol_mask = amps > 0
+    if np.sum(subthresh_depol_mask) == 0:
+        return {}, {}
+
+    subthresh_amps = amps[subthresh_depol_mask]
+    subthresh_sweeps = subthresh_sweeps[subthresh_depol_mask]
+    subthresh_deflect = sweep_table["peak_deflect"].values[subthresh_depol_mask]
+    subthresh_base = sweep_table["v_baseline"].values[subthresh_depol_mask]
+
+    amp_sweep_dict = dict(zip(subthresh_amps, subthresh_sweeps))
+    base_deflect_tuples = zip(subthresh_base, [d[0] for d in subthresh_deflect])
+    deflect_dict = dict(zip(subthresh_amps, base_deflect_tuples))
+    return amp_sweep_dict, deflect_dict
+
+
 def step_subthreshold(amp_sweep_dict, target_amps, start, end,
                       extend_duration=0.2, subsample_interval=0.01,
                       amp_tolerance=0.):
@@ -327,52 +364,42 @@ def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
     return subsampled_v
 
 
-def subthresh_depol_norm(sweep_set, features, start, end,
+def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
     extend_duration=0.2, subsample_interval=0.01, steady_state_interval=0.1):
     """ Largest positive-going subthreshold step response that does not evoke spikes,
         normalized to baseline and steady-state at end of step
 
         Parameters
         ----------
-        sweep_set : SweepSet
-        features : output of LongSquareAnalysis.analyze()
+        amp_sweep_dict : dict of amplitude / sweep pairs
+        deflect_dict : dict of (baseline, deflect) tuples with amplitude keys
         start : stimulus interval start (seconds)
         end : stimulus interval end (seconds)
         extend_duration: in seconds (default 0.2)
         subsample_interval: in seconds (default 0.01)
+        steady_state_interval: interval before end for normalization (seconds, default=0.1)
 
         Returns
         -------
         subsampled_v : subsampled, normalized voltage trace
     """
-    if "subthreshold_sweeps" in features.keys():
-        sweep_table = features["subthreshold_sweeps"]
-    else:
-        all_sweeps_table = features["sweeps"]
-        sweep_table = all_sweeps_table.loc[all_sweeps_table["avg_rate"] == 0, :]
 
-    amps = np.rint(sweep_table["stim_amp"].values)
-    if np.sum(amps > 0) == 0:
-        logging.debug("No subthreshold depolarizing sweeps found - returning all-zeros response")
-        logging.debug(features["sweeps"][["stim_amp", "avg_rate"]])
+    if (end - start) < steady_state_interval:
+        raise ValueError("steady state interval cannot exceed stimulus interval")
 
-        # create all-zeros response of appropriate length
-        swp = sweep_set.sweeps[0]
-        delta_t = swp.t[1] - swp.t[0]
-        start_index = tsu.find_time_index(swp.t, start - extend_duration)
-        delta_t = swp.t[1] - swp.t[0]
-        subsample_width = int(np.round(subsample_interval / delta_t))
-        end_index = tsu.find_time_index(swp.t, end + extend_duration)
-        subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
-        subsampled_v = np.zeros_like(subsampled_v)
-        return subsampled_v
+    if len(amp_sweep_dict) == 0:
+        logging.debug("No subthreshold depolarizing sweeps found - returning all-nan response")
 
-    subthresh_sweep_ind = sweep_table.index.tolist()
-    subthresh_sweeps = np.array(sweep_set.sweeps)[subthresh_sweep_ind]
-    max_sweep_ind = np.argmax(amps)
-    swp = subthresh_sweeps[max_sweep_ind]
+        # create all-nan response of appropriate length
+        total_interval = extend_duration * 2 + (end - start)
+        length = int(total_interval / subsample_interval)
+        return np.ones(length) * np.nan
 
-    base = sweep_table.at[sweep_table.index[max_sweep_ind], "v_baseline"]
+    available_amps = list(amp_sweep_dict.keys())
+    max_amp = np.max(available_amps)
+    swp = amp_sweep_dict[max_amp]
+
+    base, _ = deflect_dict[max_amp]
 
     interval_start_index = tsu.find_time_index(swp.t, end - steady_state_interval)
     interval_end_index = tsu.find_time_index(swp.t, end)

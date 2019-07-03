@@ -108,11 +108,43 @@ def test_subthresh_norm_normalization():
     assert np.isclose(np.min(output), -1)
 
 
+def test_subthresh_depol_norm_bad_steady_state_interval():
+    with pytest.raises(ValueError):
+        fv.subthresh_depol_norm({}, {}, start=0, end=1, steady_state_interval=2)
+
+
+def test_subthresh_depol_norm_empty_result():
+    output = fv.subthresh_depol_norm({}, {}, start=1.02, end=2.02)
+    assert len(output) == 140
+    assert np.all(np.isnan(output))
+
+
+def test_subthresh_depol_norm_normalization():
+    np.random.seed(42)
+    v = np.random.randn(100)
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+
+    base = v[0]
+    deflect_v = np.max(v)
+
+    amp_sweep_dict = {10: test_sweep}
+    deflect_dict = {10: (base, deflect_v)}
+
+    output = fv.subthresh_depol_norm(amp_sweep_dict, deflect_dict, start=t[0], end=t[-1],
+        steady_state_interval=1, subsample_interval=1, extend_duration=0)
+    assert np.isclose(output[0], 0)
+    assert np.isclose(output[-1], 1)
+
+
 def test_subthresh_depol_norm(feature_vector_input):
-
     sweeps, features, start, end = feature_vector_input
-
-    temp_data = fv.subthresh_depol_norm(sweeps, features, start, end)
+    amp_sweep_dict, deflect_dict = fv.identify_subthreshold_depol_with_amplitudes(features, sweeps)
+    temp_data = fv.subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end)
 
     test_data = np.load(os.path.join(TEST_OUTPUT_DIR, "subthresh_depol_norm.npy"))
 
