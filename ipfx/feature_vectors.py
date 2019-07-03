@@ -167,15 +167,42 @@ def feature_vectors(lsq_sweeps, ssq_sweeps, ramp_sweeps,
     return result
 
 
-def step_subthreshold(sweep_set, features, start, end,
+def identify_subthreshold_hyperpol_with_amplitudes(features, sweeps):
+    """ Identify subthreshold responses from hyperpolarizing steps
+
+        Parameters
+        ----------
+        features : output of LongSquareAnalysis.analyze()
+        sweeps: SweepSet
+
+        Returns:
+        amp_sweep_dict : dict of sweeps with amplitudes as keys
+    """
+
+    # Get non-spiking sweeps
+    subthresh_df = features["subthreshold_sweeps"]
+
+    # Get responses to hyperpolarizing steps
+    subthresh_df = subthresh_df.loc[subthresh_df["stim_amp"] < 0] # only consider hyperpolarizing steps
+
+    # Construct dictionary
+    subthresh_sweep_ind = subthresh_df.index.tolist()
+    subthresh_sweeps = np.array(sweeps.sweeps)[subthresh_sweep_ind]
+    subthresh_amps = np.rint(subthresh_df["stim_amp"].values)
+    amp_sweep_dict = dict(zip(subthresh_amps, subthresh_sweeps))
+
+    return amp_sweep_dict
+
+
+def step_subthreshold(amp_sweep_dict, target_amps, start, end,
                       extend_duration=0.2, subsample_interval=0.01,
-                      low_amp=-90., high_amp=10., amp_step=20.,
                       amp_tolerance=0.):
     """ Subsample set of subthreshold step responses including regions before and after step
 
         Parameters
         ----------
-        sweep_set : SweepSet
+        amp_sweep_dict : dict of amplitude / sweep pairs
+        target_amps: list of desired amplitudes for output vector
         features : output of LongSquareAnalysis.analyze()
         start : stimulus interval start (seconds)
         end : stimulus interval end (seconds)
@@ -186,34 +213,28 @@ def step_subthreshold(sweep_set, features, start, end,
         -------
         output_vector : subsampled, concatenated voltage trace
     """
-    subthresh_df = features["subthreshold_sweeps"]
-    subthresh_df = subthresh_df.loc[subthresh_df["stim_amp"] < 0] # only consider hyperpolarizing steps
-    subthresh_sweep_ind = subthresh_df.index.tolist()
-    subthresh_sweeps = np.array(sweep_set.sweeps)[subthresh_sweep_ind]
-    subthresh_amps = np.rint(subthresh_df["stim_amp"].values)
 
-    subthresh_data = {}
-    for amp, swp in zip(subthresh_amps, subthresh_sweeps):
+    # Subsample each sweep
+    subsampled_dict = {}
+    for amp in amp_sweep_dict:
+        swp = amp_sweep_dict[amp]
         start_index = tsu.find_time_index(swp.t, start - extend_duration)
         delta_t = swp.t[1] - swp.t[0]
         subsample_width = int(np.round(subsample_interval / delta_t))
         end_index = tsu.find_time_index(swp.t, end + extend_duration)
         subsampled_v = subsample_average(swp.v[start_index:end_index], subsample_width)
-        subthresh_data[amp] = subsampled_v
+        subsampled_dict[amp] = subsampled_v
 
     extend_length = int(np.round(extend_duration / subsample_interval))
-    use_amps = np.arange(low_amp, high_amp, amp_step)
-    n_individual = len(subsampled_v)
-    neighbor_amps = sorted([a for a in subthresh_amps if a >= low_amp and a <= high_amp])
-    output_vector = np.zeros(len(use_amps) * n_individual)
-    available_amps = np.array(list(subthresh_data.keys()))
-    for i, amp in enumerate(use_amps):
+    available_amps = np.array(list(subsampled_dict.keys()))
+    output_list = []
+    for amp in target_amps:
         amp_diffs = np.array(np.abs(available_amps - amp))
 
         if np.any(amp_diffs <= amp_tolerance):
             matching_amp = available_amps[np.argmin(amp_diffs)]
             logging.debug("found amp of {} to match {} (tol={})".format(matching_amp, amp, amp_tolerance))
-            output_vector[i * n_individual:(i + 1) * n_individual] = subthresh_data[matching_amp]
+            output_list.append(subsampled_dict[matching_amp])
         else:
             lower_amp = 0
             upper_amp = 0
@@ -228,27 +249,27 @@ def step_subthreshold(sweep_set, features, start, end,
                         upper_amp = a
                     elif a < upper_amp:
                         upper_amp = a
-            logging.debug("interpolating for amp {} with lower {} and upper {}".format(amp, lower_amp, upper_amp))
-            avg = np.zeros_like(subsampled_v)
             if lower_amp != 0 and upper_amp != 0:
-                avg = (subthresh_data[lower_amp] + subthresh_data[upper_amp]) / 2.
+                logging.debug("interpolating for amp {} with lower {} and upper {}".format(amp, lower_amp, upper_amp))
+                avg = (subsampled_dict[lower_amp] + subsampled_dict[upper_amp]) / 2.
                 scale = amp / ((lower_amp + upper_amp) / 2.)
                 base_v = avg[:extend_length].mean()
                 avg[extend_length:-extend_length] = (avg[extend_length:-extend_length] - base_v) * scale + base_v
             elif lower_amp != 0:
-                avg = subthresh_data[lower_amp].copy()
+                logging.debug("interpolating for amp {} from lower {}".format(amp, lower_amp))
+                avg = subsampled_dict[lower_amp].copy()
                 scale = amp / lower_amp
                 base_v = avg[:extend_length].mean()
                 avg[extend_length:] = (avg[extend_length:] - base_v) * scale + base_v
             elif upper_amp != 0:
-                avg = subthresh_data[upper_amp].copy()
+                logging.debug("interpolating for amp {} from upper {}".format(amp, upper_amp))
+                avg = subsampled_dict[upper_amp].copy()
                 scale = amp / upper_amp
                 base_v = avg[:extend_length].mean()
                 avg[extend_length:] = (avg[extend_length:] - base_v) * scale + base_v
+            output_list.append(avg)
 
-            output_vector[i * n_individual:(i + 1) * n_individual] = avg
-
-    return output_vector
+    return np.hstack(output_list)
 
 
 def subsample_average(x, width):
