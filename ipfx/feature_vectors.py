@@ -610,7 +610,7 @@ def noise_ap_features(noise_sweeps,
             spike_indexes = np.hstack([spike_indexes, spikes["threshold_index"].values[skip_first_n:]])
 
         if len(spike_indexes) > 0:
-            avg_ap_list.append(avg_ap_waveform(sweep, spike_indexes, length_in_points))
+            avg_ap_list.append(_avg_ap_waveform(sweep, spike_indexes, length_in_points))
 
     grand_avg_ap = np.vstack(avg_ap_list).mean(axis=0)
     if sampling_rate > target_sampling_rate:
@@ -620,13 +620,11 @@ def noise_ap_features(noise_sweeps,
     return np.hstack([grand_avg_ap, np.diff(grand_avg_ap)])
 
 
-def avg_ap_waveform(sweep, spike_indexes, length_in_points):
-    avg_waveform = np.zeros(length_in_points)
-    for si in spike_indexes.astype(int):
-        ei = si + length_in_points
-        avg_waveform += sweep.v[si:ei]
-
-    return avg_waveform / float(len(spike_indexes))
+def _avg_ap_waveform(sweep, spike_indexes, length_in_points):
+    """ Average together spike waveforms in sweep found at spike_indexes"""
+    avg_list = [sweep.v[si:si + length_in_points]
+        for si in spike_indexes.astype(int)]
+    return np.vstack(avg_list).mean(axis=0)
 
 
 def first_ap_waveform(sweep, spikes, length_in_points):
