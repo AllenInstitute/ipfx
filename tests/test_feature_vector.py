@@ -56,7 +56,7 @@ def test_step_subthreshold(feature_vector_input):
     sweeps, features, start, end = feature_vector_input
     target_amps = [-90, -70, -50, -30, -10]
 
-    subthresh_hyperpol_dict = fv.identify_subthreshold_hyperpol_with_amplitudes(features, sweeps)
+    subthresh_hyperpol_dict, _ = fv.identify_subthreshold_hyperpol_with_amplitudes(features, sweeps)
     temp_data = fv.step_subthreshold(subthresh_hyperpol_dict, target_amps, start, end)
 
     test_data = np.load(os.path.join(TEST_OUTPUT_DIR, "step_subthresh.npy"))
@@ -85,6 +85,27 @@ def test_step_subthreshold_interpolation():
     assert np.all(output[9:11] == -50)
     assert np.array_equal(output[12:16], test_sweep_list[1].v[1:-1])
     assert np.all(output[17:19] == -10)
+
+
+def test_subthresh_norm_normalization():
+    np.random.seed(42)
+    v = np.random.randn(100)
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+
+    base = v[0]
+    deflect_v = np.min(v)
+
+    amp_sweep_dict = {-10: test_sweep}
+    deflect_dict = {-10: (base, deflect_v)}
+    output = fv.subthresh_norm(amp_sweep_dict, deflect_dict, start=t[0], end=t[-1],
+        target_amp=-10, extend_duration=0, subsample_interval=1)
+    assert np.isclose(output[0], 0)
+    assert np.isclose(np.min(output), -1)
 
 
 def test_subthresh_depol_norm(feature_vector_input):
