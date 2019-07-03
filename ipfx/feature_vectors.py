@@ -532,98 +532,49 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
     return isi_norm
 
 
-def first_ap_features(lsq_sweeps, ssq_sweeps, ramp_sweeps,
-                      lsq_features, ssq_features, ramp_features,
-                      target_sampling_rate=50000, window_length=0.003):
-    """Waveforms of first APs from long square, short square, and ramp
+def first_ap_vectors(sweeps_list, spike_info_list,
+        target_sampling_rate=50000, window_length=0.003):
+    """Average waveforms of first APs from sweeps
 
     Parameters
     ----------
-    *_sweeps  : SweepSet objects
-    *_features : results of *Analysis.analyze()
+    sweeps_list: list of Sweeps
+    spike_info_list: list of spike info DataFrames
     target_sampling_rate : Hz
     window_length : seconds
 
     Returns
     -------
-    output_vector : waveforms of APs
+    ap_v: waveform of average APs
+    ap_dv: waveform of first derivative of ap_v
     """
-    if lsq_sweeps is None and ssq_sweeps is None and ramp_sweeps is None:
-        raise er.FeatureError("No input provided for first AP shape")
 
-    # Figure out the sampling rate & target length
-    if lsq_sweeps is not None:
-        swp = lsq_sweeps.sweeps[0]
-    elif ssq_sweeps is not None:
-        swp = ssq_sweeps.sweeps[0]
-    elif ramp_sweeps is not None:
-        swp = ramp_sweeps.sweeps[0]
-    else:
-        raise er.FeatureError("Could not find any sweeps for first AP shape")
+    if len(sweeps_list) == 0:
+        length_in_points = int(target_sampling_rate * window_length)
+        return np.zeros(length_in_points)
+
+    swp = sweeps_list[0]
     sampling_rate = int(np.rint(1. / (swp.t[1] - swp.t[0])))
     length_in_points = int(sampling_rate * window_length)
 
-    # Long squares
-    if lsq_sweeps is not None and lsq_features is not None:
-        rheo_ind = lsq_features["rheobase_sweep"].name
+    ap_list = []
+    for swp, si in zip(sweeps_list, spike_info_list):
+        ap = first_ap_waveform(swp, si, length_in_points)
+        ap_list.append(ap)
 
-        sweep = lsq_sweeps.sweeps[rheo_ind]
-        spikes = lsq_features["spikes_set"][rheo_ind]
-        ap_long_square = first_ap_waveform(sweep, spikes, length_in_points)
-    else:
-        ap_long_square = np.zeros(length_in_points)
+    avg_ap = np.vstack(ap_list).mean(axis=0)
 
-    # Ramps
-    if ramp_sweeps is not None and ramp_features is not None:
-        ap_ramp = np.zeros(length_in_points)
-        for swp_ind in ramp_features["spiking_sweeps"].index:
-            sweep = ramp_sweeps.sweeps[swp_ind]
-            spikes = ramp_features["spikes_set"][swp_ind]
-            ap_ramp += first_ap_waveform(sweep, spikes, length_in_points)
-        if len(ramp_features["spiking_sweeps"]) > 0:
-            ap_ramp /= len(ramp_features["spiking_sweeps"])
-    else:
-        ap_ramp = np.zeros(length_in_points)
-
-    # Short square
-    if ssq_sweeps is not None and ssq_features is not None:
-        ap_short_square = np.zeros(length_in_points)
-        short_count = 0
-        for swp_ind in ssq_features["common_amp_sweeps"].index:
-            sweep = ssq_sweeps.sweeps[swp_ind]
-            spikes = ssq_features["spikes_set"][swp_ind]
-            if len(spikes) > 0:
-                short_count += 1
-                ap_short_square += first_ap_waveform(sweep, spikes, length_in_points)
-        if short_count > 0:
-            ap_short_square /= short_count
-    else:
-        ap_short_square = np.zeros(length_in_points)
-
-    # Downsample if necessary
     if sampling_rate > target_sampling_rate:
         sampling_factor = sampling_rate // target_sampling_rate
-        ap_long_square = _subsample_average(ap_long_square, sampling_factor)
-        ap_ramp = _subsample_average(ap_ramp, sampling_factor)
-        ap_short_square = _subsample_average(ap_short_square, sampling_factor)
+        avg_ap = _subsample_average(avg_ap, sampling_factor)
 
-    dv_ap_short_square = np.diff(ap_short_square)
-    dv_ap_long_square = np.diff(ap_long_square)
-    dv_ap_ramp = np.diff(ap_ramp)
-
-    ap_list = [ap_short_square, ap_long_square, ap_ramp,
-                               dv_ap_short_square, dv_ap_long_square, dv_ap_ramp]
-
-    output_vector = np.hstack([ap_short_square, ap_long_square, ap_ramp,
-                               dv_ap_short_square, dv_ap_long_square, dv_ap_ramp])
-    return output_vector
+    return avg_ap, np.diff(avg_ap)
 
 
 def noise_ap_features(noise_sweeps,
                       stim_interval_list = [(2.02, 5.02), (10.02, 13.02), (18.02, 21.02)],
                       target_sampling_rate=50000, window_length=0.003,
                       skip_first_n=1):
-
     # Noise sweeps have three intervals of stimulation
     # so we need to find the spikes in each of them
     features_list = []
@@ -670,6 +621,7 @@ def _avg_ap_waveform(sweep, spike_indexes, length_in_points):
 
 
 def first_ap_waveform(sweep, spikes, length_in_points):
+    "Waveform of first AP with `length_in_points` time samples"
     start_index = spikes["threshold_index"].astype(int)[0]
     end_index = start_index + length_in_points
     return sweep.v[start_index:end_index]
