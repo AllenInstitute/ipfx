@@ -417,24 +417,27 @@ def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
 
     return subsampled_v
 
-
-def isi_shape(sweep_set, features, duration=1., n_points=100, min_spike=5):
-    """ Average interspike voltage trajectory with normalized duration, aligned to threshold
+def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5):
+    """ Find lowest-amplitude spiking sweep that has at least min_spike
+        or else sweep with most spikes
 
         Parameters
         ----------
-        sweep_set : SweepSet
-        features : output of LongSquareAnalysis.analyze()
-        n_points: number of points in output
-        min_spike: minimum number of spikes for first preference sweep
+        sweeps: SweepSet
+        features: output of LongSquareAnalysis.analyze()
+        duration: length of stimulus interval (seconds)
+        min_spike: minimum number of spikes for first preference sweep (default 5)
 
         Returns
         -------
-        isi_norm : averaged, threshold-aligned, and duration-normalized voltage trace
+        selected_sweep : Sweep
+        selected_spike_info : DataFrame of spike info for selected sweep
     """
     sweep_table = features["sweeps"]
-    mask_supra = sweep_table["stim_amp"].values >= features["rheobase_i"]
-    amps = np.rint(sweep_table.loc[mask_supra, "stim_amp"].values - features["rheobase_i"])
+    mask_supra = (sweep_table["avg_rate"].values > 0) & (sweep_table["stim_amp"] > 0)
+    supra_table = sweep_table.loc[mask_supra, :]
+    amps = np.rint(supra_table["stim_amp"].values)
+    n_spikes = supra_table["avg_rate"].values * duration
 
     # Pick out the sweep to get the ISI shape
     # Shape differences are more prominent at lower frequencies, but we want
@@ -443,50 +446,89 @@ def isi_shape(sweep_set, features, duration=1., n_points=100, min_spike=5):
     # (2) if not (1), sweep with the most spikes if any have multiple spikes
     # (3) if not (1) or (2), lowest amplitude sweep with 1 spike (use 100 ms after spike or end of trace)
 
-    only_one_spike = False
-    n_spikes = sweep_table.loc[mask_supra, "avg_rate"].values * duration
-
-    mask_spikes = n_spikes >= min_spike
-    if np.any(mask_spikes):
-        min_amp_masked = np.argmin(amps[mask_spikes])
-        isi_index = np.arange(0, len(n_spikes), dtype=int)[mask_spikes][min_amp_masked]
+    if np.any(n_spikes >= min_spike):
+        spike_mask = n_spikes >= min_spike
+        min_index = np.argmin(amps[spike_mask])
+        selection_index = np.arange(0, len(n_spikes), dtype=int)[spike_mask][min_index]
     elif np.any(n_spikes > 1):
-        isi_index = np.argmax(n_spikes)
+        selection_index = np.argmax(n_spikes)
     else:
         only_one_spike = True
-        isi_index = np.argmin(amps)
+        selection_index = np.argmin(amps)
 
-    isi_sweep = np.array(sweep_set.sweeps)[mask_supra][isi_index]
-    spikes_set_index = np.arange(len(sweep_set.sweeps))[mask_supra][isi_index]
-    isi_spikes = features["spikes_set"][spikes_set_index]
-    if only_one_spike:
-        threshold_v = isi_spikes["threshold_v"][0]
-        fast_trough_index = isi_spikes["fast_trough_index"].astype(int)[0]
+    selected_sweep = np.array(sweeps.sweeps)[mask_supra][selection_index]
+    info_index = supra_table.index.tolist()[selection_index]
+    selected_spike_info = features["spikes_set"][info_index]
+    return selected_sweep, selected_spike_info
 
-        end_index = tsu.find_time_index(isi_sweep.t, isi_sweep.t[fast_trough_index] + 0.1)
-        isi_raw = isi_sweep.v[fast_trough_index:end_index] - threshold_v
 
+def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
+    single_return_tolerance=1., single_max_duration=0.1):
+    """ Average interspike voltage trajectory with normalized duration, aligned to threshold
+
+        Parameters
+        ----------
+        sweep : Sweep
+        spike_info : dataframe of spike info for sweep
+        n_points: number of points in output
+        end : stimulus interval end (seconds)
+        steady_state_interval: interval for calculating steady-state for
+            sweeps with only one spike (default 0.1 s)
+        single_return_tolerance: allowable difference from steady-state for
+            determining end of "ISI" if only one spike is in sweep (default 1 mV)
+        single_max_duration: allowable max duration for finding end of "ISI"
+            if only one spike is in sweep (default 0.1 s)
+
+        Returns
+        -------
+        isi_norm : averaged, threshold-aligned, and duration-normalized voltage trace
+    """
+
+    n_spikes = spike_info.shape[0]
+
+    if n_spikes > 1:
+        threshold_indexes = spike_info["threshold_index"].values
+        threshold_voltages = spike_info["threshold_v"].values
+        fast_trough_indexes = spike_info["fast_trough_index"].values
+        isi_list = []
+        for start_index, end_index, thresh_v in zip(fast_trough_indexes[:-1], threshold_indexes[1:], threshold_voltages[:-1]):
+            isi_raw = sweep.v[int(start_index):int(end_index)] - thresh_v
+            width = len(isi_raw) // n_points
+            if width == 0:
+                logging.debug("found isi shorter than specified width; skipping")
+                continue
+            isi_norm = _subsample_average(isi_raw[:width * n_points], width)
+            isi_list.append(isi_norm)
+
+        isi_norm = np.vstack(isi_list).mean(axis=0)
+    else:
+        threshold_v = spike_info["threshold_v"][0]
+        fast_trough_index = spike_info["fast_trough_index"].astype(int)[0]
+        fast_trough_t = spike_info["fast_trough_t"][0]
+        stim_end_index = tsu.find_time_index(sweep.t, end)
+        if fast_trough_t < end - steady_state_interval:
+            max_end_index = tsu.find_time_index(sweep.t, sweep.t[fast_trough_index] + single_max_duration)
+
+            std_start_index = tsu.find_time_index(sweep.t, end - steady_state_interval)
+            steady_state_v = sweep.v[std_start_index:stim_end_index].mean()
+
+            above_ss_ind = np.flatnonzero(sweep.v[fast_trough_index:] >= steady_state_v - single_return_tolerance)
+
+            if len(above_ss_ind) > 0:
+                end_index = above_ss_ind[0] + fast_trough_index
+                end_index = min(end_index, max_end_index)
+            else:
+                logging.debug("isi_shape: voltage does not return to steady-state within specified tolerance; "
+                    "resorting to specified max duration")
+                end_index = max_end_index
+        else:
+            end_index = stim_end_index
+
+        isi_raw = sweep.v[fast_trough_index:end_index] - threshold_v
         width = len(isi_raw) // n_points
         isi_raw = isi_raw[:width * n_points] # ensure division will work
         isi_norm = _subsample_average(isi_raw, width)
 
-        return isi_norm
-
-    clip_mask = ~isi_spikes["clipped"].values
-    threshold_indexes = isi_spikes["threshold_index"].values[clip_mask]
-    threshold_voltages = isi_spikes["threshold_v"].values[clip_mask]
-    fast_trough_indexes = isi_spikes["fast_trough_index"].values[clip_mask]
-    isi_list = []
-    for start_index, end_index, thresh_v in zip(fast_trough_indexes[:-1], threshold_indexes[1:], threshold_voltages[:-1]):
-        isi_raw = isi_sweep.v[int(start_index):int(end_index)] - thresh_v
-        width = len(isi_raw) // n_points
-        if width == 0:
-            # trace is shorter than 100 points - probably in a burst, so we'll skip
-            continue
-        isi_norm = _subsample_average(isi_raw[:width * n_points], width)
-        isi_list.append(isi_norm)
-
-    isi_norm = np.vstack(isi_list).mean(axis=0)
     return isi_norm
 
 
