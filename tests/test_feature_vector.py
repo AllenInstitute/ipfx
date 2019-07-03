@@ -1,5 +1,6 @@
 from __future__ import print_function
 import numpy as np
+import pandas as pd
 from ipfx.aibs_data_set import AibsDataSet
 import ipfx.data_set_features as dsf
 import ipfx.stim_features as stf
@@ -152,3 +153,190 @@ def test_subthresh_depol_norm(feature_vector_input):
 
     assert np.array_equal(test_data, temp_data)
 
+
+def test_first_ap_no_sweeps():
+    ap_v, ap_dv = fv.first_ap_vectors([], [])
+    assert np.all(ap_v == 0)
+
+
+def test_first_ap_correct_section():
+    np.random.seed(42)
+    v = np.random.randn(100)
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+
+    test_spike_index = 10
+    test_info = pd.DataFrame({"threshold_index": np.array([test_spike_index])})
+
+    window_length = 5
+    ap_v, ap_dv = fv.first_ap_vectors([test_sweep], [test_info],
+        target_sampling_rate=sampling_rate, window_length=window_length)
+
+    assert np.array_equal(ap_v, test_sweep.v[test_spike_index:test_spike_index + window_length])
+
+
+def test_first_ap_resampling():
+    np.random.seed(42)
+    v = np.random.randn(100)
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+
+    test_spike_index = 10
+    test_info = pd.DataFrame({"threshold_index": np.array([test_spike_index])})
+
+    window_length = 10
+    ap_v, ap_dv = fv.first_ap_vectors([test_sweep], [test_info],
+        target_sampling_rate=sampling_rate / 2, window_length=window_length)
+
+    assert ap_v.shape[0] == window_length / 2
+
+
+def test_psth_sparse_firing():
+    test_spike_times = [0.2, 0.5]
+    spike_info = pd.DataFrame({"threshold_t": test_spike_times})
+    start = 0
+    end = 1
+    width = 50
+
+    # All spikes are in own bins
+    output = fv.psth_vector([spike_info], start=start, end=end, width=width)
+    assert np.sum(output > 0) == len(test_spike_times)
+    assert np.max(output) == 1 / (width * 0.001)
+
+
+def test_psth_compressed_firing():
+    test_spike_times = [0.2, 0.202, 0.204]
+    spike_info = pd.DataFrame({"threshold_t": test_spike_times})
+    start = 0
+    end = 1
+    width = 50
+
+    # All spikes are within one bin
+    output = fv.psth_vector([spike_info], start=start, end=end, width=width)
+    assert np.sum(output > 0) == 1
+    assert np.max(output) == len(test_spike_times) / (width * 0.001)
+
+
+def test_psth_between_sweep_interpolation():
+    feature = "test_feature_name"
+    test_spike_times = ([0.25, 0.75], [0.2, 0.5, 0.6, 0.7])
+    available_list = []
+    for tst in test_spike_times:
+        spike_info = pd.DataFrame({
+            "threshold_t": tst,
+        })
+        available_list.append(spike_info)
+
+    start = 0
+    end = 1
+    width = 20
+    n_bins = int((end - start) / (width * 0.001))
+
+    si_list = [None, available_list[0], None, available_list[1], None]
+    output = fv.psth_vector(si_list,
+        start=start, end=end, width=width)
+
+    assert np.array_equal(output[:n_bins], output[n_bins:2 * n_bins])
+    assert np.array_equal(output[3 * n_bins:4 * n_bins], output[4 * n_bins:5 * n_bins])
+    assert np.array_equal(output[2 * n_bins:3 * n_bins],
+        np.vstack([output[n_bins:2 * n_bins], output[4 * n_bins:5 * n_bins]]).mean(axis=0))
+
+
+def test_inst_freq_one_spike():
+    test_spike_times = [0.2]
+    spike_info = pd.DataFrame({"threshold_t": test_spike_times})
+    start = 0
+    end = 1
+    width = 20
+    output = fv.inst_freq_vector([spike_info], start=start, end=end, width=width)
+    assert np.all(output == 1 / (end - start))
+
+
+def test_inst_freq_initial_freq():
+    test_spike_times = [0.2, 0.5, 0.6, 0.7]
+    spike_info = pd.DataFrame({"threshold_t": test_spike_times})
+    start = 0
+    end = 1
+    width = 20
+    output = fv.inst_freq_vector([spike_info], start=start, end=end, width=width)
+    assert output[0] == 1. / (test_spike_times[0] - start)
+
+
+def test_inst_freq_between_sweep_interpolation():
+    feature = "test_feature_name"
+    test_spike_times = ([0.25, 0.75], [0.2, 0.5, 0.6, 0.7])
+    available_list = []
+    for tst in test_spike_times:
+        spike_info = pd.DataFrame({
+            "threshold_t": tst,
+        })
+        available_list.append(spike_info)
+
+    start = 0
+    end = 1
+    width = 20
+    n_bins = int((end - start) / (width * 0.001))
+
+    si_list = [None, available_list[0], None, available_list[1], None]
+    output = fv.inst_freq_vector(si_list,
+        start=start, end=end, width=width)
+
+    assert np.array_equal(output[:n_bins], output[n_bins:2 * n_bins])
+    assert np.array_equal(output[3 * n_bins:4 * n_bins], output[4 * n_bins:5 * n_bins])
+    assert np.array_equal(output[2 * n_bins:3 * n_bins],
+        np.vstack([output[n_bins:2 * n_bins], output[4 * n_bins:5 * n_bins]]).mean(axis=0))
+
+
+def test_spike_feature_within_sweep_interpolation():
+    feature = "test_feature_name"
+    test_spike_times = [0.25, 0.75]
+    test_feature_values = [1, 2]
+    spike_info = pd.DataFrame({
+        "threshold_t": test_spike_times,
+        "clipped": np.zeros(2).astype(bool),
+        feature: test_feature_values,
+    })
+    start = 0
+    end = 1
+    width = 20
+    output = fv.spike_feature_vector(feature, [spike_info],
+        start=start, end=end, width=width)
+    assert output[0] == test_feature_values[0]
+    assert output[len(output) // 2] > test_feature_values[0]
+    assert output[len(output) // 2] < test_feature_values[-1]
+    assert output[-1] == test_feature_values[-1]
+
+
+def test_spike_feature_between_sweep_interpolation():
+    feature = "test_feature_name"
+    test_spike_times = [0.25, 0.75]
+    test_feature_values = [1, 2]
+    available_list = []
+    for val in test_feature_values:
+        spike_info = pd.DataFrame({
+            "threshold_t": test_spike_times,
+            "clipped": np.zeros(2).astype(bool),
+            feature: [val] * 2,
+        })
+        available_list.append(spike_info)
+
+    start = 0
+    end = 1
+    width = 20
+    n_bins = int((end - start) / (width * 0.001))
+    si_list = [None, available_list[0], None, available_list[1], None]
+    output = fv.spike_feature_vector(feature, si_list,
+        start=start, end=end, width=width)
+    assert np.all(output[:n_bins] == test_feature_values[0])
+    assert np.all(output[n_bins:2 * n_bins] == test_feature_values[0])
+    assert np.all(output[2 * n_bins:3 * n_bins] == np.mean(test_feature_values))
+    assert np.all(output[3 * n_bins:4 * n_bins] == test_feature_values[1])
+    assert np.all(output[4 * n_bins:5 * n_bins] == test_feature_values[1])
