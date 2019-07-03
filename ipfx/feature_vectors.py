@@ -551,7 +551,8 @@ def first_ap_vectors(sweeps_list, spike_info_list,
 
     if len(sweeps_list) == 0:
         length_in_points = int(target_sampling_rate * window_length)
-        return np.zeros(length_in_points)
+        zero_v = np.zeros(length_in_points)
+        return zero_v, np.diff(zero_v)
 
     swp = sweeps_list[0]
     sampling_rate = int(np.rint(1. / (swp.t[1] - swp.t[0])))
@@ -565,7 +566,7 @@ def first_ap_vectors(sweeps_list, spike_info_list,
     avg_ap = np.vstack(ap_list).mean(axis=0)
 
     if sampling_rate > target_sampling_rate:
-        sampling_factor = sampling_rate // target_sampling_rate
+        sampling_factor = int(sampling_rate // target_sampling_rate)
         avg_ap = _subsample_average(avg_ap, sampling_factor)
 
     return avg_ap, np.diff(avg_ap)
@@ -631,6 +632,7 @@ def noise_ap_features(noise_sweeps,
 
 def _avg_ap_waveform(sweep, spike_indexes, length_in_points):
     """ Average together spike waveforms in sweep found at spike_indexes"""
+
     avg_list = [sweep.v[si:si + length_in_points]
         for si in spike_indexes.astype(int)]
     return np.vstack(avg_list).mean(axis=0)
@@ -638,141 +640,216 @@ def _avg_ap_waveform(sweep, spike_indexes, length_in_points):
 
 def first_ap_waveform(sweep, spikes, length_in_points):
     "Waveform of first AP with `length_in_points` time samples"
+
     start_index = spikes["threshold_index"].astype(int)[0]
     end_index = start_index + length_in_points
     return sweep.v[start_index:end_index]
 
 
-def spiking_features(sweep_set, features, spike_extractor, start, end,
-                     feature_width=20, rate_width=50,
-                     amp_interval=20, max_above_rheo=100,
-                     amp_tolerance=0.,
-                     spike_feature_list=[
-                        "upstroke_downstroke_ratio",
-                        "peak_v",
-                        "fast_trough_v",
-                        "adp_delta_v",
-                        "slow_trough_delta_v",
-                        "slow_trough_delta_t",
-                        "threshold_v",
-                        "width",
-                        ]):
-    """Binned and interpolated per-spike features"""
+def identify_suprathreshold_sweep_sequence(features, target_amplitudes,
+        shift=None, amp_tolerance=0):
+    """ Find sweeps matching desired amplitudes relative to rheobase
+
+    Parameters
+    ----------
+    features: output of LongSquareAnalysis.analyze()
+    target_amplitudes: list of amplitudes (relative to rheobase) for each desired step
+    amp_tolerance: float, pA. Tolerance for matching amplitude (default 0)
+    shift: optional, float in pA for amount to consider shifting "rheobase" to identify more
+        matching sweeps if only a single sweep matches. A value of None means that no shift is attempted.
+
+    Returns
+    -------
+    info_list: Spike info in order of desired amplitudes. If a given amplitude cannot be found,
+        the list has `None` at that location
+    """
+
+
     sweep_table = features["spiking_sweeps"]
+
     mask_supra = sweep_table["stim_amp"] >= features["rheobase_i"]
-    sweep_indexes = consolidated_long_square_indexes(sweep_table.loc[mask_supra, :])
+    sweep_table = sweep_table.loc[mask_supra, :]
+
+    sweep_indexes = _consolidated_long_square_indexes(sweep_table.loc[mask_supra, :])
+    sweep_table = sweep_table.loc[sweep_indexes, :]
+
     logging.debug("Identifying spiking sweeps using rheobase = {}".format(features["rheobase_i"]))
-    amps = np.rint(sweep_table.loc[sweep_indexes, "stim_amp"].values - features["rheobase_i"])
+    amps = np.rint(sweep_table["stim_amp"].values - features["rheobase_i"])
     logging.debug("Available amplitudes: {:s}".format(np.array2string(amps)))
+    logging.debug("Target amplitudes: {:s}".format(np.array2string(target_amplitudes)))
+
     spike_data = features["spikes_set"]
+    sweeps_to_use = _spiking_sweeps_at_levels(amps, sweep_indexes,
+        target_amplitudes, amp_tolerance)
+    n_matches = np.sum([s is not None for s in sweeps_to_use])
 
-    sweeps_to_use = spiking_sweeps_at_levels(amps, sweep_indexes,
-        max_above_rheo, amp_interval, amp_tolerance)
+    if len(target_amplitudes) > 1 and n_matches <= 1 and shift is not None:
+        logging.debug("Found only one spiking sweep that matches expected amplitude levels; attempting to shift by {} pA".format(shift))
+        sweeps_to_use = _spiking_sweeps_at_levels(amps - shift, sweep_indexes,
+            target_amplitudes, amp_tolerance)
+        n_matches = np.sum([s is not None for s in sweeps_to_use])
 
-    # We want more than one sweep to line up with expected intervals
-    if len(sweeps_to_use) <= 1:
-        logging.debug("Found only one spiking sweep that matches expected amplitude levels; attempting to shift by 10 pA")
-        sweeps_to_use = spiking_sweeps_at_levels(amps - 10., sweep_indexes,
-        max_above_rheo, amp_interval, amp_tolerance)
-        if len(sweeps_to_use) <= 1:
-            raise er.FeatureError("Could not find enough spiking sweeps aligned with expected amplitude levels")
+    if len(target_amplitudes) > 1 and n_matches <= 1:
+        raise er.FeatureError("Could not find at least two spiking sweeps matching requested amplitude levels")
 
-    # PSTH Calculation
-    rate_data = {}
-    for amp_level, amp, swp_ind in sweeps_to_use:
-        thresh_t = spike_data[swp_ind]["threshold_t"]
+    return [spike_data[ind] if ind is not None else None for ind in sweeps_to_use]
+
+
+def psth_vector(spike_info_list, start, end, width=50):
+    """ Create binned "PSTH"-like feature vector based on spike times, concatenated
+        across sweeps
+
+    Parameters
+    ----------
+    spike_info_list: list of spike info DataFrames for each sweep
+    start : stimulus interval start (seconds)
+    end : stimulus interval end (seconds)
+    width: bin width in ms (default 50)
+
+    Returns
+    -------
+    output: Concatenated vector of binned spike rates
+    """
+    vector_list = []
+    for si in spike_info_list:
+        if si is None:
+            vector_list.append(None)
+            continue
+        thresh_t = si["threshold_t"]
         spike_count = np.ones_like(thresh_t)
-        bin_number = int(1. / 0.001) // rate_width + 1
-        bins = np.linspace(start, end, bin_number)
-        bin_width = bins[1] - bins[0]
+        one_ms = 0.001
+        duration = end - start
+        n_bins = int(duration / one_ms) // width
+        bin_edges = np.linspace(start, end, n_bins + 1) # includes right edge, so adding one to desired bin number
+        bin_width = bin_edges[1] - bin_edges[0]
         output = stats.binned_statistic(thresh_t,
                                         spike_count,
                                         statistic='sum',
-                                        bins=bins)[0]
+                                        bins=bin_edges)[0]
         output[np.isnan(output)] = 0
         output /= bin_width # convert to spikes/s
-        rate_data[amp_level] = output
+        vector_list.append(output)
+    output_vector = _combine_and_interpolate(vector_list)
 
-    # Combine all levels into single vector & imterpolate to fill missing sweeps
-    output_vector = combine_and_interpolate(rate_data, max_level=max_above_rheo // amp_interval)
-
-    # Instantaneous frequency
-    feature_data = {}
-    for amp_level, amp, swp_ind in sweeps_to_use:
-        swp = sweep_set.sweeps[swp_ind]
-        start_index = tsu.find_time_index(swp.t, start)
-        end_index = tsu.find_time_index(swp.t, end)
-
-        thresh_ind = spike_data[swp_ind]["threshold_index"].values
-        thresh_t = spike_data[swp_ind]["threshold_t"].values
-        inst_freq = inst_freq_feature(thresh_t, start, end)
-        inst_freq = np.insert(inst_freq, 0, 1. / (thresh_t[0] - start))
-        thresh_ind = np.insert(thresh_ind, [0, len(thresh_ind)], [start_index, end_index])
-
-        t = swp.t[start_index:end_index]
-        freq = np.zeros_like(t)
-        thresh_ind -= start_index
-        for f, i1, i2 in zip(inst_freq, thresh_ind[:-1], thresh_ind[1:]):
-            freq[i1:i2] = f
-
-        bin_number = int(1. / 0.001) // feature_width + 1
-        bins = np.linspace(start, end, bin_number)
-        output = stats.binned_statistic(t,
-                                        freq,
-                                        bins=bins)[0]
-        feature_data[amp_level] = output
-    output_vector = np.append(output_vector, combine_and_interpolate(feature_data, max_level=max_above_rheo // amp_interval))
-
-    # Spike-level feature calculation
-    for feature in spike_feature_list:
-        feature_data = {}
-        for amp_level, amp, swp_ind in sweeps_to_use:
-            thresh_t = spike_data[swp_ind]["threshold_t"].values
-            if feature not in spike_data[swp_ind].columns:
-                feature_values = np.zeros_like(thresh_t)
-            else:
-                # Not every feature is defined for every spike
-                feature_values = spike_data[swp_ind][feature].values
-                can_be_clipped = spike_extractor.is_spike_feature_affected_by_clipping(feature)
-                if can_be_clipped:
-                    mask = ~spike_data[swp_ind]["clipped"].values
-                    thresh_t = thresh_t[mask]
-                    feature_values = feature_values[mask]
-
-            bin_number = int(1. / 0.001) // feature_width + 1
-            bins = np.linspace(start, end, bin_number)
-
-            output = stats.binned_statistic(thresh_t,
-                                            feature_values,
-                                            bins=bins)[0]
-            nan_ind = np.isnan(output)
-            x = np.arange(len(output))
-            output[nan_ind] = np.interp(x[nan_ind], x[~nan_ind], output[~nan_ind])
-            feature_data[amp_level] = output
-        output_vector = np.append(output_vector, combine_and_interpolate(feature_data, max_level=5))
     return output_vector
 
 
-def spiking_sweeps_at_levels(amps, sweep_indexes, max_above_rheo, amp_interval,
+def inst_freq_vector(spike_info_list, start, end, width=20):
+    """ Create binned instantaneous frequency feature vector,
+        concatenated across sweeps
+
+    Parameters
+    ----------
+    spike_info_list: list of spike info DataFrames for each sweep
+    start : stimulus interval start (seconds)
+    end : stimulus interval end (seconds)
+    width: bin width in ms (default 20)
+
+    Returns
+    -------
+    output: Concatenated vector of binned spike rates
+    """
+
+    vector_list = []
+    for si in spike_info_list:
+        if si is None:
+            vector_list.append(None)
+            continue
+        thresh_t = si["threshold_t"].values
+        inst_freq, inst_freq_times = _inst_freq_feature(thresh_t, start, end)
+
+        one_ms = 0.001
+        duration = end - start
+        n_bins = int(duration / one_ms) // width
+        bin_edges = np.linspace(start, end, n_bins + 1) # includes right edge, so adding one to desired bin number
+        bin_width = bin_edges[1] - bin_edges[0]
+
+        output = stats.binned_statistic(inst_freq_times,
+                                        inst_freq,
+                                        bins=bin_edges)[0]
+        nan_ind = np.isnan(output)
+        x = np.arange(len(output))
+        output[nan_ind] = np.interp(x[nan_ind], x[~nan_ind], output[~nan_ind])
+        vector_list.append(output)
+
+    output_vector = _combine_and_interpolate(vector_list)
+
+    return output_vector
+
+
+def spike_feature_vector(feature, spike_info_list, start, end, width=20):
+    """ Create binned feature vector for specified features,
+        concatenated across sweeps
+
+    Parameters
+    ----------
+    feature: string, name of feature found in members of spike_info_list
+    spike_info_list: list of spike info DataFrames for each sweep
+    start : stimulus interval start (seconds)
+    end : stimulus interval end (seconds)
+    width: bin width in ms (default 20)
+
+    Returns
+    -------
+    output: Concatenated vector of binned spike rates
+    """
+
+    vector_list = []
+    for si in spike_info_list:
+        if si is None:
+            vector_list.append(None)
+            continue
+        thresh_t = si["threshold_t"].values
+        if feature not in si.columns:
+            logging.warning("Requested feature {} not found in supplied dataframe".format(feature))
+            feature_values = np.zeros_like(thresh_t)
+        else:
+            feature_values = si[feature].values
+            mask = ~si["clipped"].values
+            thresh_t = thresh_t[mask]
+            feature_values = feature_values[mask]
+
+        one_ms = 0.001
+        duration = end - start
+        n_bins = int(duration / one_ms) // width
+        bin_edges = np.linspace(start, end, n_bins + 1) # includes right edge, so adding one to desired bin number
+        bin_width = bin_edges[1] - bin_edges[0]
+
+        output = stats.binned_statistic(thresh_t,
+                                        feature_values,
+                                        bins=bin_edges)[0]
+        nan_ind = np.isnan(output)
+        x = np.arange(len(output))
+        output[nan_ind] = np.interp(x[nan_ind], x[~nan_ind], output[~nan_ind])
+        vector_list.append(output)
+
+    output_vector = _combine_and_interpolate(vector_list)
+    return output_vector
+
+
+def _spiking_sweeps_at_levels(amps, sweep_indexes, target_amplitudes,
         amp_tolerance):
+    """Search for sweep indexes that match target amplitudes"""
 
     sweeps_to_use = []
-    for amp, swp_ind in zip(amps, sweep_indexes):
-        if (amp > max_above_rheo) or (amp < 0):
-            logging.debug("Skipping amplitude {} (outside range)".format(amp))
-            continue
-        amp_level = int(np.rint(amp / float(amp_interval)))
+    for target_amp in target_amplitudes:
+        found_match = False
+        for amp, swp_ind in zip(amps, sweep_indexes):
+            if (np.abs(amp - target_amp) <= amp_tolerance):
+                found_match = True
+                sweeps_to_use.append(swp_ind)
+                logging.debug("Using amplitude {} for target {}".format(amp, target_amp))
+                break
+        if not found_match:
+            sweeps_to_use.append(None)
 
-        if (np.abs(amp - amp_level * amp_interval) > amp_tolerance):
-            logging.debug("Skipping amplitude {} (mismatch with expected amplitude interval)".format(amp))
-            continue
-
-        logging.debug("Using amplitude {} for amp level {}".format(amp, amp_level))
-        sweeps_to_use.append((amp_level, amp, swp_ind))
     return sweeps_to_use
 
 
-def consolidated_long_square_indexes(sweep_table):
+def _consolidated_long_square_indexes(sweep_table):
+    """Identify a single sweep for each stimulus amplitude if an amplitude
+        is repeated
+    """
     sweep_index_list = []
     amp_arr = sweep_table["stim_amp"].unique()
     for a in amp_arr:
@@ -788,41 +865,48 @@ def consolidated_long_square_indexes(sweep_table):
     return np.array(sweep_index_list)
 
 
-def combine_and_interpolate(data, max_level):
-    output_vector = data[0]
-    if len(data) <= 1:
-        logging.warning("Data from only one spiking sweep found; interpolation may have problems")
-    for i in range(1, max_level + 1):
-        if i not in data:
-            bigger_level = -1
-            for j in range(i + 1, max_level + 1):
-                if j in data:
-                    bigger_level = j
-                    break
-            smaller_level = -1
-            for j in range(i - 1, -1, -1):
-                if j in data:
-                    smaller_level = j
-                    break
-            if bigger_level == -1:
-                new_data = data[smaller_level]
-            else:
-                new_data = (data[smaller_level] + data[bigger_level]) / 2.
-            output_vector = np.append(output_vector, new_data)
-            data[i] = new_data
+def _combine_and_interpolate(data):
+    """Concatenate and interpolate missing items from neighbors"""
+    n_populated = np.sum([d is not None for d in data])
+    if n_populated <= 1 and len(data) > 1:
+        logging.warning("Data from only one spiking sweep found; interpolated sweeps may have issues")
+    output_list = []
+    for i, d in enumerate(data):
+        if d is not None:
+            output_list.append(d)
+            continue
+
+        # Missing data is interpolated from neighbors in list
+        lower = -1
+        upper = np.inf
+        for j, neighbor in enumerate(data):
+            if j == i:
+                continue
+            if neighbor is not None:
+                if j < i and j > lower:
+                    lower = j
+                if j > i and j < upper:
+                    upper = j
+        if lower > -1 and upper < len(data):
+            new_data = (data[lower] + data[upper]) / 2
+        elif lower == -1:
+            new_data = data[upper]
         else:
-            output_vector = np.append(output_vector, data[i])
-    return output_vector
+            new_data = data[lower]
+
+        output_list.append(new_data)
+
+    return np.hstack(output_list)
 
 
-def inst_freq_feature(threshold_t, start, end):
+def _inst_freq_feature(threshold_t, start, end):
     if len(threshold_t) == 0:
-        return np.array([])
+        return np.array([0, 0]), np.array([start, end])
     elif len(threshold_t) == 1:
-        return np.array([1. / (end - start)])
+        return np.array([1. / (end - start)] * 3), np.array([start, threshold_t[0], end])
 
-    values = 1. / np.diff(threshold_t)
-    values = np.append(values, 1. / (end - threshold_t[-2])) # last
-    return values
+    values = 1. / np.diff(np.concatenate([[start], threshold_t]))
+    values = np.concatenate([values, [values[-1]] * 2])
+    return values, np.concatenate([[start], threshold_t, [end]])
 
 
