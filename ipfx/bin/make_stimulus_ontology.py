@@ -2,6 +2,8 @@ import allensdk.core.json_utilities as ju
 from ipfx.stimulus import StimulusOntology
 import re
 from ipfx.bin import lims_queries as lq
+import logging
+
 
 def make_stimulus_ontology(stims):
 
@@ -68,8 +70,7 @@ def make_stimulus_ontology_from_lims(file_name):
         stims = lq.get_stimuli_description()
         stim_ontology = make_stimulus_ontology(stims)
         ju.write(file_name, stim_ontology)
-    else:
-        raise Exception("Unable to connect to LIMS")
+        logging.info("Updated stimulus ontology from LIMS")
 
 
 def make_default_stimulus_ontology():

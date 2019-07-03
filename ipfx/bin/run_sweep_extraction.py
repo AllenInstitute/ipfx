@@ -41,6 +41,7 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
         mso.make_stimulus_ontology_from_lims(stimulus_ontology_file)
     else:
         stimulus_ontology_file = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
+        logging.info(F"Ontology is not provided, using default {StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE}")
 
     ont = StimulusOntology(ju.read(stimulus_ontology_file))
     ds = create_data_set(nwb_file=input_nwb_file,

@@ -47,11 +47,9 @@ def run_feature_extraction(input_nwb_file,
     if len(sweep_info) == 0:
         raise er.FeatureError("There are no QC-passed sweeps available to analyze")
 
-    if stimulus_ontology_file:
-        mso.make_stimulus_ontology_from_lims(stimulus_ontology_file)
-    else:
+    if not stimulus_ontology_file:
         stimulus_ontology_file = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
-
+        logging.info(F"Ontology is not provided, using default {StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE}")
     ont = StimulusOntology(ju.read(stimulus_ontology_file))
 
     data_set = create_data_set(sweep_info=sweep_info,
