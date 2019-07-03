@@ -213,7 +213,6 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
         Parameters
         ----------
         amp_sweep_dict : dict of amplitude / sweep pairs
-
         target_amps: list of desired amplitudes for output vector
         features : output of LongSquareAnalysis.analyze()
         start : stimulus interval start (seconds)
@@ -234,7 +233,7 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
         delta_t = swp.t[1] - swp.t[0]
         subsample_width = int(np.round(subsample_interval / delta_t))
         end_index = tsu.find_time_index(swp.t, end + extend_duration)
-        subsampled_v = subsample_average(swp.v[start_index:end_index], subsample_width)
+        subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
         subsampled_dict[amp] = subsampled_v
 
     extend_length = int(np.round(extend_duration / subsample_interval))
@@ -284,7 +283,7 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
     return np.hstack(output_list)
 
 
-def subsample_average(x, width):
+def _subsample_average(x, width):
     """Downsamples x by averaging `width` points"""
 
     avg = np.nanmean(x.reshape(-1, width), axis=1)
@@ -321,7 +320,7 @@ def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
     delta_t = swp.t[1] - swp.t[0]
     subsample_width = int(np.round(subsample_interval / delta_t))
     end_index = tsu.find_time_index(swp.t, end + extend_duration)
-    subsampled_v = subsample_average(swp.v[start_index:end_index], subsample_width)
+    subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
     subsampled_v -= base
     subsampled_v /= delta
 
@@ -364,7 +363,7 @@ def subthresh_depol_norm(sweep_set, features, start, end,
         delta_t = swp.t[1] - swp.t[0]
         subsample_width = int(np.round(subsample_interval / delta_t))
         end_index = tsu.find_time_index(swp.t, end + extend_duration)
-        subsampled_v = subsample_average(swp.v[start_index:end_index], subsample_width)
+        subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
         subsampled_v = np.zeros_like(subsampled_v)
         return subsampled_v
 
@@ -385,7 +384,7 @@ def subthresh_depol_norm(sweep_set, features, start, end,
     delta_t = swp.t[1] - swp.t[0]
     subsample_width = int(np.round(subsample_interval / delta_t))
     end_index = tsu.find_time_index(swp.t, end + extend_duration)
-    subsampled_v = subsample_average(swp.v[start_index:end_index], subsample_width)
+    subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
     subsampled_v -= base
     subsampled_v /= delta
 
@@ -442,7 +441,7 @@ def isi_shape(sweep_set, features, duration=1., n_points=100, min_spike=5):
 
         width = len(isi_raw) // n_points
         isi_raw = isi_raw[:width * n_points] # ensure division will work
-        isi_norm = subsample_average(isi_raw, width)
+        isi_norm = _subsample_average(isi_raw, width)
 
         return isi_norm
 
@@ -457,7 +456,7 @@ def isi_shape(sweep_set, features, duration=1., n_points=100, min_spike=5):
         if width == 0:
             # trace is shorter than 100 points - probably in a burst, so we'll skip
             continue
-        isi_norm = subsample_average(isi_raw[:width * n_points], width)
+        isi_norm = _subsample_average(isi_raw[:width * n_points], width)
         isi_list.append(isi_norm)
 
     isi_norm = np.vstack(isi_list).mean(axis=0)
@@ -535,9 +534,9 @@ def first_ap_features(lsq_sweeps, ssq_sweeps, ramp_sweeps,
     # Downsample if necessary
     if sampling_rate > target_sampling_rate:
         sampling_factor = sampling_rate // target_sampling_rate
-        ap_long_square = subsample_average(ap_long_square, sampling_factor)
-        ap_ramp = subsample_average(ap_ramp, sampling_factor)
-        ap_short_square = subsample_average(ap_short_square, sampling_factor)
+        ap_long_square = _subsample_average(ap_long_square, sampling_factor)
+        ap_ramp = _subsample_average(ap_ramp, sampling_factor)
+        ap_short_square = _subsample_average(ap_short_square, sampling_factor)
 
     dv_ap_short_square = np.diff(ap_short_square)
     dv_ap_long_square = np.diff(ap_long_square)
@@ -589,7 +588,7 @@ def noise_ap_features(noise_sweeps,
     grand_avg_ap = np.vstack(avg_ap_list).mean(axis=0)
     if sampling_rate > target_sampling_rate:
         sampling_factor = sampling_rate // target_sampling_rate
-        grand_avg_ap = subsample_average(grand_avg_ap, sampling_factor)
+        grand_avg_ap = _subsample_average(grand_avg_ap, sampling_factor)
 
     return np.hstack([grand_avg_ap, np.diff(grand_avg_ap)])
 
