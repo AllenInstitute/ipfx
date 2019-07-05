@@ -302,7 +302,7 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
         logging.warning(detail)
         return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=None)}}
 
-    # Identify and process ramp sweeps
+    # Identify and preprocess ramp sweeps
     try:
         ramp_sweep_numbers = categorize_iclamp_sweeps(data_set,
             ontology.ramp_names, sweep_qc_option=sweep_qc_option,
@@ -324,7 +324,6 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
         result["step_subthresh"] = fv.step_subthreshold(
             subthresh_hyperpol_dict, target_amps_for_step_subthresh,
             lsq_start, lsq_end, amp_tolerance=5)
-
         result["subthresh_norm"] = fv.subthresh_norm(subthresh_hyperpol_dict, hyperpol_deflect_dict,
             lsq_start, lsq_end)
         (subthresh_depol_dict,

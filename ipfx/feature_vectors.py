@@ -10,54 +10,6 @@ from . import time_series_utils as tsu
 from . import error as er
 
 
-def extract_multipatch_feature_vectors(lsq_supra_sweeps, lsq_supra_start, lsq_supra_end,
-                                       lsq_sub_sweeps, lsq_sub_start, lsq_sub_end,
-                                       target_sampling_rate=50000, ap_window_length=0.003):
-    lsq_supra_spx, lsq_supra_spfx = dsf.extractors_for_sweeps(lsq_supra_sweeps, start=lsq_supra_start, end=lsq_supra_end)
-    lsq_supra_an = spa.LongSquareAnalysis(lsq_supra_spx, lsq_supra_spfx, subthresh_min_amp=-100., require_subthreshold=False)
-    lsq_supra_features = lsq_supra_an.analyze(lsq_supra_sweeps)
-
-    lsq_sub_spx, lsq_sub_spfx = dsf.extractors_for_sweeps(lsq_sub_sweeps, start=lsq_sub_start, end=lsq_sub_end)
-    lsq_sub_an = spa.LongSquareAnalysis(lsq_sub_spx, lsq_sub_spfx, subthresh_min_amp=-100., require_suprathreshold=False)
-    lsq_sub_features = lsq_sub_an.analyze(lsq_sub_sweeps)
-
-    all_features = feature_vectors_multipatch(
-        lsq_supra_sweeps, lsq_supra_features,
-        lsq_supra_start, lsq_supra_end,
-        lsq_sub_sweeps, lsq_sub_features,
-        lsq_sub_start, lsq_sub_end,
-        lsq_supra_spx,
-        target_sampling_rate=target_sampling_rate,
-        ap_window_length=ap_window_length
-    )
-    return all_features
-
-
-def feature_vectors_multipatch(lsq_supra_sweeps, lsq_supra_features,
-                               lsq_supra_start, lsq_supra_end,
-                               lsq_sub_sweeps, lsq_sub_features,
-                               lsq_sub_start, lsq_sub_end,
-                               lsq_spike_extractor,
-                               amp_tolerance=4.,
-                               feature_width=20, rate_width=50,
-                               target_sampling_rate=50000, ap_window_length=0.003):
-    """Feature vectors from stimulus set features"""
-
-    result = {}
-    result["step_subthresh"] = step_subthreshold(lsq_sub_sweeps, lsq_sub_features, lsq_sub_start, lsq_sub_end, amp_tolerance=amp_tolerance)
-    result["subthresh_norm"] = subthresh_norm(lsq_sub_sweeps, lsq_sub_features, lsq_sub_start, lsq_sub_end)
-    result["subthresh_depol_norm"] = subthresh_depol_norm(lsq_supra_sweeps, lsq_supra_features, lsq_supra_start, lsq_supra_end)
-    result["isi_shape"] = isi_shape(lsq_supra_sweeps, lsq_supra_features, duration=lsq_supra_end - lsq_supra_start)
-    result["first_ap"] = first_ap_features(lsq_supra_sweeps, None, None,
-                                           lsq_supra_features, None, None,
-                                           target_sampling_rate=target_sampling_rate,
-                                           window_length=ap_window_length)
-    result["spiking"] = spiking_features(lsq_supra_sweeps, lsq_supra_features, lsq_spike_extractor,
-                                         0., 1.,
-                                         feature_width, rate_width, amp_tolerance=amp_tolerance)
-    return result
-
-
 def identify_subthreshold_hyperpol_with_amplitudes(features, sweeps):
     """ Identify subthreshold responses from hyperpolarizing steps
 
@@ -555,7 +507,6 @@ def identify_suprathreshold_sweep_sequence(features, target_amplitudes,
         the list has `None` at that location
     """
 
-
     sweep_table = features["spiking_sweeps"]
 
     mask_supra = sweep_table["stim_amp"] >= features["rheobase_i"]
@@ -601,6 +552,7 @@ def psth_vector(spike_info_list, start, end, width=50):
     -------
     output: Concatenated vector of binned spike rates
     """
+
     vector_list = []
     for si in spike_info_list:
         if si is None:
@@ -741,6 +693,7 @@ def _consolidated_long_square_indexes(sweep_table):
     """Identify a single sweep for each stimulus amplitude if an amplitude
         is repeated
     """
+
     sweep_index_list = []
     amp_arr = sweep_table["stim_amp"].unique()
     for a in amp_arr:
@@ -758,6 +711,7 @@ def _consolidated_long_square_indexes(sweep_table):
 
 def _combine_and_interpolate(data):
     """Concatenate and interpolate missing items from neighbors"""
+
     n_populated = np.sum([d is not None for d in data])
     if n_populated <= 1 and len(data) > 1:
         logging.warning("Data from only one spiking sweep found; interpolated sweeps may have issues")
@@ -791,6 +745,7 @@ def _combine_and_interpolate(data):
 
 
 def _inst_freq_feature(threshold_t, start, end):
+    """ Calculate instantaneous frequencies from differences in spike times"""
     if len(threshold_t) == 0:
         return np.array([0, 0]), np.array([start, end])
     elif len(threshold_t) == 1:
