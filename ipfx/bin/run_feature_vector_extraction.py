@@ -115,7 +115,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
         not_checked_list = []
         for swp_num in sweep_num_list:
             if swp_num not in res_nums:
-                logging.info("Could not find sweep {:d} from specimen {:d} in LIMS for QC check".format(swp_num, specimen_id))
+                logging.debug("Could not find sweep {:d} from specimen {:d} in LIMS for QC check".format(swp_num, specimen_id))
                 not_checked_list.append(swp_num)
 
         # Get passed sweeps
@@ -132,7 +132,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
         not_checked_list = []
         for swp_num in sweep_num_list:
             if swp_num not in res_nums:
-                logging.info("Could not find sweep {:d} from specimen {:d} in LIMS for QC check".format(swp_num, specimen_id))
+                logging.debug("Could not find sweep {:d} from specimen {:d} in LIMS for QC check".format(swp_num, specimen_id))
                 not_checked_list.append(swp_num)
 
         # get straight-up passed sweeps
@@ -166,13 +166,13 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, spec
 def lims_nwb_information(specimen_id):
     _, roi_id, _ = lq.get_specimen_info_from_lims_by_id(specimen_id)
     if roi_id is None:
-        logging.debug("No ephys ROI result found for {:d}".format(specimen_id))
-        return {"error": {"type": "no_ephys_roi_result", "details": "roi ID was None"}}
+        logging.warning("No ephys ROI result found for {:d}".format(specimen_id))
+        return {"error": {"type": "no_ephys_roi_result", "details": "roi ID was None"}}, None
 
     nwb_path = lq.get_nwb_path_from_lims(roi_id)
     if (nwb_path is None) or (len(nwb_path) == 0): # could not find an NWB file
-        logging.debug("No NWB file for {:d}".format(specimen_id))
-        return {"error": {"type": "no_nwb", "details": "empty nwb path"}}
+        logging.warning("No NWB file for {:d}".format(specimen_id))
+        return {"error": {"type": "no_nwb", "details": "empty nwb path"}}, None
 
     # Check if NWB has lab notebook information, or if additional hdf5 file is needed
     h5_path = None
@@ -184,10 +184,10 @@ def lims_nwb_information(specimen_id):
                 except Exception as detail:
                     logging.warning("Exception when loading h5 file for {:d}".format(specimen_id))
                     logging.warning(detail)
-                    return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
+                    return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}, None
     except:
-        logging.debug("Could not open NWB file for {:d}".format(specimen_id))
-        return {"error": {"type": "no_nwb", "details": ""}}
+        logging.warning("Could not open NWB file for {:d}".format(specimen_id))
+        return {"error": {"type": "no_nwb", "details": ""}}, None
     return nwb_path, h5_path
 
 
@@ -263,6 +263,10 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
     # Find or retrieve NWB file and ancillary info and construct an AibsDataSet object
     if data_source == "lims":
         nwb_path, h5_path = lims_nwb_information(specimen_id)
+        if type(nwb_path) is dict and "error" in nwb_path:
+            logging.warning("Problem getting NWB file for specimen {:d} from LIMS".format(specimen_id))
+            return nwb_path
+
         try:
             data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
             ontology = data_set.ontology
