@@ -18,6 +18,7 @@ import ipfx.stim_features as stf
 import ipfx.stimulus_protocol_analysis as spa
 import ipfx.data_set_features as dsf
 import ipfx.time_series_utils as tsu
+import ipfx.error as er
 
 from ipfx.aibs_data_set import AibsDataSet
 
