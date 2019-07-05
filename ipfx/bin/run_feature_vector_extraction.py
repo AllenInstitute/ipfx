@@ -44,6 +44,12 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
         description="Code used for naming of output files",
         default="test"
     )
+    output_file_type = ags.fields.String(
+        description=("File type for output - 'h5' - single HDF5 file (default) "
+            "'npy' - multiple .npy files"),
+        default="h5",
+        validate=lambda x: x in ["h5", "npy"]
+    )
     project = ags.fields.String(
         description="Project code used for LIMS query",
         default=None,
@@ -391,8 +397,48 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
     return result
 
 
+def organize_results(specimen_ids, results):
+    """Build dictionary of results, filling data from cells with appropriate-length
+        nan arrays where needed"""
+    result_sizes = {}
+    output = {}
+    all_keys = np.unique(np.concatenate([list(r.keys()) for r in results]))
+
+    for k in all_keys:
+        if k not in result_sizes:
+            for r in results:
+                if k in r and r[k] is not None:
+                    result_sizes[k] = len(r[k])
+        data = np.array([r[k] if k in r else np.nan * np.zeros(result_sizes[k])
+                        for r in results])
+        output[k] = data
+
+    return output
+
+
+def save_to_npy(specimen_ids, results_dict, output_dir, output_code):
+    k_sizes = {}
+    for k in results_dict:
+        np.save(os.path.join(output_dir, "fv_{:s}_{:s}.npy".format(k, output_code)), results_dict[k])
+    np.save(os.path.join(output_dir, "fv_ids_{:s}.npy".format(output_code)), specimen_ids)
+
+
+def save_to_h5(specimen_ids, results_dict, output_dir, output_code):
+    ids_arr = np.array(specimen_ids)
+    h5_file = h5py.File(os.path.join(output_dir, "fv_{}.h5".format(output_code)), "w")
+    for k in results_dict:
+        data = results_dict[k]
+        dset = h5_file.create_dataset(k, data.shape, dtype=data.dtype,
+            compression="gzip")
+        dset[...] = data
+    dset = h5_file.create_dataset("ids", ids_arr.shape,
+        dtype=ids_arr.dtype, compression="gzip")
+    dset[...] = ids_arr
+    h5_file.close()
+
+
 def run_feature_vector_extraction(output_dir, data_source, output_code, project,
-        sweep_qc_option, include_failed_cells, run_parallel,
+        output_file_type, sweep_qc_option, include_failed_cells, run_parallel,
         ap_window_length, ids=None, **kwargs):
     if ids is not None:
         specimen_ids = ids
@@ -421,23 +467,18 @@ def run_feature_vector_extraction(output_dir, data_source, output_code, project,
 
     used_ids, results = zip(*filtered_set)
     logging.info("Finished with {:d} processed specimens".format(len(used_ids)))
-    k_sizes = {}
 
-    for k in results[0].keys():
-        if k not in k_sizes and results[0][k] is not None:
-            k_sizes[k] = len(results[0][k])
-        data = np.array([r[k] if k in r else np.nan * np.zeros(k_sizes[k])
-                        for r in results])
-        if len(data) < len(used_ids):
-            logging.warning("Missing data!")
-            missing = np.array([k not in r for r in results])
-            print(k, np.array(used_ids)[missing])
-        np.save(os.path.join(output_dir, "fv_{:s}_{:s}.npy".format(k, output_code)), data)
+    results_dict = organize_results(used_ids, results)
+
+    if output_file_type == "h5":
+        save_to_h5(used_ids, results_dict, output_dir, output_code)
+    elif output_file_type == "npy":
+        save_to_npy(used_ids, results_dict, output_dir, output_code)
+    else:
+        raise ValueError("Unknown output_file_type option {} (allowed values are h5 and npy)".format(output_file_type))
 
     with open(os.path.join(output_dir, "fv_errors_{:s}.json".format(output_code)), "w") as f:
         json.dump(error_set, f, indent=4)
-
-    np.save(os.path.join(output_dir, "fv_ids_{:s}.npy".format(output_code)), used_ids)
 
 
 def main():
