@@ -573,7 +573,6 @@ def psth_vector(spike_info_list, start, end, width=50):
         output /= bin_width # convert to spikes/s
         vector_list.append(output)
     output_vector = _combine_and_interpolate(vector_list)
-
     return output_vector
 
 
@@ -745,14 +744,67 @@ def _combine_and_interpolate(data):
 
 
 def _inst_freq_feature(threshold_t, start, end):
-    """ Calculate instantaneous frequencies from differences in spike times"""
+    """ Estimate instantaneous firing rate from differences in spike times
+
+    This function attempts to estimate a semi-continuous instantanteous firing
+    rate from a set of interspike intervals (ISIs) and spike times. It makes
+    several assumptions:
+    - It assumes that the instantaneous firing rate at the start of the stimulus
+    interval is the inverse of the latency to the first spike.
+    - It estimates the firing rate at each spike as the average of the ISIs
+    on each side of the spike
+    - If the time between the end of the interval and the last spike is less
+    than the last true interspike interval, it sets the instantaneous rate of
+    that last spike and of the end of the interval to the inverse of the last ISI.
+    Therefore, the instantaneous rate would not "jump" just because the
+    stimulus interval ends.
+    - However, if the time between the end of the interval and the last spike is
+    longer than the final ISI, it assumes there may have been a spike just
+    after the end of the interval. Therefore, it essentially returns an upper
+    bound on the estimated rate.
+
+
+    Parameters
+    ----------
+    threshold_t: array
+        Spike times
+    start: float
+        start of stimulus interval (seconds)
+    end: float
+        end of stimulus interval (seconds)
+
+    Returns
+    -------
+    inst_firing_rate: array
+        Instantaneous firing rate estimates (spikes/s)
+    time_points: array
+        Time points for corresponding values in inst_firing_rate
+    """
     if len(threshold_t) == 0:
         return np.array([0, 0]), np.array([start, end])
-    elif len(threshold_t) == 1:
-        return np.array([1. / (end - start)] * 3), np.array([start, threshold_t[0], end])
+    print("start, end", start, end)
+    print(threshold_t)
+    inst_inv_rate = []
+    time_points = []
+    isis = [(threshold_t[0] - start)] + np.diff(threshold_t).tolist()
+    isis = isis + [max(isis[-1], end - threshold_t[-1])]
 
-    values = 1. / np.diff(np.concatenate([[start], threshold_t]))
-    values = np.concatenate([values, [values[-1]] * 2])
-    return values, np.concatenate([[start], threshold_t, [end]])
+    # Estimate at start of stimulus interval
+    inst_inv_rate.append(isis[0])
+    time_points.append(start)
+
+    # Estimate for each spike time
+    for t, pre_isi, post_isi in zip(threshold_t, isis[:-1], isis[1:]):
+        inst_inv_rate.append((pre_isi + post_isi) / 2)
+        time_points.append(t)
+
+    # Estimate for end of stimulus interval
+    inst_inv_rate.append(isis[-1])
+    time_points.append(end)
+
+
+    inst_firing_rate = 1 / np.array(inst_inv_rate)
+    time_points = np.array(time_points)
+    return inst_firing_rate, time_points
 
 
