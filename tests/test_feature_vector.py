@@ -225,6 +225,19 @@ def test_psth_compressed_firing():
     assert np.max(output) == len(test_spike_times) / (width * 0.001)
 
 
+def test_psth_number_of_spikes():
+    np.random.seed(42)
+    n_spikes = np.random.randint(0, 100)
+    start = 1.02
+    end = 2.02
+    width = 50
+    test_spike_times = np.random.random(n_spikes) * (end - start) + start
+    spike_info = pd.DataFrame({"threshold_t": test_spike_times})
+
+    output = fv.psth_vector([spike_info], start=start, end=end, width=width)
+    assert np.isclose(output.mean(), n_spikes)
+
+
 def test_psth_between_sweep_interpolation():
     feature = "test_feature_name"
     test_spike_times = ([0.25, 0.75], [0.2, 0.5, 0.6, 0.7])
@@ -257,7 +270,7 @@ def test_inst_freq_one_spike():
     end = 1
     width = 20
     output = fv.inst_freq_vector([spike_info], start=start, end=end, width=width)
-    assert np.all(output == 1 / (end - start))
+    assert np.all(output >= 1 / (end - start))
 
 
 def test_inst_freq_initial_freq():
