@@ -782,8 +782,6 @@ def _inst_freq_feature(threshold_t, start, end):
     """
     if len(threshold_t) == 0:
         return np.array([0, 0]), np.array([start, end])
-    print("start, end", start, end)
-    print(threshold_t)
     inst_inv_rate = []
     time_points = []
     isis = [(threshold_t[0] - start)] + np.diff(threshold_t).tolist()

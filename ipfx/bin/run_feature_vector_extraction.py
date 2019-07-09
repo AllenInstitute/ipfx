@@ -203,12 +203,22 @@ def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthr
         raise er.FeatureError("No long_square sweeps available for feature extraction")
 
     check_lsq_sweeps = data_set.sweep_set(sweep_numbers)
-    lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(check_lsq_sweeps.sweeps[0].i, check_lsq_sweeps.sweeps[0].t)
+    valid_sweep_stim = []
+    for swp in check_lsq_sweeps.sweeps:
+        swp_start, swp_dur, _, _, _ = stf.get_stim_characteristics(swp.i, swp.t)
+        if swp_start is None:
+            valid_sweep_stim.append(False)
+        else:
+            lsq_start = swp_start
+            lsq_dur = swp_dur
+            valid_sweep_stim.append(True)
     lsq_end = lsq_start + lsq_dur
 
     # Check that all sweeps are long enough and not ended early
-    good_sweep_numbers = [n for n, s in zip(sweep_numbers, check_lsq_sweeps.sweeps)
-                              if s.t[-1] >= lsq_start + lsq_dur + extra_dur and not np.all(s.v[tsu.find_time_index(s.t, lsq_start + lsq_dur)-100:tsu.find_time_index(s.t, lsq_start + lsq_dur)] == 0)]
+    good_sweep_numbers = [n for n, s, v in zip(sweep_numbers, check_lsq_sweeps.sweeps, valid_sweep_stim)
+                              if s.t[-1] >= lsq_start + lsq_dur + extra_dur
+                              and v is True
+                              and not np.all(s.v[tsu.find_time_index(s.t, lsq_start + lsq_dur)-100:tsu.find_time_index(s.t, lsq_start + lsq_dur)] == 0)]
     lsq_sweeps = data_set.sweep_set(good_sweep_numbers)
 
     lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(
