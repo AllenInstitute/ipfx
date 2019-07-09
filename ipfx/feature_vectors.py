@@ -367,6 +367,12 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
         else:
             end_index = stim_end_index
 
+        # check that it's not too close (less than n_points)
+        if end_index - fast_trough_index < n_points:
+            if end_index >= stim_end_index:
+                logging.warning("isi_shape: spike close to end of stimulus interval")
+            end_index = fast_trough_index + n_points
+
         isi_raw = sweep.v[fast_trough_index:end_index] - threshold_v
         width = len(isi_raw) // n_points
         isi_raw = isi_raw[:width * n_points] # ensure division will work
