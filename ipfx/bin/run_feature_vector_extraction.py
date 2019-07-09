@@ -383,11 +383,6 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
         result["first_ap_v"] = np.hstack([ssq_ap_v, lsq_ap_v, ramp_ap_v])
         result["first_ap_dv"] = np.hstack([ssq_ap_dv, lsq_ap_dv, ramp_ap_dv])
 
-
-#         result["spiking"] = spiking_features(lsq_sweeps, lsq_features, lsq_spike_extractor,
-#                                              lsq_start, lsq_end,
-#                                              feature_width, rate_width)
-
         target_amplitudes = np.arange(0, 120, 20)
         supra_info_list = fv.identify_suprathreshold_sweep_sequence(
             lsq_features, target_amplitudes, shift=10)
