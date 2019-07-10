@@ -15,12 +15,17 @@ def identify_subthreshold_hyperpol_with_amplitudes(features, sweeps):
 
         Parameters
         ----------
-        features : output of LongSquareAnalysis.analyze()
+        features: dict
+            Output of LongSquareAnalysis.analyze()
         sweeps: SweepSet
+            Long square sweeps
 
-        Returns:
-        amp_sweep_dict : dict of sweeps with amplitudes as keys
-        deflect_dict : dict of (base, deflect) tuples with amplitudes as keys
+        Returns
+        -------
+        amp_sweep_dict: dict
+            Amplitude-sweep pairs
+        deflect_dict: dict
+            Dictionary of (base, deflect) tuples with amplitudes as keys
     """
 
     # Get non-spiking sweeps
@@ -53,13 +58,19 @@ def identify_subthreshold_depol_with_amplitudes(features, sweeps):
 
         Parameters
         ----------
-        features : output of LongSquareAnalysis.analyze()
+        features: dict
+            Output of LongSquareAnalysis.analyze()
         sweeps: SweepSet
+            Long square sweeps
 
-        Returns:
-        amp_sweep_dict : dict of sweeps with amplitudes as keys
-        deflect_dict : dict of (base, deflect) tuples with amplitudes as keys
+        Returns
+        -------
+        amp_sweep_dict: dict
+            Amplitude-sweep pairs
+        deflect_dict: dict
+            Dictionary of (base, deflect) tuples with amplitudes as keys
     """
+
     if "subthreshold_sweeps" in features:
         sweep_table = features["subthreshold_sweeps"]
     else:
@@ -92,17 +103,24 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
 
         Parameters
         ----------
-        amp_sweep_dict : dict of amplitude / sweep pairs
-        target_amps: list of desired amplitudes for output vector
-        features : output of LongSquareAnalysis.analyze()
-        start : stimulus interval start (seconds)
-        end : stimulus interval end (seconds)
-        extend_duration : in seconds (default 0.2)
-        subsample_interval : in seconds (default 0.01)
+        amp_sweep_dict : dict
+            Amplitude-sweep pairs
+        target_amps: list
+            Desired amplitudes for output vector
+        start: float
+            start stimulus interval (seconds)
+        end: float
+            end of stimulus interval (seconds)
+        extend_duration: float (optional, default 0.2)
+            Duration to extend sweep before and after stimulus interval (seconds)
+        subsample_interval: float (optional, default 0.01)
+            Size of subsampled bins (seconds)
+        amp_tolerance: float (optional, default 0)
+            Tolerance for finding matching amplitudes
 
         Returns
         -------
-        output_vector : subsampled, concatenated voltage trace
+        output_vector: subsampled, concatenated voltage trace
     """
 
     # Subsample each sweep
@@ -176,17 +194,25 @@ def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
 
         Parameters
         ----------
-        amp_sweep_dict : dict of amplitude / sweep pairs
-        deflect_dict : dict of (baseline, deflect) tuples with amplitude keys
-        start : stimulus interval start (seconds)
-        end : stimulus interval end (seconds)
-        target_amp: search target for amplitude, pA (default -101)
-        extend_duration: in seconds (default 0.2)
-        subsample_interval: in seconds (default 0.01)
+        amp_sweep_dict: dict
+            Amplitude-sweep pairs
+        deflect_dict:
+            Dictionary of (baseline, deflect) tuples with amplitude keys
+        start: float
+            start stimulus interval (seconds)
+        end: float
+            end of stimulus interval (seconds)
+        target_amp: float (optional, default=-101)
+            Search target for amplitude (pA)
+        extend_duration: float (optional, default 0.2)
+            Duration to extend sweep on each side of stimulus interval (seconds)
+        subsample_interval: float (optional, default 0.01)
+            Size of subsampled bins (seconds)
 
         Returns
         -------
-        subsampled_v : subsampled, normalized voltage trace
+        subsampled_v: array
+            Subsampled, normalized voltage trace
     """
     available_amps = np.array(list(amp_sweep_dict.keys()))
 
@@ -214,17 +240,25 @@ def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
 
         Parameters
         ----------
-        amp_sweep_dict : dict of amplitude / sweep pairs
-        deflect_dict : dict of (baseline, deflect) tuples with amplitude keys
-        start : stimulus interval start (seconds)
-        end : stimulus interval end (seconds)
-        extend_duration: in seconds (default 0.2)
-        subsample_interval: in seconds (default 0.01)
-        steady_state_interval: interval before end for normalization (seconds, default=0.1)
+        amp_sweep_dict: dict
+            Amplitude-sweep pairs
+        deflect_dict:
+            Dictionary of (baseline, deflect) tuples with amplitude keys
+        start: float
+            start stimulus interval (seconds)
+        end: float
+            end of stimulus interval (seconds)
+        extend_duration: float (optional, default 0.2)
+            Duration to extend sweep on each side of stimulus interval (seconds)
+        subsample_interval: float (optional, default 0.01)
+            Size of subsampled bins (seconds)
+        steady_state_interval: float (optional, default 0.1)
+            Interval before end for normalization (seconds)
 
         Returns
         -------
-        subsampled_v : subsampled, normalized voltage trace
+        subsampled_v: array
+            Subsampled, normalized voltage trace
     """
 
     if (end - start) < steady_state_interval:
@@ -267,14 +301,20 @@ def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5):
         Parameters
         ----------
         sweeps: SweepSet
-        features: output of LongSquareAnalysis.analyze()
-        duration: length of stimulus interval (seconds)
-        min_spike: minimum number of spikes for first preference sweep (default 5)
+            Sweeps to consider for ISI shape calculation
+        features: dict
+            Output of LongSquareAnalysis.analyze()
+        duration: float
+            Length of stimulus interval (seconds)
+        min_spike: int (optional, default 5)
+            Minimum number of spikes for first preference sweep (default 5)
 
         Returns
         -------
-        selected_sweep : Sweep
-        selected_spike_info : DataFrame of spike info for selected sweep
+        selected_sweep: Sweep
+            Sweep object for ISI shape calculation
+        selected_spike_info: DataFrame
+            Spike info for selected sweep
     """
     sweep_table = features["sweeps"]
     mask_supra = (sweep_table["avg_rate"].values > 0) & (sweep_table["stim_amp"] > 0)
@@ -311,20 +351,28 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
 
         Parameters
         ----------
-        sweep : Sweep
-        spike_info : dataframe of spike info for sweep
-        n_points: number of points in output
-        end : stimulus interval end (seconds)
-        steady_state_interval: interval for calculating steady-state for
-            sweeps with only one spike (default 0.1 s)
-        single_return_tolerance: allowable difference from steady-state for
-            determining end of "ISI" if only one spike is in sweep (default 1 mV)
-        single_max_duration: allowable max duration for finding end of "ISI"
-            if only one spike is in sweep (default 0.1 s)
+        sweep: Sweep
+            Sweep object with at least one action potential
+        spike_info: DataFrame
+            Spike info for sweep
+        end: float
+            End of stimulus interval (seconds)
+        n_points: int (optional, default 100)
+            Number of points in output
+        steady_state_interval: float (optional, default 0.1)
+            Interval for calculating steady-state for
+            sweeps with only one spike (seconds)
+        single_return_tolerance: float (optional, default 1)
+            Allowable difference from steady-state for
+            determining end of "ISI" if only one spike is in sweep (mV)
+        single_max_duration: float (optional, default 0.1)
+            Allowable max duration for finding end of "ISI"
+            if only one spike is in sweep (seconds)
 
         Returns
         -------
-        isi_norm : averaged, threshold-aligned, and duration-normalized voltage trace
+        isi_norm: array of shape (n_points)
+            Averaged, threshold-aligned, duration-normalized voltage trace
     """
 
     n_spikes = spike_info.shape[0]
@@ -387,15 +435,21 @@ def first_ap_vectors(sweeps_list, spike_info_list,
 
     Parameters
     ----------
-    sweeps_list: list of Sweeps
-    spike_info_list: list of spike info DataFrames
-    target_sampling_rate : Hz
-    window_length : seconds
+    sweeps_list: list
+        List of Sweep objects
+    spike_info_list: list
+        List of spike info DataFrames
+    target_sampling_rate: float (optional, default 50000)
+        Desired sampling rate of output (Hz)
+    window_length: float (optional, default 0.003)
+        Length of AP waveform (seconds)
 
     Returns
     -------
-    ap_v: waveform of average APs
-    ap_dv: waveform of first derivative of ap_v
+    ap_v: array of shape (target_sampling_rate * window_length)
+        Waveform of average AP
+    ap_dv: array of shape (target_sampling_rate * window_length - 1)
+        Waveform of first derivative of ap_v
     """
 
     if len(sweeps_list) == 0:
@@ -430,16 +484,22 @@ def noise_ap_features(noise_sweeps,
     Parameters
     ----------
     noise_sweeps: SweepSet
-    stim_interval_list: list of tuples of start and end times (in seconds)
-        of analysis intervals
-    target_sampling_rate: Hz (default 50000)
-    window_length: seconds (default 0.003)
-    skip_first_n: number of initial APs to exclude from average (default 1)
+        Noise sweeps
+    stim_interval_list: list
+        Tuples of start and end times (in seconds) of analysis intervals
+    target_sampling_rate: float (optional, default 50000)
+        Desired sampling rate of output (Hz)
+    window_length: float (optional, default 0.003)
+        Length of AP waveform (seconds)
+    skip_first_n: int (optional, default 1)
+        Number of initial APs to exclude from average (default 1)
 
     Returns
     -------
-    ap_v: waveform of average AP
-    ap_dv: waveform of first derivative of ap_v
+    ap_v: array of shape (target_sampling_rate * window_length)
+        Waveform of average AP
+    ap_dv: array of shape (target_sampling_rate * window_length - 1)
+        Waveform of first derivative of ap_v
     """
     # Noise sweeps have multiple intervals of stimulation
     # so we can find the spikes in each of them separately
@@ -488,7 +548,22 @@ def _avg_ap_waveform(sweep, spike_indexes, length_in_points):
 
 
 def first_ap_waveform(sweep, spikes, length_in_points):
-    "Waveform of first AP with `length_in_points` time samples"
+    """Waveform of first AP with `length_in_points` time samples
+
+    Parameters
+    ----------
+    sweep: Sweep
+        Sweep object with spikes
+    spikes: DataFrame
+        Spike info dataframe with "threshold_index" column
+    length_in_points: int
+        Length of returned AP waveform
+
+    Returns
+    -------
+   first_ap_v: array of shape (length_in_points)
+        The waveform of the first AP in `sweep`
+    """
 
     start_index = spikes["threshold_index"].astype(int)[0]
     end_index = start_index + length_in_points
@@ -501,11 +576,16 @@ def identify_suprathreshold_sweep_sequence(features, target_amplitudes,
 
     Parameters
     ----------
-    features: output of LongSquareAnalysis.analyze()
-    target_amplitudes: list of amplitudes (relative to rheobase) for each desired step
-    amp_tolerance: float, pA. Tolerance for matching amplitude (default 0)
-    shift: optional, float in pA for amount to consider shifting "rheobase" to identify more
-        matching sweeps if only a single sweep matches. A value of None means that no shift is attempted.
+    features: dict
+        Output of LongSquareAnalysis.analyze()
+    target_amplitudes: list
+        Amplitudes (relative to rheobase) for each desired step
+    amp_tolerance: float (optional, default 0)
+        Tolerance for matching amplitude (pA)
+    shift: float (optional, default None)
+        Amount to consider shifting "rheobase" to identify more
+        matching sweeps if only a single sweep matches.
+        A value of None means that no shift is attempted.
 
     Returns
     -------
@@ -549,14 +629,19 @@ def psth_vector(spike_info_list, start, end, width=50):
 
     Parameters
     ----------
-    spike_info_list: list of spike info DataFrames for each sweep
-    start : stimulus interval start (seconds)
-    end : stimulus interval end (seconds)
-    width: bin width in ms (default 50)
+    spike_info_list: list
+        Spike info DataFrames for each sweep
+    start: float
+        Start of stimulus interval (seconds)
+    end: float
+        End of stimulus interval (seconds)
+    width: float (optional, default 50)
+        Bin width in ms
 
     Returns
     -------
-    output: Concatenated vector of binned spike rates
+    output: array
+        Concatenated vector of binned spike rates (spikes/s)
     """
 
     vector_list = []
@@ -588,14 +673,20 @@ def inst_freq_vector(spike_info_list, start, end, width=20):
 
     Parameters
     ----------
-    spike_info_list: list of spike info DataFrames for each sweep
-    start : stimulus interval start (seconds)
-    end : stimulus interval end (seconds)
-    width: bin width in ms (default 20)
+    spike_info_list: list
+        Spike info DataFrames for each sweep
+    start: float
+        Start of stimulus interval (seconds)
+    end: float
+        End of stimulus interval (seconds)
+    width: float (optional, default 20)
+        Bin width in ms
+
 
     Returns
     -------
-    output: Concatenated vector of binned spike rates
+    output: array
+        Concatenated vector of binned instantaneous firing rates (spikes/s)
     """
 
     vector_list = []
@@ -631,15 +722,21 @@ def spike_feature_vector(feature, spike_info_list, start, end, width=20):
 
     Parameters
     ----------
-    feature: string, name of feature found in members of spike_info_list
-    spike_info_list: list of spike info DataFrames for each sweep
-    start : stimulus interval start (seconds)
-    end : stimulus interval end (seconds)
-    width: bin width in ms (default 20)
+    feature: string
+        Name of feature found in members of spike_info_list
+    spike_info_list: list
+        Spike info DataFrames for each sweep
+    start: float
+        Start of stimulus interval (seconds)
+    end: float
+        End of stimulus interval (seconds)
+    width: float (optional, default 20)
+        Bin width in ms
 
     Returns
     -------
-    output: Concatenated vector of binned spike rates
+    output: array
+        Concatenated vector of binned spike features
     """
 
     vector_list = []
@@ -781,9 +878,9 @@ def _inst_freq_feature(threshold_t, start, end):
 
     Returns
     -------
-    inst_firing_rate: array
+    inst_firing_rate: array of shape (len(threshold_t) + 2)
         Instantaneous firing rate estimates (spikes/s)
-    time_points: array
+    time_points: array of shape (len(threshold_t) + 2)
         Time points for corresponding values in inst_firing_rate
     """
     if len(threshold_t) == 0:
