@@ -294,6 +294,7 @@ def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
 
     return subsampled_v
 
+
 def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5):
     """ Find lowest-amplitude spiking sweep that has at least min_spike
         or else sweep with most spikes
@@ -327,7 +328,7 @@ def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5):
     # enough to average to reduce noise. So, we will pick
     # (1) lowest amplitude sweep with at least `min_spike` spikes (i.e. min_spike - 1 ISIs)
     # (2) if not (1), sweep with the most spikes if any have multiple spikes
-    # (3) if not (1) or (2), lowest amplitude sweep with 1 spike (use 100 ms after spike or end of trace)
+    # (3) if not (1) or (2), lowest amplitude sweep with 1 spike
 
     if np.any(n_spikes >= min_spike):
         spike_mask = n_spikes >= min_spike
@@ -402,7 +403,6 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
 
             std_start_index = tsu.find_time_index(sweep.t, end - steady_state_interval)
             steady_state_v = sweep.v[std_start_index:stim_end_index].mean()
-
             above_ss_ind = np.flatnonzero(sweep.v[fast_trough_index:] >= steady_state_v - single_return_tolerance)
 
             if len(above_ss_ind) > 0:
@@ -424,6 +424,7 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
         isi_raw = sweep.v[fast_trough_index:end_index] - threshold_v
         width = len(isi_raw) // n_points
         isi_raw = isi_raw[:width * n_points] # ensure division will work
+
         isi_norm = _subsample_average(isi_raw, width)
 
     return isi_norm
@@ -680,7 +681,6 @@ def _identify_suprathreshold_indices(features, target_amplitudes,
     logging.debug("Available amplitudes: {:s}".format(np.array2string(amps)))
     logging.debug("Target amplitudes: {:s}".format(np.array2string(target_amplitudes)))
 
-    spike_data = features["spikes_set"]
     sweeps_to_use = _spiking_sweeps_at_levels(amps, sweep_indexes,
         target_amplitudes, amp_tolerance)
     n_matches = np.sum([s is not None for s in sweeps_to_use])

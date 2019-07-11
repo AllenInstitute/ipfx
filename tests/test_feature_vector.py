@@ -353,3 +353,413 @@ def test_spike_feature_between_sweep_interpolation():
     assert np.all(output[2 * n_bins:3 * n_bins] == np.mean(test_feature_values))
     assert np.all(output[3 * n_bins:4 * n_bins] == test_feature_values[1])
     assert np.all(output[4 * n_bins:5 * n_bins] == test_feature_values[1])
+
+
+def test_identify_sub_hyperpol_levels():
+    test_input_amplitudes = [-2000, -100, -90, -50, -10, 10]
+    test_features = {"subthreshold_sweeps": pd.DataFrame({
+        "stim_amp": test_input_amplitudes,
+        "peak_deflect": list(zip(np.zeros(len(test_input_amplitudes)),
+            np.zeros(len(test_input_amplitudes)))),
+        "v_baseline": np.ones(len(test_input_amplitudes)),
+    })}
+
+    # Random test sweeps
+    np.random.seed(42)
+    v = np.random.randn(100)
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    sweep_list = []
+    for a in test_input_amplitudes:
+        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+        sweep_list.append(test_sweep)
+    test_sweep_set = SweepSet(sweep_list)
+
+    amp_sweep_dict, deflect_dict = fv.identify_subthreshold_hyperpol_with_amplitudes(
+        test_features, test_sweep_set)
+
+    for k in amp_sweep_dict:
+        assert k in deflect_dict
+        assert len(deflect_dict[k]) == 2
+
+    less_than_one_nanoamp = [a for a in test_input_amplitudes if a < -1000]
+    for a in less_than_one_nanoamp:
+        assert a not in amp_sweep_dict
+
+    depolarizing = [a for a in test_input_amplitudes if a >= 0]
+    for a in depolarizing:
+        assert a not in amp_sweep_dict
+
+    should_belong = [a for a in test_input_amplitudes if a >= 0 and a < -1000]
+    for a in should_belong:
+        assert a in amp_sweep_dict
+
+
+def test_identify_sub_depol_levels_with_subthreshold_sweeps():
+    test_input_amplitudes = [-50, -10, 10, 20]
+    test_features = {"subthreshold_sweeps": pd.DataFrame({
+        "stim_amp": test_input_amplitudes,
+        "peak_deflect": list(zip(np.zeros(len(test_input_amplitudes)),
+            np.zeros(len(test_input_amplitudes)))),
+        "v_baseline": np.ones(len(test_input_amplitudes)),
+    })}
+
+    # Random test sweeps
+    np.random.seed(42)
+    v = np.random.randn(100)
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    sweep_list = []
+    for a in test_input_amplitudes:
+        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+        sweep_list.append(test_sweep)
+    test_sweep_set = SweepSet(sweep_list)
+
+    amp_sweep_dict, deflect_dict = fv.identify_subthreshold_depol_with_amplitudes(
+        test_features, test_sweep_set)
+
+    for k in amp_sweep_dict:
+        assert k in deflect_dict
+        assert len(deflect_dict[k]) == 2
+
+    depolarizing = [a for a in test_input_amplitudes if a > 0]
+    for a in depolarizing:
+        assert a in amp_sweep_dict
+
+    hyperpolarizing = [a for a in test_input_amplitudes if a <= 0]
+    for a in hyperpolarizing:
+        assert a not in amp_sweep_dict
+
+
+def test_identify_sub_depol_levels_without_subthreshold_sweeps():
+    test_input_amplitudes = [-50, -10, 10, 20]
+    test_avg_rate = [0, 0, 0, 5]
+    test_features = {"sweeps": pd.DataFrame({
+        "stim_amp": test_input_amplitudes,
+        "peak_deflect": list(zip(np.zeros(len(test_input_amplitudes)),
+            np.zeros(len(test_input_amplitudes)))),
+        "v_baseline": np.ones(len(test_input_amplitudes)),
+        "avg_rate": test_avg_rate,
+    })}
+
+    # Random test sweeps
+    np.random.seed(42)
+    v = np.random.randn(100)
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    sweep_list = []
+    for a in test_input_amplitudes:
+        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+        sweep_list.append(test_sweep)
+    test_sweep_set = SweepSet(sweep_list)
+
+    amp_sweep_dict, deflect_dict = fv.identify_subthreshold_depol_with_amplitudes(
+        test_features, test_sweep_set)
+
+    for k in amp_sweep_dict:
+        assert k in deflect_dict
+        assert len(deflect_dict[k]) == 2
+
+    depolarizing_spiking = [a for a, r in zip(test_input_amplitudes, test_avg_rate)
+         if a > 0 and r > 0]
+    for a in depolarizing_spiking:
+        assert a not in amp_sweep_dict
+
+    depolarizing_non_spiking = [a for a, r in zip(test_input_amplitudes, test_avg_rate)
+         if a > 0 and r == 0]
+    for a in depolarizing_non_spiking:
+        assert a in amp_sweep_dict
+
+    hyperpolarizing = [a for a in test_input_amplitudes if a <= 0]
+    for a in hyperpolarizing:
+        assert a not in amp_sweep_dict
+
+
+def test_identify_isi_shape_min_spike():
+    min_spike = 5
+
+    test_input_amplitudes = [10, 20, 30, 40, 50, 60]
+    test_avg_rate = [0, 1, 5, 5, 10, 20]
+    test_features = {
+        "sweeps": pd.DataFrame({
+            "stim_amp": test_input_amplitudes,
+            "avg_rate": test_avg_rate,
+        }),
+        "spikes_set": [None] * len(test_avg_rate),
+    }
+
+    # Random test sweeps
+    np.random.seed(42)
+    n_points = 100
+    t = np.arange(n_points)
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, n_points - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    sweep_list = []
+    for a in test_input_amplitudes:
+        v = np.random.randn(n_points)
+        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+        sweep_list.append(test_sweep)
+    test_sweep_set = SweepSet(sweep_list)
+
+    selected_sweep, _ = fv.identify_sweep_for_isi_shape(
+        test_sweep_set, test_features, duration=1, min_spike=min_spike)
+
+    assert np.array_equal(selected_sweep.v, sweep_list[2].v)
+
+
+def test_identify_isi_shape_largest_below_min_spike():
+    min_spike = 5
+
+    test_input_amplitudes = [10, 20, 30, 40]
+    test_avg_rate = [0, 1, 3, 4]
+    test_features = {
+        "sweeps": pd.DataFrame({
+            "stim_amp": test_input_amplitudes,
+            "avg_rate": test_avg_rate,
+        }),
+        "spikes_set": [None] * len(test_avg_rate),
+    }
+
+    # Random test sweeps
+    np.random.seed(42)
+    n_points = 100
+    t = np.arange(n_points)
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, n_points - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    sweep_list = []
+    for a in test_input_amplitudes:
+        v = np.random.randn(n_points)
+        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+        sweep_list.append(test_sweep)
+    test_sweep_set = SweepSet(sweep_list)
+
+    selected_sweep, _ = fv.identify_sweep_for_isi_shape(
+        test_sweep_set, test_features, duration=1, min_spike=min_spike)
+
+    assert np.array_equal(selected_sweep.v, sweep_list[-1].v)
+
+
+def test_identify_isi_shape_one_spike():
+    min_spike = 5
+
+    test_input_amplitudes = [10, 20, 30, 40]
+    test_avg_rate = [0, 1, 1, 1]
+    test_features = {
+        "sweeps": pd.DataFrame({
+            "stim_amp": test_input_amplitudes,
+            "avg_rate": test_avg_rate,
+        }),
+        "spikes_set": [None] * len(test_avg_rate),
+    }
+
+    # Random test sweeps
+    np.random.seed(42)
+    n_points = 100
+    t = np.arange(n_points)
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, n_points - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    sweep_list = []
+    for a in test_input_amplitudes:
+        v = np.random.randn(n_points)
+        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+        sweep_list.append(test_sweep)
+    test_sweep_set = SweepSet(sweep_list)
+
+    selected_sweep, _ = fv.identify_sweep_for_isi_shape(
+        test_sweep_set, test_features, duration=1, min_spike=min_spike)
+
+    assert np.array_equal(selected_sweep.v, sweep_list[1].v)
+
+
+def test_identify_supra_no_tolerance():
+    test_input_amplitudes = [10, 20, 30, 40]
+    test_avg_rate = [0, 1, 5, 10]
+    test_features = {
+        "spiking_sweeps": pd.DataFrame({
+            "stim_amp": test_input_amplitudes,
+            "avg_rate": test_avg_rate,
+        }),
+        "rheobase_i": 20,
+    }
+
+    target_amplitudes = np.array([0, 20])
+    sweeps_to_use = fv._identify_suprathreshold_indices(
+        test_features, target_amplitudes, shift=None, amp_tolerance=0)
+
+    assert sweeps_to_use == [1, 3]
+
+
+def test_identify_supra_tolerance():
+    test_input_amplitudes = [10, 20, 30, 45]
+    test_avg_rate = [0, 1, 5, 10]
+    test_features = {
+        "spiking_sweeps": pd.DataFrame({
+            "stim_amp": test_input_amplitudes,
+            "avg_rate": test_avg_rate,
+        }),
+        "rheobase_i": 20,
+    }
+
+    target_amplitudes = np.array([0, 20])
+    sweeps_to_use = fv._identify_suprathreshold_indices(
+        test_features, target_amplitudes, shift=None, amp_tolerance=5)
+
+    assert sweeps_to_use == [1, 3]
+
+
+def test_identify_supra_shift():
+    test_input_amplitudes = [10, 20, 40, 60]
+    test_avg_rate = [1, 2, 5, 10]
+    test_features = {
+        "spiking_sweeps": pd.DataFrame({
+            "stim_amp": test_input_amplitudes,
+            "avg_rate": test_avg_rate,
+        }),
+        "rheobase_i": 10,
+    }
+
+    target_amplitudes = np.array([0, 20, 40])
+    sweeps_to_use = fv._identify_suprathreshold_indices(
+        test_features, target_amplitudes, shift=10, amp_tolerance=5)
+
+    assert sweeps_to_use == [1, 2, 3]
+
+
+def test_isi_shape_aligned():
+    # Random test sweep
+    np.random.seed(42)
+    v = np.random.randn(1000)
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+    end = t[-100]
+
+    test_threshold_index = np.array([100, 300, 500])
+    test_fast_trough_index = test_threshold_index + 20
+    test_threshold_v = np.random.randint(-100, -20, size=len(test_threshold_index))
+
+    test_spike_info = pd.DataFrame({
+        "threshold_index": test_threshold_index,
+        "fast_trough_index": test_fast_trough_index,
+        "threshold_v": test_threshold_v,
+        "fast_trough_t": test_fast_trough_index,
+    })
+
+    n_points = 100
+    isi_norm = fv.isi_shape(test_sweep, test_spike_info, end, n_points=n_points)
+    assert len(isi_norm) == n_points
+    assert isi_norm[0] == np.mean(test_sweep.v[test_fast_trough_index[:-1]] - test_threshold_v[:-1])
+
+
+def test_isi_shape_aligned():
+    # Random test sweep
+    np.random.seed(42)
+    v = np.random.randn(1000)
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+    end = t[-100]
+
+    test_threshold_index = np.array([100, 220, 340])
+    test_fast_trough_index = test_threshold_index + 20
+    test_threshold_v = np.random.randint(-100, -20, size=len(test_threshold_index))
+
+    test_spike_info = pd.DataFrame({
+        "threshold_index": test_threshold_index,
+        "fast_trough_index": test_fast_trough_index,
+        "threshold_v": test_threshold_v,
+        "fast_trough_t": test_fast_trough_index,
+    })
+
+    n_points = 100
+    isi_norm = fv.isi_shape(test_sweep, test_spike_info, end, n_points=n_points)
+    assert len(isi_norm) == n_points
+    assert isi_norm[0] == np.mean(test_sweep.v[test_fast_trough_index[:-1]] - test_threshold_v[:-1])
+
+
+def test_isi_shape_skip_short():
+    # Random test sweep
+    np.random.seed(42)
+    v = np.random.randn(1000)
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+    end = t[-100]
+
+    test_subsample = 3
+    test_threshold_index = np.array([100, 130, 150 + 100 * test_subsample])
+    test_fast_trough_index = test_threshold_index + 20
+    test_threshold_v = np.random.randint(-100, -20, size=len(test_threshold_index))
+
+    test_spike_info = pd.DataFrame({
+        "threshold_index": test_threshold_index,
+        "fast_trough_index": test_fast_trough_index,
+        "threshold_v": test_threshold_v,
+        "fast_trough_t": test_fast_trough_index,
+    })
+
+    n_points = 100
+    isi_norm = fv.isi_shape(test_sweep, test_spike_info, end, n_points=n_points)
+    assert len(isi_norm) == n_points
+
+    # Should only use second ISI
+    assert isi_norm[0] == (test_sweep.v[test_fast_trough_index[1]:test_fast_trough_index[1] + test_subsample].mean()
+        - test_threshold_v[1])
+
+
+def test_isi_shape_one_spike():
+    # Test sweep
+    np.random.seed(42)
+    v = np.zeros(1000)
+    v[100:400] = np.linspace(-30, 0, 300)
+    print(v[280:300])
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+    end = t[-100]
+
+    test_threshold_index = [80]
+    test_fast_trough_index = [100]
+    test_threshold_v = [0]
+
+    test_spike_info = pd.DataFrame({
+        "threshold_index": test_threshold_index,
+        "fast_trough_index": test_fast_trough_index,
+        "threshold_v": test_threshold_v,
+        "fast_trough_t": test_fast_trough_index,
+    })
+
+    n_points = 100
+    isi_norm = fv.isi_shape(test_sweep, test_spike_info, end, n_points=n_points,
+        steady_state_interval=10, single_max_duration=500)
+    assert len(isi_norm) == n_points
+
+    assert isi_norm[0] < 0
+    assert isi_norm[0] >= -30
