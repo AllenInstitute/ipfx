@@ -198,27 +198,40 @@ def sdk_nwb_information(specimen_id):
     return nwb_data_set.file_name, sweep_info
 
 
-def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthresh_min_amp=-100.):
-    if len(sweep_numbers) == 0:
-        raise er.FeatureError("No long_square sweeps available for feature extraction")
-
-    check_lsq_sweeps = data_set.sweep_set(sweep_numbers)
+def validate_sweeps(data_set, sweep_numbers, extra_dur=0.2):
+    check_sweeps = data_set.sweep_set(sweep_numbers)
     valid_sweep_stim = []
-    for swp in check_lsq_sweeps.sweeps:
+    start = None
+    dur = None
+    for swp in check_sweeps.sweeps:
         swp_start, swp_dur, _, _, _ = stf.get_stim_characteristics(swp.i, swp.t)
         if swp_start is None:
             valid_sweep_stim.append(False)
         else:
-            lsq_start = swp_start
-            lsq_dur = swp_dur
+            start = swp_start
+            dur = swp_dur
             valid_sweep_stim.append(True)
-    lsq_end = lsq_start + lsq_dur
+    if start is None:
+        # Could not find any sweeps to define stimulus interval
+        return [], None, None
+
+    end = start + dur
 
     # Check that all sweeps are long enough and not ended early
-    good_sweep_numbers = [n for n, s, v in zip(sweep_numbers, check_lsq_sweeps.sweeps, valid_sweep_stim)
-                              if s.t[-1] >= lsq_start + lsq_dur + extra_dur
+    good_sweep_numbers = [n for n, s, v in zip(sweep_numbers, check_sweeps.sweeps, valid_sweep_stim)
+                              if s.t[-1] >= end + extra_dur
                               and v is True
-                              and not np.all(s.v[tsu.find_time_index(s.t, lsq_start + lsq_dur)-100:tsu.find_time_index(s.t, lsq_start + lsq_dur)] == 0)]
+                              and not np.all(s.v[tsu.find_time_index(s.t, end)-100:tsu.find_time_index(s.t, end)] == 0)]
+    return good_sweep_numbers, start, end
+
+
+def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthresh_min_amp=-100.):
+    if len(sweep_numbers) == 0:
+        raise er.FeatureError("No long square sweeps available for feature extraction")
+
+    good_sweep_numbers, lsq_start, lsq_end = validate_sweeps(data_set, sweep_numbers, extra_dur=extra_dur)
+    if len(good_sweep_numbers) == 0:
+        raise er.FeatureError("No long square sweeps were long enough or did not end early")
     lsq_sweeps = data_set.sweep_set(good_sweep_numbers)
 
     lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(
@@ -234,15 +247,19 @@ def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthr
     return lsq_sweeps, lsq_features, lsq_start, lsq_end, lsq_spx
 
 
-def preprocess_short_square_sweeps(data_set, sweep_numbers):
+def preprocess_short_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, spike_window=0.01):
     if len(sweep_numbers) == 0:
         raise er.FeatureError("No short square sweeps available for feature extraction")
 
-    ssq_sweeps = data_set.sweep_set(sweep_numbers)
+    good_sweep_numbers, ssq_start, ssq_end  = validate_sweeps(data_set, sweep_numbers, extra_dur=extra_dur)
+    if len(good_sweep_numbers) == 0:
+        raise er.FeatureError("No short square sweeps were long enough or did not end early")
+    ssq_sweeps = data_set.sweep_set(good_sweep_numbers)
 
-    ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
     ssq_spx, ssq_spfx = dsf.extractors_for_sweeps(ssq_sweeps,
                                                   est_window = [ssq_start, ssq_start + 0.001],
+                                                  start=ssq_start,
+                                                  end=ssq_end + spike_window,
                                                   **dsf.detection_parameters(data_set.SHORT_SQUARE))
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
     ssq_features = ssq_an.analyze(ssq_sweeps)
@@ -363,12 +380,14 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
             for swp_ind in ssq_features["common_amp_sweeps"].index]
         ssq_ap_v, ssq_ap_dv = fv.first_ap_vectors(spiking_ssq_sweep_list,
             spiking_ssq_info_list,
+            target_sampling_rate=target_sampling_rate,
             window_length=ap_window_length)
 
         rheo_ind = lsq_features["rheobase_sweep"].name
         sweep = lsq_sweeps.sweeps[rheo_ind]
         lsq_ap_v, lsq_ap_dv = fv.first_ap_vectors([sweep],
             [lsq_features["spikes_set"][rheo_ind]],
+            target_sampling_rate=target_sampling_rate,
             window_length=ap_window_length)
 
         spiking_ramp_sweep_list = [ramp_sweeps.sweeps[swp_ind]
@@ -377,14 +396,16 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
             for swp_ind in ramp_features["spiking_sweeps"].index]
         ramp_ap_v, ramp_ap_dv = fv.first_ap_vectors(spiking_ramp_sweep_list,
             spiking_ramp_info_list,
-            window_length=ap_window_length)
+            target_sampling_rate=target_sampling_rate,
+            window_length=ap_window_length,
+            skip_clipped=True)
 
         # Combine so that differences can be assessed by analyses like sPCA
         result["first_ap_v"] = np.hstack([ssq_ap_v, lsq_ap_v, ramp_ap_v])
         result["first_ap_dv"] = np.hstack([ssq_ap_dv, lsq_ap_dv, ramp_ap_dv])
 
         target_amplitudes = np.arange(0, 120, 20)
-        supra_info_list = fv.identify_suprathreshold_sweep_sequence(
+        supra_info_list = fv.identify_suprathreshold_spike_info(
             lsq_features, target_amplitudes, shift=10)
         result["psth"] = fv.psth_vector(supra_info_list, lsq_start, lsq_end)
         result["inst_freq"] = fv.inst_freq_vector(supra_info_list, lsq_start, lsq_end)
@@ -457,6 +478,11 @@ def run_feature_vector_extraction(output_dir, data_source, output_code, project,
     else:
         logging.error("Must specify input file if data source is not LIMS")
 
+    if output_file_type == "h5":
+        # Check that we can access the specified file before processing everything
+        h5_file = h5py.File(os.path.join(output_dir, "fv_{}.h5".format(output_code)))
+        h5_file.close()
+
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
     get_data_partial = partial(data_for_specimen_id,
                                sweep_qc_option=sweep_qc_option,
@@ -476,6 +502,7 @@ def run_feature_vector_extraction(output_dir, data_source, output_code, project,
         return
 
     used_ids, results = zip(*filtered_set)
+
     logging.info("Finished with {:d} processed specimens".format(len(used_ids)))
 
     results_dict = organize_results(used_ids, results)
@@ -489,6 +516,8 @@ def run_feature_vector_extraction(output_dir, data_source, output_code, project,
 
     with open(os.path.join(output_dir, "fv_errors_{:s}.json".format(output_code)), "w") as f:
         json.dump(error_set, f, indent=4)
+
+    logging.info("Finished saving")
 
 
 def main():

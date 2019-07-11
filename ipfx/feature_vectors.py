@@ -430,7 +430,8 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
 
 
 def first_ap_vectors(sweeps_list, spike_info_list,
-        target_sampling_rate=50000, window_length=0.003):
+        target_sampling_rate=50000, window_length=0.003,
+        skip_clipped=False):
     """Average waveforms of first APs from sweeps
 
     Parameters
@@ -452,6 +453,16 @@ def first_ap_vectors(sweeps_list, spike_info_list,
         Waveform of first derivative of ap_v
     """
 
+    if skip_clipped:
+        nonclipped_sweeps_list = []
+        nonclipped_spike_info_list = []
+        for swp, si in zip(sweeps_list, spike_info_list):
+            if not si["clipped"].values[0]:
+                nonclipped_sweeps_list.append(swp)
+                nonclipped_spike_info_list.append(si)
+        sweeps_list = nonclipped_sweeps_list
+        spike_info_list = nonclipped_spike_info_list
+
     if len(sweeps_list) == 0:
         length_in_points = int(target_sampling_rate * window_length)
         zero_v = np.zeros(length_in_points)
@@ -463,6 +474,7 @@ def first_ap_vectors(sweeps_list, spike_info_list,
 
     ap_list = []
     for swp, si in zip(sweeps_list, spike_info_list):
+
         ap = first_ap_waveform(swp, si, length_in_points)
         ap_list.append(ap)
 
@@ -570,26 +582,88 @@ def first_ap_waveform(sweep, spikes, length_in_points):
     return sweep.v[start_index:end_index]
 
 
-def identify_suprathreshold_sweep_sequence(features, target_amplitudes,
+def identify_suprathreshold_spike_info(features, target_amplitudes,
         shift=None, amp_tolerance=0):
-    """ Find sweeps matching desired amplitudes relative to rheobase
+    """ Find spike information for sweeps matching desired amplitudes relative to rheobase
 
     Parameters
     ----------
     features: dict
         Output of LongSquareAnalysis.analyze()
-    target_amplitudes: list
+    target_amplitudes: array
         Amplitudes (relative to rheobase) for each desired step
-    amp_tolerance: float (optional, default 0)
-        Tolerance for matching amplitude (pA)
     shift: float (optional, default None)
         Amount to consider shifting "rheobase" to identify more
         matching sweeps if only a single sweep matches.
         A value of None means that no shift is attempted.
+    amp_tolerance: float (optional, default 0)
+        Tolerance for matching amplitude (pA)
 
     Returns
     -------
-    info_list: Spike info in order of desired amplitudes. If a given amplitude cannot be found,
+    info_list: list
+        Spike info in order of desired amplitudes. If a given amplitude cannot be found,
+        the list has `None` at that location
+    """
+
+    spike_data = features["spikes_set"]
+    sweeps_to_use = _identify_suprathreshold_indices(
+        features, target_amplitudes, shift, amp_tolerance)
+    return [spike_data[ind] if ind is not None else None for ind in sweeps_to_use]
+
+
+def identify_suprathreshold_sweeps(sweeps, features, target_amplitudes,
+        shift=None, amp_tolerance=0):
+    """ Find spike information for sweeps matching desired amplitudes relative to rheobase
+
+    Parameters
+    ----------
+    sweeps: Sweep set
+        Long square sweeps
+    features: dict
+        Output of LongSquareAnalysis.analyze()
+    target_amplitudes: array
+        Amplitudes (relative to rheobase) for each desired step
+    shift: float (optional, default None)
+        Amount to consider shifting "rheobase" to identify more
+        matching sweeps if only a single sweep matches.
+        A value of None means that no shift is attempted.
+    amp_tolerance: float (optional, default 0)
+        Tolerance for matching amplitude (pA)
+
+    Returns
+    -------
+    sweeps: list
+        Sweeps in order of desired amplitudes. If a given amplitude cannot be found,
+        the list has `None` at that location
+    """
+
+    sweeps_to_use = _identify_suprathreshold_indices(
+        features, target_amplitudes, shift, amp_tolerance)
+    return [sweeps.sweeps[ind] if ind is not None else None for ind in sweeps_to_use]
+
+
+def _identify_suprathreshold_indices(features, target_amplitudes,
+        shift=None, amp_tolerance=0):
+    """ Find indices for sweeps matching desired amplitudes relative to rheobase
+
+    Parameters
+    ----------
+    features: dict
+        Output of LongSquareAnalysis.analyze()
+    target_amplitudes: array
+        Amplitudes (relative to rheobase) for each desired step
+    shift: float (optional, default None)
+        Amount to consider shifting "rheobase" to identify more
+        matching sweeps if only a single sweep matches.
+        A value of None means that no shift is attempted.
+    amp_tolerance: float (optional, default 0)
+        Tolerance for matching amplitude (pA)
+
+    Returns
+    -------
+    indices_to_use: list
+        Sweep indices in order of desired amplitudes. If a given amplitude cannot be found,
         the list has `None` at that location
     """
 
@@ -620,7 +694,7 @@ def identify_suprathreshold_sweep_sequence(features, target_amplitudes,
     if len(target_amplitudes) > 1 and n_matches <= 1:
         raise er.FeatureError("Could not find at least two spiking sweeps matching requested amplitude levels")
 
-    return [spike_data[ind] if ind is not None else None for ind in sweeps_to_use]
+    return sweeps_to_use
 
 
 def psth_vector(spike_info_list, start, end, width=50):
