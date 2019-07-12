@@ -40,7 +40,7 @@ def test_feature_vector_extraction(tmpdir_factory):
                                   output_code="TEMP",
                                   project=None,
                                   output_file_type="npy",
-                                  sweep_qc_option=None,
+                                  sweep_qc_option="none",
                                   include_failed_cells=True,
                                   run_parallel=False,
                                   ap_window_length=0.003

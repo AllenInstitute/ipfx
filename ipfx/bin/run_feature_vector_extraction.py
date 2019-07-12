@@ -80,7 +80,7 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
     )
 
 
-def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option=None, specimen_id=None):
+def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option="none", specimen_id=None):
     exist_sql = """
         select swp.sweep_number from ephys_sweeps swp
         where swp.specimen_id = :1
