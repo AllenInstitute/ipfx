@@ -47,7 +47,7 @@ def test_feature_vector_extraction(tmpdir_factory):
                                   )
 
     for feature in features:
-        test_data = np.load(os.path.join(test_output_dir, "fv_v2_{:s}_TEMP.npy".format(feature)))
+        test_data = np.load(os.path.join(test_output_dir, "fv_{:s}_TEMP.npy".format(feature)))
         temp_data = np.load(os.path.join(temp_output_dir, "fv_{:s}_TEMP.npy".format(feature)))
 
         assert np.array_equal(test_data, temp_data)
