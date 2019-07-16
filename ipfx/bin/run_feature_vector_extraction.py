@@ -11,6 +11,8 @@ from functools import partial
 import os
 import json
 import h5py
+from ipfx.stimulus import StimulusOntology
+import allensdk.core.json_utilities as ju
 
 import ipfx.feature_vectors as fv
 import ipfx.bin.lims_queries as lq
@@ -288,6 +290,7 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
     logging.debug("specimen_id: {}".format(specimen_id))
 
     # Find or retrieve NWB file and ancillary info and construct an AibsDataSet object
+    ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
     if data_source == "lims":
         nwb_path, h5_path = lims_nwb_information(specimen_id)
         if type(nwb_path) is dict and "error" in nwb_path:
@@ -295,8 +298,8 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
             return nwb_path
 
         try:
-            data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
-            ontology = data_set.ontology
+            data_set = AibsDataSet(
+                nwb_file=nwb_path, h5_file=h5_path, ontology=ontology)
         except Exception as detail:
             logging.warning("Exception when loading specimen {:d} from LIMS".format(specimen_id))
             logging.warning(detail)
@@ -304,8 +307,8 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
     elif data_source == "sdk":
         nwb_path, sweep_info = sdk_nwb_information(specimen_id)
         try:
-            data_set = AibsDataSet(nwb_file=nwb_path, sweep_info=sweep_info)
-            ontology = data_set.ontology
+            data_set = AibsDataSet(
+                nwb_file=nwb_path, sweep_info=sweep_info, ontology=ontology)
         except Exception as detail:
             logging.warning("Exception when loading specimen {:d} via Allen SDK".format(specimen_id))
             logging.warning(detail)

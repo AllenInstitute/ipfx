@@ -10,6 +10,8 @@ import ipfx.stimulus_protocol_analysis as spa
 import ipfx.time_series_utils as tsu
 import ipfx.feature_vectors as fv
 from ipfx.aibs_data_set import AibsDataSet
+from ipfx.stimulus import StimulusOntology
+import allensdk.core.json_utilities as ju
 import warnings
 import logging
 from multiprocessing import Pool
@@ -37,14 +39,14 @@ def data_for_specimen_id(specimen_id, passed_only):
         return {"error": {"type": "no_nwb", "details": ""}}
 
     # Check if NWB has lab notebook information, or if additional hdf5 file is needed
+    ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
     h5_path = None
     with h5py.File(nwb_path, "r") as h5:
         if "general/labnotebook" not in h5:
             h5_path = lq.get_igorh5_path_from_lims(roi_id)
 
     try:
-        data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path)
-        ontology = data_set.ontology
+        data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path, ontology=ontology)
     except Exception as detail:
         logging.warn("Exception when processing specimen {:d}".format(specimen_id))
         logging.warn(detail)
@@ -292,6 +294,7 @@ def run_feature_collection(ids=None, project="T301", include_failed_sweeps=True,
         results = map(get_data_partial, specimen_ids)
 
     df = pd.DataFrame([r for r in results if len(r) > 0])
+    print("shape", df.shape)
     df.set_index("specimen_id").to_csv(output_file)
 
 
