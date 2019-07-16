@@ -8,7 +8,7 @@ from ipfx.stimulus import StimulusOntology
 from ipfx._schemas import FeatureExtractionParameters
 from ipfx.data_set_utils import create_data_set
 import ipfx.sweep_props as sp
-
+import ipfx.bin.make_stimulus_ontology as mso
 import allensdk.core.json_utilities as ju
 from allensdk.core.nwb_data_set import NwbDataSet
 
@@ -47,7 +47,10 @@ def run_feature_extraction(input_nwb_file,
     if len(sweep_info) == 0:
         raise er.FeatureError("There are no QC-passed sweeps available to analyze")
 
-    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
+    if not stimulus_ontology_file:
+        stimulus_ontology_file = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
+        logging.info(F"Ontology is not provided, using default {StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE}")
+    ont = StimulusOntology(ju.read(stimulus_ontology_file))
 
     data_set = create_data_set(sweep_info=sweep_info,
                                nwb_file=input_nwb_file,
@@ -69,7 +72,7 @@ def run_feature_extraction(input_nwb_file,
                          }
 
     except (er.FeatureError,IndexError) as e:
-        cell_state = {"failed_fx":True, "fail_fx_message": e}
+        cell_state = {"failed_fx":True, "fail_fx_message": str(e)}
         logging.warning(e)
         feature_data = {'cell_state': cell_state}
 

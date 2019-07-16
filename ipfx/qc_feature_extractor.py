@@ -29,7 +29,6 @@ def extract_blowout(data_set, tags):
         blowout_data = data_set.sweep(blowout_sweep_number)
         _,test_end_idx = blowout_data.epochs["test"]
         blowout_mv = qcf.measure_blowout(blowout_data.v, test_end_idx)
-
     except IndexError as e:
         tags.append("Blowout is not available")
         blowout_mv = None
@@ -299,12 +298,15 @@ def check_sweep_integrity(sweep, is_ramp):
 
     tags = []
 
-    if sweep.epochs["stim"] == (None, None):
-        tags.append("Stimulus pulse is missing")
+    for k,v in sweep.epochs.items():
+        if not v:
+            tags.append(F"{k} epoch is missing")
 
     if not is_ramp:
-        if sweep.epochs["recording"][1] < sweep.epochs["experiment"][1]:
-            tags.append("Recording stopped before completing the experiment epoch")
+        if sweep.epochs["recording"] and sweep.epochs["experiment"]:
+            if sweep.epochs["recording"][1] < sweep.epochs["experiment"][1]:
+                tags.append("Recording stopped before completing the experiment epoch")
+
     return tags
 
 
@@ -321,8 +323,11 @@ def current_clamp_sweep_stim_features(sweep):
     stim_features['stimulus_amplitude'] = amp
     stim_features['stimulus_duration'] = dur
 
-    expt_start_idx, _ = ep.get_experiment_epoch(i, hz)
-    interval = stf.find_stim_interval(expt_start_idx, i, hz)
+    if sweep.epochs["experiment"]:
+        expt_start_idx, _ = sweep.epochs["experiment"]
+        interval = stf.find_stim_interval(expt_start_idx, i, hz)
+    else:
+        interval = None
 
     stim_features['stimulus_interval'] = interval
 

@@ -14,11 +14,11 @@ class SweepFeatures(DefaultSchema):
 
 class CellFeatures(DefaultSchema):
     blowout_mv = Float(description="blash", required=False, allow_none=True)
-    seal_gohm = Float(description="blash")
-    electrode_0_pa = Float(description="blash")
-    input_access_resistance_ratio = Float(description="blash")
-    input_resistance_mohm = Float(description="blash")
-    initial_access_resistance_mohm = Float(description="blash")
+    seal_gohm = Float(description="blash", allow_none=True)
+    electrode_0_pa = Float(description="blash", allow_none=True)
+    input_access_resistance_ratio = Float(description="blash", allow_none=True)
+    input_resistance_mohm = Float(description="blash", allow_none=True)
+    initial_access_resistance_mohm = Float(description="blash", allow_none=True)
 
 class FxSweepFeatures(SweepFeatures):
     passed = Boolean(description="qc passed or failed", required=True)
@@ -42,7 +42,7 @@ class FeatureExtractionParameters(ArgSchema):
 class SweepExtractionParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
     input_h5_file = InputFile(description="input h5 file", required=False)
-    stimulus_ontology_file = InputFile(description="stimulus ontology JSON", required=False)
+    stimulus_ontology_file = OutputFile(description="stimulus ontology JSON", required=False)
     manual_seal_gohm = Float(description="blah")
     manual_initial_access_resistance_mohm = Float(description="blah")
     manual_initial_input_mohm = Float(description="blah")
@@ -72,7 +72,7 @@ class ManualSweepState(DefaultSchema):
 
 class PipelineParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
-    stimulus_ontology_file = InputFile(description="blash", required=False)
+    stimulus_ontology_file = OutputFile(description="blash", required=False)
     input_h5_file = InputFile(desription="input h5 file", required=False)
     output_nwb_file = OutputFile(description="output nwb file", required=True)
     qc_fig_dir = OutputFile(description="output qc figure directory", required=False)

@@ -2,11 +2,11 @@ import logging
 from ipfx.stimulus import StimulusOntology
 import ipfx.qc_feature_extractor as qcfe
 import allensdk.core.json_utilities as ju
-
 import argschema as ags
 from ipfx._schemas import SweepExtractionParameters
 from ipfx.data_set_utils import create_data_set
 import ipfx.logging_utils as lu
+import ipfx.bin.make_stimulus_ontology as mso
 
 # manual keys are values that can be passed in through input.json.
 # these values are used if the particular value cannot be computed.
@@ -37,7 +37,13 @@ def run_sweep_extraction(input_nwb_file, input_h5_file, stimulus_ontology_file, 
         if mk in input_manual_values:
             manual_values[mk] = input_manual_values[mk]
 
-    ont = StimulusOntology(ju.read(stimulus_ontology_file)) if stimulus_ontology_file else StimulusOntology()
+    if stimulus_ontology_file:
+        mso.make_stimulus_ontology_from_lims(stimulus_ontology_file)
+    else:
+        stimulus_ontology_file = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
+        logging.info(F"Ontology is not provided, using default {StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE}")
+
+    ont = StimulusOntology(ju.read(stimulus_ontology_file))
     ds = create_data_set(nwb_file=input_nwb_file,
                          h5_file=input_h5_file,
                          ontology=ont)

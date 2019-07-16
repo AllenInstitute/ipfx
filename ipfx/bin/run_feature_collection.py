@@ -20,6 +20,8 @@ import os
 import json
 import h5py
 from ipfx.bin.run_feature_vector_extraction import categorize_iclamp_sweeps
+from ipfx.stimulus import StimulusOntology
+import allensdk.core.json_utilities as ju
 
 
 class CollectFeatureParameters(ags.ArgSchema):

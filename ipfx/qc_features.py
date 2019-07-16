@@ -61,11 +61,7 @@ def get_r_from_stable_pulse_response(v, i, t):
     ir: float input resistance
     """
 
-
-    dv = np.diff(v)
-    up_idx = np.flatnonzero(dv > 0)
-    down_idx = np.flatnonzero(dv < 0)
-    assert len(up_idx) == len(down_idx), "Truncated square pulse"
+    up_idx, down_idx = get_square_pulse_idx(v)
     dt = t[1] - t[0]
     one_ms = int(0.001 / dt)
 
@@ -93,10 +89,8 @@ def get_r_from_stable_pulse_response(v, i, t):
 
 
 def get_r_from_peak_pulse_response(v, i, t):
-    dv = np.diff(v)
-    up_idx = np.flatnonzero(dv > 0)
-    down_idx = np.flatnonzero(dv < 0)
-    assert len(up_idx) == len(down_idx), "Truncated square pulse"
+
+    up_idx, down_idx = get_square_pulse_idx(v)
 
     dt = t[1] - t[0]
     one_ms = int(0.001 / dt)
@@ -117,3 +111,31 @@ def get_r_from_peak_pulse_response(v, i, t):
         r.append(r_instance)
 
     return np.mean(r)
+
+
+def get_square_pulse_idx(v):
+    """
+    Get up and down indices of the square pulse(s).
+    Skipping the very first pulse (test pulse)
+
+    Parameters
+    ----------
+    v: float
+        pulse trace
+
+    Returns
+    -------
+    up_idx, down_idx: list, list
+        up, down indices
+    """
+    dv = np.diff(v)
+
+    up_idx = np.flatnonzero(dv > 0)[1:] # skip the very first pulse (test pulse)
+    down_idx = np.flatnonzero(dv < 0)[1:]
+
+    assert len(up_idx) == len(down_idx), "Truncated square pulse"
+
+    for up_ix, down_ix in zip(up_idx, down_idx):
+        assert up_ix < down_ix, "Negative square pulse"
+
+    return up_idx, down_idx
