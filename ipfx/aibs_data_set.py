@@ -17,6 +17,10 @@ class AibsDataSet(EphysDataSet):
 
         if sweep_info:
             sweep_info = sp.modify_sweep_info_keys(sweep_info) if api_sweeps else sweep_info
+
+            # Remove sweeps not found in nwb_data sweep map
+            sweep_numbers_in_map = self.nwb_data.sweep_map_table["sweep_number"].tolist()
+            sweep_info = [si for si in sweep_info if si["sweep_number"] in sweep_numbers_in_map]
         else:
             self.notebook = lab_notebook_reader.create_lab_notebook_reader(nwb_file, h5_file)
             sweep_info = self.extract_sweep_stim_info()

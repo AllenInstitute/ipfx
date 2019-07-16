@@ -4,7 +4,7 @@ import logging
 from . import time_series_utils as tsu
 from . import error as er
 
-def detect_putative_spikes(v, t, start=None, end=None, filter=10., dv_cutoff=20.):
+def detect_putative_spikes(v, t, start=None, end=None, filter=10., dv_cutoff=20., dvdt=None):
     """Perform initial detection of spikes and return their indexes.
 
     Parameters
@@ -42,7 +42,10 @@ def detect_putative_spikes(v, t, start=None, end=None, filter=10., dv_cutoff=20.
     v_window = v[start_index:end_index + 1]
     t_window = t[start_index:end_index + 1]
 
-    dvdt = tsu.calculate_dvdt(v_window, t_window, filter)
+    if dvdt is None:
+        dvdt = tsu.calculate_dvdt(v_window, t_window, filter)
+    else:
+        dvdt = dvdt[start_index:end_index]
 
     # Find positive-going crossings of dV/dt cutoff level
     putative_spikes = np.flatnonzero(np.diff(np.greater_equal(dvdt, dv_cutoff).astype(int)) == 1)

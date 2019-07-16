@@ -55,8 +55,6 @@ def recs_to_sweeps(recs, min_pulse_dur=np.inf):
     return sweeps, min_pulse_dur
 
 
-
-
 def main(nwb_file, output_dir, project, **kwargs):
     nwb = MiesNwb(nwb_file)
 
@@ -80,16 +78,76 @@ def main(nwb_file, output_dir, project, **kwargs):
     supra_recs = [nwb.contents[i][channel] for i in supra_sweep_ids]
     sub_recs = [nwb.contents[i][channel] for i in sub_sweep_ids]
 
+    # Build sweep sets
     lsq_supra_sweep_list, lsq_supra_dur = recs_to_sweeps(supra_recs)
     lsq_sub_sweep_list, lsq_sub_dur = recs_to_sweeps(sub_recs)
     lsq_supra_sweeps = SweepSet(lsq_supra_sweep_list)
     lsq_sub_sweeps = SweepSet(lsq_sub_sweep_list)
 
-    all_features = fv.extract_multipatch_feature_vectors(lsq_supra_sweeps, 0., lsq_supra_dur,
-                                                         lsq_sub_sweeps, 0., lsq_sub_dur)
+    lsq_supra_start = 0
+    lsq_supra_end = lsq_supra_dur
+    lsq_sub_start = 0
+    lsq_sub_end = lsq_sub_dur
 
+    # Pre-process sweeps
+    lsq_supra_spx, lsq_supra_spfx = dsf.extractors_for_sweeps(lsq_supra_sweeps, start=lsq_supra_start, end=lsq_supra_end)
+    lsq_supra_an = spa.LongSquareAnalysis(lsq_supra_spx, lsq_supra_spfx, subthresh_min_amp=-100., require_subthreshold=False)
+    lsq_supra_features = lsq_supra_an.analyze(lsq_supra_sweeps)
+
+    lsq_sub_spx, lsq_sub_spfx = dsf.extractors_for_sweeps(lsq_sub_sweeps, start=lsq_sub_start, end=lsq_sub_end)
+    lsq_sub_an = spa.LongSquareAnalysis(lsq_sub_spx, lsq_sub_spfx, subthresh_min_amp=-100., require_suprathreshold=False)
+    lsq_sub_features = lsq_sub_an.analyze(lsq_sub_sweeps)
+
+    # Calculate feature vectors
+    result = {}
+    (subthresh_hyperpol_dict,
+    hyperpol_deflect_dict) = fv.identify_subthreshold_hyperpol_with_amplitudes(lsq_sub_features,
+        lsq_sub_sweeps)
+    target_amps_for_step_subthresh = [-90, -70, -50, -30, -10]
+    result["step_subthresh"] = fv.step_subthreshold(
+        subthresh_hyperpol_dict, target_amps_for_step_subthresh,
+        lsq_sub_start, lsq_sub_end, amp_tolerance=5)
+    result["subthresh_norm"] = fv.subthresh_norm(subthresh_hyperpol_dict, hyperpol_deflect_dict,
+        lsq_sub_start, lsq_sub_end)
+
+    (subthresh_depol_dict,
+    depol_deflect_dict) = fv.identify_subthreshold_depol_with_amplitudes(lsq_supra_features,
+        lsq_supra_sweeps)
+    result["subthresh_depol_norm"] = fv.subthresh_depol_norm(subthresh_depol_dict,
+        depol_deflect_dict, lsq_supra_start, lsq_supra_end)
+    isi_sweep, isi_sweep_spike_info = fv.identify_sweep_for_isi_shape(
+        lsq_supra_sweeps, lsq_supra_features, lsq_supra_end - lsq_supra_start)
+    result["isi_shape"] = fv.isi_shape(isi_sweep, isi_sweep_spike_info, lsq_supra_end)
+
+    # Calculate AP waveform from long squares
+    rheo_ind = lsq_supra_features["rheobase_sweep"].name
+    sweep = lsq_supra_sweeps.sweeps[rheo_ind]
+    lsq_ap_v, lsq_ap_dv = fv.first_ap_vectors([sweep],
+        [lsq_supra_features["spikes_set"][rheo_ind]],
+        window_length=ap_window_length)
+
+    result["first_ap_v"] = lsq_ap_v
+    result["first_ap_dv"] = lsq_ap_dv
+
+    target_amplitudes = np.arange(0, 120, 20)
+    supra_info_list = fv.identify_suprathreshold_sweep_sequence(
+        lsq_supra_features, target_amplitudes, shift=10)
+    result["psth"] = fv.psth_vector(supra_info_list, lsq_supra_start, lsq_supra_end)
+    result["inst_freq"] = fv.inst_freq_vector(supra_info_list, lsq_supra_start, lsq_supra_end)
+    spike_feature_list = [
+        "upstroke_downstroke_ratio",
+        "peak_v",
+        "fast_trough_v",
+        "threshold_v",
+        "width",
+    ]
+    for feature in spike_feature_list:
+        result["spiking_" + feature] = fv.spike_feature_vector(feature,
+            supra_info_list, lsq_supra_start, lsq_supra_end)
+
+    # Save the results
     specimen_ids = [0]
-    results = [all_features]
+    results = [result]
 
     filtered_set = [(i, r) for i, r in zip(specimen_ids, results) if not "error" in r.keys()]
     error_set = [{"id": i, "error": d} for i, d in zip(specimen_ids, results) if "error" in d.keys()]

@@ -19,19 +19,36 @@ def test_feature_vector_extraction(tmpdir_factory):
     test_output_dir = TEST_OUTPUT_DIR
 
     features = [
-        "first_ap",
+        "first_ap_v",
+        "first_ap_dv",
         "isi_shape",
-        "spiking",
+        "psth",
+        "inst_freq",
+        "spiking_width",
+        "spiking_peak_v",
+        "spiking_fast_trough_v",
+        "spiking_threshold_v",
+        "spiking_upstroke_downstroke_ratio",
         "step_subthresh",
         "subthresh_norm",
+        "subthresh_depol_norm",
         ]
 
     run_feature_vector_extraction(ids=[500844783, 509604672],
-                                  output_dir=temp_output_dir)
+                                  output_dir=temp_output_dir,
+                                  data_source="lims",
+                                  output_code="TEMP",
+                                  project=None,
+                                  output_file_type="npy",
+                                  sweep_qc_option="none",
+                                  include_failed_cells=True,
+                                  run_parallel=False,
+                                  ap_window_length=0.003
+                                  )
 
     for feature in features:
-        test_data = np.load(os.path.join(test_output_dir, "fv_{:s}_T301.npy".format(feature)))
-        temp_data = np.load(os.path.join(temp_output_dir, "fv_{:s}_T301.npy".format(feature)))
+        test_data = np.load(os.path.join(test_output_dir, "fv_{:s}_TEMP.npy".format(feature)))
+        temp_data = np.load(os.path.join(temp_output_dir, "fv_{:s}_TEMP.npy".format(feature)))
 
         assert np.array_equal(test_data, temp_data)
 

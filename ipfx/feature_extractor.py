@@ -90,23 +90,25 @@ class SpikeFeatureExtractor(object):
         dvdt = tsu.calculate_dvdt(v, t, self.filter)
 
         # Basic features of spikes
-
         putative_spikes = spkd.detect_putative_spikes(v, t, self.start, self.end,
-                                                    self.filter, self.dv_cutoff)
+                                                    dv_cutoff=self.dv_cutoff,
+                                                    dvdt=dvdt)
         peaks = spkd.find_peak_indexes(v, t, putative_spikes, self.end)
         putative_spikes, peaks = spkd.filter_putative_spikes(v, t, putative_spikes, peaks,
-                                                           self.min_height, self.min_peak)
+                                                           self.min_height, self.min_peak,
+                                                           dvdt=dvdt)
 
         if not putative_spikes.size:
             # Save time if no spikes detected
             return DataFrame()
 
-        upstrokes = spkd.find_upstroke_indexes(v, t, putative_spikes, peaks, self.filter, dvdt)
+        upstrokes = spkd.find_upstroke_indexes(v, t, putative_spikes, peaks, dvdt=dvdt)
         thresholds = spkd.refine_threshold_indexes(v, t, upstrokes, self.thresh_frac,
-                                                 self.filter, dvdt)
+                                                 dvdt=dvdt)
 
         thresholds, peaks, upstrokes, clipped = spkd.check_thresholds_and_peaks(v, t, thresholds, peaks,
-                                                                     upstrokes, self.end, self.max_interval)
+                                                                     upstrokes, self.end, self.max_interval,
+                                                                     dvdt=dvdt)
         if not thresholds.size:
             # Save time if no spikes detected
             return DataFrame()
@@ -114,9 +116,9 @@ class SpikeFeatureExtractor(object):
         # Spike list and thresholds have been refined - now find other features
         upstrokes = spkd.find_upstroke_indexes(v, t, thresholds, peaks, self.filter, dvdt)
         troughs = spkd.find_trough_indexes(v, t, thresholds, peaks, clipped, self.end)
-        downstrokes = spkd.find_downstroke_indexes(v, t, peaks, troughs, clipped, self.filter, dvdt)
+        downstrokes = spkd.find_downstroke_indexes(v, t, peaks, troughs, clipped, dvdt=dvdt)
         trough_details, clipped = spkf.analyze_trough_details(v, t, thresholds, peaks, clipped, self.end,
-                                                            self.filter, dvdt=dvdt)
+                                                            dvdt=dvdt)
 
         widths = spkf.find_widths(v, t, thresholds, peaks, trough_details[1], clipped)
 
