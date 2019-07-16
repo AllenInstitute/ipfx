@@ -40,14 +40,14 @@ def test_feature_vector_extraction(tmpdir_factory):
                                   output_code="TEMP",
                                   project=None,
                                   output_file_type="npy",
-                                  sweep_qc_option=None,
+                                  sweep_qc_option="none",
                                   include_failed_cells=True,
                                   run_parallel=False,
                                   ap_window_length=0.003
                                   )
 
     for feature in features:
-        test_data = np.load(os.path.join(test_output_dir, "fv_v2_{:s}_TEMP.npy".format(feature)))
+        test_data = np.load(os.path.join(test_output_dir, "fv_{:s}_TEMP.npy".format(feature)))
         temp_data = np.load(os.path.join(temp_output_dir, "fv_{:s}_TEMP.npy".format(feature)))
 
         assert np.array_equal(test_data, temp_data)
