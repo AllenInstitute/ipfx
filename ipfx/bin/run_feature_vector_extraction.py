@@ -238,8 +238,9 @@ def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthr
 
     lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(
         lsq_sweeps,
-        start = lsq_start,
-        end = lsq_end,
+        start=lsq_start,
+        end=lsq_end,
+        min_peak=-25,
         **dsf.detection_parameters(data_set.LONG_SQUARE)
     )
     lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx,
@@ -249,7 +250,7 @@ def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthr
     return lsq_sweeps, lsq_features, lsq_start, lsq_end, lsq_spx
 
 
-def preprocess_short_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, spike_window=0.01):
+def preprocess_short_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, spike_window=0.05):
     if len(sweep_numbers) == 0:
         raise er.FeatureError("No short square sweeps available for feature extraction")
 
@@ -384,7 +385,8 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source,
         ssq_ap_v, ssq_ap_dv = fv.first_ap_vectors(spiking_ssq_sweep_list,
             spiking_ssq_info_list,
             target_sampling_rate=target_sampling_rate,
-            window_length=ap_window_length)
+            window_length=ap_window_length,
+            skip_clipped=True)
 
         rheo_ind = lsq_features["rheobase_sweep"].name
         sweep = lsq_sweeps.sweeps[rheo_ind]
