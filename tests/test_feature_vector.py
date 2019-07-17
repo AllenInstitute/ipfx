@@ -11,6 +11,7 @@ from ipfx.sweep import Sweep, SweepSet
 import allensdk.core.json_utilities as ju
 import pytest
 import os
+from .helpers_for_tests import download_file
 
 
 TEST_OUTPUT_DIR = "/allen/aibs/informatics/module_test_data/ipfx/test_feature_vector"
@@ -22,8 +23,13 @@ def feature_vector_input():
 
     TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
-    nwb_file = os.path.join(TEST_DATA_PATH, "Pvalb-IRES-Cre;Ai14-415796.02.01.01.nwb")
-    data_set = AibsDataSet(nwb_file=nwb_file, ontology=ontology)
+    nwb_file_name = "Pvalb-IRES-Cre;Ai14-415796.02.01.01.nwb"
+    nwb_file_full_path = os.path.join(TEST_DATA_PATH, nwb_file_name)
+
+    if not os.path.exists(nwb_file_full_path):
+        download_file(nwb_file_name, nwb_file_full_path)
+
+    data_set = AibsDataSet(nwb_file=nwb_file_full_path, ontology=ontology)
 
     lsq_sweep_numbers = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
                                                       stimuli=ontology.long_square_names).sweep_number.sort_values().values
