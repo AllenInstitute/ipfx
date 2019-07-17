@@ -6,13 +6,16 @@ from . import spike_features as spkf
 from . import error as er
 
 
-def basic_spike_train_features(t, spikes_df, start, end):
+def basic_spike_train_features(t, spikes_df, start, end, exclude_clipped=False):
     features = {}
     if len(spikes_df) == 0 or spikes_df.empty:
         features["avg_rate"] = 0
         return features
 
     thresholds = spikes_df["threshold_index"].values.astype(int)
+    if exclude_clipped:
+        mask = spikes_df["clipped"].values.astype(bool)
+        thresholds = thresholds[~mask]
     isis = get_isis(t, thresholds)
     with warnings.catch_warnings():
         # ignore mean of empty slice warnings here

@@ -265,8 +265,8 @@ class SpikeTrainFeatureExtractor(object):
         self.sag_baseline_interval = sag_baseline_interval
         self.peak_width = peak_width
 
-    def process(self, t, v, i, spikes_df, extra_features=None):
-        features = strf.basic_spike_train_features(t, spikes_df, self.start, self.end)
+    def process(self, t, v, i, spikes_df, extra_features=None, exclude_clipped=False):
+        features = strf.basic_spike_train_features(t, spikes_df, self.start, self.end, exclude_clipped=exclude_clipped)
 
         if self.start is None:
             self.start = t[0]
