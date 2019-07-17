@@ -263,6 +263,7 @@ def preprocess_short_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, spike
                                                   est_window = [ssq_start, ssq_start + 0.001],
                                                   start=ssq_start,
                                                   end=ssq_end + spike_window,
+                                                  reject_at_stim_start_interval=0.0002,
                                                   **dsf.detection_parameters(data_set.SHORT_SQUARE))
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
     ssq_features = ssq_an.analyze(ssq_sweeps)

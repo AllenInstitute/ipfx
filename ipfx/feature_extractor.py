@@ -60,7 +60,7 @@ class SpikeFeatureExtractor(object):
 
     def __init__(self, start=None, end=None, filter=10.,
                  dv_cutoff=20., max_interval=0.005, min_height=2., min_peak=-30.,
-                 thresh_frac=0.05):
+                 thresh_frac=0.05, reject_at_stim_start_interval=0):
         """Initialize SweepFeatures object.-
 
         Parameters
@@ -76,6 +76,7 @@ class SpikeFeatureExtractor(object):
         min_height : minimum acceptable height from threshold to peak in mV (optional, default 2)
         min_peak : minimum acceptable absolute peak level in mV (optional, default -30)
         thresh_frac : fraction of average upstroke for threshold calculation (optional, default 0.05)
+        reject_at_stim_start_interval : duration of window after start to reject potential spikes (optional, default 0)
         """
         self.start = start
         self.end = end
@@ -85,6 +86,7 @@ class SpikeFeatureExtractor(object):
         self.min_height = min_height
         self.min_peak = min_peak
         self.thresh_frac = thresh_frac
+        self.reject_at_stim_start_interval = reject_at_stim_start_interval
 
     def process(self, t, v, i):
         dvdt = tsu.calculate_dvdt(v, t, self.filter)
@@ -107,8 +109,9 @@ class SpikeFeatureExtractor(object):
                                                  dvdt=dvdt)
 
         thresholds, peaks, upstrokes, clipped = spkd.check_thresholds_and_peaks(v, t, thresholds, peaks,
-                                                                     upstrokes, self.end, self.max_interval,
-                                                                     dvdt=dvdt)
+                                                                     upstrokes, self.start, self.end, self.max_interval,
+                                                                     dvdt=dvdt,
+                                                                     reject_at_stim_start_interval=self.reject_at_stim_start_interval)
         if not thresholds.size:
             # Save time if no spikes detected
             return DataFrame()

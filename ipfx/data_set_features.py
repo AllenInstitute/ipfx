@@ -78,6 +78,8 @@ def detection_parameters(stimulus_name):
 
 def extractors_for_sweeps(sweep_set,
                           dv_cutoff=20., thresh_frac=0.05,
+                          reject_at_stim_start_interval=0,
+                          min_peak=-30,
                           thresh_frac_floor=None,
                           est_window=None,
                           start=None, end=None):
@@ -89,6 +91,7 @@ def extractors_for_sweeps(sweep_set,
 
     dv_cutoff : float
     thresh_frac :
+    reject_at_stim_start_interval :
     thresh_frac_floor
     est_window :
     start :
@@ -109,7 +112,13 @@ def extractors_for_sweeps(sweep_set,
     if thresh_frac_floor is not None:
         thresh_frac = max(thresh_frac_floor, thresh_frac)
 
-    sfx = SpikeFeatureExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac, start=start, end=end)
+    sfx = SpikeFeatureExtractor(dv_cutoff=dv_cutoff,
+        thresh_frac=thresh_frac,
+        start=start,
+        end=end,
+        min_peak=min_peak,
+        reject_at_stim_start_interval=reject_at_stim_start_interval)
+
     stfx = SpikeTrainFeatureExtractor(start, end)
 
     return sfx, stfx
