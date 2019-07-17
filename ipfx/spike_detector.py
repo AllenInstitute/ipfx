@@ -197,9 +197,9 @@ def refine_threshold_indexes(v, t, upstroke_indexes, thresh_frac=0.05, filter=10
     return np.array(threshold_indexes)
 
 
-def check_thresholds_and_peaks(v, t, spike_indexes, peak_indexes, upstroke_indexes, end=None,
+def check_thresholds_and_peaks(v, t, spike_indexes, peak_indexes, upstroke_indexes, start=None, end=None,
                                max_interval=0.005, thresh_frac=0.05, filter=10., dvdt=None,
-                               tol=1.0):
+                               tol=1.0, reject_at_stim_start_interval=0.):
     """Validate thresholds and peaks for set of spikes
 
     Check that peaks and thresholds for consecutive spikes do not overlap
@@ -214,12 +214,14 @@ def check_thresholds_and_peaks(v, t, spike_indexes, peak_indexes, upstroke_index
     spike_indexes : numpy array of spike indexes
     peak_indexes : numpy array of indexes of spike peaks
     upstroke_indexes : numpy array of indexes of spike upstrokes
+    start : start of time window for feature analysis (optional)
     end : end of time window for feature analysis (optional)
     max_interval : maximum allowed time between start of spike and time of peak in sec (default 0.005)
     thresh_frac : fraction of average upstroke for threshold calculation (optional, default 0.05)
     filter : cutoff frequency for 4-pole low-pass Bessel filter in kHz (optional, default 10)
     dvdt : pre-calculated time-derivative of voltage (optional)
     tol : tolerance for returning to threshold in mV (optional, default 1)
+    reject_at_stim_start_interval : duration of window after start to reject potential spikes (optional, default 0)
 
     Returns
     -------
@@ -228,6 +230,12 @@ def check_thresholds_and_peaks(v, t, spike_indexes, peak_indexes, upstroke_index
     upstroke_indexes : numpy array of modified spike upstroke indexes
     clipped : numpy array of clipped status of spikes
     """
+
+    if start is not None and reject_at_stim_start_interval > 0:
+        mask = t[spike_indexes] > (start + reject_at_stim_start_interval)
+        spike_indexes = spike_indexes[mask]
+        peak_indexes = peak_indexes[mask]
+        upstroke_indexes = upstroke_indexes[mask]
 
     overlaps = np.flatnonzero(spike_indexes[1:] <= peak_indexes[:-1] + 1)
     if overlaps.size:
