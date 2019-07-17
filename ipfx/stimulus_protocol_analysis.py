@@ -69,20 +69,20 @@ class StimulusProtocolAnalysis(object):
             output[mf] = np.nanmean(mfd)
         return output
 
-    def analyze_basic_features(self, sweep_set, extra_sweep_features=None):
+    def analyze_basic_features(self, sweep_set, extra_sweep_features=None, exclude_clipped=False):
         self._spikes_set = []
         for sweep in sweep_set.sweeps:
             self._spikes_set.append(self.spx.process(sweep.t, sweep.v, sweep.i))
 
-        self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features)
+        self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features, exclude_clipped=exclude_clipped)
                                               for sweep, spikes in zip(sweep_set.sweeps, self._spikes_set) ])
 
     def reset_basic_features(self):
         self._spikes_set = None
         self._sweep_features = None
 
-    def analyze(self, sweep_set, extra_sweep_features=None):
-        self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_features)
+    def analyze(self, sweep_set, extra_sweep_features=None, exclude_clipped=False):
+        self.analyze_basic_features(sweep_set, extra_sweep_features=extra_sweep_features, exclude_clipped=exclude_clipped)
         return {"spikes_set": self._spikes_set, "sweeps": self._sweep_features}
 
     def as_dict(self, features, extra_params=None):
@@ -274,7 +274,7 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
 
     def analyze(self, sweep_set):
         extra_sweep_features = [ "stim_amp" ]
-        features = super(ShortSquareAnalysis, self).analyze(sweep_set, extra_sweep_features=extra_sweep_features)
+        features = super(ShortSquareAnalysis, self).analyze(sweep_set, extra_sweep_features=extra_sweep_features, exclude_clipped=True)
 
         spiking_sweep_features = self.suprathreshold_sweep_features()
 
