@@ -52,6 +52,10 @@ def pytest_addoption(parser):
                      help="run file regression tests for conversion to NWBv2")
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "xnwbtest: mark test as part of NWB conversion set")
+
+
 collect_ignore = []
 if sys.version_info[0] < 3:
     collect_ignore.append("test_x_nwb.py")
@@ -74,3 +78,9 @@ def pytest_collection_modifyitems(config, items):
         if 'requires_lims' in item.keywords:
             item.add_marker(skip_requires_lims_test)
 
+    if config.getoption("--do-x-nwb-tests"):
+        return
+    skip_xnwb = pytest.mark.skip(reason="need --do-x-nwb-tests to run")
+    for item in items:
+       if "xnwbtest" in item.keywords:
+           item.add_marker(skip_xnwb)

@@ -23,9 +23,7 @@ from ipfx.bin.run_x_to_nwb_conversion import convert
 from .test_x_nwb_helper import fetch_and_extract_zip
 
 
-if not pytest.config.getoption("--do-x-nwb-tests"):
-    pytest.skip("--do-x-nwb-tests is missing, skipping tests",
-                allow_module_level=True)
+pytestmark = pytest.mark.xnwbtest
 
 
 def get_raw_files():
