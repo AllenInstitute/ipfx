@@ -173,9 +173,7 @@ class NwbReader(object):
         sweep_map = []
 
         for stim_group, acq_group in zip(self.get_stimulus_groups(), self.get_acquisition_groups()):
-
             sweep_record = {}
-
             sweep_record["acquisition_group"] = acq_group
             sweep_record["stimulus_group"] = stim_group
             sweep_record["sweep_number"] = self.get_sweep_number(acq_group)
@@ -286,7 +284,7 @@ class NwbXReader(NwbReader):
     def __init__(self, nwb_file):
         NwbReader.__init__(self, nwb_file)
         self.acquisition_path = "acquisition"
-        self.stimulus_path = "stimulus"
+        self.stimulus_path = "stimulus/presentation"
         self.nwb_major_version = 2
         self.build_sweep_map()
 
