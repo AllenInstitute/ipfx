@@ -53,7 +53,7 @@ def test_get_stimulus_units(NWB_file):
 
     default_ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
     dataset = AibsDataSet(nwb_file=NWB_file, ontology=default_ontology)
-    assert dataset.get_stimulus_units(0) == "mV"
+    assert dataset.get_stimulus_units(0) == "Volts"
 
 
 @pytest.mark.parametrize('NWB_file', ['H18.03.315.11.11.01.05.nwb'], indirect=True)
