@@ -67,6 +67,19 @@ class NwbReader(object):
 
         return recording_date
 
+    def get_stimulus_unit(self, sweep_number):
+
+        sweep_map = self.get_sweep_map(sweep_number)
+
+        with h5py.File(self.nwb_file, 'r') as f:
+            sweep_stimulus = f[self.stimulus_path][sweep_map["stimulus_group"]]
+            stimulus_dataset = sweep_stimulus["data"]
+
+            unit = NwbReader.get_unit_name(stimulus_dataset.attrs)
+            unit_str = NwbReader.get_long_unit_name(unit)
+
+            return unit_str
+
     @staticmethod
     def get_unit_name(stim_attrs):
         if 'unit' in stim_attrs:

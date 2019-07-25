@@ -85,18 +85,8 @@ class AibsDataSet(EphysDataSet):
 
     def get_stimulus_units(self, sweep_num):
 
-        attrs = self.nwb_data.get_sweep_attrs(sweep_num)
-        ancestry = attrs["ancestry"]
-        # stim units are based on timeseries type
-        time_series_type = to_str(ancestry[-1])
-        if "CurrentClamp" in time_series_type:
-            units = 'pA'
-        elif "VoltageClamp" in time_series_type:
-            units = 'mV'
-        else:
-            raise Exception("Unable to determine clamp mode in {}".format(sweep_num))
-
-        return units
+        unit_str = self.nwb_data.get_stimulus_unit(sweep_num)
+        return unit_str
 
     def get_clamp_mode(self, sweep_num):
 
