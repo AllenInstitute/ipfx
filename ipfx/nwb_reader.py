@@ -417,17 +417,6 @@ class NwbPipelineReader(NwbReader):
             unit = NwbReader.get_unit_name(stimulus_dataset.attrs)
             unit_str = NwbReader.get_long_unit_name(unit)
 
-            if unit_str == "Amps":
-                response *= 1e3,  # voltage, convert units V->mV
-                stimulus *= 1e12,  # current, convert units A->pA
-
-            elif unit_str == "Volts":
-                response *= 1e12,  # current, convert units A->pA
-                stimulus *= 1e3,  # voltage, convert units V->mV
-
-            else:
-                raise ValueError("Unknown stimulus unit")
-
             hz = 1.0 * swp['stimulus/timeseries']['starting_time'].attrs['rate']
 
             return {
@@ -485,12 +474,17 @@ class NwbMiesReader(NwbReader):
         with h5py.File(self.nwb_file, 'r') as f:
             sweep_response = f[self.acquisition_path][sweep_map["acquisition_group"]]
             response_dataset = sweep_response["data"]
+            response_conversion = float(response_dataset.attrs["conversion"])
+
             hz = 1.0 * sweep_response["starting_time"].attrs['rate']
             sweep_stimulus = f[self.stimulus_path][sweep_map["stimulus_group"]]
             stimulus_dataset = sweep_stimulus["data"]
 
-            response = response_dataset[...]
-            stimulus = stimulus_dataset[...]
+            stimulus_conversion = float(stimulus_dataset.attrs["conversion"])
+
+            stimulus = stimulus_dataset[...] * stimulus_conversion
+            response = response_dataset[...] * response_conversion
+
 
             unit = NwbReader.get_unit_name(stimulus_dataset.attrs)
             unit_str = NwbReader.get_long_unit_name(unit)

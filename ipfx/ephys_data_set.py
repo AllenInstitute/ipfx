@@ -140,6 +140,7 @@ class EphysDataSet(object):
 
         epochs = sweep_data.get('epochs')
         clamp_mode = sweep_record['clamp_mode']
+
         if clamp_mode == "VoltageClamp":
             v = sweep_data['stimulus']
             i = sweep_data['response']
@@ -148,6 +149,9 @@ class EphysDataSet(object):
             i = sweep_data['stimulus']
         else:
             raise Exception("Unable to determine clamp mode for sweep " + sweep_number)
+
+        v *= 1.0e3    # convert units V->mV
+        i *= 1.0e12   # convert units A->pA
 
         if len(sweep_data['stimulus']) != len(sweep_data['response']):
             warnings.warn("Stimulus duration {} is not equal reponse duration {}".
