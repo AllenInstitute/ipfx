@@ -100,7 +100,15 @@ class NwbReader(object):
         elif unit.startswith('V'):
             return "Volts"
         else:
-            raise ValueError("Unit {} not recognized from TimeSeries".format(unit))
+            return unit
+
+    @staticmethod
+    def validate_SI_unit(unit):
+
+        valid_SI_units = ["Volts", "Amps"]
+        if unit not in valid_SI_units:
+            raise ValueError(F"Unit {unit} is not among the valid SI units {valid_SI_units}")
+
 
     def get_real_sweep_number(self, sweep_name, assumed_sweep_number=None):
         """
@@ -337,12 +345,17 @@ class NwbXReader(NwbReader):
                         raise ValueError("Found multiple response TimeSeries in NWB file for sweep number {}.".format(sweep_number))
 
                     response = s.data[:] * float(s.conversion)
+                    response_unit = NwbReader.get_long_unit_name(s.unit)
+                    NwbReader.validate_SI_unit(response_unit)
+
                 elif isinstance(s, (VoltageClampStimulusSeries, CurrentClampStimulusSeries)):
                     if stimulus is not None:
                         raise ValueError("Found multiple stimulus TimeSeries in NWB file for sweep number {}.".format(sweep_number))
 
                     stimulus = s.data[:] * float(s.conversion)
                     stimulus_unit = NwbReader.get_long_unit_name(s.unit)
+                    NwbReader.validate_SI_unit(stimulus_unit)
+
                     stimulus_rate = float(s.rate)
                 else:
                     raise ValueError("Unexpected TimeSeries {}.".format(type(s)))
@@ -404,8 +417,6 @@ class NwbPipelineReader(NwbReader):
             sweep_name = 'Sweep_%d' % sweep_number
             swp = f['epochs'][sweep_name]
 
-            sweep_ts = f[self.acquisition_path][sweep_name]
-
             #   fetch data from file and convert to correct SI unit
             #   this operation depends on file version. early versions of
             #   the file have incorrect conversion information embedded
@@ -415,9 +426,15 @@ class NwbPipelineReader(NwbReader):
 
             stimulus_dataset = swp['stimulus/timeseries']['data']
             stimulus_conversion = float(stimulus_dataset.attrs["conversion"])
+            stimulus_unit = NwbReader.get_unit_name(stimulus_dataset.attrs)
+            stimulus_unit = NwbReader.get_long_unit_name(stimulus_unit)
+            NwbReader.validate_SI_unit(stimulus_unit)
 
             response_dataset = swp['response/timeseries']['data']
             response_conversion = float(response_dataset.attrs["conversion"])
+            response_unit = NwbReader.get_unit_name(response_dataset.attrs)
+            response_unit = NwbReader.get_long_unit_name(response_unit)
+            NwbReader.validate_SI_unit(response_unit)
 
             major, minor = self.get_pipeline_version()
             if (major == 1 and minor > 0) or major > 1:
@@ -427,15 +444,12 @@ class NwbPipelineReader(NwbReader):
                 stimulus = stimulus_dataset[...]
                 response = response_dataset[...]
 
-            unit = NwbReader.get_unit_name(stimulus_dataset.attrs)
-            unit_str = NwbReader.get_long_unit_name(unit)
-
             hz = 1.0 * swp['stimulus/timeseries']['starting_time'].attrs['rate']
 
             return {
                 'stimulus': stimulus,
                 'response': response,
-                'stimulus_unit': unit_str,
+                'stimulus_unit': stimulus_unit,
                 'sampling_rate': hz
             }
 
@@ -487,25 +501,27 @@ class NwbMiesReader(NwbReader):
         with h5py.File(self.nwb_file, 'r') as f:
             sweep_response = f[self.acquisition_path][sweep_map["acquisition_group"]]
             response_dataset = sweep_response["data"]
+            response_unit = NwbReader.get_unit_name(response_dataset.attrs)
+            response_unit = NwbReader.get_long_unit_name(response_unit)
             response_conversion = float(response_dataset.attrs["conversion"])
+            NwbReader.validate_SI_unit(response_unit)
 
-            hz = 1.0 * sweep_response["starting_time"].attrs['rate']
             sweep_stimulus = f[self.stimulus_path][sweep_map["stimulus_group"]]
             stimulus_dataset = sweep_stimulus["data"]
-
+            stimulus_unit = NwbReader.get_unit_name(stimulus_dataset.attrs)
+            stimulus_unit = NwbReader.get_long_unit_name(stimulus_unit)
             stimulus_conversion = float(stimulus_dataset.attrs["conversion"])
+            NwbReader.validate_SI_unit(stimulus_unit)
 
             stimulus = stimulus_dataset[...] * stimulus_conversion
             response = response_dataset[...] * response_conversion
 
-
-            unit = NwbReader.get_unit_name(stimulus_dataset.attrs)
-            unit_str = NwbReader.get_long_unit_name(unit)
+            hz = 1.0 * sweep_response["starting_time"].attrs['rate']
 
         return {"stimulus": stimulus,
                 "response": response,
                 "sampling_rate": hz,
-                "stimulus_unit": unit_str,
+                "stimulus_unit": stimulus_unit,
                 }
 
     def get_sweep_number(self, sweep_name):
