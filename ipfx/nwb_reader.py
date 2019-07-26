@@ -403,32 +403,17 @@ class NwbPipelineReader(NwbReader):
             sweep_name = 'Sweep_%d' % sweep_number
             swp = f['epochs'][sweep_name]
 
-            #   fetch data from file and convert to correct SI unit
-            #   this operation depends on file version. early versions of
-            #   the file have incorrect conversion information embedded
-            #   in the nwb file and data was stored in the appropriate
-            #   SI unit. For those files, return uncorrected data.
-            #   For newer files (1.1 and later), apply conversion value.
-
             stimulus_dataset = swp['stimulus/timeseries']['data']
-            stimulus_conversion = float(stimulus_dataset.attrs["conversion"])
+            stimulus = self.convert_dataset_to_si_unit(stimulus_dataset)
             stimulus_unit = NwbReader.get_unit_name(stimulus_dataset.attrs)
             stimulus_unit = NwbReader.get_long_unit_name(stimulus_unit)
             NwbReader.validate_SI_unit(stimulus_unit)
 
             response_dataset = swp['response/timeseries']['data']
-            response_conversion = float(response_dataset.attrs["conversion"])
+            response = self.convert_dataset_to_si_unit(response_dataset)
             response_unit = NwbReader.get_unit_name(response_dataset.attrs)
             response_unit = NwbReader.get_long_unit_name(response_unit)
             NwbReader.validate_SI_unit(response_unit)
-
-            major, minor = self.get_pipeline_version()
-            if (major == 1 and minor > 0) or major > 1:
-                stimulus = stimulus_dataset[...] * stimulus_conversion
-                response = response_dataset[...] * response_conversion
-            else:   # old file version
-                stimulus = stimulus_dataset[...]
-                response = response_dataset[...]
 
             hz = 1.0 * swp['stimulus/timeseries']['starting_time'].attrs['rate']
 
@@ -439,6 +424,33 @@ class NwbPipelineReader(NwbReader):
                 'sampling_rate': hz
             }
 
+    def convert_dataset_to_si_unit(self,dataset):
+        """
+        fetch data from file and convert to correct SI unit
+        this operation depends on file version. early versions of
+        the file have incorrect conversion information embedded
+        in the nwb file and data was stored in the appropriate
+        SI unit. For those files, return uncorrected data.
+        For newer files (1.1 and later), apply conversion value.
+
+        Parameters
+        ----------
+        dataset: dataset from nwb
+
+        Returns
+        -------
+        dataset_si: converted dataset to SI units
+
+        """
+
+        conversion = float(dataset.attrs["conversion"])
+
+        major, minor = self.get_pipeline_version()
+        if (major == 1 and minor > 0) or major > 1:
+            dataset_si = dataset[...] * conversion
+        else:  # old file/pipeline version
+            dataset_si = dataset[...]
+        return dataset_si
 
     def get_sweep_number(self, sweep_name):
 
