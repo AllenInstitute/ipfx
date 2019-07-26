@@ -388,17 +388,6 @@ class NwbPipelineReader(NwbReader):
 
     def get_sweep_data(self, sweep_number):
         """
-        Retrieve the stimulus, response, index_range, and sampling rate
-        for a particular sweep.  This method hides the NWB file's distinction
-        between a "Sweep" and an "Experiment".  An experiment is a subset of
-        of a sweep that excludes the initial test pulse.  It also excludes
-        any erroneous response data at the end of the sweep (usually for
-        ramp sweeps, where recording was terminated mid-stimulus).
-        Some sweeps do not have an experiment, so full data arrays are
-        returned.  Sweeps that have an experiment return full data arrays
-        (include the test pulse) with any erroneous data trimmed from the
-        back of the sweep. Data is returned in mV and pA.
-        Partially borrowed from the AllenSDK.get_sweep()
 
         Parameters
         ----------
@@ -407,10 +396,7 @@ class NwbPipelineReader(NwbReader):
         Returns
         -------
         dict
-            A dictionary with 'stimulus', 'response', 'index_range', and
-            'sampling_rate' elements.  The index range is a 2-tuple where
-            the first element indicates the end of the test pulse and the
-            second index is the end of valid response data.
+            with values for 'stimulus', 'response', 'stimulus_unit', 'sampling_rate'
         """
         with h5py.File(self.nwb_file, 'r') as f:
 
@@ -452,6 +438,7 @@ class NwbPipelineReader(NwbReader):
                 'stimulus_unit': stimulus_unit,
                 'sampling_rate': hz
             }
+
 
     def get_sweep_number(self, sweep_name):
 
