@@ -38,6 +38,12 @@ class NwbReader(object):
     def get_sweep_data(self, sweep_number):
         raise NotImplementedError
 
+    def get_acquisition(self,sweep_number):
+        raise NotImplementedError
+
+    def get_stimulus(self,sweep_number):
+        raise NotImplementedError
+
     def get_sweep_number(self, sweep_name):
         raise NotImplementedError
 
@@ -547,6 +553,43 @@ class NwbMiesReader(NwbReader):
                     stim_code = stim_code[:-5]
 
         return stim_code
+
+    def get_acquisition(self,sweep_number):
+
+        with h5py.File(self.nwb_file, 'r') as f:
+            sweep = f['acquisition']['timeseries']["data_%05d_AD0" % sweep_number]
+            data = sweep["data"].value
+            rate = 1.0 * sweep["starting_time"].attrs['rate']
+            unit = sweep["data"].attrs["unit"]
+            conversion = sweep["data"].attrs["conversion"]
+            comment = sweep.attrs["comment"]
+
+            return {
+                "data": data,
+                "rate": rate,
+                "unit": unit,
+                "conversion": conversion,
+                "comment": comment,
+                }
+
+    def get_stimulus(self, sweep_number):
+
+        with h5py.File(self.nwb_file, 'r') as f:
+            sweep = f['stimulus']['presentation']["data_%05d_DA0" % sweep_number]
+            data = sweep["data"].value
+
+            unit = sweep["data"].attrs["unit"]
+            rate = 1.0 * sweep["starting_time"].attrs['rate']
+            conversion = sweep["data"].attrs["conversion"]
+            comment = sweep.attrs["comment"]
+
+        return {
+                "data": data,
+                "rate": rate,
+                "unit": unit,
+                "conversion": conversion,
+                "comment": comment,
+                }
 
 
 def get_nwb_version(nwb_file):
