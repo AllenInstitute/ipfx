@@ -50,9 +50,9 @@ class NwbReader(object):
     def get_stim_code(self, sweep_number):
         raise NotImplementedError
 
-    def get_recording_date(self):
+    def get_session_start_time(self):
         """
-        Extract recording datetime from a session_start_time in nwb
+        Extract session_start_time in nwb
         Use last value if more than one is present
 
         Returns
@@ -68,6 +68,12 @@ class NwbReader(object):
                 session_start_time = f["session_start_time"][()] # otherwise
 
             datetime_object = parser.parse(session_start_time)
+
+        return datetime_object
+
+    def get_recording_date(self):
+
+        datetime_object = self.get_session_start_time()
 
         recording_date = datetime_object.strftime("%Y-%m-%d %H:%M:%S")
 
