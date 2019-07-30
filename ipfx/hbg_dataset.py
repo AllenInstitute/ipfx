@@ -62,17 +62,8 @@ class HBGDataSet(EphysDataSet):
 
     def get_stimulus_units(self, sweep_num):
 
-        attrs = self.nwb_data.get_sweep_attrs(sweep_num)
-        timeSeriesType = attrs["neurodata_type"]
-
-        if "CurrentClamp" in timeSeriesType:
-            units = "A"
-        elif "VoltageClamp" in timeSeriesType:
-            units = "V"
-        else:
-            raise ValueError("Unexpected TimeSeries type {}.".format(timeSeriesType))
-
-        return units
+        unit_str = self.nwb_data.get_stimulus_unit(sweep_num)
+        return unit_str
 
     def get_clamp_mode(self, sweep_num):
 
