@@ -299,6 +299,8 @@ class NwbXReader(NwbReader):
         self.stimulus_path = "stimulus/presentation"
         self.nwb_major_version = 2
         self.build_sweep_map()
+        io = NWBHDF5IO(nwb_file, mode='r')
+        self.nwb = io.read()
 
     def get_sweep_number(self, sweep_name):
         return self.get_real_sweep_number(sweep_name)
@@ -327,32 +329,35 @@ class NwbXReader(NwbReader):
                 d["dat"] = True
             elif experiment_description.startswith("Clampex"):
                 d["abf"] = True
+            elif experiment_description.startswith("IVSCC"):
+                d["nwb"] = True
             else:
                 d["unknown"] = True
 
             return d
 
-        with NWBHDF5IO(self.nwb_file, mode='r') as io:
-            nwb = io.read()
+        rawDataSourceType = getRawDataSourceType(self.nwb.experiment_description)
+        assert not rawDataSourceType["unknown"], "Cannot handle data from this raw data source"
 
-            rawDataSourceType = getRawDataSourceType(nwb.experiment_description)
-            assert not rawDataSourceType["unknown"], "Can handle data from this raw data source"
+        series = self.nwb.sweep_table.get_series(sweep_number)
 
-            series = nwb.sweep_table.get_series(sweep_number)
+        if series is None:
+            raise ValueError("No TimeSeries found for sweep number {}.".format(sweep_number))
 
-            if series is None:
-                raise ValueError("No TimeSeries found for sweep number {}.".format(sweep_number))
+        # we need one "*ClampStimulusSeries" and one "*ClampSeries"
 
-            # we need one "*ClampStimulusSeries" and one "*ClampSeries"
+        response = None
+        stimulus = None
+        for s in series:
 
-            response = None
-            stimulus = None
+            if isinstance(s, (VoltageClampSeries, CurrentClampSeries, IZeroClampSeries)):
+                if response is not None:
+                    raise ValueError("Found multiple response TimeSeries in NWB file for sweep number {}.".format(sweep_number))
 
-            for s in series:
-
-                if isinstance(s, (VoltageClampSeries, CurrentClampSeries, IZeroClampSeries)):
-                    if response is not None:
-                        raise ValueError("Found multiple response TimeSeries in NWB file for sweep number {}.".format(sweep_number))
+                response = s.data[:] * float(s.conversion)
+            elif isinstance(s, (VoltageClampStimulusSeries, CurrentClampStimulusSeries)):
+                if stimulus is not None:
+                    raise ValueError("Found multiple stimulus TimeSeries in NWB file for sweep number {}.".format(sweep_number))
 
                     response = s.data[:] * float(s.conversion)
                     response_unit = NwbReader.get_long_unit_name(s.unit)
@@ -370,17 +375,17 @@ class NwbXReader(NwbReader):
                 else:
                     raise ValueError("Unexpected TimeSeries {}.".format(type(s)))
 
-            if stimulus is None:
-                raise ValueError("Could not find one stimulus TimeSeries for sweep number {}.".format(sweep_number))
-            elif response is None:
-                raise ValueError("Could not find one response TimeSeries for sweep number {}.".format(sweep_number))
+        if stimulus is None:
+            raise ValueError("Could not find one stimulus TimeSeries for sweep number {}.".format(sweep_number))
+        elif response is None:
+            raise ValueError("Could not find one response TimeSeries for sweep number {}.".format(sweep_number))
 
-            return {
-                'stimulus': stimulus,
-                'response': response,
-                'stimulus_unit': stimulus_unit,
-                'sampling_rate': stimulus_rate
-            }
+        return {
+            'stimulus': stimulus,
+            'response': response,
+            'stimulus_unit': stimulus_unit,
+            'sampling_rate': stimulus_rate
+        }
 
 
 class NwbPipelineReader(NwbReader):
