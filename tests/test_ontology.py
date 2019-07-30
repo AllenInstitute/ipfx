@@ -24,8 +24,6 @@ def test_find_one(ontology):
 
     assert stim.tags(tag_type='name')[0][-1] == 'long square'
 
-    with pytest.raises(KeyError):
-        ontology.find_one('noise')
 
 
 def test_has(ontology):
