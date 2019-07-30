@@ -27,11 +27,11 @@ def test_main_abf(ontology, NWB_file):
 
     dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
 
-    expected = {'stimulus_units': {0: 'A'},
+    expected = {'stimulus_units': {0: 'Amps'},
                 'clamp_mode': {0: 'CurrentClamp'},
                 'sweep_number': {0: 0},
                 'leak_pa': {0: None},
-                'stimulus_code_ext': {0: None},
+                'stimulus_code_ext': {0: u'RAMP1'},
                 'stimulus_scale_factor': {0: 1.0},
                 'stimulus_code': {0: u'RAMP1'},
                 'stimulus_name': {0: u'ramp stimulus'},
@@ -46,11 +46,11 @@ def test_main_dat(ontology, NWB_file):
 
     dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
 
-    expected = {'stimulus_units': 'V',
+    expected = {'stimulus_units': 'Volts',
                 'clamp_mode': 'VoltageClamp',
                 'sweep_number': 10101,
                 'leak_pa': None,
-                'stimulus_code_ext': None,
+                'stimulus_code_ext': u'extpinbath',
                 'stimulus_scale_factor': 5000000.0,
                 'stimulus_code': u'extpinbath',
                 'stimulus_name': u'extpinbath stimulus',
@@ -73,7 +73,7 @@ def test_get_clamp_mode(ontology, NWB_file):
 def test_get_stimulus_units(ontology, NWB_file):
 
     dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
-    assert dataset.get_stimulus_units(10101) == "V"
+    assert dataset.get_stimulus_units(10101) == "Volts"
 
 
 @pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)

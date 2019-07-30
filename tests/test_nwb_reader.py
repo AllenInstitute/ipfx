@@ -105,16 +105,6 @@ def test_valid_v1_skeleton_Pipeline():
     assert isinstance(reader, NwbPipelineReader)
 
 
-def test_valid_v1_skeleton_X_NWB():
-    filename = os.path.join(TEST_DATA_PATH, 'valid_v2.nwb')
-
-    with h5py.File(filename, 'w') as fh:
-        fh.attrs["nwb_version"] = "2"
-
-    reader = create_nwb_reader(filename)
-    assert isinstance(reader, NwbXReader)
-
-
 @pytest.mark.parametrize('NWB_file', ["500844779.nwb", "509604657.nwb"], indirect=True)
 def test_assumed_sweep_number_fallback(NWB_file):
 
