@@ -48,7 +48,7 @@ class HBGDataSet(EphysDataSet):
             sweep_record["stimulus_scale_factor"] = get_finite_or_none(attrs, "gain")
 
             sweep_record["stimulus_code"] = self.get_stimulus_code(sweep_num)
-            sweep_record["stimulus_code_ext"] = None  # not required anymore
+            sweep_record["stimulus_code_ext"] = self.get_stimulus_code_ext(sweep_num)
 
             if self.ontology:
                 sweep_record["stimulus_name"] = self.get_stimulus_name(sweep_record["stimulus_code"])
@@ -89,6 +89,12 @@ class HBGDataSet(EphysDataSet):
         return clamp_mode
 
     def get_stimulus_code(self, sweep_num):
+
+        stim_code_ext = self.nwb_data.get_stim_code(sweep_num)
+
+        return stim_code_ext.split("[")[0]
+
+    def get_stimulus_code_ext(self, sweep_num):
 
         return self.nwb_data.get_stim_code(sweep_num)
 
