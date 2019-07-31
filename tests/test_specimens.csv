@@ -1,5 +1,5 @@
 input_json output_json
-/allen/aibs/informatics/module_test_data/ipfx/test_specimens/Pvalb-IRES-Cre-Ai14-406663.04.01.01_ver2/pipeline_input.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/Pvalb-IRES-Cre-Ai14-406663.04.01.01_ver2/pipeline_output.json
+/allen/aibs/informatics/module_test_data/ipfx/test_specimens/Pvalb-IRES-Cre;Ai14-406663.04.01.01_ver2/pipeline_input.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/Pvalb-IRES-Cre;Ai14-406663.04.01.01_ver2/pipeline_output.json
 /allen/aibs/informatics/module_test_data/ipfx/test_specimens/478407134/pipeline_input_230.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/478407134/pipeline_output_cl.json
 /allen/aibs/informatics/module_test_data/ipfx/test_specimens/500844783/pipeline_input_230.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/500844783/pipeline_output_cl.json
 /allen/aibs/informatics/module_test_data/ipfx/test_specimens/Npr3-IRES2-CreSst-IRES-FlpOAi65-401243.04.01.01/pipeline_input_230.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/Npr3-IRES2-CreSst-IRES-FlpOAi65-401243.04.01.01/pipeline_output_cl.json
