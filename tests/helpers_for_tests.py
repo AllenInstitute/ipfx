@@ -1,5 +1,6 @@
 from builtins import range
 import numbers
+import subprocess
 
 import numpy as np
 from pytest import approx
@@ -54,3 +55,41 @@ def download_file(file_name, output_filepath):
     response = urllib.request.urlopen(BASE_URL + file_name)
     with open(output_filepath, "wb") as out_file:
         shutil.copyfileobj(response, out_file)
+
+
+def diff_h5(test_file,temp_file):
+    """
+    Compare h5 files
+
+    Parameters
+    ----------
+    test_file: str nwb file name
+    temp_file: str nwb file name
+
+    Returns
+    -------
+    int h5diff exit code:     0 if no differences, 1 if differences found, 2 if error
+    """
+
+    prog_args = ["-c", "-v2", "--follow-symlinks", "--no-dangling-links"]
+
+    # list of objects to ignore
+    # these objects always change
+    ignore_paths = ["--exclude-path", "/general/source_script",
+                    "--exclude-path", "/file_create_date",
+                    "--exclude-path", "/identifier",
+                    "--exclude-path", "/specifications"]
+
+    nwb_files = [test_file, temp_file]
+
+    # MSYS_NO_PATHCONV is for users who are running the tests in a MSYS
+    # bash on windows.
+    # See https://stackoverflow.com/a/34386471/4859183 for some background.
+
+    out = subprocess.run(["h5diff"] + prog_args + ignore_paths + nwb_files,
+                         env={"MSYS_NO_PATHCONV": "1"},
+                         encoding="ascii",
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
+
+    return out.returncode
