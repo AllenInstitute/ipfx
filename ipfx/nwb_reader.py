@@ -569,7 +569,7 @@ class NwbMiesReader(NwbReader):
 
         with h5py.File(self.nwb_file, 'r') as f:
             sweep = f['acquisition']['timeseries']["data_%05d_AD0" % sweep_number]
-            data = sweep["data"].value
+            data = sweep["data"][()]
             rate = 1.0 * sweep["starting_time"].attrs['rate']
             unit = sweep["data"].attrs["unit"]
             conversion = sweep["data"].attrs["conversion"]
@@ -587,7 +587,7 @@ class NwbMiesReader(NwbReader):
 
         with h5py.File(self.nwb_file, 'r') as f:
             sweep = f['stimulus']['presentation']["data_%05d_DA0" % sweep_number]
-            data = sweep["data"].value
+            data = sweep["data"][()]
 
             unit = sweep["data"].attrs["unit"]
             rate = 1.0 * sweep["starting_time"].attrs['rate']
