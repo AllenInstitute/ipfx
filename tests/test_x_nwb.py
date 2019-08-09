@@ -21,6 +21,7 @@ from ipfx.x_to_nwb.ABFConverter import ABFConverter
 from ipfx.x_to_nwb.conversion_utils import createCycleID
 from ipfx.bin.run_x_to_nwb_conversion import convert
 from .test_x_nwb_helper import fetch_and_extract_zip
+from .helpers_for_tests import diff_h5
 
 
 pytestmark = pytest.mark.xnwbtest
@@ -74,30 +75,7 @@ def test_file_level_regressions(raw_file):
     assert os.path.isfile(ref_file)
     assert os.path.isfile(new_file)
 
-    prog_args = ["-c", "-v2", "--follow-symlinks", "--no-dangling-links"]
-
-    # list of objects to ignore
-    # these objects always change
-    ignore_paths = ["--exclude-path", "/general/source_script",
-                    "--exclude-path", "/file_create_date",
-                    "--exclude-path", "/identifier",
-                    "--exclude-path", "/specifications"]
-
-    nwb_files = [ref_file, new_file]
-
-    # MSYS_NO_PATHCONV is for users how are running the tests in a MSYS
-    # bash on windows.
-    # See https://stackoverflow.com/a/34386471/4859183 for some background.
-    out = subprocess.run(["h5diff"] + prog_args + ignore_paths + nwb_files,
-                         env={"MSYS_NO_PATHCONV": "1"}, encoding="ascii",
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-    # h5diff exit codes:
-    # 0 if no differences, 1 if differences found, 2 if error
-    if out.returncode:
-        print(out.stdout)
-
-    assert out.returncode == 0
+    assert diff_h5(ref_file,new_file) == 0
 
 
 def test_createCycleID():
