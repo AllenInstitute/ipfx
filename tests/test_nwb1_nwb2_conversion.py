@@ -6,11 +6,11 @@ from .helpers_for_tests import diff_h5
 from ipfx.bin.run_nwb1_to_nwb2_conversion import make_nwb2_file_name
 
 
-@pytest.mark.parametrize('NWB_file', ['Pvalb-IRES-Cre;Ai14-406663.04.01.01.nwb',
-                                     'H18.03.315.11.11.01.05.nwb'], indirect=True)
-def test_file_level_regressions(NWB_file,tmpdir_factory):
+@pytest.mark.parametrize('NWB_file_inhouse', ['Pvalb-IRES-Cre;Ai14-406663.04.01.01.nwb',
+                                              'H18.03.315.11.11.01.05.nwb'], indirect=True)
+def test_file_level_regressions(NWB_file_inhouse,tmpdir_factory):
 
-    nwb1_file_name = NWB_file
+    nwb1_file_name = NWB_file_inhouse
     base_name = os.path.basename(nwb1_file_name)
 
     test_dir = os.path.dirname(nwb1_file_name)
