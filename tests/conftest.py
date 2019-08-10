@@ -9,6 +9,7 @@ import ipfx.bin.lims_queries as lq
 
 
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
+TEST_DATA_PATH_INHOUSE = "/allen/aibs/informatics/module_test_data/ipfx/nwb"
 
 
 def load_array_from_zip_file(zip_file, file_name):
@@ -41,6 +42,15 @@ def NWB_file(request):
 
     if not os.path.exists(nwb_file_full_path):
         download_file(nwb_file_name, nwb_file_full_path)
+
+    return nwb_file_full_path
+
+
+@pytest.fixture()
+def NWB_file_inhouse(request):
+
+    nwb_file_name = request.param
+    nwb_file_full_path = os.path.join(TEST_DATA_PATH_INHOUSE, nwb_file_name)
 
     return nwb_file_full_path
 
