@@ -1,12 +1,14 @@
 from builtins import range
 import numbers
 import subprocess
-
+import os
 import numpy as np
 from pytest import approx
 from six.moves import urllib
 import six
 import shutil
+from pynwb import NWBHDF5IO, validate
+
 
 
 def compare_dicts(d_ref, d):
@@ -93,3 +95,26 @@ def diff_h5(test_file,temp_file):
                          stderr=subprocess.STDOUT)
 
     return out.returncode
+
+
+def validate_nwb(filename):
+    """
+    If pynwb does not catch an exception then add it to the error list
+
+    Parameters
+    ----------
+    filename: str nwb file name
+
+    Returns
+    -------
+    errors: list of errors
+    """
+
+    if os.path.exists(filename):
+        with NWBHDF5IO(filename, mode='r') as io:
+            try:
+                errors = validate(io)
+            except Exception as e:
+                errors = [e]
+
+    return errors

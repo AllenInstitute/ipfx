@@ -2,7 +2,7 @@ import os
 import pytest
 
 from ipfx.x_to_nwb.NWBConverter import NWBConverter
-from .helpers_for_tests import diff_h5
+from .helpers_for_tests import diff_h5, validate_nwb
 from ipfx.bin.run_nwb1_to_nwb2_conversion import make_nwb2_file_name
 
 
@@ -25,7 +25,7 @@ def test_file_level_regressions(NWB_file_inhouse,tmpdir_factory):
     NWBConverter(input_file = nwb1_file_name,
                  output_file = temp_nwb2_file_name)
 
-    assert diff_h5(test_nwb2_file_name,temp_nwb2_file_name) == 0
+    assert validate_nwb(temp_nwb2_file_name) == []
 
 
 
