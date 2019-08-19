@@ -9,7 +9,7 @@ argschema
 allensdk
 dictdiffer
 pyabf==2.0.25
-pynwb>=1.0.0
+pynwb==1.0.2
 six
 watchdog
 pg8000
