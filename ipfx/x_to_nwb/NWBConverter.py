@@ -26,7 +26,7 @@ class NWBConverter:
     I_CLAMP_MODE = "current_clamp"
     PLACEHOLDER = "PLACEHOLDER"
 
-    def __init__(self, input_file, output_file, compression=True):
+    def __init__(self, input_file, output_file):
         """
         Convert NWB v1 to v2
 
@@ -42,7 +42,6 @@ class NWBConverter:
         electrode = nwb_file.create_ic_electrode(name="elec0",
                                                  description=' some kind of electrode',
                                                  device=device)
-
 
         for i in self.create_stimulus_series(electrode):
             nwb_file.add_stimulus(i)

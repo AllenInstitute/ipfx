@@ -4,6 +4,7 @@ import os
 import argschema as args
 from ipfx.x_to_nwb.NWBConverter import NWBConverter
 
+
 class ConvertNWBParameters(args.ArgSchema):
     input_nwb_file = args.fields.InputFile(description="input nwb1 file", required=True)
 
@@ -29,8 +30,9 @@ def main():
     if not os.path.exists(nwb1_file_name):
         raise ValueError(f"The file {nwb1_file_name} does not exist.")
 
-    NWBConverter(input_file = nwb1_file_name,
-                 output_file= nwb2_file_name)
+    NWBConverter(nwb1_file_name,
+                 nwb2_file_name,
+                 )
 
 
 if __name__ == "__main__":
