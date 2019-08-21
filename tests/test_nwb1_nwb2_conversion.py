@@ -5,6 +5,10 @@ from ipfx.x_to_nwb.NWBConverter import NWBConverter
 from .helpers_for_tests import diff_h5, validate_nwb
 from ipfx.bin.run_nwb1_to_nwb2_conversion import make_nwb2_file_name
 from hdmf import Container
+from pynwb.icephys import CurrentClampStimulusSeries, VoltageClampStimulusSeries
+import numpy as np
+import datetime
+from pynwb import NWBFile, NWBHDF5IO
 
 
 class TestNWBConverter(NWBConverter):
@@ -33,8 +37,6 @@ class TestNWBConverter(NWBConverter):
         NWBConverter.__init__(self, input_file, output_file)
 
 
-
-
 @pytest.mark.parametrize('NWB_file_inhouse', ['Pvalb-IRES-Cre;Ai14-406663.04.01.01.nwb',
                                               'H18.03.315.11.11.01.05.nwb'], indirect=True)
 def test_file_level_regressions(NWB_file_inhouse,tmpdir_factory):
@@ -59,4 +61,95 @@ def test_file_level_regressions(NWB_file_inhouse,tmpdir_factory):
     assert diff_h5(temp_nwb2_file_name,test_nwb2_file_name) == 0
 
 
+@pytest.fixture
+def nwb_filename(tmpdir_factory):
+    nwb = tmpdir_factory.mktemp("test").join("test.nwb")
+    return str(nwb)
+
+
+def test_stimulus_round_trip(nwb_filename):
+
+    nwbfile = NWBFile(
+        session_description='test ephys',
+        identifier='session_uuid',
+        session_start_time=datetime.datetime.now(),
+        file_create_date=datetime.datetime.now()
+    )
+    device = nwbfile.create_device(name='electrode_0')
+
+    electrode = nwbfile.create_ic_electrode(name="elec0",
+                                             description=' some kind of electrode',
+                                             device=device)
+
+    data = np.array([1., 3.76, 0., 67, -2.89])
+    meta_data = {"name":"test_stimulus_sweep",
+                 "sweep_number": 4,
+                 "unit": "A",
+                 "gain": 32.0,
+                 "resolution": 1.0,
+                 "conversion": 1.0E-3,
+                 "starting_time": 1.5,
+                 "rate": 7000.0,
+                 "stimulus_description": "STIMULUS_CODE"
+                 }
+
+    time_series = CurrentClampStimulusSeries(data=data,
+                                             electrode=electrode,
+                                             **meta_data
+                                             )
+
+    nwbfile.add_stimulus(time_series)
+
+    with NWBHDF5IO(nwb_filename, mode='w') as io:
+        io.write(nwbfile)
+    nwbfile_in = NWBHDF5IO(nwb_filename, mode='r').read()
+
+    time_series_in = nwbfile_in.get_stimulus(meta_data["name"])
+
+    assert np.allclose(data,time_series_in.data)
+    for k,v in meta_data.items():
+        assert getattr(time_series_in, k) == v
+
+
+def test_acquisition_round_trip(nwb_filename):
+
+    nwbfile = NWBFile(
+        session_description='test ephys',
+        identifier='session_uuid',
+        session_start_time=datetime.datetime.now(),
+        file_create_date=datetime.datetime.now()
+    )
+    device = nwbfile.create_device(name='electrode_0')
+
+    electrode = nwbfile.create_ic_electrode(name="elec0",
+                                            description=' some kind of electrode',
+                                            device=device)
+
+    data = np.array([1., 3.76, 0., 67, -2.89])
+    meta_data = {"name":"test_acquisition_sweep",
+                 "sweep_number": 4,
+                 "unit": "V",
+                 "gain": 32.0,
+                 "resolution": 1.0,
+                 "conversion": 1.0E-3,
+                 "starting_time": 1.5,
+                 "rate": 7000.0,
+                 "stimulus_description": "STIMULUS_CODE"
+                 }
+
+    time_series = VoltageClampStimulusSeries(data=data,
+                                             electrode=electrode,
+                                             **meta_data
+                                             )
+
+    nwbfile.add_acquisition(time_series)
+
+    with NWBHDF5IO(nwb_filename, mode='w') as io:
+        io.write(nwbfile)
+    nwbfile_in = NWBHDF5IO(nwb_filename, mode='r').read()
+    time_series_in = nwbfile_in.get_acquisition(meta_data["name"])
+
+    assert np.allclose(data,time_series_in.data)
+    for k,v in meta_data.items():
+        assert getattr(time_series_in, k) == v
 
