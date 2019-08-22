@@ -94,6 +94,9 @@ def diff_h5(test_file,temp_file):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
 
+    print(out.stdout)
+    print(out.stderr)
+
     return out.returncode
 
 
