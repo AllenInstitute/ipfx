@@ -50,6 +50,8 @@ def chirp_amp_phase(sweep_set, start=0.6, end=20.6, down_rate=2000,
         Aka resistance
     phase: array
         Aka reactance
+    freq: array
+        Frequencies for amplitude and phase results
     """
     v_list = []
     i_list = []
