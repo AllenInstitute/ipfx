@@ -8,6 +8,7 @@ pillow
 argschema
 allensdk
 dictdiffer
+hdmf==1.1.2
 pyabf==2.0.25
 pynwb==1.0.2
 six
