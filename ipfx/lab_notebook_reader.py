@@ -67,7 +67,7 @@ class LabNotebookReader(object):
                     # this shouldn't happen, but if it does then bitch
                     #   as this situation hasn't been tested (eg, is
                     #   enabled indicated by 1.0, or "1.0" or "true" or ??)
-                    Exception("Enable flag not expected for text values")
+                    raise Exception("Enable flag not expected for text values")
                     #continue # 'enable' flag present and it's turned off
                 val = sample[data_col][0]
                 if len(val) > 0:
@@ -176,7 +176,9 @@ def create_lab_notebook_reader(nwb_file, h5_file=None):
     if version == "IgorNwb":
         return LabNotebookReaderIgorNwb(nwb_file)
     elif version == "IgorH5":
+        if h5_file is None:
+            raise ValueError("Lab notebook h5 file must be provided to load IgorH5 nwb files.")
         return LabNotebookReaderIvscc(nwb_file, h5_file)
     else:
-        Exception("Unable to determine NWB input type")
+        raise IOError("Unable to determine NWB input type")
 
