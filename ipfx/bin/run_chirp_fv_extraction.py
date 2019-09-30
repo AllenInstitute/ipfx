@@ -1,6 +1,5 @@
 import numpy as np
 import argschema as ags
-import lims_utils
 import ipfx.chirp as chirp
 from ipfx.aibs_data_set import AibsDataSet
 import logging
@@ -13,6 +12,12 @@ import json
 import allensdk.core.json_utilities as ju
 from ipfx.stimulus import StimulusOntology
 from ipfx.bin.run_feature_vector_extraction import lims_nwb_information, sdk_nwb_information
+
+CHIRP_CODES = [
+            "C2CHIRP180503",
+            "C2CHIRP171129",
+            "C2CHIRP171103",
+        ]
 
 class CollectChirpFeatureVectorParameters(ags.ArgSchema):
     input_file = ags.fields.InputFile(
@@ -29,12 +34,8 @@ class CollectChirpFeatureVectorParameters(ags.ArgSchema):
     output_code = ags.fields.String(
         description="output code for naming files", default=None)
     chirp_stimulus_codes = ags.fields.List(ags.fields.String,
-        description="stimulus code for chirps",
-        default=[
-            "C2CHIRP180503",
-            "C2CHIRP171129",
-            "C2CHIRP171103",
-        ],
+        description="stimulus codes for chirps",
+        default=CHIRP_CODES,
         cli_as_single_argument=True)
     data_source = ags.fields.String(
         description="Source of NWB files ('sdk' or 'lims')",
@@ -42,11 +43,8 @@ class CollectChirpFeatureVectorParameters(ags.ArgSchema):
         validate=lambda x: x in ["sdk", "lims"]
         )
 
-
-def data_for_specimen_id(specimen_id, data_source, chirp_stimulus_codes):
-    logging.debug("specimen_id: {}".format(specimen_id))
-
-    # Manual edit ontology to identify chirp sweeps
+def ontology_with_chirps(chirp_stimulus_codes=CHIRP_CODES):
+# Manual edit ontology to identify chirp sweeps
     ontology_data = ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE)
     mask = []
     for od in ontology_data:
@@ -69,9 +67,11 @@ def data_for_specimen_id(specimen_id, data_source, chirp_stimulus_codes):
           "Core 2"
         ]
     ])
+    return StimulusOntology(ontology_data)
 
-    ontology = StimulusOntology(ontology_data)
-
+def data_for_specimen_id(specimen_id, data_source="lims", chirp_stimulus_codes=CHIRP_CODES):
+    logging.debug("specimen_id: {}".format(specimen_id))
+    ontology = ontology_with_chirps(chirp_stimulus_codes)
     # Find or retrieve NWB file and ancillary info and construct an AibsDataSet object
     if data_source == "lims":
         nwb_path, h5_path = lims_nwb_information(specimen_id)
@@ -102,7 +102,6 @@ def data_for_specimen_id(specimen_id, data_source, chirp_stimulus_codes):
     # Identify chirp sweeps
 
     try:
-        iclamp_st = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP)
         iclamp_st = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP, stimuli=["Chirp"])
         chirp_sweep_numbers = iclamp_st["sweep_number"].sort_values().values
     except Exception as detail:
@@ -125,7 +124,7 @@ def data_for_specimen_id(specimen_id, data_source, chirp_stimulus_codes):
 
 
 def run_chirp_feature_vector_extraction(output_dir, output_code, include_failed_cells,
-        specimen_ids, chirp_stimulus_codes, data_source="lims", run_parallel=True):
+        specimen_ids, chirp_stimulus_codes=CHIRP_CODES, data_source="lims", run_parallel=True):
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
     get_data_partial = partial(data_for_specimen_id,
                                data_source=data_source,
