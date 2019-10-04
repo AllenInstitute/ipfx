@@ -7,28 +7,43 @@ import logging
 import pandas as pd
 import scipy.fftpack as fftpack
 
+from ipfx.error import FeatureError
 from . import offpipeline_utils as op
 from . import feature_vectors as fv
 from . import time_series_utils as tsu
 
 CHIRP_CODES = [
-            "C2CHIRP180503",
-            "C2CHIRP171129",
-            "C2CHIRP171103",
+            "C2CHIRP180503", # current version, single length
+            "C2CHIRP171129", # early version, three lengths
+            "C2CHIRP171103", # only one example
         ]
 
 def extract_chirp_features(specimen_id, data_source='lims', sweep_qc_option='none', **kwargs):
-    dataset = op.dataset_for_specimen_id(specimen_id, data_source=data_source, ontology=ontology_with_chirps())
-    sweepset = op.sweepset_by_type_qc(dataset, specimen_id, stimuli_names=["Chirp"])
-    results = []
-    if len(sweepset.sweeps)==0:
+    try:
+        dataset = op.dataset_for_specimen_id(specimen_id, data_source=data_source, ontology=ontology_with_chirps())
+        sweepset = op.sweepset_by_type_qc(dataset, specimen_id, stimuli_names=["Chirp"])
+    except:
+        logging.warning("Error loading data for specimen {:d}.".format(specimen_id), exc_info=True)
         return {}
+
+    if len(sweepset.sweeps)==0:
+        logging.debug("No chirp sweeps for specimen {:d}.".format(specimen_id))
+        return {}
+
+    results = []
     for sweep in sweepset.sweeps:
-        results.append(chirp_sweep_features(sweep, **kwargs))
+        try:
+            results.append(chirp_sweep_features(sweep, **kwargs))
+        except FeatureError as exc:
+            logging.debug(exc)
+        except Exception:
+            msg = "Error processing chirp sweep {} for specimen {:d}.".format(sweep.sweep_number, specimen_id)
+            logging.warning(msg, exc_info=True)
+
     mean_results = {key: np.mean([res[key] for res in results]) for key in results[0]}
     return mean_results
 
-def chirp_sweep_features(sweep, **kwargs):
+def chirp_sweep_amp_phase(sweep, **kwargs):
     v, i, freq = transform_sweep(sweep, **kwargs)
     Z = v / i
     amp = np.abs(Z)
@@ -39,14 +54,20 @@ def chirp_sweep_features(sweep, **kwargs):
     n_filt = int(np.rint(1/(freq[1]-freq[0])))*2 + 1
     filt = lambda x: savgol_filter(x, n_filt, 5)
     amp, phase = map(filt, [amp, phase])
+    return amp, phase, freq
 
-    imax = np.argmax(amp)
+def chirp_sweep_features(sweep, **kwargs):
+    amp, phase, freq = chirp_sweep_amp_phase(sweep, **kwargs)
+    i_max = np.argmax(amp)
+    z_max = amp[i_max]
+    i_cutoff = np.argmin(abs(amp - z_max/np.sqrt(2)))
     features = {
         "z_low": amp[0],
         "z_high": amp[-1],
-        "z_max": amp[imax],
-        "peak_ratio": amp[imax]/amp[0],
-        "peak_freq": freq[imax],
+        "z_max": z_max,
+        "peak_ratio": amp[i_max]/amp[0],
+        "peak_freq": freq[i_max],
+        "3db_freq": freq[i_cutoff],
         "phase_max": np.max(phase),
         "phase_low": phase[0],
         "phase_high": phase[-1]
@@ -60,28 +81,6 @@ def extract_chirp_feature_vector(data_set, chirp_sweep_numbers):
     result["chirp"] = np.hstack([amp, phase])
     return features
 
-
-def averaged_chirp_transform(sweep_set, df=0.1, n_sample=10000):
-    """ Calculate averaged amplitude and phase of chirp responses,
-    averaging results after transform.
-    """
-    amp_list = []
-    phase_list = []
-    for sweep in sweep_set.sweeps:
-        v, i, freq = transform_sweep(sweep, n_sample=n_sample)
-        Z = v / i
-        amp = np.abs(Z)
-        phase = np.angle(Z)
-        
-        width = int(np.rint(df/(freq[1]-freq[0])))
-        amp = fv._subsample_average(amp, width)
-        phase = fv._subsample_average(phase, width)
-        amp_list.append(amp)
-        phase_list.append(phase)
-
-    avg_amp = np.vstack(amp_list).mean(axis=0)
-    avg_phase = np.vstack(phase_list).mean(axis=0)
-    return avg_amp, avg_phase, freq
 
 def chirp_amp_phase(t, v, i, start=0.6, end=20.6, down_rate=2000,
         min_freq=0.2, max_freq=40.):
@@ -160,6 +159,8 @@ def chirp_amp_phase(t, v, i, start=0.6, end=20.6, down_rate=2000,
 
 def transform_sweep(sweep, n_sample=10000, min_freq=1., max_freq=35.):
     sweep.select_epoch("stim")
+    if np.all(sweep.v[-10:] == 0):
+        raise FeatureError("Chirp stim epoch truncated.")
     v = sweep.v
     i = sweep.i
     t = sweep.t

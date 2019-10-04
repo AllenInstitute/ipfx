@@ -30,27 +30,16 @@ def dataset_for_specimen_id(specimen_id, data_source="lims", ontology=None):
         nwb_path, h5_path = lims_nwb_information(specimen_id)
         if type(nwb_path) is dict and "error" in nwb_path:
             error_dict = nwb_path
-            logging.warning("Problem getting NWB file for specimen {:d} from LIMS".format(specimen_id))
-            return error_dict
+            raise IOError("Problem getting NWB file for specimen {:d} from LIMS".format(specimen_id))
 
-        try:
-            dataset = AibsDataSet(
+        dataset = AibsDataSet(
                 nwb_file=nwb_path, h5_file=h5_path, ontology=ontology)
-        except Exception as detail:
-            logging.warning("Exception when loading specimen {:d} from LIMS".format(specimen_id))
-            logging.warning(detail)
-            return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
     elif data_source == "sdk":
         nwb_path, sweep_info = sdk_nwb_information(specimen_id)
-        try:
-            dataset = AibsDataSet(
+        dataset = AibsDataSet(
                 nwb_file=nwb_path, sweep_info=sweep_info, ontology=ontology)
-        except Exception as detail:
-            logging.warning("Exception when loading specimen {:d} via Allen SDK".format(specimen_id))
-            logging.warning(detail)
-            return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
     else:
-        logging.error("invalid data source specified ({})".format(data_source))
+        raise ValueError("invalid data source specified ({})".format(data_source))
 
     return dataset
 
