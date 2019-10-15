@@ -1,162 +1,91 @@
-from __future__ import print_function
 import numpy as np
-from ipfx.ephys_data_set import Sweep, SweepSet
+from ipfx.ephys_data_set import SweepSet
 import ipfx.feature_vectors as fv
+from ipfx.synphys import *
 
-from neuroanalysis.miesnwb import MiesNwb
 import argschema as ags
 import os
 import json
 import logging
+import traceback
+from multiprocessing import Pool
 
 
 class SynPhysFeatureVectorSchema(ags.ArgSchema):
-    nwb_file = ags.fields.InputFile(default="/allen/programs/celltypes/workgroups/ivscc/nathang/synphys_ephys/data/2018_11_06_140408-compressed.nwb")
-    output_dir = ags.fields.OutputDir(default="/allen/programs/celltypes/workgroups/ivscc/nathang/fv_output/")
-    project = ags.fields.String(default="SynPhys")
+    output_dir = ags.fields.OutputDir(default="output")
+    input = ags.fields.InputFile(default=None, allow_none=True)
+    project = ags.fields.String(default="")
+    # sweep_qc_option = ags.fields.String(default=None, allow_none=True)
+    run_parallel = ags.fields.Boolean(default=True)
+    ap_window_length = ags.fields.Float(description="Duration after threshold for AP shape (s)", default=0.003)
 
 
-class MPSweep(Sweep):
-    """Adapter for neuroanalysis.Recording => ipfx.Sweep
-    """
-    def __init__(self, rec):
-        pri = rec['primary']
-        cmd = rec['command']
-        t = pri.time_values
-        v = pri.data * 1e3  # convert to mV
-        holding = rec.stimulus.items[0].amplitude  # todo: select holding item explicitly; don't assume it is [0]
-        i = (cmd.data - holding) * 1e12   # convert to pA with holding current removed
-        srate = pri.sample_rate
-        sweep_num = rec.parent.key
-        clamp_mode = rec.clamp_mode  # this will be 'ic' or 'vc'; not sure if that's right
+def run_mpa_cell(mpid, ap_window_length=0.003):
+    try:
+        cell = cell_from_mpid(mpid)
+        # data is a MiesNwb instance
+        nwb = cell.experiment.data
+        channel = cell.electrode.device_id
+        sweeps_dict = sweeps_dict_from_cell(cell)
+        supra_sweep_ids = sweeps_dict['If_Curve_DA_0']
+        sub_sweep_ids = sweeps_dict['TargetV_DA_0']
+        lsq_supra_sweep_list = [MPSweep(nwb.contents[i][channel]) for i in supra_sweep_ids]
+        lsq_sub_sweep_list = [MPSweep(nwb.contents[i][channel]) for i in sub_sweep_ids]
+        # filter out sweeps that don't have stim epoch
+        # (probably zero amplitude)
+        lsq_supra_sweep_list = [sweep for sweep in lsq_supra_sweep_list 
+            if 'stim' in sweep.epochs]
+        lsq_sub_sweep_list = [sweep for sweep in lsq_sub_sweep_list 
+            if 'stim' in sweep.epochs]
 
-        Sweep.__init__(self, t, v, i,
-                       clamp_mode=clamp_mode,
-                       sampling_rate=srate,
-                       sweep_number=sweep_num,
-                       epochs=None)
+        lsq_supra_sweeps = SweepSet(lsq_supra_sweep_list)
+        lsq_sub_sweeps = SweepSet(lsq_sub_sweep_list)
+        all_sweeps = [lsq_supra_sweeps, lsq_sub_sweeps]
+        for sweepset in all_sweeps:
+            sweepset.align_to_start_of_epoch('stim')
+        
+        # We may not need this - do durations actually vary for a given cell?
+        lsq_supra_dur = min_duration_of_sweeplist(lsq_supra_sweep_list)
+        lsq_sub_dur = min_duration_of_sweeplist(lsq_sub_sweep_list)
 
+    except Exception as detail:
+        logging.warn("Exception when processing specimen {}".format(mpid))
+        logging.warn(detail)
+        return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
 
-def recs_to_sweeps(recs, min_pulse_dur=np.inf):
-    sweeps = []
-    for rec in recs:
-        # get square pulse start/stop times
-        pulse = rec.stimulus.items[3]  # this assumption is bound to fail sooner or later.
-        start = pulse.global_start_time
-        end = start + pulse.duration
+    try:
+        all_features = fv.extract_multipatch_feature_vectors(lsq_supra_sweeps, 0., lsq_supra_dur,
+                                                         lsq_sub_sweeps, 0., lsq_sub_dur,
+                                                         ap_window_length=ap_window_length)
+    except Exception as detail:
+        logging.warn("Exception when processing specimen {}".format(mpid))
+        logging.warn(detail)
+        return {"error": {"type": "processing", "details": traceback.format_exc(limit=None)}}
+    return all_features
 
-        # pulses may have different start times, so we shift time values to make all pulses start at t=0
-        rec['primary'].t0 = -start
-        # pulses may have different durations as well, so we just use the smallest duration
-        min_pulse_dur = min(min_pulse_dur, end-start)
+def run_cells(ids=None, output_dir="", project='mp_test', run_parallel=True, 
+            ap_window_length=0.003, max_count=None, **kwargs):
 
-        sweep = MPSweep(rec)
-        sweeps.append(sweep)
-    return sweeps, min_pulse_dur
-
-
-def main(nwb_file, output_dir, project, **kwargs):
-    nwb = MiesNwb(nwb_file)
-
-
-    # SPECIFICS FOR EXAMPLE NWB =========
-
-    # Only analyze one channel at a time
-    channel = 0
-
-    # We can work out code to automatically extract these based on stimulus names later.
-    if_sweep_inds = [39, 45]
-    targetv_sweep_inds = [15, 21]
-
-    # END SPECIFICS =====================
-
-
-    # Assemble all Recordings and convert to Sweeps
-    supra_sweep_ids = list(range(*if_sweep_inds))
-    sub_sweep_ids = list(range(*targetv_sweep_inds))
-
-    supra_recs = [nwb.contents[i][channel] for i in supra_sweep_ids]
-    sub_recs = [nwb.contents[i][channel] for i in sub_sweep_ids]
-
-    # Build sweep sets
-    lsq_supra_sweep_list, lsq_supra_dur = recs_to_sweeps(supra_recs)
-    lsq_sub_sweep_list, lsq_sub_dur = recs_to_sweeps(sub_recs)
-    lsq_supra_sweeps = SweepSet(lsq_supra_sweep_list)
-    lsq_sub_sweeps = SweepSet(lsq_sub_sweep_list)
-
-    lsq_supra_start = 0
-    lsq_supra_end = lsq_supra_dur
-    lsq_sub_start = 0
-    lsq_sub_end = lsq_sub_dur
-
-    # Pre-process sweeps
-    lsq_supra_spx, lsq_supra_spfx = dsf.extractors_for_sweeps(lsq_supra_sweeps, start=lsq_supra_start, end=lsq_supra_end)
-    lsq_supra_an = spa.LongSquareAnalysis(lsq_supra_spx, lsq_supra_spfx, subthresh_min_amp=-100., require_subthreshold=False)
-    lsq_supra_features = lsq_supra_an.analyze(lsq_supra_sweeps)
-
-    lsq_sub_spx, lsq_sub_spfx = dsf.extractors_for_sweeps(lsq_sub_sweeps, start=lsq_sub_start, end=lsq_sub_end)
-    lsq_sub_an = spa.LongSquareAnalysis(lsq_sub_spx, lsq_sub_spfx, subthresh_min_amp=-100., require_suprathreshold=False)
-    lsq_sub_features = lsq_sub_an.analyze(lsq_sub_sweeps)
-
-    # Calculate feature vectors
-    result = {}
-    (subthresh_hyperpol_dict,
-    hyperpol_deflect_dict) = fv.identify_subthreshold_hyperpol_with_amplitudes(lsq_sub_features,
-        lsq_sub_sweeps)
-    target_amps_for_step_subthresh = [-90, -70, -50, -30, -10]
-    result["step_subthresh"] = fv.step_subthreshold(
-        subthresh_hyperpol_dict, target_amps_for_step_subthresh,
-        lsq_sub_start, lsq_sub_end, amp_tolerance=5)
-    result["subthresh_norm"] = fv.subthresh_norm(subthresh_hyperpol_dict, hyperpol_deflect_dict,
-        lsq_sub_start, lsq_sub_end)
-
-    (subthresh_depol_dict,
-    depol_deflect_dict) = fv.identify_subthreshold_depol_with_amplitudes(lsq_supra_features,
-        lsq_supra_sweeps)
-    result["subthresh_depol_norm"] = fv.subthresh_depol_norm(subthresh_depol_dict,
-        depol_deflect_dict, lsq_supra_start, lsq_supra_end)
-    isi_sweep, isi_sweep_spike_info = fv.identify_sweep_for_isi_shape(
-        lsq_supra_sweeps, lsq_supra_features, lsq_supra_end - lsq_supra_start)
-    result["isi_shape"] = fv.isi_shape(isi_sweep, isi_sweep_spike_info, lsq_supra_end)
-
-    # Calculate AP waveform from long squares
-    rheo_ind = lsq_supra_features["rheobase_sweep"].name
-    sweep = lsq_supra_sweeps.sweeps[rheo_ind]
-    lsq_ap_v, lsq_ap_dv = fv.first_ap_vectors([sweep],
-        [lsq_supra_features["spikes_set"][rheo_ind]],
-        window_length=ap_window_length)
-
-    result["first_ap_v"] = lsq_ap_v
-    result["first_ap_dv"] = lsq_ap_dv
-
-    target_amplitudes = np.arange(0, 120, 20)
-    supra_info_list = fv.identify_suprathreshold_sweep_sequence(
-        lsq_supra_features, target_amplitudes, shift=10)
-    result["psth"] = fv.psth_vector(supra_info_list, lsq_supra_start, lsq_supra_end)
-    result["inst_freq"] = fv.inst_freq_vector(supra_info_list, lsq_supra_start, lsq_supra_end)
-    spike_feature_list = [
-        "upstroke_downstroke_ratio",
-        "peak_v",
-        "fast_trough_v",
-        "threshold_v",
-        "width",
-    ]
-    for feature in spike_feature_list:
-        result["spiking_" + feature] = fv.spike_feature_vector(feature,
-            supra_info_list, lsq_supra_start, lsq_supra_end)
-
-    # Save the results
-    specimen_ids = [0]
-    results = [result]
+    if ids is not None:
+        specimen_ids = ids
+    else:
+        specimen_ids = mp_project_cell_ids(project, max_count=max_count, filter_cells=True)
+    
+    if run_parallel:
+        pool = Pool()
+        results = pool.map(run_mpa_cell, specimen_ids)
+    else:
+        results = map(run_mpa_cell, specimen_ids)
 
     filtered_set = [(i, r) for i, r in zip(specimen_ids, results) if not "error" in r.keys()]
     error_set = [{"id": i, "error": d} for i, d in zip(specimen_ids, results) if "error" in d.keys()]
+    
+    with open(os.path.join(output_dir, "fv_errors_{:s}.json".format(project)), "w") as f:
+        json.dump(error_set, f, indent=4)
+
     if len(filtered_set) == 0:
         logging.info("No specimens had results")
         return
-
-    with open(os.path.join(output_dir, "fv_errors_{:s}.json".format(project)), "w") as f:
-        json.dump(error_set, f, indent=4)
 
     used_ids, results = zip(*filtered_set)
     logging.info("Finished with {:d} processed specimens".format(len(used_ids)))
@@ -172,12 +101,21 @@ def main(nwb_file, output_dir, project, **kwargs):
         if data.shape[0] < len(used_ids):
             logging.warn("Missing data!")
             missing = np.array([k not in r for r in results])
-            print(k, np.array(used_ids)[missing])
+            print k, np.array(used_ids)[missing]
         np.save(os.path.join(output_dir, "fv_{:s}_{:s}.npy".format(k, project)), data)
 
     np.save(os.path.join(output_dir, "fv_ids_{:s}.npy".format(project)), used_ids)
 
 
-if __name__ == "__main__":
+def main():
     module = ags.ArgSchemaParser(schema_type=SynPhysFeatureVectorSchema)
-    main(**module.args)
+
+    if module.args["input"]: # input file should be list of IDs on each line
+        with open(module.args["input"], "r") as f:
+            ids = [line.strip("\n") for line in f]
+        run_cells(ids=ids, **module.args)
+    else:
+        run_cells(**module.args)
+
+
+if __name__ == "__main__": main()
