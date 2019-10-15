@@ -33,9 +33,9 @@ def run_mpa_cell(mpid, ap_window_length=0.003):
         lsq_sub_sweep_list = [MPSweep(nwb.contents[i][channel]) for i in sub_sweep_ids]
         # filter out sweeps that don't have stim epoch
         # (probably zero amplitude)
-        lsq_supra_sweep_list = [sweep for sweep in lsq_supra_sweep_list 
+        lsq_supra_sweep_list = [sweep for sweep in lsq_supra_sweep_list
             if 'stim' in sweep.epochs]
-        lsq_sub_sweep_list = [sweep for sweep in lsq_sub_sweep_list 
+        lsq_sub_sweep_list = [sweep for sweep in lsq_sub_sweep_list
             if 'stim' in sweep.epochs]
 
         lsq_supra_sweeps = SweepSet(lsq_supra_sweep_list)
@@ -43,7 +43,7 @@ def run_mpa_cell(mpid, ap_window_length=0.003):
         all_sweeps = [lsq_supra_sweeps, lsq_sub_sweeps]
         for sweepset in all_sweeps:
             sweepset.align_to_start_of_epoch('stim')
-        
+
         # We may not need this - do durations actually vary for a given cell?
         lsq_supra_dur = min_duration_of_sweeplist(lsq_supra_sweep_list)
         lsq_sub_dur = min_duration_of_sweeplist(lsq_sub_sweep_list)
@@ -63,14 +63,14 @@ def run_mpa_cell(mpid, ap_window_length=0.003):
         return {"error": {"type": "processing", "details": traceback.format_exc(limit=None)}}
     return all_features
 
-def run_cells(ids=None, output_dir="", project='mp_test', run_parallel=True, 
+def run_cells(ids=None, output_dir="", project='mp_test', run_parallel=True,
             ap_window_length=0.003, max_count=None, **kwargs):
 
     if ids is not None:
         specimen_ids = ids
     else:
         specimen_ids = mp_project_cell_ids(project, max_count=max_count, filter_cells=True)
-    
+
     if run_parallel:
         pool = Pool()
         results = pool.map(run_mpa_cell, specimen_ids)
@@ -79,7 +79,7 @@ def run_cells(ids=None, output_dir="", project='mp_test', run_parallel=True,
 
     filtered_set = [(i, r) for i, r in zip(specimen_ids, results) if not "error" in r.keys()]
     error_set = [{"id": i, "error": d} for i, d in zip(specimen_ids, results) if "error" in d.keys()]
-    
+
     with open(os.path.join(output_dir, "fv_errors_{:s}.json".format(project)), "w") as f:
         json.dump(error_set, f, indent=4)
 
@@ -101,7 +101,7 @@ def run_cells(ids=None, output_dir="", project='mp_test', run_parallel=True,
         if data.shape[0] < len(used_ids):
             logging.warn("Missing data!")
             missing = np.array([k not in r for r in results])
-            print k, np.array(used_ids)[missing]
+            print(k, np.array(used_ids)[missing])
         np.save(os.path.join(output_dir, "fv_{:s}_{:s}.npy".format(k, project)), data)
 
     np.save(os.path.join(output_dir, "fv_ids_{:s}.npy".format(project)), used_ids)
