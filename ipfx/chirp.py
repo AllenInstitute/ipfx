@@ -18,7 +18,7 @@ CHIRP_CODES = [
             "C2CHIRP171103", # only one example
         ]
 
-def extract_chirp_features(specimen_id, data_source='lims', sweep_qc_option='none', **kwargs):
+def extract_chirp_features(specimen_id, data_source='lims', sweep_qc_option='none', method_params={}):
     try:
         dataset = op.dataset_for_specimen_id(specimen_id, data_source=data_source, ontology=ontology_with_chirps())
         sweepset = op.sweepset_by_type_qc(dataset, specimen_id, stimuli_names=["Chirp"])
@@ -26,25 +26,25 @@ def extract_chirp_features(specimen_id, data_source='lims', sweep_qc_option='non
         logging.warning("Error loading data for specimen {:d}.".format(specimen_id), exc_info=True)
         return {}
 
-    if len(sweepset.sweeps)==0:
-        logging.debug("No chirp sweeps for specimen {:d}.".format(specimen_id))
-        return {}
-
     results = []
     for sweep in sweepset.sweeps:
         try:
-            results.append(chirp_sweep_features(sweep, **kwargs))
+            results.append(chirp_sweep_features(sweep, method_params=method_params))
         except FeatureError as exc:
             logging.debug(exc)
         except Exception:
             msg = "Error processing chirp sweep {} for specimen {:d}.".format(sweep.sweep_number, specimen_id)
             logging.warning(msg, exc_info=True)
 
+    if len(results)==0:
+        logging.debug("No chirp sweep results for specimen {:d}.".format(specimen_id))
+        return {}
+
     mean_results = {key: np.mean([res[key] for res in results]) for key in results[0]}
     return mean_results
 
-def chirp_sweep_amp_phase(sweep, **kwargs):
-    v, i, freq = transform_sweep(sweep, **kwargs)
+def chirp_sweep_amp_phase(sweep, method_params={}):
+    v, i, freq = transform_sweep(sweep, **method_params)
     Z = v / i
     amp = np.abs(Z)
     phase = np.angle(Z)
@@ -56,8 +56,8 @@ def chirp_sweep_amp_phase(sweep, **kwargs):
     amp, phase = map(filt, [amp, phase])
     return amp, phase, freq
 
-def chirp_sweep_features(sweep, **kwargs):
-    amp, phase, freq = chirp_sweep_amp_phase(sweep, **kwargs)
+def chirp_sweep_features(sweep, method_params={}):
+    amp, phase, freq = chirp_sweep_amp_phase(sweep, method_params=method_params)
     i_max = np.argmax(amp)
     z_max = amp[i_max]
     i_cutoff = np.argmin(abs(amp - z_max/np.sqrt(2)))
