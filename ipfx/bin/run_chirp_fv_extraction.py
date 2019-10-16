@@ -1,6 +1,5 @@
 import numpy as np
 import argschema as ags
-import ipfx.chirp as chirp
 from ipfx.aibs_data_set import AibsDataSet
 import logging
 import traceback
@@ -12,12 +11,7 @@ import json
 import allensdk.core.json_utilities as ju
 from ipfx.stimulus import StimulusOntology
 from ipfx.bin.run_feature_vector_extraction import lims_nwb_information, sdk_nwb_information
-
-CHIRP_CODES = [
-            "C2CHIRP180503",
-            "C2CHIRP171129",
-            "C2CHIRP171103",
-        ]
+from ipfx.chirp import extract_chirp_feature_vector, ontology_with_chirps, CHIRP_CODES
 
 class CollectChirpFeatureVectorParameters(ags.ArgSchema):
     input_file = ags.fields.InputFile(
@@ -42,32 +36,6 @@ class CollectChirpFeatureVectorParameters(ags.ArgSchema):
         default="sdk",
         validate=lambda x: x in ["sdk", "lims"]
         )
-
-def ontology_with_chirps(chirp_stimulus_codes=CHIRP_CODES):
-# Manual edit ontology to identify chirp sweeps
-    ontology_data = ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE)
-    mask = []
-    for od in ontology_data:
-        mask_val = True
-        for tagset in od:
-            for c in chirp_stimulus_codes:
-                if c in tagset and "code" in tagset:
-                    mask_val = False
-                    break
-        mask.append(mask_val)
-    ontology_data = [od for od, m in zip(ontology_data, mask) if m is True]
-    ontology_data.append([
-        ["code"] + chirp_stimulus_codes,
-        [
-          "name",
-          "Chirp",
-        ],
-        [
-          "core",
-          "Core 2"
-        ]
-    ])
-    return StimulusOntology(ontology_data)
 
 def data_for_specimen_id(specimen_id, data_source="lims", chirp_stimulus_codes=CHIRP_CODES):
     logging.debug("specimen_id: {}".format(specimen_id))
@@ -114,7 +82,7 @@ def data_for_specimen_id(specimen_id, data_source="lims", chirp_stimulus_codes=C
         return {"error": {"type": "processing", "details:": "no available chirp sweeps"}}
 
     try:
-        result = chirp.extract_chirp_feature_vector(data_set, chirp_sweep_numbers)
+        result = extract_chirp_feature_vector(data_set, chirp_sweep_numbers)
     except Exception as detail:
         logging.warning("Exception when processing specimen {:d}".format(specimen_id))
         logging.warning(detail)

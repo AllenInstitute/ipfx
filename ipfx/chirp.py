@@ -82,7 +82,7 @@ def extract_chirp_feature_vector(data_set, chirp_sweep_numbers):
     return features
 
 
-def chirp_amp_phase(t, v, i, start=0.6, end=20.6, down_rate=2000,
+def chirp_amp_phase(sweep_set, start=0.6, end=20.6, down_rate=2000,
         min_freq=0.2, max_freq=40.):
     """ Calculate amplitude and phase of chirp responses
 
