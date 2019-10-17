@@ -43,34 +43,35 @@ class CollectChirpFeatureVectorParameters(ags.ArgSchema):
         )
 
 
-def data_for_specimen_id(specimen_id, data_source, chirp_stimulus_codes):
-    logging.debug("specimen_id: {}".format(specimen_id))
-
-    # Manual edit ontology to identify chirp sweeps
-    ontology_data = ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE)
+def edit_ontology_data(original_ontology_data, codes_to_rename,
+        new_name_tag, new_core_tag):
+    ontology_data = original_ontology_data.copy()
     mask = []
     for od in ontology_data:
         mask_val = True
         for tagset in od:
-            for c in chirp_stimulus_codes:
+            for c in codes_to_rename:
                 if c in tagset and "code" in tagset:
                     mask_val = False
                     break
         mask.append(mask_val)
     ontology_data = [od for od, m in zip(ontology_data, mask) if m is True]
     ontology_data.append([
-        ["code"] + chirp_stimulus_codes,
+        ["code"] + codes_to_rename,
         [
           "name",
-          "Chirp",
+          new_name_tag,
         ],
         [
           "core",
-          "Core 2"
+          new_core_tag
         ]
     ])
+    return ontology_data
 
-    ontology = StimulusOntology(ontology_data)
+
+def data_for_specimen_id(specimen_id, data_source, ontology):
+    logging.debug("specimen_id: {}".format(specimen_id))
 
     # Find or retrieve NWB file and ancillary info and construct an AibsDataSet object
     if data_source == "lims":
@@ -100,7 +101,6 @@ def data_for_specimen_id(specimen_id, data_source, chirp_stimulus_codes):
 
 
     # Identify chirp sweeps
-
     try:
         iclamp_st = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP)
         iclamp_st = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP, stimuli=["Chirp"])
@@ -127,9 +127,18 @@ def data_for_specimen_id(specimen_id, data_source, chirp_stimulus_codes):
 def run_chirp_feature_vector_extraction(output_dir, output_code, include_failed_cells,
         specimen_ids, chirp_stimulus_codes, data_source="lims", run_parallel=True):
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
+
+    # Include and name chirp stimulus codes in ontology
+    ontology_data = ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE)
+    edited_ontology_data = edit_ontology_data(
+        ontology_data, chirp_stimulus_codes,
+        new_name_tag="Chirp", new_core_tag="Core 2")
+    ontology = StimulusOntology(edited_ontology_data)
+
     get_data_partial = partial(data_for_specimen_id,
                                data_source=data_source,
-                               chirp_stimulus_codes=chirp_stimulus_codes)
+                               ontology=ontology)
+
     if run_parallel:
         pool = Pool()
         results = pool.map(get_data_partial, specimen_ids)
