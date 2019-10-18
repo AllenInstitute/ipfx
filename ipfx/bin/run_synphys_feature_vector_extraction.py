@@ -80,6 +80,7 @@ def run_cells(ids=None, output_dir="", project='mp_test', run_parallel=True,
     filtered_set = [(i, r) for i, r in zip(specimen_ids, results) if not "error" in r.keys()]
     error_set = [{"id": i, "error": d} for i, d in zip(specimen_ids, results) if "error" in d.keys()]
 
+
     with open(os.path.join(output_dir, "fv_errors_{:s}.json".format(project)), "w") as f:
         json.dump(error_set, f, indent=4)
 
@@ -110,7 +111,13 @@ def run_cells(ids=None, output_dir="", project='mp_test', run_parallel=True,
 def main():
     module = ags.ArgSchemaParser(schema_type=SynPhysFeatureVectorSchema)
 
-    if module.args["input"]: # input file should be list of IDs on each line
+    # Input file should be list of acq timestamps and ext_ids separeted
+    # by an '_' from the aisynphys database.  Each new cell should be on a
+    # new line with an underscore in the middle.
+    # For example:
+    #      1490137102.372_7
+    #      1490137102.372_4
+    if module.args["input"]: 
         with open(module.args["input"], "r") as f:
             ids = [line.strip("\n") for line in f]
         run_cells(ids=ids, **module.args)
