@@ -8,6 +8,7 @@ from pynwb import NWBHDF5IO
 from pynwb.icephys import (CurrentClampSeries, CurrentClampStimulusSeries, VoltageClampSeries,
                            VoltageClampStimulusSeries, IZeroClampSeries)
 from ipfx.py2to3 import to_str
+from allensdk.core.nwb_data_set import NwbDataSet
 
 
 def custom_formatwarning(msg, *args, **kwargs):
@@ -48,6 +49,9 @@ class NwbReader(object):
         raise NotImplementedError
 
     def get_stim_code(self, sweep_number):
+        raise NotImplementedError
+
+    def get_spike_times(self, sweep_number):
         raise NotImplementedError
 
     def get_session_start_time(self):
@@ -308,6 +312,14 @@ class NwbXReader(NwbReader):
     def get_stim_code(self, sweep_number):
         return self.get_sweep_attrs(sweep_number)["stimulus_description"]
 
+    def get_spike_times(self, sweep_number):
+
+        spikes = self.nwb.get_processing_module('spikes')
+        sweep_spikes = spikes.get_data_interface(f"Sweep_{sweep_number}")
+
+        return sweep_spikes.timestamps
+
+
     def get_sweep_data(self, sweep_number):
         """
         Parameters
@@ -545,6 +557,11 @@ class NwbMiesReader(NwbReader):
             sweep_number = int(sweep_name.split('_')[1])
 
         return sweep_number
+
+    def get_spike_times(self, sweep_number):
+
+        spike_times = NwbDataSet(self.nwb_file).get_spike_times(sweep_number)
+        return spike_times
 
     def get_stim_code(self, sweep_number):
 
