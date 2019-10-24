@@ -65,12 +65,12 @@ def mp_cell_id(cell):
 def cell_from_mpid(mpid):
     """Get an MP database cell object by its id (combined timestamp and cell id).
     """
-    import multipatch_analysis.database as db
+    from aisynphys.database import default_db as db    
     timestamp, ext_id = mpid.split('_')
     timestamp = float(timestamp)
     ext_id = int(ext_id)
     experiment = db.experiment_from_timestamp(timestamp)
-    cell = experiment.cells[ext_id]
+    cell = experiment.cells[str(ext_id)]
     return cell
 
 def mpsweep_from_recording(recording):
