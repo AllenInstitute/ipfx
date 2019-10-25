@@ -49,7 +49,7 @@ def feature_vector_input():
 
     return lsq_sweeps, lsq_features, lsq_start, lsq_end
 
-
+@pytest.mark.requires_inhouse_data
 def test_isi_shape(feature_vector_input):
 
     sweeps, features, start, end = feature_vector_input
@@ -63,6 +63,7 @@ def test_isi_shape(feature_vector_input):
     assert np.array_equal(test_data, temp_data)
 
 
+@pytest.mark.requires_inhouse_data
 def test_step_subthreshold(feature_vector_input):
     sweeps, features, start, end = feature_vector_input
     target_amps = [-90, -70, -50, -30, -10]
@@ -151,7 +152,7 @@ def test_subthresh_depol_norm_normalization():
     assert np.isclose(output[0], 0)
     assert np.isclose(output[-1], 1)
 
-
+@pytest.mark.requires_inhouse_data
 def test_subthresh_depol_norm(feature_vector_input):
     sweeps, features, start, end = feature_vector_input
     amp_sweep_dict, deflect_dict = fv.identify_subthreshold_depol_with_amplitudes(features, sweeps)

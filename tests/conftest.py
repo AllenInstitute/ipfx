@@ -74,18 +74,25 @@ def pytest_collection_modifyitems(config, items):
 
     """
 
-    skip_requires_lims_test = pytest.mark.skipif(
+    skip_requires_lims = pytest.mark.skipif(
         not lq.able_to_connect_to_lims(),
         reason='This test requires connection to lims'
+    )
+    if config.getoption("--do-x-nwb-tests"):
+        return
+    skip_xnwb = pytest.mark.skip(reason="need --do-x-nwb-tests to run")
+
+    skip_internal = pytest.mark.skipif(
+        os.getenv('TEST_INHOUSE') != 'true',
+        reason='depend on resources internal to the Allen Institute.'
     )
 
     for item in items:
         if 'requires_lims' in item.keywords:
-            item.add_marker(skip_requires_lims_test)
+            item.add_marker(skip_requires_lims)
 
-    if config.getoption("--do-x-nwb-tests"):
-        return
-    skip_xnwb = pytest.mark.skip(reason="need --do-x-nwb-tests to run")
-    for item in items:
-       if "xnwbtest" in item.keywords:
+        if "xnwbtest" in item.keywords:
            item.add_marker(skip_xnwb)
+
+        if "requires_inhouse_data" in item.keywords:
+            item.add_marker(skip_internal)
