@@ -1,7 +1,8 @@
 import numpy as np
 from ipfx.ephys_data_set import SweepSet
 import ipfx.feature_vectors as fv
-from ipfx.synphys import *
+import ipfx.synphys as synphys
+import ipfx.data_set_features as dsf
 
 import argschema as ags
 import os
@@ -22,15 +23,15 @@ class SynPhysFeatureVectorSchema(ags.ArgSchema):
 
 def run_mpa_cell(mpid, ap_window_length=0.003):
     try:
-        cell = cell_from_mpid(mpid)
+        cell = synphys.cell_from_mpid(mpid)
         # data is a MiesNwb instance
         nwb = cell.experiment.data
         channel = cell.electrode.device_id
-        sweeps_dict = sweeps_dict_from_cell(cell)
+        sweeps_dict = synphys.sweeps_dict_from_cell(cell)
         supra_sweep_ids = sweeps_dict['If_Curve_DA_0']
         sub_sweep_ids = sweeps_dict['TargetV_DA_0']
-        lsq_supra_sweep_list = [MPSweep(nwb.contents[i][channel]) for i in supra_sweep_ids]
-        lsq_sub_sweep_list = [MPSweep(nwb.contents[i][channel]) for i in sub_sweep_ids]
+        lsq_supra_sweep_list = [synphys.MPSweep(nwb.contents[i][channel]) for i in supra_sweep_ids]
+        lsq_sub_sweep_list = [synphys.MPSweep(nwb.contents[i][channel]) for i in sub_sweep_ids]
         # filter out sweeps that don't have stim epoch
         # (probably zero amplitude)
         lsq_supra_sweep_list = [sweep for sweep in lsq_supra_sweep_list
