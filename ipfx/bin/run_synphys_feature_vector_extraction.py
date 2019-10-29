@@ -50,19 +50,97 @@ def run_mpa_cell(mpid, ap_window_length=0.003):
         lsq_sub_dur = min_duration_of_sweeplist(lsq_sub_sweep_list)
 
     except Exception as detail:
-        logging.warn("Exception when processing specimen {}".format(mpid))
+        logging.warn("Exception when getting sweeps for specimen {}".format(mpid))
         logging.warn(detail)
         return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
 
+    result = {}
     try:
-        all_features = fv.extract_multipatch_feature_vectors(lsq_supra_sweeps, 0., lsq_supra_dur,
-                                                         lsq_sub_sweeps, 0., lsq_sub_dur,
-                                                         ap_window_length=ap_window_length)
+        # Process hyperpolarizing long square features
+        sub_start = 0.
+        sub_end = sub_start + lsq_sub_dur
+
+        sub_spx, sub_spfx = dsf.extractors_for_sweeps(
+            lsq_sub_sweeps,
+            start=sub_start,
+            end=sub_end,
+            min_peak=-25,
+            **dsf.detection_parameters(data_set.LONG_SQUARE)
+        )
+        sub_an = spa.LongSquareAnalysis(sub_spx, sub_spfx,
+            subthresh_min_amp=-100.)
+        sub_features = lsq_an.analyze(lsq_sub_sweeps)
+
+        # Process depolarizing long square features
+        supra_start = 0.
+        supra_end = supra_start + lsq_supra_dur
+
+        supra_spx, supra_spfx = dsf.extractors_for_sweeps(
+            lsq_supra_sweeps,
+            start=supra_start,
+            end=supra_end,
+            min_peak=-25,
+            **dsf.detection_parameters(data_set.LONG_SQUARE)
+        )
+        supra_an = spa.LongSquareAnalysis(supra_spx, supra_spfx,
+            subthresh_min_amp=-100.)
+        supra_features = lsq_an.analyze(lsq_supra_sweeps)
+
+        # Extract hyperpolarizing step-related feature vectors
+        (subthresh_hyperpol_dict,
+        hyperpol_deflect_dict) = fv.identify_subthreshold_hyperpol_with_amplitudes(sub_features,
+            lsq_sub_sweeps)
+        target_amps_for_step_subthresh = [-90, -70, -50, -30, -10]
+        result["step_subthresh"] = fv.step_subthreshold(
+            subthresh_hyperpol_dict, target_amps_for_step_subthresh,
+            sub_start, sub_end, amp_tolerance=9.9)
+        result["subthresh_norm"] = fv.subthresh_norm(subthresh_hyperpol_dict, hyperpol_deflect_dict,
+            sub_start, sub_end)
+
+        # Extract depolarizing step-related feature vectors
+        (subthresh_depol_dict,
+        depol_deflect_dict) = fv.identify_subthreshold_depol_with_amplitudes(supra_features,
+            lsq_supra_sweeps)
+        result["subthresh_depol_norm"] = fv.subthresh_depol_norm(subthresh_depol_dict,
+            depol_deflect_dict, supra_start, supra_end)
+        isi_sweep, isi_sweep_spike_info = fv.identify_sweep_for_isi_shape(
+            lsq_supra_sweeps, supra_features, supra_end - supra_start)
+        result["isi_shape"] = fv.isi_shape(isi_sweep, isi_sweep_spike_info, supra_end)
+
+        # Calculate waveform from rheobase sweep
+        rheo_ind = supra_features["rheobase_sweep"].name
+        sweep = lsq_supra_sweeps.sweeps[rheo_ind]
+        lsq_ap_v, lsq_ap_dv = fv.first_ap_vectors([sweep],
+            [supra_features["spikes_set"][rheo_ind]],
+            target_sampling_rate=target_sampling_rate,
+            window_length=ap_window_length)
+
+        # Combine so that differences can be assessed by analyses like sPCA
+        result["first_ap_v"] = np.hstack([np.zeros_like(lsq_ap_v), lsq_ap_v, np.zeros_like(lsq_ap_v)])
+        result["first_ap_dv"] = np.hstack([np.zeros_like(lsq_ap_dv), lsq_ap_dv, np.zeros_like(lsq_ap_dv)])
+
+        target_amplitudes = np.arange(0, 120, 20)
+        supra_info_list = fv.identify_suprathreshold_spike_info(
+            supra_features, target_amplitudes, shift=10)
+        result["psth"] = fv.psth_vector(supra_info_list, supra_start, supra_end)
+        result["inst_freq"] = fv.inst_freq_vector(supra_info_list, supra_start, supra_end)
+
+        spike_feature_list = [
+            "upstroke_downstroke_ratio",
+            "peak_v",
+            "fast_trough_v",
+            "threshold_v",
+            "width",
+        ]
+        for feature in spike_feature_list:
+            result["spiking_" + feature] = fv.spike_feature_vector(feature,
+                supra_info_list, supra_start, supra_end)
     except Exception as detail:
-        logging.warn("Exception when processing specimen {}".format(mpid))
+        logging.warn("Exception when processing feature vectors for specimen {}".format(mpid))
         logging.warn(detail)
         return {"error": {"type": "processing", "details": traceback.format_exc(limit=None)}}
     return all_features
+
 
 def run_cells(ids=None, output_dir="", project='mp_test', run_parallel=True,
             ap_window_length=0.003, max_count=None, **kwargs):
@@ -118,7 +196,7 @@ def main():
     # For example:
     #      1490137102.372_7
     #      1490137102.372_4
-    if module.args["input"]: 
+    if module.args["input"]:
         with open(module.args["input"], "r") as f:
             ids = [line.strip("\n") for line in f]
         run_cells(ids=ids, **module.args)
