@@ -64,8 +64,7 @@ def run_mpa_cell(mpid, ap_window_length=0.003):
             lsq_sub_sweeps,
             start=sub_start,
             end=sub_end,
-            min_peak=-25,
-            **dsf.detection_parameters(data_set.LONG_SQUARE)
+            min_peak=-25
         )
         sub_an = spa.LongSquareAnalysis(sub_spx, sub_spfx,
             subthresh_min_amp=-100.)
@@ -79,8 +78,7 @@ def run_mpa_cell(mpid, ap_window_length=0.003):
             lsq_supra_sweeps,
             start=supra_start,
             end=supra_end,
-            min_peak=-25,
-            **dsf.detection_parameters(data_set.LONG_SQUARE)
+            min_peak=-25
         )
         supra_an = spa.LongSquareAnalysis(supra_spx, supra_spfx,
             subthresh_min_amp=-100.)
