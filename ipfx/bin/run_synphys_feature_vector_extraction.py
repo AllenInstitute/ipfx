@@ -46,8 +46,8 @@ def run_mpa_cell(mpid, ap_window_length=0.003):
             sweepset.align_to_start_of_epoch('stim')
 
         # We may not need this - do durations actually vary for a given cell?
-        lsq_supra_dur = min_duration_of_sweeplist(lsq_supra_sweep_list)
-        lsq_sub_dur = min_duration_of_sweeplist(lsq_sub_sweep_list)
+        lsq_supra_dur = synphys.min_duration_of_sweeplist(lsq_supra_sweep_list)
+        lsq_sub_dur = synphys.min_duration_of_sweeplist(lsq_sub_sweep_list)
 
     except Exception as detail:
         logging.warn("Exception when getting sweeps for specimen {}".format(mpid))
