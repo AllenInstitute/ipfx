@@ -1,6 +1,5 @@
-from __future__ import absolute_import
 import numpy as np
-from . import time_series_utils as tsu
+import ipfx.time_series_utils as tsu
 
 
 # global constants
@@ -54,18 +53,22 @@ def get_last_noise_epoch(idx1, hz):
 
 def get_recording_epoch(response):
     """
-    Detect response epoch defined as interval from start to the last non-zero value of the response
+    Detect response epoch defined as interval from start to the last non-nan value of the response
+
+    Parameters
+    ----------
+    response: float np.array
 
     Returns
     -------
-    start,end: int indices of the epoch
+    start,end: int
+        indices of the epoch
     """
 
-    if len(np.flatnonzero(response)) == 0:
+    if len(tsu.flatnotnan(response)) == 0:
         end_idx = 0
     else:
-        end_idx = np.flatnonzero(response)[-1]
-
+        end_idx = tsu.flatnotnan(response)[-1]
     return 0, end_idx
 
 

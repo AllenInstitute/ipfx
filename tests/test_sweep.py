@@ -6,7 +6,7 @@ import numpy as np
 def sweep():
 
     i = [0,0,1,1,0,0,0,2,2,2,2,2,0,0,0,0]
-    v = [0,0,1,2,1,0,0,1,2,3,1,0,0,0,0,0]
+    v = [0,0,1,2,1,0,0,1,2,3,1,np.nan,np.nan,np.nan,np.nan,np.nan]
     sampling_rate = 2
     dt = 1./sampling_rate
     t = np.arange(0,len(v))*dt
