@@ -2,9 +2,7 @@ import warnings
 import logging
 import pandas as pd
 import numpy as np
-from ipfx.stimulus import StimulusOntology
 from ipfx.sweep import Sweep,SweepSet
-
 
 class EphysDataSet(object):
 
@@ -36,6 +34,10 @@ class EphysDataSet(object):
         self.sweep_table = None
         self.ontology = ontology
         self.validate_stim = validate_stim
+
+    @property
+    def nwb_data(self):
+        raise NotImplementedError
 
     def build_sweep_table(self, sweep_info=None):
 
@@ -197,7 +199,17 @@ class EphysDataSet(object):
 
     def get_sweep_data(self, sweep_number):
         """
-        Return the data of sweep_number as dict. The dict has the format:
+        Read sweep data from the nwb file
+        Substitute trailing zeros in the response for np.nan
+        because trailing zeros occur after the end of recording
+
+        Parameters
+        ----------
+        sweep_number
+
+        Returns
+        -------
+        dict in the format:
 
         {
             'stimulus': np.ndarray,
@@ -205,9 +217,23 @@ class EphysDataSet(object):
             'stimulus_unit': string,
             'sampling_rate': float
         }
-
         """
-        raise NotImplementedError
+
+        sweep_data = self.nwb_data.get_sweep_data(sweep_number)
+
+        response = sweep_data['response']
+
+        if len(np.flatnonzero(response)) == 0:
+            recording_end_idx = 0
+            sweep_end_idx = 0
+        else:
+            recording_end_idx = np.flatnonzero(response)[-1]
+            sweep_end_idx = len(response)-1
+
+        if recording_end_idx < sweep_end_idx:
+            response[recording_end_idx+1:] = np.nan
+
+        return sweep_data
 
     def get_clamp_mode(self,stimulus_number):
         raise NotImplementedError

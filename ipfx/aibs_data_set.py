@@ -13,7 +13,7 @@ class AibsDataSet(EphysDataSet):
                  ontology=None, api_sweeps=True, validate_stim=True):
         super(AibsDataSet, self).__init__(ontology, validate_stim)
 
-        self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
+        self._nwb_data = nwb_reader.create_nwb_reader(nwb_file)
 
         if sweep_info:
             sweep_info = sp.modify_sweep_info_keys(sweep_info) if api_sweeps else sweep_info
@@ -26,6 +26,10 @@ class AibsDataSet(EphysDataSet):
             sweep_info = self.extract_sweep_stim_info()
 
         self.build_sweep_table(sweep_info)
+
+    @property
+    def nwb_data(self):
+        return self._nwb_data
 
     def extract_sweep_stim_info(self):
         """
@@ -102,9 +106,6 @@ class AibsDataSet(EphysDataSet):
             raise Exception("Unable to determine clamp mode in {}".format(sweep_num))
 
         return clamp_mode
-
-    def get_sweep_data(self, sweep_number):
-        return self.nwb_data.get_sweep_data(sweep_number)
 
     def get_recording_date(self):
         return self.nwb_data.get_recording_date()
