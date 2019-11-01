@@ -83,6 +83,8 @@ def extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_
     # RAMP FEATURES -----------------
     if len(ramp_sweep_numbers) > 0:
         ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
+        ramp_sweeps.select_epoch("recording")
+        ramp_sweeps.align_to_start_of_epoch("experiment")
 
         ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
         ramp_spx, ramp_spfx = dsf.extractors_for_sweeps(ramp_sweeps,
@@ -96,6 +98,8 @@ def extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_
     # SHORT SQUARE FEATURES -----------------
     if len(ssq_sweep_numbers) > 0:
         ssq_sweeps = data_set.sweep_set(ssq_sweep_numbers)
+        ssq_sweeps.select_epoch("recording")
+        ssq_sweeps.align_to_start_of_epoch("experiment")
 
         ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
         ssq_spx, ssq_spfx = dsf.extractors_for_sweeps(ssq_sweeps,
