@@ -7,7 +7,7 @@ jobs:
   build:
     parallelism: 1
     environment:
-      TEST_INTERNAL: false
+      TEST_INHOUSE: false
 
     docker:
       # specify the version you desire here
