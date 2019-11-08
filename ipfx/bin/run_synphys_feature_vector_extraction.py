@@ -3,6 +3,7 @@ from ipfx.ephys_data_set import SweepSet
 import ipfx.feature_vectors as fv
 import ipfx.synphys as synphys
 import ipfx.data_set_features as dsf
+import ipfx.stimulus_protocol_analysis as spa
 
 import argschema as ags
 import os
@@ -68,7 +69,7 @@ def run_mpa_cell(mpid, ap_window_length=0.003):
         )
         sub_an = spa.LongSquareAnalysis(sub_spx, sub_spfx,
             subthresh_min_amp=-100.)
-        sub_features = lsq_an.analyze(lsq_sub_sweeps)
+        sub_features = sub_an.analyze(lsq_sub_sweeps)
 
         # Process depolarizing long square features
         supra_start = 0.
@@ -82,7 +83,7 @@ def run_mpa_cell(mpid, ap_window_length=0.003):
         )
         supra_an = spa.LongSquareAnalysis(supra_spx, supra_spfx,
             subthresh_min_amp=-100.)
-        supra_features = lsq_an.analyze(lsq_supra_sweeps)
+        supra_features = supra_an.analyze(lsq_supra_sweeps)
 
         # Extract hyperpolarizing step-related feature vectors
         (subthresh_hyperpol_dict,
