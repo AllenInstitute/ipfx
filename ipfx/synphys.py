@@ -1,5 +1,6 @@
 import numpy as np
 from ipfx.ephys_data_set import Sweep, SweepSet
+import ipfx.epochs as ep
 from collections import defaultdict
 
 class MPSweep(Sweep):
@@ -11,19 +12,25 @@ class MPSweep(Sweep):
         t = pri.time_values
         v = pri.data * 1e3  # convert to mV
         # TODO: select holding item explicitly; don't assume it is [0]
-        holding = rec.stimulus.items[0].amplitude  
+        holding = rec.stimulus.items[0].amplitude
         # convert to pA with holding current removed
-        i = (cmd.data - holding) * 1e12   
+        i = (cmd.data - holding) * 1e12
         srate = pri.sample_rate
         sweep_num = rec.parent.key
         clamp_mode = rec.clamp_mode  # this will be 'ic' or 'vc'; not sure if that's right
+
+        # Detect epochs for Sweep object
+        epochs = {}
+        if test_pulse:
+            epochs["test"] = ep.get_test_epoch(i, srate)
+        epochs["stim"] = ep.get_stim_epoch(i, test_pulse)
+        epochs["experiment"] = ep.get_experiment_epoch(i, srate, test_pulse)
 
         Sweep.__init__(self, t, v, i,
                        clamp_mode=clamp_mode,
                        sampling_rate=srate,
                        sweep_number=sweep_num,
-                       epochs=None,
-                       test_pulse=test_pulse)
+                       epochs=epochs)
 
 
 stim_list = [
@@ -65,7 +72,7 @@ def mp_cell_id(cell):
 def cell_from_mpid(mpid):
     """Get an MP database cell object by its id (combined timestamp and cell id).
     """
-    from aisynphys.database import default_db as db    
+    from aisynphys.database import default_db as db
     timestamp, ext_id = mpid.split('_')
     timestamp = float(timestamp)
     ext_id = int(ext_id)
@@ -102,4 +109,4 @@ def mp_project_cell_ids(project, max_count=None, filter_cells=True):
     else:
         cells = q.all()
     return [mp_cell_id(cell) for cell in cells]
-    
+
