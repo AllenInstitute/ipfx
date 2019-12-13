@@ -57,10 +57,8 @@ class ABFConverter:
 
         self.abfs = []
 
-        pyabf.stimulus.Stimulus.protocolStorageDir = ABFConverter.protocolStorageDir
-
         for inFile in inFiles:
-            abf = pyabf.ABF(inFile, loadData=False)
+            abf = pyabf.ABF(inFile, loadData=False, stimulusFileFolder=ABFConverter.protocolStorageDir)
             self.abfs.append(abf)
 
             # ensure that the input file matches our expectations
@@ -97,7 +95,7 @@ class ABFConverter:
         root, ext = os.path.splitext(inFile)
 
         abf = pyabf.ABF(inFile)
-        abf.getInfoPage().generateHTML(saveAs=root + ".html")
+        pyabf.abfHeaderDisplay.abfInfoPage(abf).generateHTML(saveAs=root + ".html")
 
     @staticmethod
     def _getProtocolName(protocolName):
