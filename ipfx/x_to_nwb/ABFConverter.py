@@ -534,7 +534,6 @@ class ABFConverter:
 
         for file_index, abf in enumerate(self.abfs):
 
-            starting_time = self._calculateStartingTime(abf)
             stimulus_description = ABFConverter._getProtocolName(abf.protocol)
             _, jsonSource = self._findSettingsEntry(abf)
             log.debug(f"Using JSON settings for {jsonSource}.")
@@ -558,6 +557,7 @@ class ABFConverter:
                     electrode = electrodes[channel]
                     gain = abf._adcSection.fADCProgrammableGain[channel]
                     resolution = np.nan
+                    starting_time = self._calculateStartingTime(abf)
                     rate = float(abf.dataRate)
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
