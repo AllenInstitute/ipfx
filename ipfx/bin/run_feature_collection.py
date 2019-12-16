@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import scipy
 import argschema as ags
-from ipfx.bin import lims_queries as lq
+import ipfx.lims_queries as lq
 import ipfx.stim_features as stf
 import ipfx.data_set_features as dsf
 import ipfx.stimulus_protocol_analysis as spa

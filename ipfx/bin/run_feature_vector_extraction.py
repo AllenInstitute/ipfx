@@ -15,7 +15,7 @@ from ipfx.stimulus import StimulusOntology
 import allensdk.core.json_utilities as ju
 
 import ipfx.feature_vectors as fv
-import ipfx.bin.lims_queries as lq
+import ipfx.lims_queries as lq
 import ipfx.stim_features as stf
 import ipfx.stimulus_protocol_analysis as spa
 import ipfx.data_set_features as dsf

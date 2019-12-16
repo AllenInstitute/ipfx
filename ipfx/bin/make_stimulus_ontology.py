@@ -1,7 +1,7 @@
 import allensdk.core.json_utilities as ju
 from ipfx.stimulus import StimulusOntology
 import re
-from ipfx.bin import lims_queries as lq
+import ipfx.lims_queries as lq
 import logging
 
 

@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from . import lims_queries as lq
+import ipfx.lims_queries as lq
 import glob
 import os
 import pandas as pd
