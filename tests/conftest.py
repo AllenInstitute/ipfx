@@ -5,7 +5,7 @@ import io
 import os
 import sys
 from .helpers_for_tests import download_file
-import ipfx.bin.lims_queries as lq
+import ipfx.lims_queries as lq
 
 
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
