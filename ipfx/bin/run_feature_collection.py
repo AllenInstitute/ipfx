@@ -9,6 +9,7 @@ import ipfx.data_set_features as dsf
 import ipfx.stimulus_protocol_analysis as spa
 import ipfx.time_series_utils as tsu
 import ipfx.feature_vectors as fv
+import ipfx.script_utils as su
 from ipfx.aibs_data_set import AibsDataSet
 from ipfx.stimulus import StimulusOntology
 import allensdk.core.json_utilities as ju
@@ -19,7 +20,6 @@ from functools import partial
 import os
 import json
 import h5py
-from ipfx.bin.run_feature_vector_extraction import categorize_iclamp_sweeps
 from ipfx.stimulus import StimulusOntology
 import allensdk.core.json_utilities as ju
 
@@ -31,34 +31,23 @@ class CollectFeatureParameters(ags.ArgSchema):
     include_failed_sweeps = ags.fields.Boolean(default=False)
     include_failed_cells = ags.fields.Boolean(default=False)
     run_parallel = ags.fields.Boolean(default=True)
+    data_source = ags.fields.String(
+        description="Source of NWB files ('sdk' or 'lims')",
+        default="sdk",
+        validate=lambda x: x in ["sdk", "lims"]
+        )
 
 
-def data_for_specimen_id(specimen_id, passed_only):
-    name, roi_id, specimen_id = lq.get_specimen_info_from_lims_by_id(specimen_id)
-    nwb_path = lq.get_nwb_path_from_lims(roi_id)
-    if len(nwb_path) == 0: # could not find an NWB file
-        logging.debug("No NWB file for {:d}".format(specimen_id))
-        return {"error": {"type": "no_nwb", "details": ""}}
-
-    # Check if NWB has lab notebook information, or if additional hdf5 file is needed
-    ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
-    h5_path = None
-    with h5py.File(nwb_path, "r") as h5:
-        if "general/labnotebook" not in h5:
-            h5_path = lq.get_igorh5_path_from_lims(roi_id)
-
-    try:
-        data_set = AibsDataSet(nwb_file=nwb_path, h5_file=h5_path, ontology=ontology)
-    except Exception as detail:
-        logging.warn("Exception when processing specimen {:d}".format(specimen_id))
-        logging.warn(detail)
-#         return {"error": {"type": "dataset", "details": traceback.format_exc(limit=1)}}
+def data_for_specimen_id(specimen_id, passed_only, data_source, ontology):
+    data_set = su.dataset_for_specimen_id(specimen_id, data_source, ontology)
+    if type(data_set) is dict and "error" in data_set:
+        logging.warning("Problem getting AibsDataSet for specimen {:d} from LIMS".format(specimen_id))
         return {}
 
     try:
-        lsq_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.long_square_names)
-        ssq_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.short_square_names)
-        ramp_sweep_numbers = categorize_iclamp_sweeps(data_set, ontology.ramp_names)
+        lsq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.long_square_names)
+        ssq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.short_square_names)
+        ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.ramp_names)
     except Exception as detail:
         logging.warn("Exception when processing specimen {:d}".format(specimen_id))
         logging.warn(detail)
@@ -82,48 +71,27 @@ def extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_
     features = {}
     # RAMP FEATURES -----------------
     if len(ramp_sweep_numbers) > 0:
-        ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
-
-        ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
-        ramp_spx, ramp_spfx = dsf.extractors_for_sweeps(ramp_sweeps,
-                                                    start = ramp_start,
-                                                    **dsf.detection_parameters(data_set.RAMP))
-        ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
-        basic_ramp_features = ramp_an.analyze(ramp_sweeps)
+        _, _, ramp_an = su.preprocess_ramp_sweeps(data_set,
+            ramp_sweep_numbers)
         first_spike_ramp_features = first_spike_ramp(ramp_an)
         features.update(first_spike_ramp_features)
 
     # SHORT SQUARE FEATURES -----------------
     if len(ssq_sweep_numbers) > 0:
-        ssq_sweeps = data_set.sweep_set(ssq_sweep_numbers)
-
-        ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
-        ssq_spx, ssq_spfx = dsf.extractors_for_sweeps(ssq_sweeps,
-                                                      est_window = [ssq_start, ssq_start+0.001],
-                                                      **dsf.detection_parameters(data_set.SHORT_SQUARE))
-        ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
-        basic_ssq_features = ssq_an.analyze(ssq_sweeps)
+        _, basic_ssq_features, ssq_an = su.preprocess_short_square_sweeps(data_set,
+            ssq_sweep_numbers)
         first_spike_ssq_features = first_spike_ssq(ssq_an)
         first_spike_ssq_features["short_square_current"] = basic_ssq_features["stimulus_amplitude"]
         features.update(first_spike_ssq_features)
 
     # LONG SQUARE SUBTHRESHOLD FEATURES -----------------
     if len(lsq_sweep_numbers) > 0:
-        check_lsq_sweeps = data_set.sweep_set(lsq_sweep_numbers)
-        lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(check_lsq_sweeps.sweeps[0].i, check_lsq_sweeps.sweeps[0].t)
+        (lsq_sweeps,
+        basic_lsq_features,
+        lsq_an,
+        lsq_start,
+        lsq_end) = su.preprocess_long_square_sweeps(data_set, lsq_sweep_numbers)
 
-        # Check that all sweeps are long enough and not ended early
-        extra_dur = 0.2
-        good_lsq_sweep_numbers = [n for n, s in zip(lsq_sweep_numbers, check_lsq_sweeps.sweeps)
-                                  if s.t[-1] >= lsq_start + lsq_dur + extra_dur and not np.all(s.v[tsu.find_time_index(s.t, lsq_start + lsq_dur)-100:tsu.find_time_index(s.t, lsq_start + lsq_dur)] == 0)]
-        lsq_sweeps = data_set.sweep_set(good_lsq_sweep_numbers)
-
-        lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(lsq_sweeps,
-                                                      start = lsq_start,
-                                                      end = lsq_start + lsq_dur,
-                                                      **dsf.detection_parameters(data_set.LONG_SQUARE))
-        lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=-100.)
-        basic_lsq_features = lsq_an.analyze(lsq_sweeps)
         features.update({
             "input_resistance": basic_lsq_features["input_resistance"],
             "tau": basic_lsq_features["tau"],
@@ -278,7 +246,7 @@ def lin_sqrt_fit(x, y):
 
 
 def run_feature_collection(ids=None, project="T301", include_failed_sweeps=True, include_failed_cells=False,
-         output_file="", run_parallel=True, **kwargs):
+         output_file="", run_parallel=True, data_source="lims", **kwargs):
     if ids is not None:
         specimen_ids = ids
     else:
@@ -286,8 +254,11 @@ def run_feature_collection(ids=None, project="T301", include_failed_sweeps=True,
 
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
 
+    ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
     get_data_partial = partial(data_for_specimen_id,
-                               passed_only=not include_failed_sweeps)
+                               passed_only=not include_failed_sweeps,
+                               data_source=data_source,
+                               ontology=ontology)
 
     if run_parallel:
         pool = Pool()
@@ -296,7 +267,7 @@ def run_feature_collection(ids=None, project="T301", include_failed_sweeps=True,
         results = map(get_data_partial, specimen_ids)
 
     df = pd.DataFrame([r for r in results if len(r) > 0])
-    print("shape", df.shape)
+    logging.info("shape {}".format(df.shape))
     df.set_index("specimen_id").to_csv(output_file)
 
 
