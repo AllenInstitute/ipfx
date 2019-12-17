@@ -11,7 +11,18 @@ def extract_chirp_feature_vector(data_set, chirp_sweep_numbers):
     # Pull out all chirps
     chirp_sweeps = data_set.sweep_set(chirp_sweep_numbers)
 
-    features = feature_vectors_chirp(chirp_sweeps)
+    chirp_sweep_sets = divide_chirps_by_stimulus(chirp_sweeps)
+    features_list = [feature_vectors_chirp(sweep_set) for sweep_set in chirp_sweep_sets]
+    features_list = [f for f in features_list if f is not None]
+    if len(features_list) == 0:
+        return {}
+
+    # Average the amplitudes and phases from the different stimulus types
+    arr_list = [r["chirp"] for r in features_list]
+    features = {
+        "chirp": np.vstack(arr_list).mean(axis=0)
+    }
+
     return features
 
 
@@ -27,9 +38,13 @@ def divide_chirps_by_stimulus(sweep_set):
     return [SweepSet(chirp_sets[k]) for k in chirp_sets]
 
 
-def feature_vectors_chirp(chirp_sweeps):
+def feature_vectors_chirp(chirp_sweeps, min_freq=0.2, max_freq=40.):
     result = {}
-    amp, phase, freq = chirp_amp_phase(chirp_sweeps)
+    amp, phase, freq = chirp_amp_phase(
+        chirp_sweeps, min_freq=min_freq, max_freq=max_freq)
+    if amp is None:
+        return None
+
     result["chirp"] = np.hstack([amp, phase])
     return result
 
@@ -71,6 +86,8 @@ def chirp_amp_phase(sweep_set, start=0.6, end=20.6, down_rate=2000,
         v_list.append(swp.v)
         i_list.append(swp.i)
 
+    if len(v_list) == 0:
+        return None, None, None
 
     avg_v = np.vstack(v_list).mean(axis=0)
     avg_i = np.vstack(i_list).mean(axis=0)
