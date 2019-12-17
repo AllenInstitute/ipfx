@@ -9,12 +9,17 @@ from .ephys_data_set import EphysDataSet
 class HBGDataSet(EphysDataSet):
     def __init__(self, sweep_info=None, nwb_file=None, ontology=None, api_sweeps=True, validate_stim=True):
         super(HBGDataSet, self).__init__(ontology, validate_stim)
-        self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)
+        self._nwb_data = nwb_reader.create_nwb_reader(nwb_file)
 
         if sweep_info is None:
             sweep_info = self.extract_sweep_stim_info()
 
         self.build_sweep_table(sweep_info)
+
+    @property
+    def nwb_data(self):
+        return self._nwb_data
+
 
     def extract_sweep_stim_info(self):
 
@@ -56,9 +61,6 @@ class HBGDataSet(EphysDataSet):
             sweep_info.append(sweep_record)
 
         return sweep_info
-
-    def get_sweep_data(self, sweep_number):
-        return self.nwb_data.get_sweep_data(sweep_number)
 
     def get_stimulus_units(self, sweep_num):
 

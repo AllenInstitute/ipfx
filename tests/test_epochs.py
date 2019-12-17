@@ -1,6 +1,6 @@
 import ipfx.epochs as ep
 import pytest
-
+import numpy as np
 
 @pytest.mark.parametrize('i,'
                          'sampling_rate,'
@@ -120,13 +120,13 @@ def test_get_stim_epoch(i, stim_epoch):
                          'recording_epoch',
                          [
                              (
-                                 [0, 0, 1, 1.5, 0, 0, 2, 3, 4, 1, 0, 0],
+                                 [0, 0, 1, 1.5, 0, 0, 2, 3, 4, 1, np.nan, np.nan],
                                  (0, 9)
                              ),
 
                              #   zero array
                              (
-                                 [0, 0, 0, 0, 0, 0],
+                                 [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
                                  (0, 0)
                              ),
 

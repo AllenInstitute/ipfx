@@ -171,6 +171,10 @@ def validate_sweeps(data_set, sweep_numbers, extra_dur=0.2):
     start = None
     dur = None
     for swp in check_sweeps.sweeps:
+        if len(swp.t) == 0:
+            valid_sweep_stim.append(False)
+            continue
+
         swp_start, swp_dur, _, _, _ = stf.get_stim_characteristics(swp.i, swp.t)
         if swp_start is None:
             valid_sweep_stim.append(False)

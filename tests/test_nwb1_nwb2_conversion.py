@@ -36,7 +36,7 @@ class TestNWBConverter(NWBConverter):
 
         NWBConverter.__init__(self, input_file, output_file)
 
-
+@pytest.mark.requires_inhouse_data
 @pytest.mark.parametrize('NWB_file_inhouse', ['Pvalb-IRES-Cre;Ai14-406663.04.01.01.nwb',
                                               'H18.03.315.11.11.01.05.nwb'], indirect=True)
 def test_file_level_regressions(NWB_file_inhouse,tmpdir_factory):

@@ -26,3 +26,9 @@ def test_fixed_dt():
     # Change the first time point to make time steps inconsistent
     t[0] -= 3.
     assert not tsu.has_fixed_dt(t)
+
+def test_flatnotnan():
+    a = [1, 10, 12, 17, 13, 4, 8, np.nan, np.nan]
+
+    assert np.all(tsu.flatnotnan(a) == [0, 1, 2, 3, 4, 5, 6])
+

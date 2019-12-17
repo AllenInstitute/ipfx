@@ -87,3 +87,22 @@ def average_voltage(v, t, start=None, end=None):
 
     return v[start_index:end_index].mean()
 
+
+def flatnotnan(a):
+    """
+    Returns indices that are non nan in a flattened version of a
+
+    Parameters
+    ----------
+    a: np.array
+
+    Returns
+    -------
+    res: np.array
+        Output array containing indices of an array that are not nan
+    """
+    notnan = np.argwhere(~np.isnan(a))
+
+    return notnan.flatten()
+
+

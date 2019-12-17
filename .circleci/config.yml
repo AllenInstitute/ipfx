@@ -1,0 +1,69 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2
+jobs:
+  build:
+    parallelism: 1
+    environment:
+      TEST_INHOUSE: false
+
+    docker:
+      # specify the version you desire here
+      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
+      - image: circleci/python:3.6
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "requirements.txt" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run:
+          name: install dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+            pip install codecov
+
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: install test dependencies
+          command: |
+            . venv/bin/activate
+            pip install -r test_requirements.txt
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            sudo apt-get -y install hdf5-tools
+            . venv/bin/activate
+            mkdir test-results
+            py.test --junitxml=test-results/junit.xml --verbose
+
+
+      - store_test_results:
+          path: test-results
+          destination: tr2
+
+      - store_artifacts:
+          path: test-results
+          destination: tr1
