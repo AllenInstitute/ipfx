@@ -73,3 +73,35 @@ def test_chirp_downsample():
     tol = 0.1
     assert np.abs(amp[0] - 1) < tol
     assert np.abs(amp[-1] - 0.5) < tol
+
+
+def test_divide_chirps_by_stimulus():
+    # Stuff for sweep construction
+    sampling_rate = 2000
+    t = np.arange(0, 20 * sampling_rate) * (1 / sampling_rate)
+    clamp_mode = "CurrentClamp"
+    epochs = {"sweep": (0, len(t) - 1),
+        "test": None,
+        "recording": None,
+        "experiment": None,
+        "stim": None}
+
+    i1 = scipy.signal.chirp(t, 0.5, 20, 40, method="linear")
+    i2 = scipy.signal.chirp(t, 0.5, 20, 40, method="logarithmic")
+    # linear descreasing profile
+    profile = np.linspace(1., 0.5, num=len(t))
+
+    sweep_set = SweepSet([Sweep(t, i * profile, i, clamp_mode, sampling_rate, epochs=epochs)
+        for i in (i1, i2, i2)])
+
+    divided_list = chirp.divide_chirps_by_stimulus(sweep_set)
+    lengths = [len(d.sweeps) for d in divided_list]
+    assert np.min(lengths) == 1
+    assert np.max(lengths) == 2
+    bigger_sweep_set = divided_list[np.argmax(lengths)]
+    smaller_sweep_set = divided_list[np.argmin(lengths)]
+    assert np.all(bigger_sweep_set.sweeps[0].i == bigger_sweep_set.sweeps[1].i)
+    assert np.any(bigger_sweep_set.sweeps[0].i != smaller_sweep_set.sweeps[0].i)
+
+
+

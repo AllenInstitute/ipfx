@@ -2,16 +2,29 @@ import numpy as np
 import logging
 import pandas as pd
 import scipy.fftpack as fftpack
-
+from .sweep import SweepSet
 from . import feature_vectors as fv
 from . import time_series_utils as tsu
 
 
 def extract_chirp_feature_vector(data_set, chirp_sweep_numbers):
+    # Pull out all chirps
     chirp_sweeps = data_set.sweep_set(chirp_sweep_numbers)
 
     features = feature_vectors_chirp(chirp_sweeps)
     return features
+
+
+def divide_chirps_by_stimulus(sweep_set):
+    chirp_sets = {}
+    for swp in sweep_set.sweeps:
+        hash_key = hash(swp.i.data.tobytes())
+        if hash_key not in chirp_sets:
+            chirp_sets[hash_key] = [swp]
+        else:
+            chirp_sets[hash_key].append(swp)
+
+    return [SweepSet(chirp_sets[k]) for k in chirp_sets]
 
 
 def feature_vectors_chirp(chirp_sweeps):

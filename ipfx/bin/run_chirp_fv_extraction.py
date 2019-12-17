@@ -29,7 +29,7 @@ class CollectChirpFeatureVectorParameters(ags.ArgSchema):
     output_code = ags.fields.String(
         description="output code for naming files", default=None)
     chirp_stimulus_codes = ags.fields.List(ags.fields.String,
-        description="stimulus code for chirps",
+        description="stimulus codes for chirps",
         default=[
             "C2CHIRP180503",
             "C2CHIRP171129",
