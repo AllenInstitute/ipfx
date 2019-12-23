@@ -13,6 +13,7 @@ setup(
     url = 'https://github.com/AllenInstitute/ipfx',
     packages = find_packages(),
     install_requires = required,
+    python_requires = '>=3.6',
     include_package_data=True,
 #    entry_points={
 #          'console_scripts': [
