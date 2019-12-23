@@ -1,47 +1,7 @@
 from __future__ import absolute_import
-import ipfx.lims_queries as lq
-import glob
-import os
+from ipfx.lims_queries import get_fx_output_json
 import pandas as pd
 import argparse
-
-NO_SPECIMEN = "No_specimen_in_LIMS"
-NO_OUTPUT_FILE = "No_feature_extraction_output"
-
-
-def get_fx_output_json(specimen_id):
-    """
-    Find in LIMS the full path to the json output of the feature extraction module
-    If more than one file exists, then chose the latest version
-
-    Parameters
-    ----------
-    specimen_id
-
-    Returns
-    -------
-    file_name: string
-    """
-
-    query = """
-    select err.storage_directory, err.id
-    from specimens sp
-    join ephys_roi_results err on err.id = sp.ephys_roi_result_id
-    where sp.id = %d
-    """ % specimen_id
-
-    res = lq.query(query)
-    if res:
-        err_dir = res[0]["storage_directory"]
-
-        file_list = glob.glob(os.path.join(err_dir, '*EPHYS_FEATURE_EXTRACTION_*_output.json'))
-        if file_list:
-            latest_file = max(file_list, key=os.path.getctime)   # get the most recent file
-            return latest_file
-        else:
-            return NO_OUTPUT_FILE
-    else:
-        return NO_SPECIMEN
 
 
 def parse_args():
