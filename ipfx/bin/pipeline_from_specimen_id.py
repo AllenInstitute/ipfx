@@ -12,7 +12,7 @@ INPUT_JSON = "pipeline_input.json"
 OUTPUT_JSON = "pipeline_output.json"
 
 
-def main():
+def run_pipeline_from_id(specimen_id, output_dir=OUTPUT_DIR):
     """
     Runs pipeline from the specimen_id
     Usage:
@@ -22,10 +22,10 @@ def main():
 
     """
 
-    specimen_id = sys.argv[1]
+    specimen_id = specimen_id
     cell_name = specimen_id
 
-    cell_dir = os.path.join(OUTPUT_DIR,cell_name)
+    cell_dir = os.path.join(output_dir,cell_name)
 
     if not os.path.exists(cell_dir):
         os.makedirs(cell_dir)
@@ -50,7 +50,7 @@ def main():
 
     ju.write(os.path.join(cell_dir,OUTPUT_JSON), pipe_output)
 
-if __name__ == "__main__": main()
+if __name__ == "__main__": run_pipeline_from_id(sys.argv[1])
 
 
 

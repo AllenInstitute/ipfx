@@ -3,12 +3,13 @@ import logging
 
 
 def configure_logger(cell_dir):
-
-    logging.getLogger().setLevel(logging.INFO)
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
     logging.basicConfig(filename=os.path.join(cell_dir,"log.txt"))
-    stderrLogger = logging.StreamHandler()
-    stderrLogger.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
-    logging.getLogger().addHandler(stderrLogger)
+    if len(logger.handlers)<2:
+        stderrLogger = logging.StreamHandler()
+        stderrLogger.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+        logger.addHandler(stderrLogger)
 
 
 def log_pretty_header(header, level=1, top_line_break=True, bottom_line_break=True):
