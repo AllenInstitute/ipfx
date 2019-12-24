@@ -65,24 +65,16 @@ def run_feature_extraction(input_nwb_file,
                                ontology=ont,
                                api_sweeps=False)
 
-    try:
-        cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
+    cell_features, sweep_features, cell_record, sweep_records, cell_state = dsft.extract_data_set_features(data_set)
 
-        if cell_info: cell_record.update(cell_info)
+    if cell_info: cell_record.update(cell_info)
 
-        cell_state = {"failed_fx": False, "fail_fx_message": None}
-
-        feature_data = { 'cell_features': cell_features,
-                         'sweep_features': sweep_features,
-                         'cell_record': cell_record,
-                         'sweep_records': sweep_records,
-                         'cell_state': cell_state
-                         }
-
-    except (er.FeatureError,IndexError) as e:
-        cell_state = {"failed_fx":True, "fail_fx_message": str(e)}
-        logging.warning(e)
-        feature_data = {'cell_state': cell_state}
+    feature_data = { 'cell_features': cell_features,
+                        'sweep_features': sweep_features,
+                        'cell_record': cell_record,
+                        'sweep_records': sweep_records,
+                        'cell_state': cell_state
+                        }
 
     if not cell_state["failed_fx"]:
         sweep_spike_times = collect_spike_times(sweep_features)

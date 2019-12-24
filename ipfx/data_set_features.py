@@ -162,66 +162,97 @@ def extract_cell_features(data_set,
     lu.log_pretty_header("Analyzing cell features:",level=2)
 
     cell_features = {}
+    cell_state = {"failed_fx": False, "fail_fx_message": None}
 
     # long squares
-    lu.log_pretty_header("Long Squares:",level=2)
-    if len(long_square_sweep_numbers) == 0:
-        raise er.FeatureError("No long_square sweeps available for feature extraction")
+    try:
+        lu.log_pretty_header("Long Squares:",level=2)
+        if len(long_square_sweep_numbers) == 0:
+            raise er.FeatureError("No long_square sweeps available for feature extraction")
 
-    lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
-    lsq_sweeps.select_epoch("recording")
-    lsq_sweeps.align_to_start_of_epoch("experiment")
+        lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
+        lsq_sweeps.select_epoch("recording")
+        lsq_sweeps.align_to_start_of_epoch("experiment")
+        # TODO: fail properly when stim sweeps differ in start/duration
+        lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
 
-    lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t)
+        lsq_spx, lsq_spfx = extractors_for_sweeps(lsq_sweeps,
+                                                start = lsq_start,
+                                                end = lsq_start+lsq_dur,
+                                                **detection_parameters(data_set.LONG_SQUARE))
+        lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=subthresh_min_amp)
+        lsq_features = lsq_an.analyze(lsq_sweeps)
+        cell_features["long_squares"] = lsq_an.as_dict(lsq_features, [ dict(sweep_number=sn) for sn in long_square_sweep_numbers ])
 
-    lsq_spx, lsq_spfx = extractors_for_sweeps(lsq_sweeps,
-                                              start = lsq_start,
-                                              end = lsq_start+lsq_dur,
-                                              **detection_parameters(data_set.LONG_SQUARE))
-    lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=subthresh_min_amp)
-    lsq_features = lsq_an.analyze(lsq_sweeps)
-    cell_features["long_squares"] = lsq_an.as_dict(lsq_features, [ dict(sweep_number=sn) for sn in long_square_sweep_numbers ])
+        if cell_features["long_squares"]["hero_sweep"] is None:
+            raise er.FeatureError("Could not find hero sweep.")
 
-    if cell_features["long_squares"]["hero_sweep"] is None:
-        raise er.FeatureError("Could not find hero sweep.")
+    except (er.FeatureError,IndexError) as e:
+        cell_features["long_squares"] = None
+        logging.warning(e)
+        if cell_state["failed_fx"]:
+            cell_state["fail_fx_message"].append('; '+str(e))
+        else:
+            cell_state["failed_fx"] = True
+            cell_state["fail_fx_message"] = str(e)
 
     # short squares
-    lu.log_pretty_header("Short Squares:",level=2)
+    try:
+        lu.log_pretty_header("Short Squares:",level=2)
 
-    if len(short_square_sweep_numbers) == 0:
-        raise er.FeatureError("No short square sweeps available for feature extraction")
+        if len(short_square_sweep_numbers) == 0:
+            raise er.FeatureError("No short square sweeps available for feature extraction")
 
-    ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
-    ssq_sweeps.select_epoch("recording")
-    ssq_sweeps.align_to_start_of_epoch("experiment")
+        ssq_sweeps = data_set.sweep_set(short_square_sweep_numbers)
+        ssq_sweeps.select_epoch("recording")
+        ssq_sweeps.align_to_start_of_epoch("experiment")
 
-    ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
-    ssq_spx, ssq_spfx = extractors_for_sweeps(ssq_sweeps,
-                                              est_window = [ssq_start,ssq_start+0.001],
-                                              **detection_parameters(data_set.SHORT_SQUARE))
-    ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
-    ssq_features = ssq_an.analyze(ssq_sweeps)
-    cell_features["short_squares"] = ssq_an.as_dict(ssq_features, [ dict(sweep_number=sn) for sn in short_square_sweep_numbers ])
+        ssq_start, ssq_dur, _, _, _ = stf.get_stim_characteristics(ssq_sweeps.sweeps[0].i, ssq_sweeps.sweeps[0].t)
+        ssq_spx, ssq_spfx = extractors_for_sweeps(ssq_sweeps,
+                                                est_window = [ssq_start,ssq_start+0.001],
+                                                **detection_parameters(data_set.SHORT_SQUARE))
+        ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
+        ssq_features = ssq_an.analyze(ssq_sweeps)
+        cell_features["short_squares"] = ssq_an.as_dict(ssq_features, [ dict(sweep_number=sn) for sn in short_square_sweep_numbers ])
+
+    except (er.FeatureError,IndexError) as e:
+        cell_features["short_squares"] = None
+        logging.warning(e)
+        if cell_state["failed_fx"]:
+            cell_state["fail_fx_message"].append('; '+str(e))
+        else:
+            cell_state["failed_fx"] = True
+            cell_state["fail_fx_message"] = str(e)
 
     # ramps
-    lu.log_pretty_header("Ramps:", level=2)
-    if len(ramp_sweep_numbers) == 0:
-        raise er.FeatureError("No ramp sweeps available for feature extraction")
+    try:
+        lu.log_pretty_header("Ramps:", level=2)
+        if len(ramp_sweep_numbers) == 0:
+            raise er.FeatureError("No ramp sweeps available for feature extraction")
 
-    ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
-    ramp_sweeps.select_epoch("recording")
-    ramp_sweeps.align_to_start_of_epoch("experiment")
+        ramp_sweeps = data_set.sweep_set(ramp_sweep_numbers)
+        ramp_sweeps.select_epoch("recording")
+        ramp_sweeps.align_to_start_of_epoch("experiment")
 
-    ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
+        ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
 
-    ramp_spx, ramp_spfx = extractors_for_sweeps(ramp_sweeps,
-                                                start = ramp_start,
-                                                **detection_parameters(data_set.RAMP))
-    ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
-    ramp_features = ramp_an.analyze(ramp_sweeps)
-    cell_features["ramps"] = ramp_an.as_dict(ramp_features, [dict(sweep_number=sn) for sn in ramp_sweep_numbers ])
+        ramp_spx, ramp_spfx = extractors_for_sweeps(ramp_sweeps,
+                                                    start = ramp_start,
+                                                    **detection_parameters(data_set.RAMP))
+        ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
+        ramp_features = ramp_an.analyze(ramp_sweeps)
+        cell_features["ramps"] = ramp_an.as_dict(ramp_features, [dict(sweep_number=sn) for sn in ramp_sweep_numbers ])
 
-    return cell_features
+    except (er.FeatureError,IndexError) as e:
+        cell_features["ramps"] = None
+        logging.warning(e)
+        if cell_state["failed_fx"]:
+            cell_state["fail_fx_message"].append('; '+str(e))
+        else:
+            cell_state["failed_fx"] = True
+            cell_state["fail_fx_message"] = str(e)
+
+    return cell_features, cell_state
 
 
 def select_subthreshold_min_amplitude(stim_amps, decimals=0):
@@ -308,21 +339,23 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
             logging.info("Assigned subthreshold minimum amplitude of %f.", subthresh_min_amp)
 
 
-    cell_features = extract_cell_features(data_set,
-                                          ramp_sweep_numbers,
-                                          ssq_sweep_numbers,
-                                          lsq_sweep_numbers,
-                                          subthresh_min_amp)
-
     # compute sweep features
     sweep_features = extract_sweep_features(data_set, iclamp_sweeps)
 
+    # try:
+    cell_features, cell_state = extract_cell_features(data_set,
+                                        ramp_sweep_numbers,
+                                        ssq_sweep_numbers,
+                                        lsq_sweep_numbers,
+                                        subthresh_min_amp)
+    # TODO: looks like this is adding peak_deflect, but could be refactored not to need cell_features
     # shuffle peak deflection for the subthreshold long squares
-    for s in cell_features["long_squares"]["subthreshold_sweeps"]:
-        sweep_features[s['sweep_number']]['peak_deflect'] = s['peak_deflect']
-
-    cell_record = fr.build_cell_feature_record(cell_features)
+    if cell_features["long_squares"]:
+        for s in cell_features["long_squares"]["subthreshold_sweeps"]:
+            sweep_features[s['sweep_number']]['peak_deflect'] = s['peak_deflect']
+    
+    cell_record = fr.build_cell_feature_record(cell_features)     
     sweep_records = fr.build_sweep_feature_record(data_set.sweep_table, sweep_features)
 
-    return cell_features, sweep_features, cell_record, sweep_records
+    return cell_features, sweep_features, cell_record, sweep_records, cell_state
 

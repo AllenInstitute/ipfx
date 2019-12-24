@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.signal as signal
+from . import error as er
 
 
 def find_time_index(t, t_0):
@@ -15,8 +16,9 @@ def find_time_index(t, t_0):
     -------
     idx: index of t closest to t_0
     """
-    assert t[0] <= t_0 <= t[-1], "Given time ({:f}) is outside of time range ({:f}, {:f})".format(t_0, t[0], t[-1])
-
+    if not t[0] <= t_0 <= t[-1]:
+        raise er.FeatureError(
+            "Given time ({:f}) is outside of time range ({:f}, {:f})".format(t_0, t[0], t[-1]))
     idx = np.argmin(abs(t - t_0))
     return idx
 
