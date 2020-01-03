@@ -1,4 +1,5 @@
 import re
+import logging
 import warnings
 import pandas as pd
 from dateutil import parser
@@ -152,7 +153,7 @@ class NwbReader(object):
                 real_sweep_number = timeseries.attrs["sweep_number"]
 
             if real_sweep_number is None:
-                warnings.warn("Sweep number not found, returning: None")
+                logging.info("Sweep number not found, returning: None")
 
             return real_sweep_number
 
@@ -480,7 +481,7 @@ class NwbPipelineReader(NwbReader):
         return dataset_si
 
     def get_sweep_number(self, sweep_name):
-
+# TODO: check numbering approach for whole file on load, no need for trial and error on each sweep
         sweep_number = self.get_real_sweep_number(sweep_name)
         if sweep_number is None:
             sweep_number = int(sweep_name.split('_')[-1])
