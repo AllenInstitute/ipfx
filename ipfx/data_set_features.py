@@ -180,7 +180,7 @@ def extract_cell_features(data_set,
                                                 start = lsq_start,
                                                 end = lsq_start+lsq_dur,
                                                 **detection_parameters(data_set.LONG_SQUARE))
-        lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=subthresh_min_amp)
+        lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=subthresh_min_amp, require_subthreshold=False, require_suprathreshold=False)
         lsq_features = lsq_an.analyze(lsq_sweeps)
         cell_features["long_squares"] = lsq_an.as_dict(lsq_features, [ dict(sweep_number=sn) for sn in long_square_sweep_numbers ])
 
