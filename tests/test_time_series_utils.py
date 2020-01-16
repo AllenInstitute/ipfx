@@ -2,13 +2,14 @@ import pytest
 import numpy as np
 
 import ipfx.time_series_utils as tsu
+from ipfx.error import FeatureError
 
 
 def test_find_time_out_of_bounds():
     t = np.array([0, 1, 2])
     t_0 = 4
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(FeatureError):
         tsu.find_time_index(t, t_0)
 
 
