@@ -57,10 +57,8 @@ class ABFConverter:
 
         self.abfs = []
 
-        pyabf.stimulus.Stimulus.protocolStorageDir = ABFConverter.protocolStorageDir
-
         for inFile in inFiles:
-            abf = pyabf.ABF(inFile, loadData=False)
+            abf = pyabf.ABF(inFile, loadData=False, stimulusFileFolder=ABFConverter.protocolStorageDir)
             self.abfs.append(abf)
 
             # ensure that the input file matches our expectations
@@ -97,7 +95,7 @@ class ABFConverter:
         root, ext = os.path.splitext(inFile)
 
         abf = pyabf.ABF(inFile)
-        abf.getInfoPage().generateHTML(saveAs=root + ".html")
+        pyabf.abfHeaderDisplay.abfInfoPage(abf).generateHTML(saveAs=root + ".html")
 
     @staticmethod
     def _getProtocolName(protocolName):
@@ -536,7 +534,6 @@ class ABFConverter:
 
         for file_index, abf in enumerate(self.abfs):
 
-            starting_time = self._calculateStartingTime(abf)
             stimulus_description = ABFConverter._getProtocolName(abf.protocol)
             _, jsonSource = self._findSettingsEntry(abf)
             log.debug(f"Using JSON settings for {jsonSource}.")
@@ -560,6 +557,7 @@ class ABFConverter:
                     electrode = electrodes[channel]
                     gain = abf._adcSection.fADCProgrammableGain[channel]
                     resolution = np.nan
+                    starting_time = self._calculateStartingTime(abf)
                     rate = float(abf.dataRate)
                     description = json.dumps({"cycle_id": cycle_id,
                                               "protocol": abf.protocol,
