@@ -33,11 +33,8 @@ def run_pipeline(input_nwb_file,
                        qc_criteria)
 
     if qc_output["cell_state"]["failed_qc"]:
-        logging.warning("Failed QC. No ephys features extracted.")
+        logging.warning("Cell failed QC. Attempting feature extraction anyway.")
 
-        return dict(sweep_extraction=se_output,
-                    qc=qc_output,
-                    )
 
     sp.override_auto_sweep_states(manual_sweep_states, qc_output["sweep_states"])
     sp.assign_sweep_states(qc_output["sweep_states"], se_output["sweep_features"])
