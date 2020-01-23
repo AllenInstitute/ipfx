@@ -31,10 +31,11 @@ def feature_vector_input():
 
     data_set = AibsDataSet(nwb_file=nwb_file_full_path, ontology=ontology)
 
-    lsq_sweep_numbers = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP,
-                                                      stimuli=ontology.long_square_names).sweep_number.sort_values().values
+    lsq_sweep_numbers = [4, 5, 6, 16, 17, 18, 19, 20, 21]
 
     lsq_sweeps = data_set.sweep_set(lsq_sweep_numbers)
+    lsq_sweeps.select_epoch("recording")
+    lsq_sweeps.align_to_start_of_epoch("experiment")
     lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(lsq_sweeps.sweeps[0].i,
                                                                lsq_sweeps.sweeps[0].t)
 
