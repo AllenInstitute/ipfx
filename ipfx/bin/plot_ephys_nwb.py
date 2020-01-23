@@ -3,6 +3,8 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from ipfx.data_set_utils import create_data_set
+from ipfx.stimulus import StimulusOntology
+import allensdk.core.json_utilities as ju
 
 
 def plot_data_set(data_set, sweep_table, nwb_file_name):
@@ -81,7 +83,7 @@ def customize_axis(ax):
 
 
 def get_vertical_offset(data):
-
+    data = data[~np.isnan(data)]
     return np.max(np.abs(data)) * 1.2
 
 
@@ -96,7 +98,10 @@ def main():
     nwb_file = sys.argv[1]
     print("plotting file: %s" % nwb_file)
 
-    data_set = create_data_set(nwb_file=nwb_file,validate_stim=False)
+    stimulus_ontology_file = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
+    ont = StimulusOntology(ju.read(stimulus_ontology_file))
+
+    data_set = create_data_set(nwb_file=nwb_file,validate_stim=False,ontology=ont)
 
     vclamp_sweep_table = data_set.sweep_table[data_set.sweep_table["clamp_mode"] == "VoltageClamp"]
     plot_data_set(data_set, vclamp_sweep_table, nwb_file)
