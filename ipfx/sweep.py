@@ -3,10 +3,9 @@ import numpy as np
 
 class Sweep(object):
     def __init__(self, t, v, i, clamp_mode, sampling_rate, sweep_number=None, epochs=None):
-        nanmask = np.isnan(v)
-        self._t = np.array(t)[~nanmask]
-        self._v = np.array(v)[~nanmask]
-        self._i = np.array(i)[~nanmask]
+        self._t = t
+        self._v = v
+        self._i = i
         self.sampling_rate = sampling_rate
         self.sweep_number = sweep_number
         self.clamp_mode = clamp_mode

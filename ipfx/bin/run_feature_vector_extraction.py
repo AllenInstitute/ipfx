@@ -94,6 +94,7 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source, ontology,
         _,
         lsq_start,
         lsq_end) = su.preprocess_long_square_sweeps(data_set, lsq_sweep_numbers)
+
     except Exception as detail:
         logging.warning("Exception when preprocessing long square sweeps from specimen {:d}".format(specimen_id))
         logging.warning(detail)
