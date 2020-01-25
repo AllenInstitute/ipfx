@@ -18,6 +18,17 @@ def make_nwb2_file_name(dir_name,base_name):
 
 
 def main():
+    """
+    Convert nwb version 1 to nwb version 2
+
+    Usage:
+    -----
+    python run_nwb1_to_nwb2_conversion.py --input_nwb_file /path/to/version1/file.nwb
+    or
+    python -m ipfx.bin.run_nwb1_to_nwb2_conversion --input_nwb_file /path/to/version1/file.nwb
+
+    Will produce nwb version 2 file in the same folder
+    """
 
     module = args.ArgSchemaParser(schema_type=ConvertNWBParameters)
 
