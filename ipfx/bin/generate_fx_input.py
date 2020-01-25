@@ -6,7 +6,7 @@ from ipfx.bin.run_sweep_extraction import run_sweep_extraction
 from ipfx.bin.generate_qc_input import generate_qc_input
 from ipfx.bin.generate_se_input import generate_se_input, parse_args
 from ipfx.bin.run_qc import run_qc
-import ipfx.bin.lims_queries as lq
+import ipfx.lims_queries as lq
 import ipfx.logging_utils as lu
 
 

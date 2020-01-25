@@ -20,12 +20,12 @@ def test_select_epoch(sweep):
     v_sweep = sweep.v
 
     sweep.select_epoch("recording")
-    assert sweep.i == [0,0,1,1,0,0,0,2,2,2,2]
-    assert sweep.v == [0,0,1,2,1,0,0,1,2,3,1]
+    assert np.all(sweep.i == [0,0,1,1,0,0,0,2,2,2,2])
+    assert np.all(sweep.v == [0,0,1,2,1,0,0,1,2,3,1])
 
     sweep.select_epoch("sweep")
-    assert sweep.i == i_sweep
-    assert sweep.v == v_sweep
+    assert np.all(sweep.i == i_sweep)
+    assert np.all(sweep.v == v_sweep)
 
 
 def test_set_time_zero_to_index(sweep):

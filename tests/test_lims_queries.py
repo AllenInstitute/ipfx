@@ -1,5 +1,5 @@
 import pytest
-import ipfx.bin.lims_queries as lq
+import ipfx.lims_queries as lq
 
 
 if not lq.able_to_connect_to_lims():
