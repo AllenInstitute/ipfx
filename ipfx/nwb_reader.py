@@ -637,6 +637,9 @@ def get_nwb_version(nwb_file):
             if nwb_version is not None and re.match("^2", nwb_version):
                 return {"major": 2, "full": nwb_version}
 
+            if nwb_version is not None and re.match("^NWB-2", nwb_version):
+                return {"major": 2, "full": nwb_version}
+
     return {"major": None, "full": None}
 
 
