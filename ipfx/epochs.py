@@ -106,8 +106,9 @@ def get_stim_epoch(i, test_pulse=True):
     -------
     start,end: int tuple
     """
+    nanmask = np.isnan(i)
+    di = np.diff(i[~nanmask])
 
-    di = np.diff(i)
     di_idx = np.flatnonzero(di)   # != 0
 
     if test_pulse:
@@ -139,7 +140,8 @@ def get_test_epoch(i,hz):
         sampling rate
     """
 
-    di = np.diff(i)
+    nanmask = np.isnan(i)
+    di = np.diff(i[~nanmask])
     di_idx = np.flatnonzero(di)
 
     if len(di_idx) == 0:
