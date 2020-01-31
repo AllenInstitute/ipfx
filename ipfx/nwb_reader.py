@@ -335,27 +335,6 @@ class NwbXReader(NwbReader):
         if not isinstance(sweep_number, (int, np.uint64, np.int64)):
             raise ValueError("sweep_number must be an integer but it is {}".format(type(sweep_number)))
 
-        def getRawDataSourceType(experiment_description):
-            """
-            Return the original file format of the NWB file
-            """
-
-            d = {"abf": False, "dat": False, "unknown": False}
-
-            if experiment_description.startswith("PatchMaster"):
-                d["dat"] = True
-            elif experiment_description.startswith("Clampex"):
-                d["abf"] = True
-            elif experiment_description.startswith("IVSCC"):
-                d["nwb"] = True
-            else:
-                d["unknown"] = True
-
-            return d
-
-        rawDataSourceType = getRawDataSourceType(self.nwb.experiment_description)
-        assert not rawDataSourceType["unknown"], "Cannot handle data from this raw data source"
-
         series = self.nwb.sweep_table.get_series(sweep_number)
 
         if series is None:
