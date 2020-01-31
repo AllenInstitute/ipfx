@@ -116,9 +116,9 @@ class NwbReader(object):
     def get_long_unit_name(unit):
         if not unit:
             return "Unknown"
-        if unit.startswith('A'):
+        elif unit.startswith('A') or unit == 'amps':
             return "Amps"
-        elif unit.startswith('V'):
+        elif unit.startswith('V') or unit == 'volts':
             return "Volts"
         else:
             return unit
