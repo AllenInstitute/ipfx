@@ -294,7 +294,7 @@ class NwbReader(object):
 class NwbXReader(NwbReader):
     """
     Read data from NWB v2 files created by run_x_to_nwb_conversion.py from
-    ABF/DAT files.
+    ABF/DAT files or new NWBv2 files from MIES.
     """
 
     def __init__(self, nwb_file):
