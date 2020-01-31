@@ -502,3 +502,53 @@ def test_get_long_unit_name(unit_name, long_unit_name):
 
     assert long_unit_name == NwbReader.get_long_unit_name(unit_name)
 
+@pytest.mark.parametrize('NWB_file', ['valid_v2_MIES-NWBv2-0655f7e4.nwb'], indirect=True)
+def test_valid_v2_full_MIES(NWB_file):
+
+    reader = create_nwb_reader(NWB_file)
+
+    assert isinstance(reader, NwbXReader)
+
+    sweep_data = reader.get_sweep_data(0)
+
+    sweep_names_ref = [u'data_00000_AD0']
+
+    sweep_names = reader.get_sweep_names()
+    assert sorted(sweep_names_ref) == sorted(sweep_names)
+
+    assert reader.get_pipeline_version() == (0, 0)
+
+    assert reader.get_sweep_number("data_00000_AD0") == 0
+
+    assert reader.get_stim_code(0) == "StimulusSetA_DA_0"
+
+    # ignore very long description
+    sweep_attrs_ref = {u'capacitance_fast': 0.0,
+                       u'capacitance_slow': 0.0,
+                       u'comments': None,
+                       u'description': None,
+                       u'gain': 0.0005,
+                       u'namespace': u'core',
+                       u'neurodata_type': u'VoltageClampSeries',
+                       u'starting_time': 3609.376999855042,
+                       u'stimulus_description': u'StimulusSetA_DA_0',
+                       u'sweep_number': 0}
+
+    sweep_attrs = reader.get_sweep_attrs(0)
+    sweep_attrs['description'] = None
+    sweep_attrs['comments'] = None
+
+    compare_dicts(sweep_attrs_ref, sweep_attrs)
+
+    # assume the data itself is correct and replace it with None
+    sweep_data_ref = {
+                      'response': None,
+                      'sampling_rate': 200000.0,
+                      'stimulus': None,
+                      'stimulus_unit': 'Volts'}
+
+    sweep_data = reader.get_sweep_data(0)
+    sweep_data['response'] = None
+    sweep_data['stimulus'] = None
+
+    assert sweep_data_ref == sweep_data
