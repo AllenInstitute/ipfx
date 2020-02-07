@@ -142,15 +142,25 @@ def get_specimen_info_from_lims_by_id(specimen_id):
 def get_nwb_path_from_lims(ephys_roi_result):
 
     # well known file type ID for NWB files is 475137571
+    # well known file type ID for NWBIgor files is 570280085
 
+    # Try to find NWBIgor file preferentially
     result = query("""
     SELECT f.filename, f.storage_directory FROM well_known_files f
-    WHERE f.attachable_type = 'EphysRoiResult' AND f.attachable_id = %s AND f.well_known_file_type_id = 475137571
+    WHERE f.attachable_type = 'EphysRoiResult' AND f.attachable_id = %s AND f.well_known_file_type_id = 570280085
     """ % (ephys_roi_result,))
 
     if len(result) == 0:
-        logging.info("No result from query to find NWB file")
-        return None
+        # Fall back to looking for NWB type
+
+        result = query("""
+        SELECT f.filename, f.storage_directory FROM well_known_files f
+        WHERE f.attachable_type = 'EphysRoiResult' AND f.attachable_id = %s AND f.well_known_file_type_id = 475137571
+        """ % (ephys_roi_result,))
+
+        if len(result) == 0:
+            logging.info("No result from query to find NWB file")
+            return None
 
     result = result[0]
     if result:
