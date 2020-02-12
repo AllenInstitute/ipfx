@@ -9,7 +9,7 @@ argschema
 allensdk
 dictdiffer
 hdmf==1.1.2
-pyabf==2.2.0
+git+https://github.com/nilegraddis/pyABF@version-outside-init#egg=pyabf&subdirectory=src
 pynwb==1.0.2
 six
 watchdog
