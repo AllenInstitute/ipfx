@@ -18,7 +18,7 @@ from pynwb.device import Device
 from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import IntracellularElectrode
 
-from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
+from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, I0_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, createCycleID
 
@@ -362,7 +362,6 @@ class ABFConverter:
         counter = 0
 
         for file_index, abf in enumerate(self.abfs):
-
             stimulus_description = ABFConverter._getProtocolName(abf.protocol)
             scale_factor = self._getScaleFactor(abf, stimulus_description)
 
@@ -519,6 +518,10 @@ class ABFConverter:
                 d["bias_current"] = np.nan
                 d["bridge_balance"] = np.nan
                 d["capacitance_compensation"] = np.nan
+            elif clampMode == I0_CLAMP_MODE:
+                d["bias_current"] = np.nan
+                d["bridge_balance"] = np.nan
+                d["capacitance_compensation"] = np.nan
             else:
                 warnings.warn("Unsupported clamp mode {clampMode}")
 
@@ -593,6 +596,22 @@ class ABFConverter:
                                                       whole_cell_series_resistance_comp=settings["whole_cell_series_resistance_comp"])  # noqa: E501
 
                     elif clampMode == I_CLAMP_MODE:
+                        acquistion_data = seriesClass(name=name,
+                                                      data=data,
+                                                      sweep_number=np.uint64(cycle_id),
+                                                      unit=unit,
+                                                      electrode=electrode,
+                                                      gain=gain,
+                                                      resolution=resolution,
+                                                      conversion=conversion,
+                                                      starting_time=starting_time,
+                                                      rate=rate,
+                                                      description=description,
+                                                      bias_current=settings["bias_current"],
+                                                      bridge_balance=settings["bridge_balance"],
+                                                      stimulus_description=stimulus_description,
+                                                      capacitance_compensation=settings["capacitance_compensation"])
+                    elif clampMode == I0_CLAMP_MODE:
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
                                                       sweep_number=np.uint64(cycle_id),
