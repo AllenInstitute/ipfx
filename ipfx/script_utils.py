@@ -167,6 +167,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option="none", sp
 
 def validate_sweeps(data_set, sweep_numbers, extra_dur=0.2):
     check_sweeps = data_set.sweep_set(sweep_numbers)
+    check_sweeps.select_epoch("recording")
     valid_sweep_stim = []
     start = None
     dur = None
