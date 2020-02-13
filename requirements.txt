@@ -10,7 +10,7 @@ allensdk
 dictdiffer
 hdmf==1.1.2
 pyabf<2.3.0
-pynwb==1.0.2
+git+https://github.com/neurodatawithoutborders/pynwb@enh/update_schema
 six
 watchdog
 pg8000
