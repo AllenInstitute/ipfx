@@ -8,7 +8,6 @@ pillow
 argschema
 allensdk
 dictdiffer
-hdmf==1.1.2
 pyabf<2.3.0
 git+https://github.com/neurodatawithoutborders/pynwb@enh/update_schema
 six
