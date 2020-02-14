@@ -413,7 +413,7 @@ def test_valid_v2_full_ABF(NWB_file):
                       'response': None,
                       'sampling_rate': 50000.0,
                       'stimulus': None,
-                      'stimulus_unit': 'Amps'}
+                      'stimulus_unit': 'amperes'}
 
     sweep_data = reader.get_sweep_data(0)
     sweep_data['response'] = None

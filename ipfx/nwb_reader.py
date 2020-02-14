@@ -121,7 +121,7 @@ class NwbReader(object):
     @staticmethod
     def validate_SI_unit(unit):
 
-        valid_SI_units = ["Volts", "Amps"]
+        valid_SI_units = ["Volts", "Amps", "amperes"]
         if unit not in valid_SI_units:
             raise ValueError(F"Unit {unit} is not among the valid SI units {valid_SI_units}")
 
