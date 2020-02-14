@@ -5,6 +5,7 @@ from dateutil import parser
 import h5py
 import numpy as np
 from pynwb import NWBHDF5IO
+from io import BytesIO
 from pynwb.icephys import (CurrentClampSeries, CurrentClampStimulusSeries, VoltageClampSeries,
                            VoltageClampStimulusSeries, IZeroClampSeries)
 from ipfx.py2to3 import to_str
@@ -33,8 +34,12 @@ def get_scalar_value(dataset_from_nwb):
 
 class NwbReader(object):
 
-    def __init__(self, nwb_file):
-        self.nwb_file = nwb_file
+    def __init__(self, nwb_file, load_into_memory=True):
+        if load_into_memory:
+            with open(nwb_file, 'rb') as fh:
+                self.nwb_file = BytesIO(fh.read())
+        else:
+            self.nwb_file = nwb_file
 
     def get_sweep_data(self, sweep_number):
         raise NotImplementedError
