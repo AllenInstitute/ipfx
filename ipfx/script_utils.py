@@ -7,6 +7,7 @@ import ipfx.stimulus_protocol_analysis as spa
 import ipfx.data_set_features as dsf
 import ipfx.time_series_utils as tsu
 import ipfx.error as er
+from ipfx.sweep import SweepSet
 from ipfx.aibs_data_set import AibsDataSet
 import h5py
 import os
@@ -190,21 +191,20 @@ def validate_sweeps(data_set, sweep_numbers, extra_dur=0.2):
     end = start + dur
 
     # Check that all sweeps are long enough and not ended early
-    good_sweep_numbers = [n for n, s, v in zip(sweep_numbers, check_sweeps.sweeps, valid_sweep_stim)
+    good_sweeps = [s for s, v in zip(check_sweeps.sweeps, valid_sweep_stim)
                               if s.t[-1] >= end + extra_dur
                               and v is True
                               and not np.all(s.v[tsu.find_time_index(s.t, end)-100:tsu.find_time_index(s.t, end)] == 0)]
-    return good_sweep_numbers, start, end
+    return SweepSet(sweeps=good_sweeps), start, end
 
 
 def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthresh_min_amp=-100.):
     if len(sweep_numbers) == 0:
         raise er.FeatureError("No long square sweeps available for feature extraction")
 
-    good_sweep_numbers, lsq_start, lsq_end = validate_sweeps(data_set, sweep_numbers, extra_dur=extra_dur)
-    if len(good_sweep_numbers) == 0:
+    lsq_sweeps, lsq_start, lsq_end = validate_sweeps(data_set, sweep_numbers, extra_dur=extra_dur)
+    if len(lsq_sweeps.sweeps) == 0:
         raise er.FeatureError("No long square sweeps were long enough or did not end early")
-    lsq_sweeps = data_set.sweep_set(good_sweep_numbers)
     lsq_sweeps.select_epoch("recording")
 
     lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(
@@ -225,10 +225,9 @@ def preprocess_short_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, spike
     if len(sweep_numbers) == 0:
         raise er.FeatureError("No short square sweeps available for feature extraction")
 
-    good_sweep_numbers, ssq_start, ssq_end  = validate_sweeps(data_set, sweep_numbers, extra_dur=extra_dur)
-    if len(good_sweep_numbers) == 0:
+    ssq_sweeps, ssq_start, ssq_end  = validate_sweeps(data_set, sweep_numbers, extra_dur=extra_dur)
+    if len(ssq_sweeps.sweeps) == 0:
         raise er.FeatureError("No short square sweeps were long enough or did not end early")
-    ssq_sweeps = data_set.sweep_set(good_sweep_numbers)
     ssq_sweeps.select_epoch("recording")
 
     ssq_spx, ssq_spfx = dsf.extractors_for_sweeps(ssq_sweeps,
