@@ -310,7 +310,12 @@ class NwbXReader(NwbReader):
         return self.get_real_sweep_number(sweep_name)
 
     def get_stim_code(self, sweep_number):
-        return self.get_sweep_attrs(sweep_number)["stimulus_description"]
+
+        stim_code = self.get_sweep_attrs(sweep_number)["stimulus_description"]
+        if stim_code[-5:] == "_DA_0":
+            stim_code = stim_code[:-5]
+
+        return stim_code
 
     def get_spike_times(self, sweep_number):
 
