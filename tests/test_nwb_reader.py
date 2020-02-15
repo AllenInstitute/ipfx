@@ -520,7 +520,7 @@ def test_valid_v2_full_MIES(NWB_file):
 
     assert reader.get_sweep_number("data_00000_AD0") == 0
 
-    assert reader.get_stim_code(0) == "StimulusSetA_DA_0"
+    assert reader.get_stim_code(0) == "StimulusSetA"
 
     # ignore very long description
     sweep_attrs_ref = {u'capacitance_fast': 0.0,
