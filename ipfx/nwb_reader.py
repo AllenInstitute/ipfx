@@ -34,6 +34,9 @@ def get_scalar_value(dataset_from_nwb):
 
 class NwbReader(object):
 
+
+    SCALAR_ATTRS = ["bias_current", "stimulus_scale_factor", "bridge_balance", "stimulus_scale_factor"]
+
     def __init__(self, nwb_file, load_into_memory=True):
         if load_into_memory:
             with open(nwb_file, 'rb') as fh:
@@ -181,6 +184,10 @@ class NwbReader(object):
                         continue
 
                     attrs[entry] = sweep_ts[entry][()]
+
+        for k in self.SCALAR_ATTRS:
+            if k in attrs.keys():
+                attrs[k] = get_scalar_value(attrs[k])
 
         return attrs
 
