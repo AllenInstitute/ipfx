@@ -4,6 +4,8 @@ from ipfx.hbg_dataset import HBGDataSet, get_finite_or_none
 from ipfx import lab_notebook_reader
 
 class MiesDataSet(HBGDataSet):
+    # TODO as part of issue GH-286, this class should be refactored to no 
+    # longer subclass HBGDataSet, among other changes.
 
     def __init__(self, sweep_info=None, nwb_file=None, ontology=None, api_sweeps=True, validate_stim=True):
         self.notebook = lab_notebook_reader.create_lab_notebook_reader(nwb_file)
@@ -22,7 +24,6 @@ class MiesDataSet(HBGDataSet):
 
         cnt = self.notebook.get_value("Set Sweep Count", sweep_num, 0)
         stim_code_ext = stim_code + "[%d]" % int(cnt)
-        print(stim_code_ext)
         return stim_code_ext
 
     def extract_sweep_record(self, sweep_num: int) -> Dict[str, Any]:
