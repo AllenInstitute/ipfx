@@ -13,6 +13,10 @@ TEST_OUTPUT_DIR = "/allen/aibs/informatics/module_test_data/ipfx/test_feature_ve
 
 @pytest.mark.requires_lims
 @pytest.mark.slow
+@pytest.mark.skipif(
+    not os.path.exists(TEST_OUTPUT_DIR), 
+    reason="unable to read expected data"
+)
 def test_feature_vector_extraction(tmpdir_factory):
 
     temp_output_dir = str(tmpdir_factory.mktemp("feature_vector"))
@@ -54,6 +58,10 @@ def test_feature_vector_extraction(tmpdir_factory):
 
 @pytest.mark.requires_lims
 @pytest.mark.slow
+@pytest.mark.skipif(
+    not os.path.exists(TEST_OUTPUT_DIR), 
+    reason="unable to read expected data"
+)
 def test_feature_collection(tmpdir_factory):
 
     temp_output_dir = str(tmpdir_factory.mktemp("feature_vector"))
