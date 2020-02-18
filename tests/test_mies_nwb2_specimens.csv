@@ -1,2 +1,4 @@
 input_json output_json
 /allen/aibs/informatics/module_test_data/ipfx/test_specimens/Ctgf-T2A-dgCre;Ai14-495723.05.02.01/pipeline_input_nwb2.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/Ctgf-T2A-dgCre;Ai14-495723.05.02.01/pipeline_output_nwb1.json
+/allen/aibs/informatics/module_test_data/ipfx/test_specimens/Vip-IRES-Cre;Ai14-331294.04.01.01/pipeline_input_nwb2.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/Vip-IRES-Cre;Ai14-331294.04.01.01/pipeline_output_nwb1.json
+/allen/aibs/informatics/module_test_data/ipfx/test_specimens/Pvalb-IRES-Cre;Ai14(IVSCC)-165172.05.02/pipeline_input_nwb2.json /allen/aibs/informatics/module_test_data/ipfx/test_specimens/Pvalb-IRES-Cre;Ai14(IVSCC)-165172.05.02/pipeline_output_nwb1.json
