@@ -327,7 +327,8 @@ class ABFConverter:
         )
 
         # Overwrite default values with user-passed values
-        meta_ini.update(metadata['NWBFile'])
+        if 'NWBFile' in metadata:
+            meta_ini.update(metadata['NWBFile'])
 
         # Create nwbfile with initial metadata
         nwbfile = NWBFile(**meta_ini)
