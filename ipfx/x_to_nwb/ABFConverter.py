@@ -71,7 +71,7 @@ class ABFConverter:
 
         self.totalSeriesCount = self._getMaxTimeSeriesCount()
 
-        nwbFile = self._createFile()
+        nwbFile = self._createFile(metadata=metadata)
 
         device = self._createDevice()
         nwbFile.add_device(device)
@@ -279,7 +279,7 @@ class ABFConverter:
 
         return sum(map(getCount, self.abfs))
 
-    def _createFile(self):
+    def _createFile(self, metadata={}):
         """
         Create a pynwb NWBFile object from the ABF file contents.
         """
@@ -307,23 +307,23 @@ class ABFConverter:
         if len(session_description) == 0:
             session_description = PLACEHOLDER
 
-        identifier = sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest()
-        session_start_time = self.refabf.abfDateTime
+        meta_ini = {}
+        meta_ini['identifier'] = sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest()
+        meta_ini['session_start_time'] = self.refabf.abfDateTime
         creatorName = self.refabf._stringsIndexed.uCreatorName
         creatorVersion = formatVersion(self.refabf.creatorVersion)
-        experiment_description = (f"{creatorName} v{creatorVersion}")
-        source_script_file_name = "run_x_to_nwb_conversion.py"
-        source_script = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
-        session_id = PLACEHOLDER
+        meta_ini['experiment_description'] = (f"{creatorName} v{creatorVersion}")
+        meta_ini['source_script_file_name'] = "run_x_to_nwb_conversion.py"
+        meta_ini['source_script'] = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
+        meta_ini['session_id'] = PLACEHOLDER
 
-        return NWBFile(session_description=session_description,
-                       identifier=identifier,
-                       session_start_time=session_start_time,
-                       experimenter=None,
-                       experiment_description=experiment_description,
-                       session_id=session_id,
-                       source_script_file_name=source_script_file_name,
-                       source_script=source_script)
+        # Overwrite default values with user-passed values
+        meta_ini.update(metadata['NWBFile'])
+
+        # Create nwbfile with initial metadata
+        nwbfile = NWBFile(**meta_ini)
+
+        return nwbfile
 
     def _createDevice(self):
         """
