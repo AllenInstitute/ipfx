@@ -9,6 +9,7 @@ import os
 import glob
 import warnings
 import logging
+import copy
 
 import numpy as np
 
@@ -323,11 +324,25 @@ class ABFConverter:
         meta_ini['source_script'] = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
         meta_ini['session_id'] = PLACEHOLDER
 
+        meta_ini_user = copy.deepcopy(metadata['NWBFile'])
+        meta_lab_meta_data = meta_ini_user.pop('lab_meta_data', None)
+
         # Overwrite default values with user-passed values
-        meta_ini.update(metadata['NWBFile'])
+        meta_ini.update(meta_ini_user)
 
         # Create nwbfile with initial metadata
         nwbfile = NWBFile(**meta_ini)
+
+        # Creates LabMetaData container
+        if meta_lab_meta_data is not None:
+            from ndx_labmetadata_abf import LabMetaData_ext
+
+            lab_metadata = LabMetaData_ext(
+                name=meta_lab_meta_data['name'],
+                cell_id=meta_lab_meta_data['cell_id'],
+                tissue_sample_id=meta_lab_meta_data['tissue_sample_id'],
+            )
+            nwbfile.add_lab_meta_data(lab_metadata)
 
         return nwbfile
 
