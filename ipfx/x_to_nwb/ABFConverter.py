@@ -391,20 +391,21 @@ class ABFConverter:
 
                     seriesClass = getStimulusSeriesClass(self._getClampMode(abf, channel))
 
-                    stimulus = seriesClass(name=name,
-                                           data=data,
-                                           sweep_number=np.uint64(cycle_id),
-                                           unit=unit,
-                                           electrode=electrode,
-                                           gain=gain,
-                                           resolution=resolution,
-                                           conversion=conversion,
-                                           starting_time=starting_time,
-                                           rate=rate,
-                                           description=description,
-                                           stimulus_description=stimulus_description)
+                    if seriesClass is not None:
+                        stimulus = seriesClass(name=name,
+                                               data=data,
+                                               sweep_number=np.uint64(cycle_id),
+                                               unit=unit,
+                                               electrode=electrode,
+                                               gain=gain,
+                                               resolution=resolution,
+                                               conversion=conversion,
+                                               starting_time=starting_time,
+                                               rate=rate,
+                                               description=description,
+                                               stimulus_description=stimulus_description)
 
-                    series.append(stimulus)
+                        series.append(stimulus)
 
         return series
 

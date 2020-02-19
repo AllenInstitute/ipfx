@@ -53,7 +53,7 @@ def getStimulusSeriesClass(clampMode):
     elif clampMode == I_CLAMP_MODE:
         return CurrentClampStimulusSeries
     elif clampMode == I0_CLAMP_MODE:
-        return CurrentClampStimulusSeries
+        return None
     else:
         raise ValueError(f"Unsupported clamp mode {clampMode}.")
 
