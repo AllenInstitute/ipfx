@@ -30,7 +30,7 @@ class ABFConverter:
     protocolStorageDir = None
     adcNamesWithRealData = ["IN 0", "IN 1", "IN 2", "IN 3"]
 
-    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True):
+    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True, metadata={}):
         """
         Convert the given ABF file to NWB
 
@@ -39,6 +39,7 @@ class ABFConverter:
         outFile               -- target filepath (must not exist)
         outputFeedbackChannel -- Output ADC data from feedback channels as well (useful for debugging only)
         compression           -- Toggle compression for HDF5 datasets
+        metadata              -- Metadata dictionary with user-defined values for some nwb fields
         """
 
         inFiles = []
