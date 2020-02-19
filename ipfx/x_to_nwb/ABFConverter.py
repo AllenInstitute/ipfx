@@ -76,7 +76,7 @@ class ABFConverter:
 
         # If Subject information is present in metadata
         if 'Subject' in metadata:
-            subject = self._createSubject(metadata['Subject'])
+            subject = self._createSubject(**metadata['Subject'])
             nwbFile.subject = subject
 
         device = self._createDevice()
@@ -347,21 +347,12 @@ class ABFConverter:
 
         return Device(f"{digitizer} with {telegraph}")
 
-    def _createSubject(self, metadata):
+    def _createSubject(self, **subject_fields):
         """
         Create a pynwb Subject object from the metadata contents.
         """
-        subject = Subject(
-            age=metadata['age'],
-            subject_id=metadata['subject_id'],
-            species=metadata['species'],
-            description=metadata['description'],
-            genotype=metadata['genotype'],
-            # date_of_birth=metadata['date_of_birth'],
-            weight=metadata['weight'],
-            sex=metadata['sex']
-        )
-        return subject
+        subject_fields.pop('date_of_birth')  # backwards compatibility
+        return Subject(**subject_fields)
 
     def _createElectrodes(self, device):
         """
