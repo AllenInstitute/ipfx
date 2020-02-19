@@ -9,7 +9,6 @@ import os
 import glob
 import warnings
 import logging
-import copy
 
 import numpy as np
 
@@ -314,35 +313,27 @@ class ABFConverter:
         if len(session_description) == 0:
             session_description = PLACEHOLDER
 
-        meta_ini = {}
-        meta_ini['identifier'] = sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest()
-        meta_ini['session_start_time'] = self.refabf.abfDateTime
         creatorName = self.refabf._stringsIndexed.uCreatorName
         creatorVersion = formatVersion(self.refabf.creatorVersion)
-        meta_ini['experiment_description'] = (f"{creatorName} v{creatorVersion}")
-        meta_ini['source_script_file_name'] = "run_x_to_nwb_conversion.py"
-        meta_ini['source_script'] = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
-        meta_ini['session_id'] = PLACEHOLDER
-
-        meta_ini_user = copy.deepcopy(metadata['NWBFile'])
-        meta_lab_meta_data = meta_ini_user.pop('lab_meta_data', None)
+        meta_ini = dict(
+            identifier=sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest(),
+            session_start_time=self.refabf.abfDateTime,
+            experiment_description="{} v{}".format(creatorName, creatorVersion),
+            source_script_file_name="run_x_to_nwb_conversion.py",
+            source_script=json.dumps(getPackageInfo(), sort_keys=True, indent=4),
+            session_id=PLACEHOLDER
+        )
 
         # Overwrite default values with user-passed values
-        meta_ini.update(meta_ini_user)
+        meta_ini.update(metadata['NWBFile'])
 
         # Create nwbfile with initial metadata
         nwbfile = NWBFile(**meta_ini)
 
         # Creates LabMetaData container
-        if meta_lab_meta_data is not None:
+        if 'lab_meta_data' in metadata:
             from ndx_labmetadata_abf import LabMetaData_ext
-
-            lab_metadata = LabMetaData_ext(
-                name=meta_lab_meta_data['name'],
-                cell_id=meta_lab_meta_data['cell_id'],
-                tissue_sample_id=meta_lab_meta_data['tissue_sample_id'],
-            )
-            nwbfile.add_lab_meta_data(lab_metadata)
+            nwbfile.add_lab_meta_data(LabMetaData_ext(**metadata['lab_meta_data']))
 
         return nwbfile
 
