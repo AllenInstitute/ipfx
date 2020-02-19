@@ -15,6 +15,7 @@ import numpy as np
 import pyabf
 
 from pynwb.device import Device
+from pynwb.file import Subject
 from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import IntracellularElectrode
 
@@ -72,6 +73,11 @@ class ABFConverter:
         self.totalSeriesCount = self._getMaxTimeSeriesCount()
 
         nwbFile = self._createFile(metadata=metadata)
+
+        # If Subject information is present in metadata
+        if 'Subject' in metadata:
+            subject = self._createSubject(metadata['Subject'])
+            nwbFile.subject = subject
 
         device = self._createDevice()
         nwbFile.add_device(device)
@@ -334,6 +340,22 @@ class ABFConverter:
         telegraph = self.refabf._adcSection.sTelegraphInstrument[0]
 
         return Device(f"{digitizer} with {telegraph}")
+
+    def _createSubject(self, metadata):
+        """
+        Create a pynwb Subject object from the metadata contents.
+        """
+        subject = Subject(
+            age=metadata['age'],
+            subject_id=metadata['subject_id'],
+            species=metadata['species'],
+            description=metadata['description'],
+            genotype=metadata['genotype'],
+            # date_of_birth=metadata['date_of_birth'],
+            weight=metadata['weight'],
+            sex=metadata['sex']
+        )
+        return subject
 
     def _createElectrodes(self, device):
         """
