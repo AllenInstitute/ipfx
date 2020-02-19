@@ -316,8 +316,10 @@ class ABFConverter:
         creatorName = self.refabf._stringsIndexed.uCreatorName
         creatorVersion = formatVersion(self.refabf.creatorVersion)
         meta_ini = dict(
+            session_description=session_description,
             identifier=sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest(),
             session_start_time=self.refabf.abfDateTime,
+            experimenter=None,
             experiment_description="{} v{}".format(creatorName, creatorVersion),
             source_script_file_name="run_x_to_nwb_conversion.py",
             source_script=json.dumps(getPackageInfo(), sort_keys=True, indent=4),
