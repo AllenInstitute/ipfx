@@ -2,7 +2,7 @@ Attach Metadata
 ===============
 
 `attach_metadata` is a standalone executable which 
-1. reads a(n NWB2) file containing processed, feature-extracted data from an icephys experiment.
+1. reads an NWB2 file containing processed, feature-extracted data from an icephys experiment.
 1. dispatches argued cell- and sweep-level metadata to appropriate sinks. This will be a mix of
     1. An in-memory representation of an NWB2 file
     1. An in-memory representation of a generic mapping
@@ -20,7 +20,6 @@ Some handy links:
 
 goals
 -----
-1. output filename follows pattern: `f{ephys_roi_result_id}_ephys.nwb`
 1. NWB2 outputs are compatible with nwb-schema 2.2.1
 1. NWB2 outputs are compatible with the [NWB icephys extension proposal](https://docs.google.com/document/d/1cAgsXv26BmQoVfa7Greyxs0oc4IGH-t5aJsm-AwUAAE/)
     - this should be implied by backwards compatibility of this proposal
