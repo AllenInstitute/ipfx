@@ -10,8 +10,6 @@ import numpy as np
 import datetime
 from pynwb import NWBFile, NWBHDF5IO
 
-pytestmark = pytest.mark.skip("because pynwb changes break tests, but pynwb is planning to roll back")
-
 class TestNWBConverter(NWBConverter):
 
     @staticmethod
@@ -85,7 +83,7 @@ def test_stimulus_round_trip(nwb_filename):
     data = np.array([1., 3.76, 0., 67, -2.89])
     meta_data = {"name":"test_stimulus_sweep",
                  "sweep_number": 4,
-                 "unit": "A",
+                 "unit": "amperes",
                  "gain": 32.0,
                  "resolution": 1.0,
                  "conversion": 1.0E-3,
@@ -129,7 +127,7 @@ def test_acquisition_round_trip(nwb_filename):
     data = np.array([1., 3.76, 0., 67, -2.89])
     meta_data = {"name":"test_acquisition_sweep",
                  "sweep_number": 4,
-                 "unit": "V",
+                 "unit": "volts",
                  "gain": 32.0,
                  "resolution": 1.0,
                  "conversion": 1.0E-3,
