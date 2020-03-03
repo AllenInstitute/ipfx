@@ -13,3 +13,4 @@ git+https://github.com/neurodatawithoutborders/pynwb@enh/update_schema
 six
 watchdog
 pg8000
+pyYAML<6.0.0
