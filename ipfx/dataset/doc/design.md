@@ -1,3 +1,47 @@
+Refactor Handling of NWB data
+=============================
+
+Extracting ephys features from data requires constructing the EphysDatSet object that contains sweep traces 
+as well as a sweep table with metadata. EphysDataSet owns the functionality for for handling sweep data data and metadata 
+and should be agnostic of the data source.
+ 
+Data from different sources (labs) may have somewhat different organization due to the loose nature of the NWB format or
+because of using different version of NWB, extensions, etc. 
+
+Thus, each data source may require a dedicated nwb data hangler class satisfying a given interface.
+The nwb handlers for the for the AIBS data as well as for data from collaborators on the HBG grant are provided.
+
+
+Some handy links:
+- [design diagrams](http://confluence.corp.alleninstitute.org/pages/viewpage.action?spaceKey=PP&title=Publishing+IVSCC+NWB2+publish+module%2C+v3)
+- [NWB2 DANDI icephys metadata list](https://docs.google.com/document/d/1KaQTtZ1AWSjHQsC3XO4k3BT5Z_pjVb4F6fIzrTEClhs/edit#heading=h.diqkrf5s0jti)
+- [NWB2 icephys extension proposal](https://docs.google.com/document/d/1cAgsXv26BmQoVfa7Greyxs0oc4IGH-t5aJsm-AwUAAE/edit)
+
+requirements
+------------
+1. NWB2 outputs are compatible with nwb-schema 2.2.1
+1. NWB2 outputs are compatible with the [NWB icephys extension proposal](https://docs.google.com/document/d/1cAgsXv26BmQoVfa7Greyxs0oc4IGH-t5aJsm-AwUAAE/)
+    - this should be implied by backwards compatibility of this proposal
+1. multiple input NWB2 file types supported (particularly AIBS vs HBG; covered by dataset creation dynamic dispatch)
+1. NWB1 file types version 1.0.5 is supported (for published data alreadly on the celltypes.brain-map.org)
+
+
+inputs
+------
+1. An NWB2 or NWB1 file
+1. Optional stimulus ontology, if not provided then use a default ontology
+1. Optional sweep-level metadata. This is a mapping from sweep identifiers to dictionaries of metadata
+
+outputs
+-------
+1. an nwb file of the same version as the input with attached spike times
+
+approach
+--------
+
+
+```Python
+
 from ipfx.sweep import Sweep,SweepSet
 from typing import Dict, Any, Optional, List
 import pandas as pd
@@ -60,7 +104,6 @@ class NWBData:
     @staticmethod
     def get_unit_name(stim_attrs):
 
-        return unit
 
     @staticmethod
     def get_long_unit_name(unit):
@@ -75,8 +118,6 @@ class NWBData:
         Return the real sweep number for the given sweep_name. Falls back to
         assumed_sweep_number if given.
         """
-
-        with h5py.File(self.nwb_file, 'r') as f:
 
 
     def get_starting_time(self, data_set_name):
@@ -117,24 +158,47 @@ class NWBData:
     def get_stimulus_groups(self):
 
 
+    def add_spike_times(self, sweep_spike_times: Dict[int,List[float]]):
+        """ Add spikes to the nwb file
+        Parameters
+        ----------
+        sweep_spike_times: all detected spikes for the experiment
+        """
+
+    def add_metadata(self, metadata: Dict[str,Any]):
+        """ Add metadata
+        """
+
+    def get_metadata(self, sweep_number: Optional[int] = None) -> Dict[str,Any]:
+        """ Get experiment metadata
+        If sweep_number is provided, then will return a sweep metadata, otherwise will return a cell-level metadata
+        Parameters
+        ----------
+        sweep_number: sweep id
+        
+        Returns
+        ------- 
+        metadata
+        
+        """
 
 
-
+    
 class HBGNWB2Data(NWBData):
-    def __init__(self, nwb_file: str,has_notebook: bool =  False):
-        super.__init__(self, nwb_file, has_notebook)
+    def __init__(self, nwb_file: str:
+        super.__init__(self, nwb_file)
 
 
 
 class MIESNWB1Data(NWBData):
-    def __init__(self, nwb_file: str, has_notebook: bool = False):
+    def __init__(self, nwb_file: str):
         super.__init__(self, nwb_file)
         self.notebook = LabNotebookIgorNwb(nwb_file)
 
 
 
 class MIESNWB2Data(NWBData):
-    def __init__(self, nwb_file: str, has_notebook: bool = False):
+    def __init__(self, nwb_file: str):
         super.__init__(self, nwb_file)
         self.notebook = LabNotebookIgorNwb(nwb_file)
 
@@ -152,7 +216,7 @@ def create_data_set(sweep_info = None,
 
 
     if nwb_version["major"] == 2 and is_mies:
-        nwb_data = MIESNWB2Data(nwb_file)
+        nwb_data = MIESNWB2Data(nwbfile)
 
     elif nwb_version["major"] == 2:
         nwb_data  = NWB2Data(nwb_file)
@@ -330,3 +394,22 @@ class EphysDataSet(object):
         -------
 
         """
+
+```
+
+
+
+Testing
+-------
+t.b.d
+
+
+Presentation
+------------
+t.b.d
+
+
+Review Notes
+------------
+
+t.b.d
