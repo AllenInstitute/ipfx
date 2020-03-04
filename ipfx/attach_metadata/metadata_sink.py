@@ -10,6 +10,7 @@ from typing import (
 )
 
 import yaml
+import pynwb
 
 
 TV = TypeVar("TV")
@@ -132,13 +133,6 @@ class DandiYamlSink(MetadataSink):
     def targets(self) -> List[Dict[str, Any]]:
         return self._targets
 
-    def __init__(self):
-        """
-        """
-
-        self._targets: List[Dict] = []
-        self._data = {}
-
     @property
     def supported_cell_fields(self) -> Set[str]:
         return {
@@ -154,6 +148,11 @@ class DandiYamlSink(MetadataSink):
     @property
     def supported_sweep_fields(self) -> Set[str]:
         return set()
+
+    def __init__(self):
+
+        self._targets: List[Dict] = []
+        self._data = {}
 
     def serialize(self, targets: Optional[OneOrMany[Dict[str, Any]]] = None):
         """ Write this sink's data to one or more 
@@ -198,6 +197,142 @@ class DandiYamlSink(MetadataSink):
         else:
             raise ValueError(
                 f"don't know how to attach metadata field: {name}\n"
+            )
+
+class Nwb2Sink(MetadataSink):
+    """ A metadata sink which modifies an NWBFile (in-memory representation of 
+    an NWB 2 file)
+    """
+
+    @property
+    def targets(self) -> List[Dict[str, Any]]:
+        return self._targets
+
+
+    @property
+    def supported_cell_fields(self) -> Set[str]:
+        return {
+            # general:
+
+            "subject_id",
+            # "specimen_id", # TODO: currently unsupported by NWB
+            # "citation_policy", # TODO: currently unsupported by NWB
+            "institution",
+            # "external_solution_recipe", # TODO: currently unsupported by NWB
+            # "recording_temperature", # TODO: currently unsupported by NWB
+            # "reporter_status", # TODO: currently unsupported by NWB
+            "electrode_id",
+            "electrode_resistance",
+            # "electrode_internal_solution_recipe", # TODO: currently unsupported by NWB
+        }
+
+    @property
+    def supported_sweep_fields(self) -> Set[str]:
+        return {
+            # general
+
+            "gain",
+            # "output_low_pass_filter_type", # TODO: NWB only has a "filtering" string
+            # "output_low_pass_filter_cutoff_frequency" # TODO: NWB only has a "filtering" string
+            # "output_high_pass_filter_type", # TODO: NWB only has a "filtering" string
+            # "output_high_pass_filter_cutoff_frequency", # TODO: NWB only has a "filtering" string
+            # "holding" # TODO: appropriate NWB field not listed
+
+            # specific to current-clamp sweeps:
+
+            "bridge_balance_enabled",
+            "fast_capacitance_compensation_enabled",
+            # "leak_current_enabled", # TODO: currently unsupported by NWB
+            # "leak_current_value", # TODO: currently unsupported by NWB
+
+            # specific to voltage-clamp sweeps:
+
+            "whole_cell_capacitance_compensation_enabled", # TODO: currently unsupported by NWB
+            "series_resistance_correction_enabled",
+        }
+
+
+    def __init__(self, nwbfile: pynwb.NWBFile, copy_file=True):
+        self._targets: List[Dict[str, Any]] = []
+        if copy_file:
+            nwbfile = cp.deepcopy(nwbfile)
+        self.nwbfile = nwbfile
+
+    def _single_ic_electrode(self) -> pynwb.icephys.IntracellularElectrode:
+        """Find the unique electrode used during this session.
+
+        Returns
+        -------
+        electrode object
+
+        Raises
+        ------
+        ValueError : If there is not exactly 1 intracellular electrode in this 
+            file.
+
+        """
+
+        keys = list(self.nwbfile.ic_electrodes.keys())
+        
+        if len(keys) != 1:
+            raise ValueError(
+                f"expected exactly 1 intracellular electrode, found {len(keys)}"
+            )
+
+        return self.nwbfile.ic_electrodes[keys[0]]
+    
+    def _get_sweep_series(self, sweep_id: int):
+        """
+        """
+        return self.nwbfile.sweep_table[sweep_id].series.values[0][0]
+
+    def register(self, name: str, value: Any, sweep_id: Optional[int] = None):
+        """ Attaches a named piece of metadata to this sink's internal store. 
+        Should dispatch to a protected method which carries out appropriate 
+        validations and transformations.
+
+        Parameters
+        ----------
+        name : the well-known name of the metadata
+        value : the value of the metadata (before any required transformations)
+        sweep_id : If provided, this will be interpreted as sweep-level 
+            metadata and sweep_id will be used to identify the sweep to which 
+            value ought to be attached. If None, this will be interpreted as 
+            cell-level metadata
+
+        Raises
+        ------
+        ValueError : An argued piece of metadata is not supported by this sink
+        """
+
+        if sweep_id is None:
+            if name == "subject_id":
+                self.nwbfile.subject.subject_id = value
+            elif name == "institution":
+                self.nwbfile.institution = value
+            elif name == "electrode_id":
+                self._single_ic_electrode().name = str(value)
+            elif name == "electrode_resistance":
+                self._single_ic_electrode().resistance = value
+
+        elif isinstance(sweep_id, int):
+            series = self._get_sweep_series(sweep_id)
+
+            if name == "gain":
+                series.gain = value
+            elif name == "bridge_balance_enabled":
+                series.bridge_balance = value # TODO: this is a float, but named enabled? I think we might need to read this from nwb -> other store
+            elif name == "fast_capacitance_compensation_enabled":
+                series.capacitance_compensation = value
+            elif name == "whole_cell_capacitance_compensation_enabled":
+                series.whole_cell_capacitance_comp = value
+            elif name == "series_resistance_correction_enabled":
+                series.resistance_comp_correction = value
+
+        else:
+            raise ValueError(
+                "unable to attach metadata field: "
+                f"{name} (sweep_id: {sweep_id})"
             )
 
 
