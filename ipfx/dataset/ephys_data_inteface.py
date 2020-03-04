@@ -1,6 +1,6 @@
 from typing import Dict, Any, List, Optional
 import abc
-
+from ipfx.stimulus import StimulusOntology
 
 class EphysDataInterface(abc.ABC):
     """
@@ -8,9 +8,11 @@ class EphysDataInterface(abc.ABC):
 
     """
 
-    def __init__(self, nwb_file):
+    def __init__(self, ontology: StimulusOntology):
 
-    @abs.abstractmethod
+        self.ontology = ontology
+
+    @abc.abstractmethod
     def get_sweep_data(self, sweep_number: int) -> Dict[str,Any]:
         """
         Extract sweep data
@@ -35,7 +37,36 @@ class EphysDataInterface(abc.ABC):
         raise NotImplementedError
 
 
-    @abs.abstractmethod
+    @abc.abstractmethod
+    def get_sweep_record(self, sweep_number: int) -> Dict[str,Any]:
+        """
+        Extract sweep data
+
+        Parameters
+        ----------
+        sweep_number
+
+        Returns
+        -------
+
+        dict in the format:
+
+        {
+            "sweep_number": int,
+            "stimulus_units": str,
+            "bridge_balance_mohm": float,
+            "leak_pa": float,
+            "stimulus_scale_factor": float,
+            "stimulus_code": str,
+            "stimulus_code_ext": str,
+            "stimulus_name": str,
+        }
+
+        """
+        raise NotImplementedError
+
+
+    @abc.abstractmethod
     def get_sweep_attrs(self, sweep_number) -> Dict[str,Any]:
         """
         Extract sweep attributes
@@ -51,8 +82,7 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-
-    @abs.abstractmethod
+    @abc.abstractmethod
     def get_sweep_number(self, sweep_name:str)-> int:
         """
         Infer sweep number from the sweep_name
@@ -67,7 +97,7 @@ class EphysDataInterface(abc.ABC):
         """
         raise NotImplementedError
 
-    @abs.abstractmethod
+    @abc.abstractmethod
     def get_stim_code(self, sweep_number: int) -> str:
         """
         Extract stimulus code
@@ -82,8 +112,23 @@ class EphysDataInterface(abc.ABC):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def get_stimulus_name(self,
+                          stim_code: str,
+                          validate: Optional[bool] = True) -> str:
+        """
+        Extract name of the stimulus from the stimulus given the ontology
 
-    @abs.abstractmethod
+        Parameters
+        ----------
+        validate: flag to validate the stimulus code is in the ontology
+
+        Returns
+        -------
+        stimulus name
+        """
+
+    @abc.abstractmethod
     def get_stim_code_ext(self, sweep_number: int)-> str:
         """
         Extract stimulus code with the extension of the format: stim_code + %d
@@ -99,7 +144,7 @@ class EphysDataInterface(abc.ABC):
         raise NotImplementedError
 
 
-    @abs.abstractmethod
+    @abc.abstractmethod
     def get_session_start_time(self) -> str:
         """
         Extract session_start_time in nwb
@@ -113,8 +158,7 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-
-    @abs.abstractmethod
+    @abc.abstractmethod
     def get_recording_date(self) -> str:
         """
         Extract recording date
@@ -127,7 +171,7 @@ class EphysDataInterface(abc.ABC):
         raise NotImplementedError
 
 
-    @abs.abstractmethod
+    @abc.abstractmethod
     def get_stimulus_unit(self, sweep_number: int) -> str:
         """
         Extract unit of a stimulus
@@ -143,7 +187,7 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-    @abs.abstractmethod
+    @abc.abstractmethod
     def get_real_sweep_number(self, sweep_name:str, assumed_sweep_number: Optional[int]=None) -> int:
         """
         Return the real sweep number for the given sweep_name. Falls back to
@@ -162,7 +206,7 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-    @abs.abstractmethod
+    @abc.abstractmethod
     def get_starting_time(self, data_set_name: str) -> str:
         """
 
@@ -178,8 +222,7 @@ class EphysDataInterface(abc.ABC):
         """
         raise NotImplementedError
 
-
-    @abs.abstractmethod
+    @abc.abstractmethod
     def build_sweep_map(self):
         """
         Build table for mapping sweep_number to the names of stimulus and acquisition groups in the nwb file
@@ -189,7 +232,7 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-    @abs.abstractmethod
+    @abc.abstractmethod
     def drop_reacquired_sweeps(self):
         """
         If sweep was re-acquired, then drop earlier acquired sweep with the same sweep_number
@@ -197,7 +240,7 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-    @abs.abstractmethod
+    @abc.abstractmethod
     def get_sweep_map(self, sweep_number):
         """
         Parameters
@@ -211,7 +254,7 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-    @abs.abstractmethod
+    @abc.abstractmethod
     def get_acquisition_groups(self) -> List[str]:
         """
         Collect names of hdf5 groups from the acquisition
@@ -223,7 +266,7 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-    @abs.abstractmethod
+    @abc.abstractmethod
     def get_stimulus_groups(self) ->List[str]:
         """
         Collect names of hdf5 groups from the stimulus
