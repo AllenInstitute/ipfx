@@ -31,18 +31,22 @@ log = logging.getLogger(__name__)
 class ABFConverter:
 
     protocolStorageDir = None
+    # TODO hardcoded channel names should be removed,
+    # together with the --outputFeedbackChannel and --realDataChannel options of run_x_to_nwb_conversion.py
     adcNamesWithRealData = ["IN 0", "IN 1", "IN 2", "IN 3"]
 
-    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True, searchSettingsFile=True):
+    def __init__(self, inFileOrFolder, outFile, compression=True, searchSettingsFile=True,
+                 includeChannelList=None, discardChannelList=None):
         """
-        Convert the given ABF file to NWB
+        Convert the given ABF file to NWB. By default all ADC channel are written in to the NWB file.
 
         Keyword arguments:
         inFileOrFolder        -- input file, or folder with multiple files, in ABF v2 format
         outFile               -- target filepath (must not exist)
-        outputFeedbackChannel -- Output ADC data from feedback channels as well (useful for debugging only)
         compression           -- Toggle compression for HDF5 datasets
         searchSettingsFile    -- Search the JSON settings file and warn if it could not be found
+        includeChannelList    -- ADC channels to write into the NWB file
+        discardChannelList    -- ADC channels to not write into the NWB file
         """
 
         inFiles = []
@@ -54,7 +58,14 @@ class ABFConverter:
         else:
             raise ValueError(f"{inFileOrFolder} is neither a folder nor a path.")
 
-        self.outputFeedbackChannel = outputFeedbackChannel
+        if includeChannelList is not None and discardChannelList is not None:
+            raise ValueError(f"includeChannelList and discardChannelList are mutually exclusive. Pass only one of them.")
+        elif includeChannelList is None and discardChannelList is None:
+            includeChannelList = list("*")
+
+        self.includeChannelList = includeChannelList
+        self.discardChannelList = discardChannelList
+
         self.compression = compression
         self.searchSettingsFile = searchSettingsFile
 
@@ -212,21 +223,20 @@ class ABFConverter:
 
     def _reduceChannelList(self, abf):
         """
-        Return a reduced channel list taking into account the feedback channel export setting.
+        Return a reduced channel list taking into account the include and discard ADC channel settings.
         """
 
-        if self.outputFeedbackChannel:
-            return abf.channelList
+        if self.includeChannelList is not None:
 
-        cleanChanneList = []
+            if self.includeChannelList == list("*"):
+                return abf.adcNames
 
-        for channel in range(abf.channelCount):
-            adcName = abf.adcNames[channel]
+            return list(set(abf.adcNames).intersection(self.includeChannelList))
 
-            if adcName in ABFConverter.adcNamesWithRealData:
-                cleanChanneList.append(abf.channelList[channel])
+        elif self.discardChannelList is not None:
+            return list(set(abf.adcNames) - set(abf.adcNames).intersection(self.discardChannelList))
 
-        return cleanChanneList
+        raise ValueError(f"Unexpected include and discard channel settings.")
 
     def _checkAll(self):
         """
@@ -553,17 +563,23 @@ class ABFConverter:
             _, jsonSource = self._findSettingsEntry(abf)
             log.debug(f"Using JSON settings for {jsonSource}.")
 
+            channelList = self._reduceChannelList(abf)
+            log.debug(f"Channel lists: original {abf.adcNames}, reduced {channelList}")
+
+            if len(channelList) == 0:
+                warnings.warn(f"The channel settings {self.includeChannelList} (included) and {self.discardChannelList} (discarded) resulted "
+                              f"in an empty channelList for {abf.abfFilePath} with the unfiltered channels being {abf.adcNames}.")
+                continue
+
             for sweep in range(abf.sweepCount):
                 cycle_id = createCycleID([file_index, sweep], total=self.totalSeriesCount)
+
                 for channel in range(abf.channelCount):
+
                     adcName = abf.adcNames[channel]
 
-                    if not self.outputFeedbackChannel:
-                        if adcName in ABFConverter.adcNamesWithRealData:
-                            pass
-                        else:
-                            # feedback data, skip
-                            continue
+                    if adcName not in channelList:
+                        continue
 
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)

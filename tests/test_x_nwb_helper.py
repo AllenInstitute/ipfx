@@ -108,7 +108,7 @@ def create_files_for_upload(ext):
 
     for f in files:
         print(f"Converting {f}")
-        convert(f, overwrite=True, outputFeedbackChannel=True, multipleGroupsPerFile=True)
+        convert(f, overwrite=True, multipleGroupsPerFile=True)
 
     nwb_folder = basename + "_nwb"
     zip_files(folder, nwb_folder, ".nwb")

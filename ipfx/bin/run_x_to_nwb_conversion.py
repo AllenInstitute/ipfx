@@ -11,7 +11,9 @@ from ipfx.x_to_nwb.DatConverter import DatConverter
 log = logging.getLogger(__name__)
 
 
-def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False, outputFeedbackChannel=False, multipleGroupsPerFile=False, compression=True, searchSettingsFile=True):
+def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False,
+            multipleGroupsPerFile=False, compression=True, searchSettingsFile=True,
+            includeChannelList="*", discardChannelList=None):
     """
     Convert the given file to a NeuroDataWithoutBorders file using pynwb
 
@@ -23,11 +25,12 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
     :param overwrite: overwrite output file, defaults to `False`
     :param fileType: file type to be converted, must be passed iff `inFileOrFolder` refers to a folder
     :param outputMetadata: output metadata of the file, helpful for debugging
-    :param outputFeedbackChannel: Output ADC data which stems from stimulus feedback channels (ignored for DAT files)
     :param multipleGroupsPerFile: Write all Groups in the DAT file into one NWB
                                   file. By default we create one NWB per Group (ignored for ABF files).
     :param searchSettingsFile: Search the JSON amplifier settings file and warn if it could not be found (ignored for DAT files)
     :param compression: Toggle compression for HDF5 datasets
+    :param includeChannelList: ADC channels to write into the NWB file (ignored for DAT files)
+    :param discardChannelList: ADC channels to not write into the NWB file (ignored for DAT files)
 
     :return: path of the created NWB file
     """
@@ -60,7 +63,8 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
         if outputMetadata:
             ABFConverter.outputMetadata(inFileOrFolder)
         else:
-            ABFConverter(inFileOrFolder, outFile, outputFeedbackChannel=outputFeedbackChannel, compression=compression, searchSettingsFile=searchSettingsFile)
+            ABFConverter(inFileOrFolder, outFile, compression=compression, searchSettingsFile=searchSettingsFile,
+                         includeChannelList=includeChannelList, discardChannelList=discardChannelList)
     elif ext == ".dat":
         if outputMetadata:
             DatConverter.outputMetadata(inFileOrFolder)
@@ -105,10 +109,27 @@ def main():
     abf_group.add_argument("--no-searchSettingsFile", action="store_false", dest="searchSettingsFile", default=True,
                         help="Don't search the JSON file for the amplifier settings.")
 
+    abf_group_channels = abf_group.add_mutually_exclusive_group(required=False)
+    abf_group_channels.add_argument("--includeChannel", type=str, dest='includeChannelList', action="append",
+                                    help=f"Name of ADC channels to include in the NWB file. Can not be combined with --outputFeedbackChannel and --realDataChannel as these settings are ignored.")
+    abf_group_channels.add_argument("--discardChannel", type=str, dest='discardChannelList', action="append",
+                                    help=f"Name of ADC channels to not include in the NWB file. Can not be combined with --outputFeedbackChannel and --realDataChannel as these settings are ignored.")
+
     dat_group.add_argument("--multipleGroupsPerFile", action="store_true", default=False,
                            help="Write all Groups from a DAT file into a single NWB file. By default we create one NWB file per Group.")
 
     args = parser.parse_args()
+
+    if args.includeChannelList is not None or args.discardChannelList is not None:
+        if args.outputFeedbackChannel or args.realDataChannel:
+            raise ValueError("--outputFeedbackChannel and --realDataChannel can not be present together with --includeChannel or --discardChannel.")
+
+    elif args.realDataChannel:
+        args.includeChannelList = ABFConverter.adcNamesWithRealData + args.realDataChannel
+    elif args.outputFeedbackChannel:
+        args.includeChannelList = "*"
+    else:
+        args.includeChannelList = ABFConverter.adcNamesWithRealData
 
     if args.log:
         numeric_level = getattr(logging, args.log.upper(), None)
@@ -125,19 +146,17 @@ def main():
 
         ABFConverter.protocolStorageDir = args.protocolDir
 
-    if args.realDataChannel:
-        ABFConverter.adcNamesWithRealData.append(args.realDataChannel)
-
     for fileOrFolder in args.filesOrFolders:
         print(f"Converting {fileOrFolder}")
         convert(fileOrFolder,
                 overwrite=args.overwrite,
                 fileType=args.fileType,
                 outputMetadata=args.outputMetadata,
-                outputFeedbackChannel=args.outputFeedbackChannel,
                 multipleGroupsPerFile=args.multipleGroupsPerFile,
                 compression=args.compression,
-                searchSettingsFile=args.searchSettingsFile)
+                searchSettingsFile=args.searchSettingsFile,
+                includeChannelList=args.includeChannelList,
+                discardChannelList=args.discardChannelList)
 
 
 if __name__ == "__main__":

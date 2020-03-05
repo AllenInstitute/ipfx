@@ -11,6 +11,23 @@ JSON output.
 
 In case you don't have a JSON settings file pass `--no-searchSettingsFile` to avoid warnings.
 
+For historic reasons the ABF conversion uses a hardcoded list of AD channel names
+which will be written into the NWB file, other channels are discarded.
+
+To turn that behaviour off call the conversion script with
+
+```sh
+run_x_to_nwb_conversion.py --includeChannel "*" 2018_03_20_0000.abf
+```
+
+which outputs all AD channels.
+
+To discard some AD channels (the hardcoded list is ignored in this case) use
+
+```sh
+run_x_to_nwb_conversion.py --discardChannel ABCD 2018_03_20_0000.abf
+```
+
 #### MCC settings gathering
 
 ```sh
