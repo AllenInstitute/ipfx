@@ -379,7 +379,7 @@ class ABFConverter:
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                     data = convertDataset(abf.sweepC * scale_factor, self.compression)
-                    conversion, unit = parseUnit(abf.sweepUnitsC)
+                    conversion, _ = parseUnit(abf.sweepUnitsC)
                     electrode = electrodes[channel]
                     gain = abf._dacSection.fDACScaleFactor[channel]
                     resolution = np.nan
@@ -399,7 +399,6 @@ class ABFConverter:
                         stimulus = seriesClass(name=name,
                                                data=data,
                                                sweep_number=np.uint64(cycle_id),
-                                               unit=unit,
                                                electrode=electrode,
                                                gain=gain,
                                                resolution=resolution,
@@ -557,7 +556,7 @@ class ABFConverter:
                     abf.setSweep(sweep, channel=channel, absoluteTime=True)
                     name, counter = createSeriesName("index", counter, total=self.totalSeriesCount)
                     data = convertDataset(abf.sweepY, self.compression)
-                    conversion, unit = parseUnit(abf.sweepUnitsY)
+                    conversion, _ = parseUnit(abf.sweepUnitsY)
                     electrode = electrodes[channel]
                     gain = abf._adcSection.fADCProgrammableGain[channel]
                     resolution = np.nan
@@ -579,7 +578,6 @@ class ABFConverter:
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
                                                       sweep_number=np.uint64(cycle_id),
-                                                      unit=unit,
                                                       electrode=electrode,
                                                       gain=gain,
                                                       resolution=resolution,
@@ -600,7 +598,6 @@ class ABFConverter:
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
                                                       sweep_number=np.uint64(cycle_id),
-                                                      unit=unit,
                                                       electrode=electrode,
                                                       gain=gain,
                                                       resolution=resolution,
