@@ -8,6 +8,7 @@ from datetime import datetime
 
 import yaml
 import pynwb
+import numpy as np
 
 
 def test_cli_dandi_yaml(tmpdir_factory):
@@ -73,6 +74,14 @@ def test_cli_nwb2(tmpdir_factory):
         identifier='test session',
         session_start_time=datetime.now()
     )
+    nwbfile.add_acquisition(
+      pynwb.TimeSeries(
+          name="a timeseries", 
+          data=[1, 2, 3], 
+          starting_time=0.0, 
+          rate=1.0
+        )
+    )
     with pynwb.NWBHDF5IO(path=in_nwb_path, mode="w") as writer:
         writer.write(nwbfile)
 
@@ -108,6 +117,8 @@ def test_cli_nwb2(tmpdir_factory):
         out_json_path
     ])
 
+    os.remove(in_nwb_path) # make sure we aren't linking
+
     with open(out_json_path, "r") as out_json_file:
         out_json = json.load(out_json_file)
     obt_nwb_path = out_json["inputs"]["sinks"][0]["targets"][0]["output_path"]
@@ -115,3 +126,7 @@ def test_cli_nwb2(tmpdir_factory):
     with pynwb.NWBHDF5IO(path=obt_nwb_path, mode="r") as reader:
         obt = reader.read()
         assert obt.subject.subject_id == "23"
+        assert np.allclose(
+            obt.get_acquisition("a timeseries").data[:],
+            [1, 2, 3]
+        )
