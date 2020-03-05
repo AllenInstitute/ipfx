@@ -91,7 +91,7 @@ def main():
                                help="Helper for debugging which outputs HTML/TXT files with the metadata contents of the files.")
     common_group.add_argument("--log", type=str, help="Log level for debugging, defaults to the root logger's value.")
     common_group.add_argument("filesOrFolders", nargs="+",
-                               help="List of ABF files/folders to convert.")
+                               help="List of files/folders to convert.")
 
     abf_group.add_argument("--protocolDir", type=str,
                             help=("Disc location where custom waveforms in ATF format are stored."))
