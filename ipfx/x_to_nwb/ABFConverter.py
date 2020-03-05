@@ -285,7 +285,7 @@ class ABFConverter:
 
         return sum(map(getCount, self.abfs))
 
-    def _createFile(self, metadata={}):
+    def _createFile(self, metadata=None):
         """
         Create a pynwb NWBFile object from the ABF file contents.
         """
@@ -327,14 +327,14 @@ class ABFConverter:
         )
 
         # Overwrite default values with user-passed values
-        if 'NWBFile' in metadata:
+        if metadata and 'NWBFile' in metadata:
             meta_ini.update(metadata['NWBFile'])
 
         # Create nwbfile with initial metadata
         nwbfile = NWBFile(**meta_ini)
 
         # Creates LabMetaData container
-        if 'lab_meta_data' in metadata:
+        if metadata and 'lab_meta_data' in metadata:
             from ndx_dandi_icephys import DandiIcephysMetadata
             nwbfile.add_lab_meta_data(DandiIcephysMetadata(**metadata['lab_meta_data']))
 
