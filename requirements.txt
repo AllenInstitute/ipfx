@@ -9,7 +9,7 @@ argschema
 allensdk
 dictdiffer
 pyabf<2.3.0
-git+https://github.com/neurodatawithoutborders/pynwb@enh/update_schema
+git+https://github.com/neurodatawithoutborders/pynwb@dev
 six
 watchdog
 pg8000

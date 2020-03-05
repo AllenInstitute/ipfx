@@ -9,7 +9,7 @@ from typing import (
 
 from argschema.argschema_parser import ArgSchemaParser
 
-from ipfx.attach_metadata.metadata_sink import MetadataSink, default_sink_kinds
+from ipfx.attach_metadata.sink import MetadataSink, default_sink_kinds
 from ipfx.attach_metadata._schemas import InputParameters, OutputParameters
 
 def attach_metadata(
