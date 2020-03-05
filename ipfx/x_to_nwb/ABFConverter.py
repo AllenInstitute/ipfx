@@ -335,8 +335,8 @@ class ABFConverter:
 
         # Creates LabMetaData container
         if 'lab_meta_data' in metadata:
-            from ndx_labmetadata_abf import LabMetaData_ext
-            nwbfile.add_lab_meta_data(LabMetaData_ext(**metadata['lab_meta_data']))
+            from ndx_dandi_icephys import DandiIcephysMetadata
+            nwbfile.add_lab_meta_data(DandiIcephysMetadata(**metadata['lab_meta_data']))
 
         return nwbfile
 
@@ -354,7 +354,9 @@ class ABFConverter:
         """
         Create a pynwb Subject object from the metadata contents.
         """
-        subject_fields.pop('date_of_birth')  # backwards compatibility
+        if 'date_of_birth' in subject_fields:
+            subject_fields.pop('date_of_birth')  # backwards compatibility
+            warnings.warn('date_of_birth removed from Subject info. Must update pynwb version to accept this field.')
         return Subject(**subject_fields)
 
     def _createElectrodes(self, device):
