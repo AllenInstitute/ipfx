@@ -9,6 +9,8 @@ To workaround that issue we've developed `mcc_get_settings.py` which gathers
 all amplifier settings from all active amplifiers and writes them to a file in
 JSON output.
 
+In case you don't have a JSON settings file pass `--no-searchSettingsFile` to avoid warnings.
+
 #### MCC settings gathering
 
 ```sh

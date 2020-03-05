@@ -33,7 +33,7 @@ class ABFConverter:
     protocolStorageDir = None
     adcNamesWithRealData = ["IN 0", "IN 1", "IN 2", "IN 3"]
 
-    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True):
+    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True, searchSettingsFile=True):
         """
         Convert the given ABF file to NWB
 
@@ -42,6 +42,7 @@ class ABFConverter:
         outFile               -- target filepath (must not exist)
         outputFeedbackChannel -- Output ADC data from feedback channels as well (useful for debugging only)
         compression           -- Toggle compression for HDF5 datasets
+        searchSettingsFile    -- Search the JSON settings file and warn if it could not be found
         """
 
         inFiles = []
@@ -55,6 +56,7 @@ class ABFConverter:
 
         self.outputFeedbackChannel = outputFeedbackChannel
         self.compression = compression
+        self.searchSettingsFile = searchSettingsFile
 
         self._settings = self._getJSONFiles(inFileOrFolder)
 
@@ -119,6 +121,9 @@ class ABFConverter:
         Returns a dict with the abf file/folder name as key and a dictinonary with
         the settings as value.
         """
+
+        if not self.searchSettingsFile:
+            return None
 
         d = {}
 
@@ -419,7 +424,7 @@ class ABFConverter:
         The second element is the source of the data.
         """
 
-        if self._settings is None:
+        if self._settings is None or not self.searchSettingsFile:
             return None, None
 
         filename = abf.abfFilePath
@@ -439,12 +444,17 @@ class ABFConverter:
         Return the stimulus scale factor for the stimset of the abf file.
         """
 
+        DEFAULT_SCALE_FACTOR = 1.0
+
+        if not self.searchSettingsFile:
+            return DEFAULT_SCALE_FACTOR
+
         try:
             settings, _ = self._findSettingsEntry(abf)
             return float(settings["ScaleFactors"][stimset])
         except (TypeError, KeyError):
-            warnings.warn(f"Could not find the scale factor for the stimset {stimset}, using 1.0 as fallback.")
-            return 1.0
+            warnings.warn(f"Could not find the scale factor for the stimset {stimset}, using {DEFAULT_SCALE_FACTOR} as fallback.")
+            return DEFAULT_SCALE_FACTOR
 
     def _getAmplifierSettings(self, abf, clampMode, adcName):
         """
@@ -453,23 +463,25 @@ class ABFConverter:
         """
 
         d = {}
+        settings = None
 
-        try:
-            # JSON stores adcName without spaces
+        if self.searchSettingsFile:
+            try:
+                # JSON stores adcName without spaces
 
-            amplifier = "unknown"
-            abfSettings, _ = self._findSettingsEntry(abf)
-            adcNameWOSpace = adcName.replace(" ", "")
-            amplifier = abfSettings["uids"][adcNameWOSpace]
-            settings = abfSettings[amplifier]
+                amplifier = "unknown"
+                abfSettings, _ = self._findSettingsEntry(abf)
+                adcNameWOSpace = adcName.replace(" ", "")
+                amplifier = abfSettings["uids"][adcNameWOSpace]
+                settings = abfSettings[amplifier]
 
-            if settings["GetMode"] != clampMode:
-                warnings.warn(f"Stored clamp mode {settings['GetMode']} does not match requested "
-                              f"clamp mode {clampMode} of channel {adcName}.")
+                if settings["GetMode"] != clampMode:
+                    warnings.warn(f"Stored clamp mode {settings['GetMode']} does not match requested "
+                                  f"clamp mode {clampMode} of channel {adcName}.")
+                    settings = None
+            except (TypeError, KeyError):
+                warnings.warn(f"Could not find settings for amplifier {amplifier} of channel {adcName}.")
                 settings = None
-        except (TypeError, KeyError):
-            warnings.warn(f"Could not find settings for amplifier {amplifier} of channel {adcName}.")
-            settings = None
 
         if settings:
             if clampMode == V_CLAMP_MODE:

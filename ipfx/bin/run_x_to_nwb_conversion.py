@@ -11,7 +11,7 @@ from ipfx.x_to_nwb.DatConverter import DatConverter
 log = logging.getLogger(__name__)
 
 
-def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False, outputFeedbackChannel=False, multipleGroupsPerFile=False, compression=True):
+def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False, outputFeedbackChannel=False, multipleGroupsPerFile=False, compression=True, searchSettingsFile=True):
     """
     Convert the given file to a NeuroDataWithoutBorders file using pynwb
 
@@ -26,6 +26,7 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
     :param outputFeedbackChannel: Output ADC data which stems from stimulus feedback channels (ignored for DAT files)
     :param multipleGroupsPerFile: Write all Groups in the DAT file into one NWB
                                   file. By default we create one NWB per Group (ignored for ABF files).
+    :param searchSettingsFile: Search the JSON amplifier settings file and warn if it could not be found (ignored for DAT files)
     :param compression: Toggle compression for HDF5 datasets
 
     :return: path of the created NWB file
@@ -59,7 +60,7 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
         if outputMetadata:
             ABFConverter.outputMetadata(inFileOrFolder)
         else:
-            ABFConverter(inFileOrFolder, outFile, outputFeedbackChannel=outputFeedbackChannel, compression=compression)
+            ABFConverter(inFileOrFolder, outFile, outputFeedbackChannel=outputFeedbackChannel, compression=compression, searchSettingsFile=searchSettingsFile)
     elif ext == ".dat":
         if outputMetadata:
             DatConverter.outputMetadata(inFileOrFolder)
@@ -101,6 +102,8 @@ def main():
                         help="Output ADC data to the NWB file which stems from stimulus feedback channels.")
     abf_group.add_argument("--realDataChannel", type=str, action="append",
                         help=f"Define additional channels which hold non-feedback channel data. The default is {ABFConverter.adcNamesWithRealData}.")
+    abf_group.add_argument("--no-searchSettingsFile", action="store_false", dest="searchSettingsFile", default=True,
+                        help="Don't search the JSON file for the amplifier settings.")
 
     dat_group.add_argument("--multipleGroupsPerFile", action="store_true", default=False,
                            help="Write all Groups from a DAT file into a single NWB file. By default we create one NWB file per Group.")
@@ -133,7 +136,8 @@ def main():
                 outputMetadata=args.outputMetadata,
                 outputFeedbackChannel=args.outputFeedbackChannel,
                 multipleGroupsPerFile=args.multipleGroupsPerFile,
-                compression=args.compression)
+                compression=args.compression,
+                searchSettingsFile=args.searchSettingsFile)
 
 
 if __name__ == "__main__":
