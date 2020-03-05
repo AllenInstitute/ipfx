@@ -2,35 +2,74 @@
 """
 
 from argschema.schemas import DefaultSchema, ArgSchema
-from argschema.fields import Nested, String, Dict, Field, List, Int
-
+from argschema.fields import (
+    Nested, String, Dict, Field, List, Int, InputFile, OutputFile
+)
 
 class SinkSpecification(DefaultSchema):
-    """ Fully specify a sink (reusable output destination)
-    """
-
     name = String(
         description="Identifier for this sink. Should be unique",
         required=True
     )
-    kind = String(
-        description="What sort of sink is this?",
+
+
+class Nwb2SinkConfig(DefaultSchema):
+    nwb_path = InputFile(
+        description=(
+            "Path to input NWB. This will serve as the basis for the output "
+            "file."
+        ),
         required=True
     )
-    config = Dict(
-        description="Parameters required to define this sink",
-        required=True,
-        default=dict()
-    )
-    targets = List(
-        Dict,
+
+class Nwb2SinkTarget(DefaultSchema):
+    output_path = OutputFile(
         description=(
-            "Each entry defines a new target to which this sink will be written"
+            "Output path to which file with attached metadata will be written"
         ),
-        required=True,
-        default=list()
+        required=True
     )
 
+class Nwb2SinkSpecification(SinkSpecification):
+    kind = String(
+        description="what sort of sink is this?",
+        required=True,
+        default="Nwb2Sink"
+    )
+    config = Nested(
+        Nwb2SinkConfig,
+        description="Parameters required to define this sink",
+        required=True,
+        many=False
+    )
+    targets = Nested(
+        Nwb2SinkTarget,
+        description="Targets (output nwb files) which will be written to",
+        required=True,
+        many=True
+    )
+
+
+class DandiSinkTarget(DefaultSchema):
+    output_path = OutputFile(
+        description=(
+            "Outputs will be written here. Currently only yaml is "
+            "supported"
+        )
+    )
+
+class DandiSinkSpecification(SinkSpecification):
+    kind = String(
+        description="what sort of sink is this?",
+        required=True,
+        default="DandiYamlSink"
+    )
+    targets = Nested(
+        Nwb2SinkTarget,
+        description="Targets (output nwb files) which will be written to",
+        required=True,
+        many=True
+    )
 
 class Metadatum(DefaultSchema):
     """ A piece of lightweight data
@@ -59,7 +98,6 @@ class Metadatum(DefaultSchema):
         validate=lambda x: len(x) > 0
     )
 
-
 class InputParameters(ArgSchema):
     """ Inputs required by attach_metadata
     """
@@ -72,13 +110,21 @@ class InputParameters(ArgSchema):
         many=True,
         required=True
     )
-    sinks = Nested(
-        SinkSpecification, 
-        description="specify outputs to which metadata will be written", 
+    nwb2_sinks = Nested(
+        Nwb2SinkSpecification,
+        description="Specify nwb files to which metadata should be attached",
         many=True,
-        required=True
+        default=[]
     )
-
+    dandi_sinks = Nested(
+        DandiSinkSpecification,
+        description=(
+            "Specify dandi-compatible files to which metadata should be "
+            "attached"
+        ),
+        many=True,
+        default=[]
+    )
 
 class OutputParameters(DefaultSchema):
     """ Outputs produced by attach_metadata
@@ -88,4 +134,9 @@ class OutputParameters(DefaultSchema):
         InputParameters, 
         description="The parameters argued to this executable",
         required=True
+    )
+    sinks = Dict(
+        description="The sinks to which metadata was attached",
+        required=True,
+        many=True
     )

@@ -3,7 +3,7 @@
 import io
 from pathlib import Path
 from typing import (
-    List, Dict, Any, Set, Optional, Union
+    List, Dict, Any, Set, Optional, Union, Callable
 )
 
 import pynwb
@@ -33,46 +33,18 @@ class Nwb2Sink(MetadataSink):
 
     @property
     def supported_cell_fields(self) -> Set[str]:
-        return {
-            # general:
-
+        return { # TODO update list based on dandi reqs
             "subject_id",
-            # "specimen_id", # TODO: currently unsupported by NWB
-            # "citation_policy", # TODO: currently unsupported by NWB
             "institution",
-            # "external_solution_recipe", # TODO: currently unsupported by NWB
-            # "recording_temperature", # TODO: currently unsupported by NWB
-            # "reporter_status", # TODO: currently unsupported by NWB
             "electrode_id",
             "electrode_resistance",
-            # "electrode_internal_solution_recipe", # TODO: currently unsupported by NWB
         }
 
     @property
     def supported_sweep_fields(self) -> Set[str]:
-        return {
-            # general
-
+        return { # TODO update list based on dandi reqs
             "gain",
-            # "output_low_pass_filter_type", # TODO: NWB only has a "filtering" string
-            # "output_low_pass_filter_cutoff_frequency" # TODO: NWB only has a "filtering" string
-            # "output_high_pass_filter_type", # TODO: NWB only has a "filtering" string
-            # "output_high_pass_filter_cutoff_frequency", # TODO: NWB only has a "filtering" string
-            # "holding" # TODO: appropriate NWB field not listed
-
-            # specific to current-clamp sweeps:
-
-            "bridge_balance_enabled",
-            "fast_capacitance_compensation_enabled",
-            # "leak_current_enabled", # TODO: currently unsupported by NWB
-            # "leak_current_value", # TODO: currently unsupported by NWB
-
-            # specific to voltage-clamp sweeps:
-
-            "whole_cell_capacitance_compensation_enabled", # TODO: currently unsupported by NWB
-            "series_resistance_correction_enabled",
         }
-
 
     def __init__(
             self, 
@@ -203,14 +175,6 @@ class Nwb2Sink(MetadataSink):
 
             if name == "gain":
                 series.gain = value
-            elif name == "bridge_balance_enabled":
-                series.bridge_balance = value # TODO: this is a float, but named enabled? I think we might need to read this from nwb -> other store
-            elif name == "fast_capacitance_compensation_enabled":
-                series.capacitance_compensation = value
-            elif name == "whole_cell_capacitance_compensation_enabled":
-                series.whole_cell_capacitance_comp = value
-            elif name == "series_resistance_correction_enabled":
-                series.resistance_comp_correction = value
 
         else:
             raise ValueError(# This is useless

@@ -106,6 +106,12 @@ def run_attach_metadata(
     for sink in sinks.values():
         sink.serialize()
 
+    return {
+        "sinks": {
+            spec["name"]: spec
+            for spec in sink_specs
+        }
+    }
 
 def main():
     """ CLI entry point for attaching metadata to an ICEPHYS NWB file
@@ -121,10 +127,14 @@ def main():
     
     output = {}
     output.update({"inputs": parser.args})
-    run_attach_metadata(
-        inputs_record["sinks"],
-        inputs_record["metadata"]
+    output.update(
+        run_attach_metadata(
+            inputs_record["nwb2_sinks"] + inputs_record["dandi_sinks"],
+            inputs_record["metadata"]
+        )
     )
+
+    print(output)
 
     parser.output(output)
 

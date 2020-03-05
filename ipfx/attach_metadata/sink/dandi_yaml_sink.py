@@ -47,12 +47,8 @@ class DandiYamlSink(MetadataSink):
         """
 
         for target in self._ensure_plural_targets(targets):
-            target = cp.deepcopy(target)
-            if not isinstance(target["stream"], io.IOBase):
-                target["stream"] = open(target["stream"], "w")
-
-            yaml.dump(self._data, **target)
-            target["stream"].close()
+            with open(target["output_path"], "w") as file_:
+                yaml.dump(self._data, stream=file_)
 
     def register(
             self, 

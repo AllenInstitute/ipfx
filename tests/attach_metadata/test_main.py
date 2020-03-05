@@ -1,139 +1,85 @@
-""" Tests for the attach_metadata executable
+"""Tests for the utilities in attach_metadata.__main__
+
+See test_cli for integration tests of
+    run_attach_metadata()
+    main()
+
 """
-
-import os
-import json
-import time
-import subprocess as sp
-from datetime import datetime
-
-import yaml
-import pynwb
-import numpy as np
+from ipfx.attach_metadata import __main__ as attach
+from ipfx.attach_metadata.sink import MetadataSink
 
 
-def test_cli_dandi_yaml(tmpdir_factory, timeout_seconds):
-    """ Integration tests whether we can write a DANDI-compatible yaml
-    """
+def test_configure_sinks():
 
-    tmpdir = str(tmpdir_factory.mktemp("test_cli_dandi_yaml"))
-    in_json_path = os.path.join(tmpdir, "input.json")
-    out_json_path = os.path.join(tmpdir, "output.json")
-    meta_yaml_path = os.path.join(tmpdir, "meta.yaml")
+    class SinkTest:
+        def register_targets(self, targets):
+            self.targets = targets
 
-    input_json = {
-        "metadata": [
-            {
-                "name": "species",
-                "value": "mouse",
-                "sinks": ["dandi_yaml"]
-            }
-        ],
-        "sinks": [
-            {
-                "name": "dandi_yaml",
-                "kind": "DandiYamlSink",
-                "targets": [
-                    {"stream": meta_yaml_path}
-                ]
-            }
-        ]
-    }
+    class SinkA(SinkTest):
+        def __init__(self, a):
+            self.a = a
+        
+    class SinkB(SinkTest):
+        def __init__(self, b):
+            self.b = b
     
-    with open(in_json_path, "w") as in_json_file:
-        json.dump(input_json, in_json_file)
+    sink_specs = [
+        {
+            "name": "a1",
+            "kind": "SinkA",
+            "config": {"a": 1},
+            "targets": [1]
+        },
+        {
+            "name": "a2",
+            "kind": "SinkA",
+            "config": {"a": 2},
+            "targets": [2]
+        },
+        {
+            "name": "b1",
+            "kind": "SinkB",
+            "config": {"b": 1},
+            "targets": [3]
+        }
+    ]
+    sink_kinds = {"SinkA": SinkA, "SinkB": SinkB}
+    obtained = attach.configure_sinks(sink_specs, sink_kinds)
 
-    start_time = time.time()
-    sp.check_call([
-        "python",
-        "-m",
-        "ipfx.attach_metadata",
-        "--input_json",
-        in_json_path,
-        "--output_json",
-        out_json_path
-    ])
-    duration = time.time() - start_time
-    assert duration < timeout_seconds
-
-    with open(out_json_path, "r") as out_json_file:
-        out_json = json.load(out_json_file)
-
-    obt_meta_yaml_path = out_json["inputs"]["sinks"][0]["targets"][0]["stream"]
-    with open(obt_meta_yaml_path, "r") as obt_meta_yaml_file:
-        obt_meta = yaml.load(obt_meta_yaml_file, Loader=yaml.FullLoader)
-
-    assert obt_meta["species"] == "mouse"
+    assert obtained["b1"].targets[0] == 3
+    assert obtained["a1"].a == 1 
+    assert obtained["a2"].a == 2
 
 
-def test_cli_nwb2(tmpdir_factory, timeout_seconds):
-    tmpdir = str(tmpdir_factory.mktemp("test_cli_nwb2"))
-    in_json_path = os.path.join(tmpdir, "input.json")
-    out_json_path = os.path.join(tmpdir, "output.json")
-    in_nwb_path = os.path.join(tmpdir, "input.nwb")
-    out_nwb_path = os.path.join(tmpdir, "meta.nwb")
+def test_attach_metadata():
 
-    nwbfile = pynwb.NWBFile(
-        session_description="test session",
-        identifier='test session',
-        session_start_time=datetime.now()
-    )
-    nwbfile.add_acquisition(
-      pynwb.TimeSeries(
-          name="a timeseries", 
-          data=[1, 2, 3], 
-          starting_time=0.0, 
-          rate=1.0
-        )
-    )
-    with pynwb.NWBHDF5IO(path=in_nwb_path, mode="w") as writer:
-        writer.write(nwbfile)
+    class SinkTest:
+        def __init__(self):
+            self.registered = {}
 
-    input_json = {
-        "metadata": [
+        def register(self, name, value, sweep_number):
+            self.registered[(name, sweep_number)] = value
+
+    sinks = {"fizz": SinkTest(), "buzz": SinkTest()}
+
+    attach.attach_metadata(
+        sinks,
+        [
             {
-                "name": "subject_id",
-                "value": "23",
-                "sinks": ["nwb2"]
-            }
-        ],
-        "sinks": [
+                "name": "a",
+                "value": 1,
+                "sinks": ["fizz", "buzz"],
+                "sweep_number": 12
+            },
             {
-                "name": "nwb2",
-                "kind": "Nwb2Sink",
-                "config": {"nwb_path": in_nwb_path},
-                "targets": [
-                    {"output_path": out_nwb_path}
-                ]
+                "name": "b",
+                "value": 2,
+                "sinks": ["buzz"]
             }
         ]
-    }
-    with open(in_json_path, "w") as in_json_file:
-        json.dump(input_json, in_json_file)
+    )
 
-    start_time = time.time()
-    sp.check_call([
-        "python",
-        "-m",
-        "ipfx.attach_metadata",
-        "--input_json",
-        in_json_path,
-        "--output_json",
-        out_json_path
-    ])
-    duration = time.time() - start_time
-    assert duration < timeout_seconds
+    assert sinks["fizz"].registered[("a", 12)] == 1 
+    assert sinks["buzz"].registered[("a", 12)] == 1 
+    assert sinks["buzz"].registered[("b", None)] == 2 
 
-    os.remove(in_nwb_path) # make sure we aren't linking
-
-    with open(out_json_path, "r") as out_json_file:
-        out_json = json.load(out_json_file)
-    obt_nwb_path = out_json["inputs"]["sinks"][0]["targets"][0]["output_path"]
-
-    with pynwb.NWBHDF5IO(path=obt_nwb_path, mode="r") as reader:
-        obt = reader.read()
-        assert obt.subject.subject_id == "23"
-        assert np.allclose(
-            obt.get_acquisition("a timeseries").data[:],
-            [1, 2, 3]
-        )
