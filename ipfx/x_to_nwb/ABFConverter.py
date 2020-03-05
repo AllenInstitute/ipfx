@@ -10,6 +10,9 @@ import glob
 import warnings
 import logging
 
+from datetime import datetime
+from dateutil.tz import tzlocal
+
 import numpy as np
 
 import pyabf
@@ -307,7 +310,7 @@ class ABFConverter:
             session_description = PLACEHOLDER
 
         identifier = sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest()
-        session_start_time = self.refabf.abfDateTime
+        session_start_time = datetime.combine(self.refabf.abfDateTime.date(), self.refabf.abfDateTime.time(), tzinfo=tzlocal())
         creatorName = self.refabf._stringsIndexed.uCreatorName
         creatorVersion = formatVersion(self.refabf.creatorVersion)
         experiment_description = (f"{creatorName} v{creatorVersion}")
