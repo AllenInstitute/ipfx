@@ -3,6 +3,7 @@
 
 import os
 import json
+import time
 import subprocess as sp
 from datetime import datetime
 
@@ -11,7 +12,7 @@ import pynwb
 import numpy as np
 
 
-def test_cli_dandi_yaml(tmpdir_factory):
+def test_cli_dandi_yaml(tmpdir_factory, timeout_seconds):
     """ Integration tests whether we can write a DANDI-compatible yaml
     """
 
@@ -42,6 +43,7 @@ def test_cli_dandi_yaml(tmpdir_factory):
     with open(in_json_path, "w") as in_json_file:
         json.dump(input_json, in_json_file)
 
+    start_time = time.time()
     sp.check_call([
         "python",
         "-m",
@@ -51,6 +53,8 @@ def test_cli_dandi_yaml(tmpdir_factory):
         "--output_json",
         out_json_path
     ])
+    duration = time.time() - start_time
+    assert duration < timeout_seconds
 
     with open(out_json_path, "r") as out_json_file:
         out_json = json.load(out_json_file)
@@ -62,7 +66,7 @@ def test_cli_dandi_yaml(tmpdir_factory):
     assert obt_meta["species"] == "mouse"
 
 
-def test_cli_nwb2(tmpdir_factory):
+def test_cli_nwb2(tmpdir_factory, timeout_seconds):
     tmpdir = str(tmpdir_factory.mktemp("test_cli_nwb2"))
     in_json_path = os.path.join(tmpdir, "input.json")
     out_json_path = os.path.join(tmpdir, "output.json")
@@ -107,6 +111,7 @@ def test_cli_nwb2(tmpdir_factory):
     with open(in_json_path, "w") as in_json_file:
         json.dump(input_json, in_json_file)
 
+    start_time = time.time()
     sp.check_call([
         "python",
         "-m",
@@ -116,6 +121,8 @@ def test_cli_nwb2(tmpdir_factory):
         "--output_json",
         out_json_path
     ])
+    duration = time.time() - start_time
+    assert duration < timeout_seconds
 
     os.remove(in_nwb_path) # make sure we aren't linking
 

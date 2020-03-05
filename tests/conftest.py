@@ -66,6 +66,11 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "xnwbtest: mark test as part of NWB conversion set")
 
 
+_timeout_seconds = float(os.environ.get("IPFX_TEST_TIMEOUT", "0.0"))
+@pytest.fixture
+def timeout_seconds():
+    return _timeout_seconds
+
 
 def pytest_collection_modifyitems(config, items):
     """
@@ -90,6 +95,11 @@ def pytest_collection_modifyitems(config, items):
         reason='depend on resources internal to the Allen Institute.'
     )
 
+    skip_timeout = pytest.mark.skipif(
+        abs(_timeout_seconds) <= sys.float_info.epsilon,
+        reason="This test has a timeout (s) and this timeout was set to 0 seconds"
+    )
+
     for item in items:
         if 'requires_lims' in item.keywords:
             item.add_marker(skip_requires_lims)
@@ -99,3 +109,6 @@ def pytest_collection_modifyitems(config, items):
 
         if "requires_inhouse_data" in item.keywords:
             item.add_marker(skip_internal)
+
+        if "timeout_seconds" in item.fixturenames:
+            item.add_marker(skip_timeout)
