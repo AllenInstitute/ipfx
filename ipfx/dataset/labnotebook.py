@@ -41,8 +41,18 @@ class LabNotebookReader(object):
             according to Thomas Braun (igor nwb dev), the first 8 pages are
             for headstage data, and the 9th is for headstage-independent
             data
-            
-            Output:
+
+            Parameters
+            ----------
+            name: str
+            data_col: int
+            sweep_col: int
+            enable_col: int
+            sweep_num: int
+            default_val: dict
+
+            Returns
+            -------
             
             last non-empty entry in specified column
             for specified sweep number
@@ -66,7 +76,17 @@ class LabNotebookReader(object):
         """
             fetch text data
 
-            Output:
+            Parameters
+            ----------
+            name: str
+            data_col: int
+            sweep_col: int
+            enable_col: int
+            sweep_num: int
+            default_val: dict
+
+            Returns
+            -------
             
             last non-empty entry in specified column
             for specified sweep number
@@ -103,6 +123,17 @@ class LabNotebookReader(object):
             dimension. they look to represent the full array of values
             (for each field for each multipatch) for a given point in
             time, and thus given sweep
+
+            Parameters
+            ----------
+            name: str
+            sweep_num: int
+            default_val: dict
+
+            Returns
+            -------
+            values obtained from lab notebook
+            
         """
 
         numeric_fields = [to_str(c) for c in self.colname_number[0]]
