@@ -6,7 +6,11 @@ from argschema.fields import (
     Nested, String, Dict, Field, List, Int, InputFile, OutputFile
 )
 
+
 class SinkSpecification(DefaultSchema):
+    """Basic requirements for sinks
+    """
+
     name = String(
         description="Identifier for this sink. Should be unique",
         required=True
@@ -14,6 +18,8 @@ class SinkSpecification(DefaultSchema):
 
 
 class Nwb2SinkConfig(DefaultSchema):
+    """Configure an Nwb2Sink (by arguing the input nwb path)
+    """
     nwb_path = InputFile(
         description=(
             "Path to input NWB. This will serve as the basis for the output "
@@ -22,7 +28,10 @@ class Nwb2SinkConfig(DefaultSchema):
         required=True
     )
 
+
 class Nwb2SinkTarget(DefaultSchema):
+    """Configure an output target for an Nwb2 Sink
+    """
     output_path = OutputFile(
         description=(
             "Output path to which file with attached metadata will be written"
@@ -30,7 +39,10 @@ class Nwb2SinkTarget(DefaultSchema):
         required=True
     )
 
+
 class Nwb2SinkSpecification(SinkSpecification):
+    """Specify options for writing / adding metadata to an NWB2 file
+    """
     kind = String(
         description="what sort of sink is this?",
         required=True,
@@ -51,6 +63,8 @@ class Nwb2SinkSpecification(SinkSpecification):
 
 
 class DandiSinkTarget(DefaultSchema):
+    """Specify an output target for a DANDI metadata sink
+    """
     output_path = OutputFile(
         description=(
             "Outputs will be written here. Currently only yaml is "
@@ -58,7 +72,10 @@ class DandiSinkTarget(DefaultSchema):
         )
     )
 
+
 class DandiSinkSpecification(SinkSpecification):
+    """Specify a sink which writes data to a DANDI-compatible format
+    """
     kind = String(
         description="what sort of sink is this?",
         required=True,
@@ -70,6 +87,7 @@ class DandiSinkSpecification(SinkSpecification):
         required=True,
         many=True
     )
+
 
 class Metadatum(DefaultSchema):
     """ A piece of lightweight data
@@ -98,6 +116,7 @@ class Metadatum(DefaultSchema):
         validate=lambda x: len(x) > 0
     )
 
+
 class InputParameters(ArgSchema):
     """ Inputs required by attach_metadata
     """
@@ -125,6 +144,7 @@ class InputParameters(ArgSchema):
         many=True,
         default=[]
     )
+
 
 class OutputParameters(DefaultSchema):
     """ Outputs produced by attach_metadata

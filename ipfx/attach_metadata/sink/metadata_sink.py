@@ -1,3 +1,6 @@
+"""Base class for metadata sinks, which serve as a staging ground for metadata
+attachment.
+"""
 import abc
 import collections
 from typing import (
@@ -17,7 +20,6 @@ class MetadataSink(abc.ABC):
         """ A sequence of preregistered targets. Calling serialize with no
         arguments will write to these.
         """
-
 
     @abc.abstractproperty
     def supported_cell_fields(self) -> Set[str]:

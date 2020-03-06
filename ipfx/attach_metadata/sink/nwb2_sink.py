@@ -1,9 +1,9 @@
-"""
+"""Sink for appending to an NWBFile (not in place)
 """
 import io
 from pathlib import Path
 from typing import (
-    List, Dict, Any, Set, Optional, Union, Callable
+    List, Dict, Any, Set, Optional, Union
 )
 
 import pynwb
@@ -30,10 +30,9 @@ class Nwb2Sink(MetadataSink):
     def targets(self) -> List[Dict[str, Any]]:
         return self._targets
 
-
     @property
     def supported_cell_fields(self) -> Set[str]:
-        return { # TODO update list based on dandi reqs
+        return {  # TODO update list based on dandi reqs
             "subject_id",
             "institution",
             "electrode_id",
@@ -42,14 +41,14 @@ class Nwb2Sink(MetadataSink):
 
     @property
     def supported_sweep_fields(self) -> Set[str]:
-        return { # TODO update list based on dandi reqs
+        return {  # TODO update list based on dandi reqs
             "gain",
         }
 
     def __init__(
             self, 
             nwb_path: Optional[PathLike]
-        ):
+    ):
         self._targets: List[Dict[str, Any]] = []
         if nwb_path is not None:
             self._initial_load_nwbfile(nwb_path)
@@ -108,7 +107,8 @@ class Nwb2Sink(MetadataSink):
         
         if len(keys) != 1:
             raise ValueError(
-                f"expected exactly 1 intracellular electrode, found {len(keys)}"
+                "expected exactly 1 intracellular electrode, found "
+                f"{len(keys)}"
             )
 
         return self.nwbfile.icephys_electrodes[keys[0]]
@@ -125,12 +125,11 @@ class Nwb2Sink(MetadataSink):
 
         Returns
         -------
-        A PatchClampSeries object for this sweep
+        A collection of PatchClampSeries object for this sweep
 
         """
         return self.nwbfile.sweep_table.get_series(sweep_id)
         
-
     def _get_subject(self) -> pynwb.file.Subject:
         """Obtain this NWBFile's subject field, constructing it if needed
 
@@ -185,7 +184,7 @@ class Nwb2Sink(MetadataSink):
             self._cant_attach(name, sweep_id)
 
     def _cant_attach(self, name: str, sweep_id: Optional[int]):
-        """Helper - raises if attachment of a particular field not supported
+        """Helper - raises if attachment of a particular field is not supported
         """
         raise ValueError(
             "unable to attach metadata field: "
@@ -211,8 +210,8 @@ class Nwb2Sink(MetadataSink):
 
 
 def set_container_sources(
-    container: hdmf.container.AbstractContainer,
-    source: str
+        container: hdmf.container.AbstractContainer,
+        source: str
 ):
     """Traverse an NWBFile starting at a given container, setting the
     container_source attribute inplace on each container.
@@ -231,6 +230,7 @@ def set_container_sources(
         # container_source is set on write, but cannot be overrwritten, making 
         # read -> modify -> write elsewhere
         # pretty tricky!
+        # this is a fragile workaround
         if hasattr(current, "_AbstractContainer__container_source"):
             setattr(
                 current, 
@@ -240,4 +240,3 @@ def set_container_sources(
 
         if hasattr(current, "children"):
             children.extend(current.children)
-

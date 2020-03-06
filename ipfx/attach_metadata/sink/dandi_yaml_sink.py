@@ -1,7 +1,5 @@
+"""Sink for metadata intended to be uploaded to DANDI
 """
-"""
-import copy as cp
-import io
 from typing import (
     List, Dict, Any, Set, Optional
 )

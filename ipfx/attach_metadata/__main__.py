@@ -12,6 +12,7 @@ from argschema.argschema_parser import ArgSchemaParser
 from ipfx.attach_metadata.sink import MetadataSink, default_sink_kinds
 from ipfx.attach_metadata._schemas import InputParameters, OutputParameters
 
+
 def attach_metadata(
         sinks: Dict[str, MetadataSink],
         metadata: List[Dict],
@@ -79,6 +80,7 @@ def configure_sinks(
 
     return sinks
 
+
 def run_attach_metadata(
         sink_specs: Sequence[Dict],
         metadata: List[Dict]
@@ -113,6 +115,7 @@ def run_attach_metadata(
         }
     }
 
+
 def main():
     """ CLI entry point for attaching metadata to an ICEPHYS NWB file
     """
@@ -124,7 +127,7 @@ def main():
 
     inputs_record = cp.deepcopy(parser.args)
     logging.getLogger().setLevel(inputs_record["log_level"])
-    
+
     output = {}
     output.update({"inputs": parser.args})
     output.update(
