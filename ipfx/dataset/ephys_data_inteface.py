@@ -8,7 +8,7 @@ class EphysDataInterface(abc.ABC):
 
     """
 
-    def __init__(self, nwb_file):
+    def __init__(self, ontology):
 
     @abs.abstractmethod
     def get_sweep_data(self, sweep_number: int) -> Dict[str,Any]:
