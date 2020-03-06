@@ -1,6 +1,9 @@
 from typing import Dict, Any, List, Optional
 import abc
 
+import warnings
+from ipfx.stimulus import StimulusOntology
+
 
 class EphysDataInterface(abc.ABC):
     """
@@ -8,7 +11,10 @@ class EphysDataInterface(abc.ABC):
 
     """
 
-    def __init__(self, ontology):
+    def __init__(self,
+                 ontology: StimulusOntology,
+                 validate_stim: bool = True):
+        self.ontology = ontology
 
     @abs.abstractmethod
     def get_sweep_data(self, sweep_number: int) -> Dict[str,Any]:
@@ -224,7 +230,7 @@ class EphysDataInterface(abc.ABC):
         raise NotImplementedError
 
     @abs.abstractmethod
-    def get_stimulus_groups(self) ->List[str]:
+    def get_stimulus_groups(self) -> List[str]:
         """
         Collect names of hdf5 groups from the stimulus
 
@@ -235,5 +241,18 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
+    def get_stimulus_name(self, stim_code):
 
+        if not self.ontology:
+            raise ValueError("Missing stimulus ontology")
 
+        try:
+            stim = self.ontology.find_one(stim_code, tag_type="code")
+            return stim.tags(tag_type="name")[0][-1]
+
+        except KeyError:
+            if self.validate_stim:
+                raise
+            else:
+                warnings.warn("Stimulus code {} is not in the ontology".format(stim_code))
+                return
