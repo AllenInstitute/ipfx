@@ -38,14 +38,18 @@ class DandiYamlSink(MetadataSink):
         return set()
 
     def __init__(self):
-
         self._targets: List[Dict] = []
         self._data = {}
 
     def serialize(self, targets: Optional[OneOrMany[Dict[str, Any]]] = None):
-        """ Write this sink's data to one or more 
-        """
+        """ Writes this sink's data to an external target or targets. Does not 
+        modify this sink.
 
+        Parameters
+        ----------
+        targets : If provided, these targets will be written to. Otherwise, 
+            write to targets previously defined by register_target.
+        """
         for target in self._ensure_plural_targets(targets):
             with open(target["output_path"], "w") as file_:
                 yaml.dump(self._data, stream=file_)

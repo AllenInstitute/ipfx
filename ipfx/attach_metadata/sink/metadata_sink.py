@@ -18,6 +18,7 @@ class MetadataSink(abc.ABC):
         arguments will write to these.
         """
 
+
     @abc.abstractproperty
     def supported_cell_fields(self) -> Set[str]:
         """ The names of each cell-level field supported by this sink.
@@ -69,6 +70,9 @@ class MetadataSink(abc.ABC):
             passes this class's validate_target method
 
         """
+        if targets is None:
+            raise ValueError("must argue targets")
+
         targets = self._ensure_plural_targets(targets)
         for target in targets:
             self.register_target(target)

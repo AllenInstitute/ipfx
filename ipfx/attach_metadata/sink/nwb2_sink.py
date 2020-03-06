@@ -48,10 +48,11 @@ class Nwb2Sink(MetadataSink):
 
     def __init__(
             self, 
-            nwb_path: PathLike
+            nwb_path: Optional[PathLike]
         ):
         self._targets: List[Dict[str, Any]] = []
-        self._initial_load_nwbfile(nwb_path)
+        if nwb_path is not None:
+            self._initial_load_nwbfile(nwb_path)
 
     def _initial_load_nwbfile(self, nwb_path: PathLike):
         """Reads an nwbfile from an argued path into memory
@@ -110,12 +111,12 @@ class Nwb2Sink(MetadataSink):
                 f"expected exactly 1 intracellular electrode, found {len(keys)}"
             )
 
-        return self.nwbfile.ic_electrodes[keys[0]]
+        return self.nwbfile.icephys_electrodes[keys[0]]
     
     def _get_sweep_series(
             self, 
             sweep_id: int
-    ) -> pynwb.icephys.PatchClampSeries:
+    ) -> List[pynwb.icephys.PatchClampSeries]:
         """ Obtain the PatchClampSeries object corresponding to this sweep id
 
         Parameters
@@ -127,7 +128,8 @@ class Nwb2Sink(MetadataSink):
         A PatchClampSeries object for this sweep
 
         """
-        return self.nwbfile.sweep_table[sweep_id].series.values[0][0]
+        return self.nwbfile.sweep_table.get_series(sweep_id)
+        
 
     def _get_subject(self) -> pynwb.file.Subject:
         """Obtain this NWBFile's subject field, constructing it if needed
@@ -169,18 +171,26 @@ class Nwb2Sink(MetadataSink):
                 self._get_single_ic_electrode().name = str(value)
             elif name == "electrode_resistance":
                 self._get_single_ic_electrode().resistance = value
+            else:
+                self._cant_attach(name, sweep_id)
 
         elif isinstance(sweep_id, int):
-            series = self._get_sweep_series(sweep_id)
-
-            if name == "gain":
-                series.gain = value
-
+            all_series = self._get_sweep_series(sweep_id)
+            for series in all_series:
+                if name == "gain":
+                    series.gain = value
+                else:
+                    self._cant_attach(name, sweep_id)
         else:
-            raise ValueError(# This is useless
-                "unable to attach metadata field: "
-                f"{name} (sweep_id: {sweep_id})"
-            )
+            self._cant_attach(name, sweep_id)
+
+    def _cant_attach(self, name: str, sweep_id: Optional[int]):
+        """Helper - raises if attachment of a particular field not supported
+        """
+        raise ValueError(
+            "unable to attach metadata field: "
+            f"{name} (sweep_id: {sweep_id})"
+        )
 
     def serialize(self, targets: Optional[OneOrMany[Dict[str, Any]]] = None):
         """ Writes this sink's data to an external target or targets. Does not 
