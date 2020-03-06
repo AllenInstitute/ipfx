@@ -18,7 +18,7 @@ from pynwb.device import Device
 from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import IntracellularElectrode
 
-from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
+from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, I0_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, createCycleID
 
@@ -392,20 +392,21 @@ class ABFConverter:
 
                     seriesClass = getStimulusSeriesClass(self._getClampMode(abf, channel))
 
-                    stimulus = seriesClass(name=name,
-                                           data=data,
-                                           sweep_number=np.uint64(cycle_id),
-                                           unit=unit,
-                                           electrode=electrode,
-                                           gain=gain,
-                                           resolution=resolution,
-                                           conversion=conversion,
-                                           starting_time=starting_time,
-                                           rate=rate,
-                                           description=description,
-                                           stimulus_description=stimulus_description)
+                    if seriesClass is not None:
+                        stimulus = seriesClass(name=name,
+                                               data=data,
+                                               sweep_number=np.uint64(cycle_id),
+                                               unit=unit,
+                                               electrode=electrode,
+                                               gain=gain,
+                                               resolution=resolution,
+                                               conversion=conversion,
+                                               starting_time=starting_time,
+                                               rate=rate,
+                                               description=description,
+                                               stimulus_description=stimulus_description)
 
-                    series.append(stimulus)
+                        series.append(stimulus)
 
         return series
 
@@ -489,7 +490,7 @@ class ABFConverter:
                     d["whole_cell_capacitance_comp"] = np.nan
                     d["whole_cell_series_resistance_comp"] = np.nan
 
-            elif clampMode == I_CLAMP_MODE:
+            elif clampMode in (I_CLAMP_MODE, I0_CLAMP_MODE):
                 if settings["GetHoldingEnable"]:
                     d["bias_current"] = settings["GetHolding"]
                 else:
@@ -515,7 +516,7 @@ class ABFConverter:
                 d["resistance_comp_prediction"] = np.nan
                 d["whole_cell_capacitance_comp"] = np.nan
                 d["whole_cell_series_resistance_comp"] = np.nan
-            elif clampMode == I_CLAMP_MODE:
+            elif clampMode in (I_CLAMP_MODE, I0_CLAMP_MODE):
                 d["bias_current"] = np.nan
                 d["bridge_balance"] = np.nan
                 d["capacitance_compensation"] = np.nan
@@ -592,7 +593,7 @@ class ABFConverter:
                                                       whole_cell_capacitance_comp=settings["whole_cell_capacitance_comp"],  # noqa: E501
                                                       whole_cell_series_resistance_comp=settings["whole_cell_series_resistance_comp"])  # noqa: E501
 
-                    elif clampMode == I_CLAMP_MODE:
+                    elif clampMode in (I_CLAMP_MODE, I0_CLAMP_MODE):
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
                                                       sweep_number=np.uint64(cycle_id),
