@@ -10,8 +10,8 @@ from subprocess import Popen, PIPE
 
 import numpy as np
 
-from pynwb.icephys import CurrentClampStimulusSeries, VoltageClampStimulusSeries
-from pynwb.icephys import CurrentClampSeries, VoltageClampSeries
+from pynwb.icephys import CurrentClampStimulusSeries, VoltageClampStimulusSeries, CurrentClampSeries, \
+    VoltageClampSeries, IZeroClampSeries
 
 try:
     from pynwb.form.backends.hdf5.h5_utils import H5DataIO
@@ -21,6 +21,7 @@ except ModuleNotFoundError:
 PLACEHOLDER = "PLACEHOLDER"
 V_CLAMP_MODE = 0
 I_CLAMP_MODE = 1
+I0_CLAMP_MODE = 2
 
 
 # TODO Use the pint package if doing that manually gets too involved
@@ -31,6 +32,8 @@ def parseUnit(unitString):
 
     if unitString == "pA":
         return 1e-12, "A"
+    elif unitString == "nA":
+        return 1e-9, "A"
     elif unitString == "A":
         return 1.0, "A"
     elif unitString == "mV":
@@ -50,6 +53,8 @@ def getStimulusSeriesClass(clampMode):
         return VoltageClampStimulusSeries
     elif clampMode == I_CLAMP_MODE:
         return CurrentClampStimulusSeries
+    elif clampMode == I0_CLAMP_MODE:
+        return None
     else:
         raise ValueError(f"Unsupported clamp mode {clampMode}.")
 
@@ -63,6 +68,8 @@ def getAcquiredSeriesClass(clampMode):
         return VoltageClampSeries
     elif clampMode == I_CLAMP_MODE:
         return CurrentClampSeries
+    elif clampMode == I0_CLAMP_MODE:
+        return IZeroClampSeries
     else:
         raise ValueError(f"Unsupported clamp mode {clampMode}.")
 
@@ -188,5 +195,7 @@ def clampModeToString(clampMode):
         return "I_CLAMP_MODE"
     elif clampMode == V_CLAMP_MODE:
         return "V_CLAMP_MODE"
+    elif clampMode == I0_CLAMP_MODE:
+        return "I0_CLAMP_MODE"
     else:
         raise ValueError(f"Unknown clampMode {clampMode}")
