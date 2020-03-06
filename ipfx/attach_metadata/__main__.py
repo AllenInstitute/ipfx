@@ -28,7 +28,7 @@ def attach_metadata(
 
     Raises
     ------
-    UnsupportedMetadataError(ValueError) : If a piece of metadata is argued to 
+    ValueError : If a piece of metadata is argued to 
         an incompatible sink.
 
     """

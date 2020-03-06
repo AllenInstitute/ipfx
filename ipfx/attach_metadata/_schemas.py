@@ -79,11 +79,11 @@ class DandiSinkSpecification(SinkSpecification):
     kind = String(
         description="what sort of sink is this?",
         required=True,
-        default="DandiYamlSink"
+        default="DandiSink"
     )
     targets = Nested(
         Nwb2SinkTarget,
-        description="Targets (output nwb files) which will be written to",
+        description="Targets (currently yaml files) which will be written to",
         required=True,
         many=True
     )

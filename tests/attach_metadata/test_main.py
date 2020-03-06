@@ -6,7 +6,6 @@ See test_cli for integration tests of
 
 """
 from ipfx.attach_metadata import __main__ as attach
-from ipfx.attach_metadata.sink import MetadataSink
 
 
 def test_configure_sinks():

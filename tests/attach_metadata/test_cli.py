@@ -57,11 +57,11 @@ def simple_nwb(base_path):
         session_start_time=datetime.now()
     )
     nwbfile.add_acquisition(
-      pynwb.TimeSeries(
-          name="a timeseries", 
-          data=[1, 2, 3], 
-          starting_time=0.0, 
-          rate=1.0
+        pynwb.TimeSeries(
+            name="a timeseries", 
+            data=[1, 2, 3], 
+            starting_time=0.0, 
+            rate=1.0
         )
     )
     with pynwb.NWBHDF5IO(path=in_nwb_path, mode="w") as writer:
@@ -133,7 +133,7 @@ def test_cli_nwb2(cli_runner):
     }
 
     out_json = cli_runner.run(input_json)
-    os.remove(in_nwb_path) # make sure we aren't linking
+    os.remove(in_nwb_path)  # make sure we aren't linking
     obt_nwb_path = out_json["sinks"]["nwb2"]["targets"][0]["output_path"]
 
     with pynwb.NWBHDF5IO(path=obt_nwb_path, mode="r") as reader:
@@ -143,6 +143,7 @@ def test_cli_nwb2(cli_runner):
             obt.get_acquisition("a timeseries").data[:],
             [1, 2, 3]
         )
+
 
 def test_cli_multisink(cli_runner):
     in_nwb_path, out_nwb_path = simple_nwb(cli_runner.tmpdir)
