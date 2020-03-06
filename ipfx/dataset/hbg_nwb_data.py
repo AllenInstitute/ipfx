@@ -26,7 +26,7 @@ class HBGNWBData(EphysNWBData):
         return super().get_stim_code(sweep_number)
 
     def extract_sweep_record(self, sweep_num: int) -> Dict[str, Any]:
-        attrs = self.nwb_data.get_sweep_attrs(sweep_num)
+        attrs = self.get_sweep_attrs(sweep_num)
 
         sweep_record = {
             "sweep_number": sweep_num,
