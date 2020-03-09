@@ -22,3 +22,14 @@ def test_labnotebook_reader(NWB_file):
 
     assert reader.get_textual_keys()[0][1] == 'TimeStamp'
     np.testing.assert_almost_equal(float(reader.get_textual_values()[0][1][0]), 3617200000.0)
+
+    sweep_num = 0
+    expected = {
+        "Stim Wave Name": "EXTPSMOKET180424_DA_0",
+        "Scale Factor": 0.5,
+        "Set Sweep Count": 0.0
+    }
+    obtained = {}
+    for k,v in expected.items():
+        obtained[k] = reader.get_value(k, sweep_num, None)
+    assert expected == obtained
