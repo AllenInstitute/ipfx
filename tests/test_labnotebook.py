@@ -6,8 +6,6 @@ import pytest
 import h5py
 import numpy as np
 from ipfx.dataset.labnotebook import LabNotebookReaderIgorNwb
-from tests.helpers_for_tests import compare_dicts
-from allensdk.api.queries.cell_types_api import CellTypesApi
 
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
