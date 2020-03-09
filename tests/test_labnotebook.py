@@ -17,17 +17,24 @@ def test_labnotebook_reader(NWB_file):
     reader = LabNotebookReaderIgorNwb(NWB_file)
     assert isinstance(reader, LabNotebookReaderIgorNwb)
 
-    assert reader.get_numerical_keys()[0][1] == 'TimeStamp'
-    np.testing.assert_almost_equal(reader.get_numerical_values()[0][1][0], 3617183992.147)
-
-    assert reader.get_textual_keys()[0][1] == 'TimeStamp'
-    np.testing.assert_almost_equal(float(reader.get_textual_values()[0][1][0]), 3617200000.0)
-
     sweep_num = 0
     expected = {
         "Stim Wave Name": "EXTPSMOKET180424_DA_0",
         "Scale Factor": 0.5,
-        "Set Sweep Count": 0.0
+        "Set Sweep Count": 0.0,
+        "Stimset Acq Cycle ID":  7394437.0,
+        "TimeStamp":  3617184191.612,
+        "TimeStampSinceIgorEpochUTC":  3617209391.612,
+        "EntrySourceType":  1.0,
+        "TP Baseline Vm":  -167.69015502929688,
+        "TP Baseline pA":  51.41988754272461,
+        "Headstage Active":  1.0,
+        "Stim Scale Factor" :  1.0,
+        "Stim set length" :  46000.0,
+        "DA unit" :  "mV",
+        "DA Gain" :  20.0,
+        "AD unit" :  "pA",
+        "AD Gain" :  0.0005000000237487257
     }
     obtained = {}
     for k,v in expected.items():
