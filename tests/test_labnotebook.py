@@ -9,7 +9,7 @@ from ipfx.dataset.labnotebook import LabNotebookReaderIgorNwb
 
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
-@pytest.mark.parametrize('NWB_file', ['H18.03.315.11.11.01.05.nwb'], indirect=True)
+@pytest.mark.parametrize('NWB_file', ['Ctgf-T2A-dgCre;Ai14-495723.05.02.01-compressed-V2.nwb'], indirect=True)
 def test_labnotebook_reader(NWB_file):
 
     reader = LabNotebookReaderIgorNwb(NWB_file)
@@ -19,20 +19,22 @@ def test_labnotebook_reader(NWB_file):
     expected = {
         "Stim Wave Name": "EXTPSMOKET180424_DA_0",
         "Scale Factor": 0.5,
-        "Set Sweep Count": 0.0,
-        "Stimset Acq Cycle ID":  7394437.0,
-        "TimeStamp":  3617184191.612,
-        "TimeStampSinceIgorEpochUTC":  3617209391.612,
         "EntrySourceType":  1.0,
-        "TP Baseline Vm":  -167.69015502929688,
-        "TP Baseline pA":  51.41988754272461,
+        "Set Sweep Count": 0.0,
+        "Stimset Acq Cycle ID":  3272828.0,
+        "TimeStamp":  3655804981.533,
+        "TimeStampSinceIgorEpochUTC":  3655833781.533,
+        "EntrySourceType":  1.0,
+        "TP Baseline Vm":  None,
+        "TP Baseline pA":  -66.3965072631836,
         "Headstage Active":  1.0,
         "Stim Scale Factor" :  1.0,
         "Stim set length" :  46000.0,
         "DA unit" :  "mV",
         "DA Gain" :  20.0,
         "AD unit" :  "pA",
-        "AD Gain" :  0.0005000000237487257
+        "AD Gain" :  0.0005000000237487257,
+        "Headstage Active":  1.0
     }
     obtained = {}
     for k,v in expected.items():
