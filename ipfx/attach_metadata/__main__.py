@@ -137,8 +137,6 @@ def main():
         )
     )
 
-    print(output)
-
     parser.output(output)
 
 
