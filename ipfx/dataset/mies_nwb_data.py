@@ -1,7 +1,7 @@
 from typing import Dict, Any, List, Optional
 import abc
 
-from ipfx.stimulus import StimulusOntology
+from ipfx.dataset.stimulus import StimulusOntology
 from ipfx.dataset.lab_notebook_reader import LabNotebookReader
 from ipfx.dataset.ephys_nwb_data import EphysNWBData, get_finite_or_none
 
