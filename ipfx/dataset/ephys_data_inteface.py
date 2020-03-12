@@ -267,13 +267,8 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-<<<<<<< HEAD
     @abc.abstractmethod
     def get_stimulus_groups(self) ->List[str]:
-=======
-    @abs.abstractmethod
-    def get_stimulus_groups(self) -> List[str]:
->>>>>>> adds extract_sweep_record
         """
         Collect names of hdf5 groups from the stimulus
 
