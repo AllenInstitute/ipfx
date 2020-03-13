@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 import pytest
 
-from ipfx.stimulus import StimulusOntology
-from ipfx.hbg_dataset import HBGDataSet
+from ipfx.dataset.stimulus import StimulusOntology
+from ipfx.dataset.hbg_nwb_data import HBGNWBData
 
 from .helpers_for_tests import compare_dicts
 
@@ -25,7 +25,7 @@ def ontology():
 @pytest.mark.parametrize('ontology, NWB_file', [(None, '2018_03_20_0005.nwb')], indirect=True)
 def test_main_abf(ontology, NWB_file):
 
-    dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
+    dataset = HBGNWBData(nwb_file=NWB_file, ontology=ontology)
 
     expected = {'stimulus_units': {0: 'Amps'},
                 'clamp_mode': {0: 'CurrentClamp'},
@@ -44,7 +44,7 @@ def test_main_abf(ontology, NWB_file):
 @pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
 def test_main_dat(ontology, NWB_file):
 
-    dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
+    dataset = HBGNWBData(nwb_file=NWB_file, ontology=ontology)
 
     expected = {'stimulus_units': 'Volts',
                 'clamp_mode': 'VoltageClamp',
@@ -65,21 +65,21 @@ def test_main_dat(ontology, NWB_file):
 @pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
 def test_get_clamp_mode(ontology, NWB_file):
 
-    dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
+    dataset = HBGNWBData(nwb_file=NWB_file, ontology=ontology)
     assert dataset.get_clamp_mode(10101) == dataset.VOLTAGE_CLAMP
 
 
 @pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
 def test_get_stimulus_units(ontology, NWB_file):
 
-    dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
+    dataset = HBGNWBData(nwb_file=NWB_file, ontology=ontology)
     assert dataset.get_stimulus_units(10101) == "Volts"
 
 
 @pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
 def test_get_stimulus_code(ontology, NWB_file):
 
-    dataset = HBGDataSet(nwb_file=NWB_file, ontology=ontology)
+    dataset = HBGNWBData(nwb_file=NWB_file, ontology=ontology)
     assert dataset.get_stimulus_code(10101) == u'extpinbath'
 
 

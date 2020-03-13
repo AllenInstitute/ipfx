@@ -15,7 +15,7 @@ from pynwb.icephys import (
     IZeroClampSeries)
 from ipfx.py2to3 import to_str
 
-from ipfx.stimulus import StimulusOntology
+from ipfx.dataset.stimulus import StimulusOntology
 from ipfx.dataset.ephys_data_interface import EphysDataInterface
 
 
