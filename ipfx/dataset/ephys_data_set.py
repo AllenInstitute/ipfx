@@ -1,203 +1,134 @@
-from typing import Optional, List, Dict, Any, Tuple
-import warnings
-import logging
+"""Interface required to run ipfx pipeline
+
+"""
+from typing import Optional, Sequence, List, Dict, Any
+import abc
+
 import pandas as pd
-import numpy as np
+
+from ipfx.dataset.stimulus import StimulusOntology
+from ipfx.dataset.ephys_data_interface import EphysDataInterface
 from ipfx.sweep import Sweep, SweepSet
-from ipfx.dataset.ephys_data_inteface import EphysDataInterface
 
 
-class EphysDataSet(object):
+class NotYetImplementedError(TypeError):
+    """This method or property is not yet implemented. Unlike 
+    NotImplementedError, it will be implemented in the future!
+    """
 
-    STIMULUS_UNITS = 'stimulus_units'
-    STIMULUS_CODE = 'stimulus_code'
-    STIMULUS_AMPLITUDE = 'stimulus_amplitude'
-    STIMULUS_NAME = 'stimulus_name'
-    SWEEP_NUMBER = 'sweep_number'
-    CLAMP_MODE = 'clamp_mode'
 
-    COLUMN_NAMES = [STIMULUS_UNITS,
-                    STIMULUS_CODE,
-                    STIMULUS_AMPLITUDE,
-                    STIMULUS_NAME,
-                    CLAMP_MODE,
-                    SWEEP_NUMBER,
-                    ]
+class _EphysDataset(abc.ABC):
+    """Interface expected by pipeline modules, specifically:
+        - sweep extraction
+        - auto qc
+        - feature extraction
 
-    LONG_SQUARE = 'long_square'
-    COARSE_LONG_SQUARE = 'coarse_long_square'
-    SHORT_SQUARE_TRIPLE = 'short_square_triple'
-    SHORT_SQUARE = 'short_square'
-    RAMP = 'ramp'
+    Provides data, but does not directly read from any external sources (e.g. 
+    NWB files). Instead, an EphysDataInterface is used as an intermediary, 
+    handling all of the gory business of extracting 
 
-    VOLTAGE_CLAMP = "VoltageClamp"
-    CURRENT_CLAMP = "CurrentClamp"
+    """
 
-    def __init__(self,
-                 data: EphysDataInterface,
-                 sweep_info: Optional[Dict[str, Any]] = None):
-
-        self.data = data
-        self.ontology = data.ontology
-
-        if sweep_info is None:
-            sweep_info = self.extract_sweep_info()
-
-        self.build_sweep_table(sweep_info)
-
-    def extract_sweep_info(self) -> Dict[str,Any]:
-        """
-        Extract sweep information for all sweeps
-
-        Returns
-        -------
-        sweep information
+    @abc.abstractproperty
+    def ontology(self) -> StimulusOntology:
+        """Used to interpret the stimuli presented during this experiment
         """
 
-        sweep_info = []
-
-        for index, sweep_map in self.data.sweep_map_table.iterrows():
-            sweep_num = sweep_map["sweep_number"]
-            sweep_info.append(self.data.extract_sweep_record(sweep_num))
-
-        return sweep_info
-
-    def build_sweep_table(self, sweep_info=None):
+    @abc.abstractproperty
+    def sweep_info(self) -> List[Dict[str, Any]]:
+        """Each element is a dictionary describing a sweep. See also 
+        sweep_table.
         """
-        Construct pd.Dataframe from
-        Parameters
-        ----------
-        sweep_info
 
-        Returns
-        -------
-
+    @abc.abstractproperty
+    def sweep_table(self) -> pd.DataFrame:
+        """Each row describes a sweep. Rows are ordered by presentation time. 
+        Some datasets may provide additional information on their sweeps, but 
+        all have at least:
+            stimulus_units
+            stimulus_code
+            stimulus_ampliture
+            stimulus_name
+            sweep_number
+            clamp_mode
         """
-        if sweep_info:
-            self.sweep_table = pd.DataFrame.from_records(sweep_info)
-        else:
-            self.sweep_table = pd.DataFrame(columns=self.COLUMN_NAMES)
 
-    def filtered_sweep_table(self,
-                             clamp_mode=None,
-                             stimuli=None,
-                             stimuli_exclude=None,
-                             ):
-
-        st = self.sweep_table
-
-        if clamp_mode:
-            mask = st[self.CLAMP_MODE] == clamp_mode
-            st = st[mask.astype(bool)]
-
-        if stimuli:
-            mask = st[self.STIMULUS_CODE].apply(
-                self.ontology.stimulus_has_any_tags, args=(stimuli,), tag_type="code")
-            st = st[mask.astype(bool)]
-
-        if stimuli_exclude:
-            mask = ~st[self.STIMULUS_CODE].apply(
-                self.ontology.stimulus_has_any_tags, args=(stimuli_exclude,), tag_type="code")
-            st = st[mask.astype(bool)]
-
-        return st
-
-    def get_sweep_number(self, stimuli, clamp_mode=None):
-
-        sweeps = self.filtered_sweep_table(clamp_mode=clamp_mode,
-                                           stimuli=stimuli).sort_values(by=self.SWEEP_NUMBER)
-
-        if len(sweeps) > 1:
-            logging.warning(
-                "Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimuli))
-
-        if len(sweeps) == 0:
-            raise IndexError("Cannot find {} sweeps with clamp mode: {} found ".format(stimuli,clamp_mode))
-
-        return sweeps.sweep_number.values[-1]
-
-    def voltage_current(self, sweep_data, clamp_mode) -> Tuple[np.arrray,np.array]:
-
-        if clamp_mode == self.VOLTAGE_CLAMP:
-            v = sweep_data['stimulus']
-            i = sweep_data['response']
-        elif clamp_mode == self.CURRENT_CLAMP:
-            v = sweep_data['response']
-            i = sweep_data['stimulus']
-        else:
-            raise Exception(f"Invalid clamp mode: {clamp_mode}")
-
-        return v, i
-
-    def sweep(self, sweep_number):
-
-        """
-        Create an instance of the Sweep class with the data loaded from the from a file
+    @abc.abstractmethod
+    def __init__(self, data: EphysDataInterface):
+        """Construct an EphysPipelineDataset.
 
         Parameters
         ----------
-        sweep_number: int
+        data : This EphysDataInterface will handle the details of loading data
+            from an external source.
+        """
+
+    def filtered_sweep_table(
+            self,
+            clamp_mode: Optional[str] = None,
+            stimuli: Optional[Sequence[str]] = None,
+            stimuli_exclude: Optional[str] = None
+    ) -> pd.DataFrame:
+        """Convenvience for filtering the sweep table
+
+        Parameters
+        ----------
+        clamp_mode : restrict to one of:
+                VoltageClamp
+                CurrentClamp
+            sweeps or leave None for both.
+        stimuli : include only stimuli with these names
+        stimuli_exclude : do not include any stimuli with these names
+        """
+
+    def sweep(self, sweep_number: int) -> Sweep:
+        """Obtain a Sweep object containing data for a specified sweep
+
+        Parameters
+        ----------
+        sweep_number: identifier of the sweep to be accessed.
 
         Returns
         -------
-        sweep: Sweep object
+        Data and metadata for a single sweep
         """
 
-        sweep_data = self.data.get_sweep_data(sweep_number)
-        self.drop_trailing_zeros_in_response(sweep_data)
-        sweep_record = self.data.get_sweep_record(sweep_number)
-        sampling_rate = sweep_data['sampling_rate']
-        dt = 1. / sampling_rate
-        t = np.arange(0, len(sweep_data['stimulus'])) * dt
+    def sweep_set(self, sweep_numbers: Sequence[int]) -> SweepSet:
+        """Obtain a SweepSet object, which holds data for a collection of 
+        sweeps.
+        
+        Parameters
+        ----------
+        sweep_numbers : identifiers for the sweeps which will make up the set
 
-        epochs = sweep_data.get('epochs')
-        clamp_mode = sweep_record['clamp_mode']
+        Returns
+        -------
+        Data and metadata for a collection of sweeps
+        """
 
-        v, i = self.voltage_current(sweep_data,clamp_mode)
+    def get_stimulus_name(self, stim_code: str) -> Optional[str]:
+        """Convenience for looking up a stimulus' name from its code. See also 
+        Ontology.get_stimulus_name
+        
+        Parameters
+        ----------
+        stim_code : The code to look up
 
-        v *= 1.0e3    # convert units V->mV
-        i *= 1.0e12   # convert units A->pA
+        Returns
+        -------
+        The name of the stimulus, or None if it was not found
+        """
 
-        if len(sweep_data['stimulus']) != len(sweep_data['response']):
-            warnings.warn("Stimulus duration {} is not equal reponse duration {}".
-                          format(len(sweep_data['stimulus']),len(sweep_data['response'])))
+    def get_stimulus_code(self, sweep_number: int) -> str:
+        """Look up the stimulus code for a specific sweep
 
-        try:
-            sweep = Sweep(t=t,
-                          v=v,
-                          i=i,
-                          sampling_rate=sampling_rate,
-                          sweep_number=sweep_number,
-                          clamp_mode=clamp_mode,
-                          epochs=epochs,
-                          )
+        Parameters
+        ----------
+        sweep_number : Identifies sweep whose code will be looked up
 
-        except Exception:
-            logging.warning("Error reading sweep %d" % sweep_number)
-            raise
+        Returns
+        -------
+        The code of the stimulus applied on the identified sweep
+        """
 
-        return sweep
-
-    def sweep_set(self, sweep_numbers):
-        try:
-            return SweepSet([self.sweep(sn) for sn in sweep_numbers])
-        except TypeError:  # not iterable
-            return SweepSet([self.sweep(sweep_numbers)])
-
-    @staticmethod
-    def drop_trailing_zeros_in_response(sweep_data):
-
-        response = sweep_data['response']
-
-        if len(np.flatnonzero(response)) == 0:
-            recording_end_idx = 0
-            sweep_end_idx = 0
-        else:
-            recording_end_idx = np.flatnonzero(response)[-1]
-            sweep_end_idx = len(response)-1
-
-        if recording_end_idx < sweep_end_idx:
-            response[recording_end_idx+1:] = np.nan
-            sweep_data["response"] = response
-
-
+    def get_stimulus_code_ext(self, sweep_number:)
