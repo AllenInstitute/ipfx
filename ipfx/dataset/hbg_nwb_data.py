@@ -17,7 +17,7 @@ class HBGNWBData(EphysNWBData):
                  load_into_memory: bool = True,
                  validate_stim: bool = True,
                  ):
-        super().init(nwb_file=nwb_file,
+        super().__init__(nwb_file=nwb_file,
                      ontology=ontology,
                      load_into_memory=load_into_memory,
                      validate_stim=validate_stim)

@@ -1,11 +1,13 @@
 from __future__ import absolute_import
 import pytest
+import os
 
 from ipfx.dataset.stimulus import StimulusOntology
 from ipfx.dataset.hbg_nwb_data import HBGNWBData
 
 from .helpers_for_tests import compare_dicts
 
+TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
 @pytest.fixture()
 def ontology():
@@ -41,7 +43,7 @@ def test_main_abf(ontology, NWB_file):
     compare_dicts(expected, dataset.sweep_table.to_dict())
 
 
-@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
+@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H20.28.008.11.05-10.nwb')], indirect=True)
 def test_main_dat(ontology, NWB_file):
 
     dataset = HBGNWBData(nwb_file=NWB_file, ontology=ontology)
@@ -62,21 +64,21 @@ def test_main_dat(ontology, NWB_file):
     compare_dicts(expected, sweep_record)
 
 
-@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
+@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H20.28.008.11.05-10.nwb')], indirect=True)
 def test_get_clamp_mode(ontology, NWB_file):
 
     dataset = HBGNWBData(nwb_file=NWB_file, ontology=ontology)
     assert dataset.get_clamp_mode(10101) == dataset.VOLTAGE_CLAMP
 
 
-@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
+@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H20.28.008.11.05-10.nwb')], indirect=True)
 def test_get_stimulus_units(ontology, NWB_file):
 
     dataset = HBGNWBData(nwb_file=NWB_file, ontology=ontology)
     assert dataset.get_stimulus_units(10101) == "Volts"
 
 
-@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H18.28.015.11.14.nwb')], indirect=True)
+@pytest.mark.parametrize('ontology, NWB_file', [(None, 'H20.28.008.11.05-10.nwb')], indirect=True)
 def test_get_stimulus_code(ontology, NWB_file):
 
     dataset = HBGNWBData(nwb_file=NWB_file, ontology=ontology)

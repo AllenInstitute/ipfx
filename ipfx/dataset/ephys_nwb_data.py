@@ -1,3 +1,4 @@
+from typing import Dict, Any, List, Optional
 import warnings
 import re
 
@@ -63,7 +64,7 @@ class EphysNWBData(EphysDataInterface):
                  validate_stim: bool = True,
                  ):
 
-        super().init(ontology=ontology, validate_stim=validate_stim)
+        super().__init__(ontology=ontology)
         if load_into_memory:
             with open(nwb_file, 'rb') as fh:
                 nwb_file = BytesIO(fh.read())
@@ -212,6 +213,33 @@ class EphysNWBData(EphysDataInterface):
             unit_str = self.get_long_unit_name(unit)
 
             return unit_str
+
+    def get_sweep_record(self, sweep_number: int) -> Dict[str,Any]:
+        """
+        Extract sweep data
+
+        Parameters
+        ----------
+        sweep_number
+
+        Returns
+        -------
+
+        dict in the format:
+
+        {
+            "sweep_number": int,
+            "stimulus_units": str,
+            "bridge_balance_mohm": float,
+            "leak_pa": float,
+            "stimulus_scale_factor": float,
+            "stimulus_code": str,
+            "stimulus_code_ext": str,
+            "stimulus_name": str,
+        }
+
+        """
+        raise NotImplementedError
 
     @staticmethod
     def get_unit_name(stim_attrs):
