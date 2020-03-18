@@ -71,7 +71,7 @@ class EphysNWBData(EphysDataInterface):
             with open(nwb_file, 'rb') as fh:
                 data = BytesIO(fh.read())
 
-            _h5_file = h5py.File(data, "r+")
+            _h5_file = h5py.File(data, "r")
             self.nwb = NWBHDF5IO(path=_h5_file.filename, mode="r+",file=_h5_file).read()
         else:
             self.nwb = NWBHDF5IO(nwb_file, mode='r').read()
