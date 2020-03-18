@@ -5,7 +5,7 @@ from ipfx.dataset.stimulus import StimulusOntology
 from ipfx.dataset.ephys_nwb_data import EphysNWBData, get_finite_or_none
 
 
-class HBGNWBData(EphysNWBData):
+class HBGNWB2Data(EphysNWBData):
     """
     Provides an Ephys Data Interface to an HBG generated NWB file
 

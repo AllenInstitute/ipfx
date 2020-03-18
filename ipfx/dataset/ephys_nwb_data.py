@@ -65,12 +65,16 @@ class EphysNWBData(EphysDataInterface):
                  ):
 
         super().__init__(ontology=ontology)
+        self.nwb_file = nwb_file
+        
         if load_into_memory:
             with open(nwb_file, 'rb') as fh:
-                nwb_file = BytesIO(fh.read())
+                data = BytesIO(fh.read())
 
-        self.nwb_file = nwb_file
-        self.nwb = NWBHDF5IO(nwb_file, mode='r').read()
+            _h5_file = h5py.File(data, "r+")
+            self.nwb = NWBHDF5IO(path=_h5_file.filename, mode="r+",file=_h5_file).read()
+        else:
+            self.nwb = NWBHDF5IO(nwb_file, mode='r').read()
 
         self.acquisition_path = "acquisition"
         self.stimulus_path = "stimulus/presentation"
