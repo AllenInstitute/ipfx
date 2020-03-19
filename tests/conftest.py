@@ -87,6 +87,11 @@ def pytest_collection_modifyitems(config, items):
         reason='depend on resources internal to the Allen Institute.'
     )
 
+    skip_download = pytest.mark.skipif(
+        os.getenv("ALLOW_TEST_DOWNLOADS", "false") != "true",
+        reason="required to opt in to potentially flaky file-downloading tests"
+    )
+
     for item in items:
         if 'requires_lims' in item.keywords:
             item.add_marker(skip_requires_lims)
@@ -96,3 +101,6 @@ def pytest_collection_modifyitems(config, items):
 
         if "requires_inhouse_data" in item.keywords:
             item.add_marker(skip_internal)
+
+        if "downloads_file" in item.keywords:
+            item.add_marker(skip_download)
