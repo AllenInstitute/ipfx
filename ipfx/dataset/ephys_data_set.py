@@ -1,10 +1,25 @@
-from typing import Optional, List, Dict, Any, Tuple
-import warnings
+"""
+"""
+from typing import (
+    Optional, List, Dict, Tuple, Collection, Sequence, Union
+)
 import logging
+from collections import defaultdict
+import copy as cp
+
 import pandas as pd
 import numpy as np
-from ipfx.sweep import Sweep, SweepSet
+
+from allensdk.deprecated import deprecated
+
 from ipfx.dataset.ephys_data_inteface import EphysDataInterface
+from ipfx.dataset.stimulus import StimulusOntology
+from ipfx.sweep import Sweep, SweepSet
+
+
+# TODO modify EphysDataInterface to accept sweep_info
+# TODO determine where constants ought to reside
+# here i think, but need to add stim and response
 
 
 class EphysDataSet(object):
@@ -33,57 +48,79 @@ class EphysDataSet(object):
     VOLTAGE_CLAMP = "VoltageClamp"
     CURRENT_CLAMP = "CurrentClamp"
 
-    def __init__(self,
-                 data: EphysDataInterface,
-                 sweep_info: Optional[Dict[str, Any]] = None):
-
-        self.data = data
-        self.ontology = data.ontology
-
-        if sweep_info is None:
-            sweep_info = self.extract_sweep_info()
-
-        self.build_sweep_table(sweep_info)
-
-    def extract_sweep_info(self) -> Dict[str,Any]:
+    @property
+    def ontology(self) -> StimulusOntology:
+        """The stimulus ontology maps short-form stimulus codes to complete
+        descriptions.
         """
-        Extract sweep information for all sweeps
+        return self._data.ontology
 
-        Returns
-        -------
-        sweep information
+    @property
+    def sweep_table(self) -> pd.DataFrame:
+        """Each row of the sweep table contains the metadata for a single 
+        sweep. In particular details of the stimulus presented and the clamp 
+        mode. See EphysDataInterface.get_sweep_metadata for more information.
+
         """
+        if not hasattr(self, "_sweep_table"):
+            self._sweep_table = pd.DataFrame([
+                self._data.get_sweep_metadata(num)
+                for num in self._data.sweep_numbers
+            ])
+        return self._sweep_table
 
-        sweep_info = []
+    def __init__(
+            self,
+            data: EphysDataInterface
+    ):
+        """EphysDataSet is the preferred interface for running analyses or 
+        pipeline code.
 
-        for index, sweep_map in self.data.sweep_map_table.iterrows():
-            sweep_num = sweep_map["sweep_number"]
-            sweep_info.append(self.data.extract_sweep_record(sweep_num))
-
-        return sweep_info
-
-    def build_sweep_table(self, sweep_info=None):
-        """
-        Construct pd.Dataframe from
         Parameters
         ----------
-        sweep_info
+        data : This object must implement the EphysDataInterface. It will 
+            handle any loading of data from external sources (such as NWB2 
+            files)
+        """
+        self._data: EphysDataInterface = data
+
+    def _setup_stimulus_repeat_lookup(self):
+        """Construct a mapping from sweep number to the number of presentations 
+        of the stimulus presented during that sweep before and during that 
+        sweep.
+
+        Notes
+        -----
+        see get_stim_code_ext for use
+
+        """
+        stimulus_counters = defaultdict(int)
+        self._stimulus_repeat_lookup = {}
+
+        for sweep_number in self._data.sweep_numbers:
+            code = self.get_stimulus_code(sweep_number)
+            stimulus_counters[code] += 1
+            self._stimulus_repeat_lookup[sweep_number] = \
+                stimulus_counters[code]
+
+    def filtered_sweep_table(
+            self,
+            clamp_mode: Optional[str] = None,
+            stimuli: Optional[Collection[str]] = None,
+            stimuli_exclude: Optional[Collection[str]] = None,
+    ) -> pd.DataFrame:
+        """Utility for filtering the 
+
+        Parameters
+        ----------
+        clamp_mode: filter to one of self.VOLTAGE_CLAMP or self.CURRENT_CLAMP
+        stimuli: filter to sweeps presenting these stimuli
+        stimuli_exclude: filter to sweeps not presenting these stimuli
 
         Returns
         -------
-
+        filtered sweep table
         """
-        if sweep_info:
-            self.sweep_table = pd.DataFrame.from_records(sweep_info)
-        else:
-            self.sweep_table = pd.DataFrame(columns=self.COLUMN_NAMES)
-
-    def filtered_sweep_table(self,
-                             clamp_mode=None,
-                             stimuli=None,
-                             stimuli_exclude=None,
-                             ):
-
         st = self.sweep_table
 
         if clamp_mode:
@@ -92,47 +129,75 @@ class EphysDataSet(object):
 
         if stimuli:
             mask = st[self.STIMULUS_CODE].apply(
-                self.ontology.stimulus_has_any_tags, args=(stimuli,), tag_type="code")
+                self.ontology.stimulus_has_any_tags, 
+                args=(stimuli,), 
+                tag_type="code"
+            )
             st = st[mask.astype(bool)]
 
         if stimuli_exclude:
             mask = ~st[self.STIMULUS_CODE].apply(
-                self.ontology.stimulus_has_any_tags, args=(stimuli_exclude,), tag_type="code")
+                self.ontology.stimulus_has_any_tags, 
+                args=(stimuli_exclude,), 
+                tag_type="code"
+            )
             st = st[mask.astype(bool)]
 
         return st
 
-    def get_sweep_number(self, stimuli, clamp_mode=None):
+    def get_sweep_numbers(
+            self,
+            stimuli: Collection[str],
+            clamp_mode: Optional[str] = None
+    ) -> List[int]:
+        """Return the integer identifier of all sweeps matching argued criteria
 
-        sweeps = self.filtered_sweep_table(clamp_mode=clamp_mode,
-                                           stimuli=stimuli).sort_values(by=self.SWEEP_NUMBER)
+        Parameters
+        ----------
+        stimuli : filter to  sweeps presentingthese stimuli
+        clamp_mode : filter to sweeps of this clamp mode
 
-        if len(sweeps) > 1:
-            logging.warning(
-                "Found multiple sweeps for stimulus %s: using largest sweep number" % str(stimuli))
+        Returns
+        -------
+        A list of sweep numbers matching these criteria
+        """
+
+        sweeps = self.filtered_sweep_table(
+            clamp_mode=clamp_mode, stimuli=stimuli
+        ).sort_values(by=self.SWEEP_NUMBER)
 
         if len(sweeps) == 0:
-            raise IndexError("Cannot find {} sweeps with clamp mode: {} found ".format(stimuli,clamp_mode))
+            raise IndexError(
+                f"Cannot find {stimuli} sweeps with clamp mode: {clamp_mode} "
+            )
 
-        return sweeps.sweep_number.values[-1]
+        return sweeps[self.SWEEP_NUMBER].values.tolist()
 
-    def voltage_current(self, sweep_data, clamp_mode) -> Tuple[np.arrray,np.array]:
+    @deprecated("call .get_sweep_numbers()[-1] instead")
+    def get_sweep_number(
+            self,
+            stimuli: Collection[str],
+            clamp_mode: Optional[str] = None
+    ) -> int:
+        """Convenience for getting the integer identifier of the temporally 
+        latest sweep matching argued criteria.
 
-        if clamp_mode == self.VOLTAGE_CLAMP:
-            v = sweep_data['stimulus']
-            i = sweep_data['response']
-        elif clamp_mode == self.CURRENT_CLAMP:
-            v = sweep_data['response']
-            i = sweep_data['stimulus']
-        else:
-            raise Exception(f"Invalid clamp mode: {clamp_mode}")
+        Parameters
+        ----------
+        stimuli : filter to  sweeps presentingthese stimuli
+        clamp_mode : filter to sweeps of this clamp mode
 
-        return v, i
-
-    def sweep(self, sweep_number):
-
+        Returns
+        -------
+        The identifier of the last sweep matching argued criteria
         """
-        Create an instance of the Sweep class with the data loaded from the from a file
+        return self.get_sweep_numbers(stimuli, clamp_mode)[-1]
+
+    # TODO apply scaling factor in EphysDataInterface
+    def sweep(self, sweep_number: int) -> Sweep:
+        """
+        Create an instance of the Sweep class with the data loaded from the 
+        from a file
 
         Parameters
         ----------
@@ -143,34 +208,30 @@ class EphysDataSet(object):
         sweep: Sweep object
         """
 
-        sweep_data = self.data.get_sweep_data(sweep_number)
-        self.drop_trailing_zeros_in_response(sweep_data)
-        sweep_record = self.data.get_sweep_record(sweep_number)
-        sampling_rate = sweep_data['sampling_rate']
-        dt = 1. / sampling_rate
-        t = np.arange(0, len(sweep_data['stimulus'])) * dt
+        sweep_data = self._data.get_sweep_data(sweep_number)
+        sweep_metadata = self._data.get_sweep_metadata(sweep_number)
 
-        epochs = sweep_data.get('epochs')
-        clamp_mode = sweep_record['clamp_mode']
+        time = np.arange(
+            len(sweep_data["stimulus"])
+        ) / sweep_data["sampling_rate"]
 
-        v, i = self.voltage_current(sweep_data,clamp_mode)
-
-        v *= 1.0e3    # convert units V->mV
-        i *= 1.0e12   # convert units A->pA
-
-        if len(sweep_data['stimulus']) != len(sweep_data['response']):
-            warnings.warn("Stimulus duration {} is not equal reponse duration {}".
-                          format(len(sweep_data['stimulus']),len(sweep_data['response'])))
+        voltage, current = type(self)._voltage_current(
+            sweep_data["stimuulus"],
+            _nan_trailing_zeros(sweep_data["response"]), 
+            sweep_metadata["clamp_mode"], 
+            enforce_equal_length=True,
+        )
 
         try:
-            sweep = Sweep(t=t,
-                          v=v,
-                          i=i,
-                          sampling_rate=sampling_rate,
-                          sweep_number=sweep_number,
-                          clamp_mode=clamp_mode,
-                          epochs=epochs,
-                          )
+            sweep = Sweep(
+                t=time,
+                v=voltage,
+                i=current,
+                sampling_rate=sweep_data["sampling_rate"],
+                sweep_number=sweep_number,
+                clamp_mode=sweep_metadata["clamp_mode"],
+                epochs=sweep_data.get("epochs", None),
+            )
 
         except Exception:
             logging.warning("Error reading sweep %d" % sweep_number)
@@ -178,26 +239,182 @@ class EphysDataSet(object):
 
         return sweep
 
-    def sweep_set(self, sweep_numbers):
-        try:
-            return SweepSet([self.sweep(sn) for sn in sweep_numbers])
-        except TypeError:  # not iterable
-            return SweepSet([self.sweep(sweep_numbers)])
+    def sweep_set(
+            self, 
+            sweep_numbers: Union[Sequence[int], int, None] = None
+    ) -> SweepSet:
+        """Construct a SweepSet object, which offers convenient access to an 
+        ordered collection of sweeps.
 
-    @staticmethod
-    def drop_trailing_zeros_in_response(sweep_data):
+        Parameters
+        ----------
+        sweep_numbers : Identifiers for the sweeps which will make up this set. 
+            If None, use all available sweeps.
 
-        response = sweep_data['response']
+        Returns
+        -------
+        A SweepSet constructed from the requested sweeps
+        """
+        if sweep_numbers is None:
+            _sweep_numbers: Sequence = self._data.sweep_numbers
 
-        if len(np.flatnonzero(response)) == 0:
-            recording_end_idx = 0
-            sweep_end_idx = 0
+        if not hasattr(sweep_numbers, "__len__"):  # not testing for order
+            _sweep_numbers = [sweep_numbers]
+
+        return SweepSet([self.sweep(num) for num in _sweep_numbers])
+
+    def get_recording_date(self) -> str:
+        """Return the date and time at which recording began.
+
+        Returns
+        -------
+        a string, formatted like: "%Y-%m-%d %H:%M:%S" in local time
+        """
+        return (
+            self._data.get_full_recording_date()
+                .strftime("%Y-%m-%d %H:%M:%S")
+        )
+
+    def get_sweep_data(self, sweep_number: int) -> Dict:
+        """Obtain the recorded data for a given sweep.
+
+        Parameters
+        ----------
+        sweep_number : identifier for the sweep whose data will be returned
+
+        Returns
+        -------
+        A dictionary containing at least:
+            {
+                'stimulus': np.ndarray,
+                'response': np.ndarray,
+                'stimulus_unit': string,
+                'sampling_rate': float
+            }
+        """
+        sweep_data = cp.copy(self._data.get_sweep_data(sweep_number))
+        sweep_data["response"] = _nan_trailing_zeros(sweep_data["response"])
+        return sweep_data
+
+    def get_clamp_mode(self, sweep_number: int) -> str:
+        """Obtain the clamp mode of a given sweep. Should be one of 
+        EphysDataSet.VOLTAGE_CLAMP or EphysDataSet.CURRENT_CLAMP
+
+        Parameters
+        ----------
+        sweep_number : identifier for the sweep whose clamp mode will be 
+            returned
+
+        Returns
+        -------
+        The clamp mode of the identified sweep
+        """
+        return self._data.get_sweep_metadata(sweep_number)["clamp_number"]
+
+    def get_stimulus_code(self, sweep_number: int) -> str:
+        """Return the (short form) stimulus code for a particular sweep.
+
+        Parameters
+        ----------
+        sweep_number : identifier for the sweep whose stimulus code will be 
+            returned
+
+        Returns
+        -------
+        code defining the stimulus presented on the identified sweep
+        """
+        return self._data.get_stimulus_code(sweep_number)
+
+    def get_stimulus_code_ext(self, sweep_number: int) -> str:
+        """Obtain the extended stimulus code for a sweep. This is the stimulus 
+        code for that sweep augmented with an integer counter describing the 
+        number of presentations of that stimulus up to and including the 
+        requested sweep.
+
+        Parameters
+        ----------
+        sweep_number : identifies the sweep whose extended stimulus code will 
+        be returned
+
+        Returns
+        -------
+        A string of the form "{stimulus_code}[{counter}]"
+        """
+        if not hasattr(self, "self._stimulus_repeat_lookup"):
+            self._setup_stimulus_repeat_lookup()
+        return self._stimulus_repeat_lookup[sweep_number]
+
+    def get_stimulus_units(self, sweep_number: int) -> str:
+        """Report the SI unit of measurement for a sweep's stimulus data
+
+        Parameters
+        ----------
+        sweep_number : identifies the sweep whose stimulus unit will be 
+            returned
+
+        Returns
+        -------
+        An SI (or derived) unit's name
+        """
+        return self._data.get_sweep_metadata(sweep_number)["stimulus_units"]
+
+    @classmethod
+    def _voltage_current(
+            cls,
+            stimulus: np.ndarray,
+            response: np.ndarray, 
+            clamp_mode: str,
+            enforce_equal_length: bool = True
+    ) -> Tuple[np.arrray, np.array]:
+        """Resolve the stimulus and response arrays from a sweep's data into 
+        voltage and current, using the clamp mode as a guide
+
+        Parameters
+        ----------
+        stimulus : stimulus trace
+        response : response trace
+        clamp_mode : Used to map stimulus and response to voltage and current
+        enforce_equal_length : Raise a ValueError if the stimulus and 
+            response arrays have uneven numbers of samples
+
+        Returns
+        -------
+        The voltage and current traces.
+
+        """            
+
+        if clamp_mode == cls.VOLTAGE_CLAMP:
+            voltage = stimulus
+            current = response
+        elif clamp_mode == cls.CURRENT_CLAMP:
+            voltage = response
+            current = stimulus
         else:
-            recording_end_idx = np.flatnonzero(response)[-1]
-            sweep_end_idx = len(response)-1
+            raise ValueError(f"Invalid clamp mode: {clamp_mode}")
 
-        if recording_end_idx < sweep_end_idx:
-            response[recording_end_idx+1:] = np.nan
-            sweep_data["response"] = response
+        if enforce_equal_length and len(voltage) != len(current):
+            raise ValueError(
+                f"found {len(voltage)} voltage samples, "
+                f"but {len(current)} current samples"
+            )
+
+        return voltage, current
 
 
+def _nan_trailing_zeros(
+        array: np.ndarray, 
+        inplace: bool = False
+) -> np.ndarray:
+    """If an array ends with one or more zeros, replace those zeros with 
+    np.nan
+    """
+
+    if not inplace:
+        array = array.copy()
+
+    nonzero = np.flatnonzero(array)
+    if not nonzero or nonzero[-1] + 1 == len(array):
+        return array
+
+    array[nonzero[-1]:] = np.nan
+    return array

@@ -1,6 +1,8 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Sequence
 import abc
 import warnings
+from datetime import datetime
+
 from ipfx.stimulus import StimulusOntology
 
 class EphysDataInterface(abc.ABC):
@@ -12,6 +14,11 @@ class EphysDataInterface(abc.ABC):
     def __init__(self, ontology: StimulusOntology):
 
         self.ontology = ontology
+
+    @abc.abstractproperty
+    def sweep_numbers(self) -> Sequence[int]:
+        """A time-ordered sequence of each sweep's integer identifer
+        """
 
     @abc.abstractmethod
     def get_sweep_data(self, sweep_number: int) -> Dict[str,Any]:
@@ -39,13 +46,12 @@ class EphysDataInterface(abc.ABC):
 
 
     @abc.abstractmethod
-    def get_sweep_record(self, sweep_number: int) -> Dict[str,Any]:
-        """
-        Extract sweep data
+    def get_sweep_metadata(self, sweep_number: int) -> Dict[str,Any]:
+        """Returns metadata about a sweep
 
         Parameters
         ----------
-        sweep_number
+        sweep_number : identifier of the sweep whose metadata will be returned
 
         Returns
         -------
@@ -61,6 +67,7 @@ class EphysDataInterface(abc.ABC):
             "stimulus_code": str,
             "stimulus_code_ext": str,
             "stimulus_name": str,
+            "clamp_mode": str
         }
 
         """
@@ -99,78 +106,28 @@ class EphysDataInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_stim_code(self, sweep_number: int) -> str:
-        """
-        Extract stimulus code
+    def get_stimulus_code(self, sweep_number: int) -> str:
+        """Obtain the code of the stimulus presented on a particular sweep.
 
         Parameters
         ----------
-        sweep_number
+        sweep_number : unique identifier for the sweep
 
         Returns
         -------
-        stimulus code
+        The code (a short-form description) of the stimulus presented on the 
+        identified sweep
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_stimulus_name(self,
-                          stim_code: str,
-                          validate: Optional[bool] = True) -> str:
-        """
-        Extract name of the stimulus from the stimulus given the ontology
-
-        Parameters
-        ----------
-        validate: flag to validate the stimulus code is in the ontology
+    def get_full_recording_date(self) -> datetime:
+        """Obtain the full date and time at which recording began.
 
         Returns
         -------
-        stimulus name
+        A datetime object, with timezone, reporting the start of recording
         """
-
-    @abc.abstractmethod
-    def get_stim_code_ext(self, sweep_number: int)-> str:
-        """
-        Extract stimulus code with the extension of the format: stim_code + %d
-
-        Parameters
-        ----------
-        sweep_number
-
-        Returns
-        -------
-        stimulus code with extension
-        """
-        raise NotImplementedError
-
-
-    @abc.abstractmethod
-    def get_session_start_time(self) -> str:
-        """
-        Extract session_start_time in nwb
-        Use last value if more than one is present
-
-        Returns
-        -------
-        recording_date: str
-            use date format "%Y-%m-%d %H:%M:%S", drop timezone info
-        """
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_recording_date(self) -> str:
-        """
-        Extract recording date
-
-        Returns
-        -------
-        recording date
-        """
-
-        raise NotImplementedError
-
 
     @abc.abstractmethod
     def get_stimulus_unit(self, sweep_number: int) -> str:
