@@ -107,12 +107,12 @@ class EphysDataSet(object):
             stimuli: Optional[Collection[str]] = None,
             stimuli_exclude: Optional[Collection[str]] = None,
     ) -> pd.DataFrame:
-        """Utility for filtering the 
+        """Utility for filtering the sweep table
 
         Parameters
         ----------
         clamp_mode: filter to one of self.VOLTAGE_CLAMP or self.CURRENT_CLAMP
-        stimuli: filter to sweeps presenting these stimuli
+        stimuli: filter to sweeps presenting these stimuli (codes)
         stimuli_exclude: filter to sweeps not presenting these stimuli
 
         Returns
@@ -145,14 +145,14 @@ class EphysDataSet(object):
 
     def get_sweep_numbers(
             self,
-            stimuli: Collection[str],
+            stimuli: Collection[str] = None,
             clamp_mode: Optional[str] = None
     ) -> List[int]:
         """Return the integer identifier of all sweeps matching argued criteria
 
         Parameters
         ----------
-        stimuli : filter to  sweeps presentingthese stimuli
+        stimuli : filter to  sweeps presenting these stimuli (codes)
         clamp_mode : filter to sweeps of this clamp mode
 
         Returns
@@ -214,7 +214,7 @@ class EphysDataSet(object):
         ) / sweep_data["sampling_rate"]
 
         voltage, current = type(self)._voltage_current(
-            sweep_data["stimuulus"],
+            sweep_data["stimulus"],
             _nan_trailing_zeros(sweep_data["response"]), 
             sweep_metadata["clamp_mode"], 
             enforce_equal_length=True,
@@ -253,11 +253,13 @@ class EphysDataSet(object):
         -------
         A SweepSet constructed from the requested sweeps
         """
+
         if sweep_numbers is None:
             _sweep_numbers: Sequence = self._data.sweep_numbers
-
-        if not hasattr(sweep_numbers, "__len__"):  # not testing for order
+        elif not hasattr(sweep_numbers, "__len__"):  # not testing for order
             _sweep_numbers = [sweep_numbers]
+        else:
+            _sweep_numbers = sweep_numbers  # type: ignore
 
         return SweepSet([self.sweep(num) for num in _sweep_numbers])
 
@@ -307,7 +309,7 @@ class EphysDataSet(object):
         -------
         The clamp mode of the identified sweep
         """
-        return self._data.get_sweep_metadata(sweep_number)["clamp_number"]
+        return self._data.get_sweep_metadata(sweep_number)["clamp_mode"]
 
     def get_stimulus_code(self, sweep_number: int) -> str:
         """Return the (short form) stimulus code for a particular sweep.
@@ -340,7 +342,10 @@ class EphysDataSet(object):
         """
         if not hasattr(self, "self._stimulus_repeat_lookup"):
             self._setup_stimulus_repeat_lookup()
-        return self._stimulus_repeat_lookup[sweep_number]
+
+        repeat = self._stimulus_repeat_lookup[sweep_number]
+        code = self.get_stimulus_code(sweep_number)
+        return f"{code}[{repeat}]"
 
     def get_stimulus_units(self, sweep_number: int) -> str:
         """Report the SI unit of measurement for a sweep's stimulus data

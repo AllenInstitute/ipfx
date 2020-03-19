@@ -75,7 +75,7 @@ class EphysDataInterface(abc.ABC):
 
 
     @abc.abstractmethod
-    def get_sweep_attrs(self, sweep_number) -> Dict[str,Any]:
+    def get_sweep_attrs(self, sweep_number) -> Dict[str, Any]:
         """
         Extract sweep attributes
 
@@ -131,22 +131,6 @@ class EphysDataInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_starting_time(self, data_set_name: str) -> str:
-        """
-
-        Parameters
-        ----------
-        data_set_name
-
-        Returns
-        -------
-        starting time of acquisition
-
-
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def build_sweep_map(self):
         """
         Build table for mapping sweep_number to the names of stimulus and acquisition groups in the nwb file
@@ -179,7 +163,7 @@ class EphysDataInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_stimulus_groups(self) ->List[str]:
+    def get_stimulus_groups(self) -> List[str]:
         """
         Collect names of hdf5 groups from the stimulus
 
