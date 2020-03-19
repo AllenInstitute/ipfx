@@ -48,8 +48,8 @@ class EphysDataSet(object):
 
     @property
     def ontology(self) -> StimulusOntology:
-        """The stimulus ontology maps short-form stimulus codes to complete
-        descriptions.
+        """The stimulus ontology maps codified description of the stimulus type 
+        to the human-readable descriptions.
         """
         return self._data.ontology
 
@@ -83,8 +83,8 @@ class EphysDataSet(object):
         self._data: EphysDataInterface = data
 
     def _setup_stimulus_repeat_lookup(self):
-        """Construct a mapping from sweep number to the number of presentations 
-        of the stimulus presented during that sweep before and during that 
+        """Each sweep contains the ith repetition of some stimulus (from 1 -> 
+        the number of times that stimulus was presented). Find i for each 
         sweep.
 
         Notes

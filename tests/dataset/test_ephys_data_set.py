@@ -1,4 +1,4 @@
-from typing import Dict, Any, Sequence, List
+from typing import Dict, Any, Sequence
 from datetime import datetime
 import json
 
@@ -140,9 +140,6 @@ class EphysDataFixture(EphysDataInterface):
         raise NotImplementedError()
 
     def get_sweep_map(self, sweep_number):
-        raise NotImplementedError()
-
-    def get_stimulus_groups(self) -> List[str]:
         raise NotImplementedError()
 
 

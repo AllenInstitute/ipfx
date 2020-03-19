@@ -162,18 +162,6 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def get_stimulus_groups(self) -> List[str]:
-        """
-        Collect names of hdf5 groups from the stimulus
-
-        Returns
-        -------
-        names of acquisition groups
-        """
-
-        raise NotImplementedError
-
     def get_stimulus_name(self, stim_code):
 
         if not self.ontology:
