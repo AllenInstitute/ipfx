@@ -46,7 +46,7 @@ class EphysDataInterface(abc.ABC):
 
 
     @abc.abstractmethod
-    def get_sweep_metadata(self, sweep_number: int) -> Dict[str,Any]:
+    def get_sweep_metadata(self, sweep_number: int) -> Dict[str, Any]:
         """Returns metadata about a sweep
 
         Parameters
@@ -208,18 +208,6 @@ class EphysDataInterface(abc.ABC):
         Returns
         -------
         sweep_map: dict
-        """
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_acquisition_groups(self) -> List[str]:
-        """
-        Collect names of hdf5 groups from the acquisition
-
-        Returns
-        -------
-        names of acquisition groups
         """
 
         raise NotImplementedError
