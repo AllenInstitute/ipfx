@@ -21,7 +21,7 @@ class EphysDataInterface(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_sweep_data(self, sweep_number: int) -> Dict[str,Any]:
+    def get_sweep_data(self, sweep_number: int) -> Dict[str, Any]:
         """
         Extract sweep data
 
@@ -91,21 +91,6 @@ class EphysDataInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_sweep_number(self, sweep_name:str)-> int:
-        """
-        Infer sweep number from the sweep_name
-
-        Parameters
-        ----------
-        sweep_name
-
-        Returns
-        -------
-
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def get_stimulus_code(self, sweep_number: int) -> str:
         """Obtain the code of the stimulus presented on a particular sweep.
 
@@ -141,25 +126,6 @@ class EphysDataInterface(abc.ABC):
         Returns
         -------
         stimulus unit
-        """
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_real_sweep_number(self, sweep_name:str, assumed_sweep_number: Optional[int]=None) -> int:
-        """
-        Return the real sweep number for the given sweep_name. Falls back to
-        assumed_sweep_number if given.
-
-        Parameters
-        ----------
-        sweep_name
-        assumed_sweep_number
-
-        Returns
-        -------
-        sweep number
-
         """
 
         raise NotImplementedError

@@ -155,9 +155,6 @@ class EphysNWBData(EphysDataInterface):
 
         return attrs
 
-    def get_sweep_number(self, sweep_name):
-        return self.get_real_sweep_number(sweep_name)
-
     def get_stim_code(self, sweep_number):
         stim_code = self.get_sweep_attrs(sweep_number)["stimulus_description"]
         if stim_code[-5:] == "_DA_0":
@@ -242,36 +239,6 @@ class EphysNWBData(EphysDataInterface):
         if unit not in valid_SI_units:
             raise ValueError(F"Unit {unit} is not among the valid SI units {valid_SI_units}")
 
-    def get_real_sweep_number(self, sweep_name, assumed_sweep_number=None):
-        """
-        Return the real sweep number for the given sweep_name. Falls back to
-        assumed_sweep_number if given.
-        """
-
-        with h5py.File(self.nwb_file, 'r') as f:
-            timeseries = f[self.acquisition_path][sweep_name]
-
-            real_sweep_number = None
-
-            def read_sweep_from_source(source):
-                source = get_scalar_value(source)
-                for x in source.split(";"):
-                    result = re.search(r"^Sweep=(\d+)$", x)
-                    if result:
-                        return int(result.group(1))
-
-            if "source" in timeseries:
-                real_sweep_number = read_sweep_from_source(timeseries["source"][()])
-            elif "source" in timeseries.attrs:
-                real_sweep_number = read_sweep_from_source(timeseries.attrs["source"])
-            elif "sweep_number" in timeseries.attrs:
-                real_sweep_number = timeseries.attrs["sweep_number"]
-
-            if real_sweep_number is None:
-                warnings.warn("Sweep number not found, returning: None")
-
-            return real_sweep_number
-
     def get_starting_time(self, data_set_name):
         with h5py.File(self.nwb_file, 'r') as f:
             sweep_ts = f[self.acquisition_path][data_set_name]
@@ -313,13 +280,6 @@ class EphysNWBData(EphysDataInterface):
                           format(reacquired_sweep_numbers))
 
         self.sweep_map_table.drop_duplicates(subset="sweep_number", keep="last",inplace=True)
-
-    def get_sweep_names(self):
-
-        with h5py.File(self.nwb_file, 'r') as f:
-            sweep_names = [e for e in f[self.acquisition_path].keys()]
-
-        return sweep_names
 
     def get_sweep_map(self, sweep_number):
         """
