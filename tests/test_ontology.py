@@ -1,4 +1,4 @@
-from ipfx.dataset.stimulus import StimulusOntology
+from ipfx.stimulus import StimulusOntology
 import pytest
 
 
