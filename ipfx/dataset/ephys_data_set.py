@@ -1,5 +1,3 @@
-"""
-"""
 from typing import (
     Optional, List, Dict, Tuple, Collection, Sequence, Union
 )
@@ -12,8 +10,8 @@ import numpy as np
 
 from allensdk.deprecated import deprecated
 
-from ipfx.dataset.ephys_data_inteface import EphysDataInterface
-from ipfx.dataset.stimulus import StimulusOntology
+from ipfx.dataset.ephys_data_interface import EphysDataInterface
+from ipfx.stimulus import StimulusOntology
 from ipfx.sweep import Sweep, SweepSet
 
 
@@ -365,7 +363,7 @@ class EphysDataSet(object):
             response: np.ndarray, 
             clamp_mode: str,
             enforce_equal_length: bool = True
-    ) -> Tuple[np.arrray, np.array]:
+    ) -> Tuple[np.array, np.array]:
         """Resolve the stimulus and response arrays from a sweep's data into 
         voltage and current, using the clamp mode as a guide
 
@@ -413,8 +411,8 @@ def _nan_trailing_zeros(
         array = array.copy()
 
     nonzero = np.flatnonzero(array)
-    if not nonzero or nonzero[-1] + 1 == len(array):
+    if len(nonzero) == 0 or nonzero[-1] + 1 >= len(array):
         return array
 
-    array[nonzero[-1]:] = np.nan
+    array[nonzero[-1] + 1:] = np.nan
     return array
