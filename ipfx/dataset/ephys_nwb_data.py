@@ -218,33 +218,6 @@ class EphysNWBData(EphysDataInterface):
 
             return unit_str
 
-    def get_sweep_record(self, sweep_number: int) -> Dict[str,Any]:
-        """
-        Extract sweep data
-
-        Parameters
-        ----------
-        sweep_number
-
-        Returns
-        -------
-
-        dict in the format:
-
-        {
-            "sweep_number": int,
-            "stimulus_units": str,
-            "bridge_balance_mohm": float,
-            "leak_pa": float,
-            "stimulus_scale_factor": float,
-            "stimulus_code": str,
-            "stimulus_code_ext": str,
-            "stimulus_name": str,
-        }
-
-        """
-        raise NotImplementedError
-
     @staticmethod
     def get_unit_name(stim_attrs):
         if 'unit' in stim_attrs:

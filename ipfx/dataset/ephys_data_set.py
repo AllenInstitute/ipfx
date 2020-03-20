@@ -4,7 +4,7 @@ import logging
 import pandas as pd
 import numpy as np
 from ipfx.sweep import Sweep, SweepSet
-from ipfx.dataset.ephys_data_inteface import EphysDataInterface
+from ipfx.dataset.ephys_data_interface import EphysDataInterface
 
 
 class EphysDataSet(object):
