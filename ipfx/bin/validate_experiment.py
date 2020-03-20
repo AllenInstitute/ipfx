@@ -1,4 +1,3 @@
-from __future__ import print_function
 import allensdk.core.json_utilities as ju
 import numpy as np
 import sys

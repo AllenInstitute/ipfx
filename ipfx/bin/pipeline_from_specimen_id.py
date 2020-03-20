@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import allensdk.core.json_utilities as ju
 import sys
 import os.path

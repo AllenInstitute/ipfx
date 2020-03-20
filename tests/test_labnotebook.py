@@ -1,9 +1,6 @@
-from __future__ import absolute_import
-from builtins import range
 import os
 import pytest
-import h5py
-import numpy as np
+
 from ipfx.dataset.labnotebook import LabNotebookReaderIgorNwb
 
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')

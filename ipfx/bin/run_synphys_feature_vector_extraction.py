@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy as np
 from ipfx.sweep import Sweep, SweepSet
 import ipfx.feature_vectors as fv

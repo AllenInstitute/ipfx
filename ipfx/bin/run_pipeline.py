@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import logging
 import argschema as ags
 from ipfx._schemas import PipelineParameters

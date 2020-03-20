@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import allensdk.core.json_utilities as ju
 import os
 import ipfx.lims_queries as lq
