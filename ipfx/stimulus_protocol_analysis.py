@@ -6,7 +6,7 @@ from collections import Counter
 from . import stim_features as stf
 from . import subthresh_features as subf
 from . import spike_train_features as strf
-from .ephys_data_set import SweepSet
+from .sweep import SweepSet
 from . import error as er
 
 

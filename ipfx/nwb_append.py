@@ -1,7 +1,7 @@
 import os
 import pynwb
 from allensdk.core.nwb_data_set import NwbDataSet
-import ipfx.nwb_reader as nwb_reader
+from ipfx.dataset.create import get_nwb_version
 from pynwb import TimeSeries
 from pynwb import ProcessingModule
 
@@ -12,12 +12,12 @@ class NwbAppender(object):
         if os.path.isfile(nwb_file_name):
             self.nwb_file_name = nwb_file_name
         else:
-            raise FileNotFoundError(f"Cannot locate {nwb_file_names}")
+            raise FileNotFoundError(f"Cannot locate {nwb_file_name}")
 
     def add_spike_times(self, sweep_num, spike_times):
         raise NotImplementedError
 
-    def set_spike_time(self,sweep_spike_times):
+    def set_spike_time(self, sweep_spike_times):
         raise NotImplementedError
 
 
@@ -71,7 +71,7 @@ def create_nwb_appender(nwb_file):
     """
 
     if os.path.isfile(nwb_file):
-        nwb_version = nwb_reader.get_nwb_version(nwb_file)
+        nwb_version = get_nwb_version(nwb_file)
     else:
         raise FileNotFoundError(f"Cannot locate {nwb_file}")
 
@@ -80,5 +80,7 @@ def create_nwb_appender(nwb_file):
     elif nwb_version["major"] == 1 or nwb_version["major"] == 0:
         return Nwb1Appender(nwb_file)
     else:
-        raise ValueError("Unsupported or unknown NWB major" +
-                         "version {} ({})".format(nwb_version["major"], nwb_version["full"]))
+        raise ValueError(
+            "Unsupported or unknown NWB major version {} ({})".format(
+                nwb_version["major"], nwb_version["full"])
+        )

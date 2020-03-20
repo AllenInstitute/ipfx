@@ -4,7 +4,6 @@ import pynwb
 import h5py
 
 import numpy as np
-import ipfx.nwb_reader as nwb_reader
 
 from ipfx.bin.run_feature_extraction import embed_spike_times
 
@@ -54,6 +53,7 @@ def test_embed_spike_times_into_nwb(make_skeleton_nwb_file, tmpdir_factory):
 
     embed_spike_times(input_nwb_file_name, output_nwb_file_name, sweep_spike_times)
 
+    # TODO replace with nwb access
     nwb_data = nwb_reader.create_nwb_reader(output_nwb_file_name)
 
     for sweep_num, spike_times in sweep_spike_times.items():
