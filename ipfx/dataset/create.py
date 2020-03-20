@@ -1,8 +1,9 @@
 from typing import Optional, Dict, Any
 import h5py
 from ipfx.dataset.ephys_data_set import EphysDataSet
-from ipfx.dataset.stimulus_ontology import StimulusOntology
-from ipfx.dataset.nwbdata import MIESNWB2Data, HBGNWB2Data
+from ipfx.stimulus import StimulusOntology
+from ipfx.dataset.hbg_nwb_data import HBGNWBData
+from ipfx.dataset.mies_nwb_data import MIESNWBData
 
 
 def is_file_mies(path: str) -> bool:
@@ -14,7 +15,7 @@ def is_file_mies(path: str) -> bool:
     return False
 
 
-def get_nwb_version(nwb_file:str) ->Dict[str,Any]:
+def get_nwb_version(nwb_file: str) -> Dict[str, Any]:
     """
     Find version of the nwb file
 
@@ -76,9 +77,9 @@ def create_ephys_data_set(nwb_file: str,
 
     if nwb_version["major"] == 2:
         if is_mies:
-            nwb_data = MIESNWB2Data(nwb_file, ontology_file)
+            nwb_data = MIESNWBData(nwb_file, ontology_file)
         else:
-            nwb_data = HBGNWB2Data(nwb_file, ontology_file)
+            nwb_data = HBGNWBData(nwb_file, ontology_file)
 
     else:
         raise ValueError("Unsupported or unknown NWB major" +
