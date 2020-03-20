@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import pytest
 import os
 
+import pynwb
 from ipfx.dataset.stimulus import StimulusOntology
 from ipfx.dataset.hbg_nwb_data import HBGNWB2Data
 import allensdk.core.json_utilities as ju
@@ -46,12 +47,12 @@ def test_main_dat(hbg_nwb_data):
         'stimulus_units': 'amperes',
         'bridge_balance_mohm': 500.0,
         'leak_pa': 100.0,
-        'stimulus_scale_factor': 200.0,
+        'stimulus_scale_factor': 32.0,
         'stimulus_code': 'STIMULUS_CODE',
-        'stimulus_code_ext': 'STIMULUS_CODE[1]',
-        'stimulus_name': 'expected name'}
+        'stimulus_code_ext': 'STIMULUS_CODE',
+        'stimulus_name': 'Unknown'}
 
-    obtained = hbg_nwb_data.get_sweep_record(sweep_number=4)
+    obtained = hbg_nwb_data.get_sweep_record(sweep_num=4)
     assert expected == obtained
 
 # @pytest.mark.parametrize('ontology, NWB_file', [(None, 'H20.28.008.11.05-10.nwb')], indirect=True)
