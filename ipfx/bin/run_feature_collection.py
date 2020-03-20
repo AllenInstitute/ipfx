@@ -4,24 +4,13 @@ import pandas as pd
 import scipy
 import argschema as ags
 import ipfx.lims_queries as lq
-import ipfx.stim_features as stf
-import ipfx.data_set_features as dsf
-import ipfx.stimulus_protocol_analysis as spa
-import ipfx.time_series_utils as tsu
 import ipfx.feature_vectors as fv
 import ipfx.script_utils as su
-from ipfx.aibs_data_set import AibsDataSet
 from ipfx.stimulus import StimulusOntology
 import allensdk.core.json_utilities as ju
-import warnings
 import logging
 from multiprocessing import Pool
 from functools import partial
-import os
-import json
-import h5py
-from ipfx.stimulus import StimulusOntology
-import allensdk.core.json_utilities as ju
 
 
 class CollectFeatureParameters(ags.ArgSchema):
