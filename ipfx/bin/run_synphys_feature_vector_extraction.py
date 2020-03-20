@@ -1,6 +1,6 @@
 from __future__ import print_function
 import numpy as np
-from ipfx.ephys_data_set import Sweep, SweepSet
+from ipfx.sweep import Sweep, SweepSet
 import ipfx.feature_vectors as fv
 
 from neuroanalysis.miesnwb import MiesNwb

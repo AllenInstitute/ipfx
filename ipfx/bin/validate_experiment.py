@@ -5,6 +5,7 @@ import sys
 import os
 import logging
 
+
 def nullisclose(a, b):
     if a is None or b is None:
         return a is None and b is None

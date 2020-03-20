@@ -1,14 +1,9 @@
-import numpy as np
 import argschema as ags
-import lims_utils
 import ipfx.chirp as chirp
 import logging
 import traceback
 from multiprocessing import Pool
 from functools import partial
-import h5py
-import os
-import json
 import allensdk.core.json_utilities as ju
 from ipfx.stimulus import StimulusOntology
 import ipfx.script_utils as su

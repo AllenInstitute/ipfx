@@ -1,5 +1,5 @@
 import ipfx.epochs as ep
-import numpy as np
+
 
 class Sweep(object):
     def __init__(self, t, v, i, clamp_mode, sampling_rate, sweep_number=None, epochs=None):

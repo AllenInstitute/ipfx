@@ -25,7 +25,7 @@ def main():
     specimen_id = sys.argv[1]
     cell_name = specimen_id
 
-    cell_dir = os.path.join(OUTPUT_DIR,cell_name)
+    cell_dir = os.path.join(OUTPUT_DIR, cell_name)
 
     if not os.path.exists(cell_dir):
         os.makedirs(cell_dir)

@@ -1,5 +1,4 @@
-from typing import Dict, Any, List, Optional
-import abc
+from typing import Dict, Any
 
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.labnotebook import LabNotebookReader
@@ -19,10 +18,12 @@ class MIESNWBData(EphysNWBData):
                  load_into_memory: bool = True,
                  validate_stim: bool = True,
                  ):
-        super().init(nwb_file=nwb_file,
-                     ontology=ontology,
-                     load_into_memory=load_into_memory,
-                     validate_stim=validate_stim)
+        super(MIESNWBData, self).__init__(
+            nwb_file=nwb_file,
+            ontology=ontology,
+            load_into_memory=load_into_memory,
+            validate_stim=validate_stim
+        )
         self.notebook = lab_notebook_reader
 
     def get_stim_code_ext(self, sweep_number):
@@ -40,12 +41,16 @@ class MIESNWBData(EphysNWBData):
             "stimulus_units": self.get_stimulus_unit(sweep_num),
             "bridge_balance_mohm": get_finite_or_none(attrs, "bridge_balance"),
             "leak_pa": get_finite_or_none(attrs, "bias_current"),
-            "stimulus_scale_factor": self.notebook.get_value("Scale Factor", sweep_num, None),
+            "stimulus_scale_factor": self.notebook.get_value(
+                "Scale Factor", sweep_num, None
+            ),
             "stimulus_code": self.get_stim_code(sweep_num),
             "stimulus_code_ext": self.get_stim_code_ext(sweep_num)
         }
 
         if self.ontology:
-            sweep_record["stimulus_name"] = self.get_stimulus_name(sweep_record["stimulus_code"])
+            sweep_record["stimulus_name"] = self.get_stimulus_name(
+                sweep_record["stimulus_code"]
+            )
 
         return sweep_record

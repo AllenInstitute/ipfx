@@ -1,6 +1,5 @@
 import numpy as np
-import logging
-import pandas as pd
+
 import scipy.fftpack as fftpack
 from .sweep import SweepSet
 from . import feature_vectors as fv

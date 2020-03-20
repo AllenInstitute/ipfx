@@ -1,5 +1,4 @@
 import warnings
-import re
 
 import numpy as np
 import pandas as pd
@@ -63,7 +62,9 @@ class EphysNWBData(EphysDataInterface):
                  validate_stim: bool = True,
                  ):
 
-        super().init(ontology=ontology, validate_stim=validate_stim)
+        super(EphysNWBData, self).__init__(
+            ontology=ontology, validate_stim=validate_stim
+        )
         if load_into_memory:
             with open(nwb_file, 'rb') as fh:
                 nwb_file = BytesIO(fh.read())
