@@ -1,9 +1,26 @@
 from typing import Optional, Dict, Any
+import re
+
 import h5py
+import numpy as np
+
 from ipfx.dataset.ephys_data_set import EphysDataSet
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.hbg_nwb_data import HBGNWBData
 from ipfx.dataset.mies_nwb_data import MIESNWBData
+from ipfx import py2to3
+
+
+def get_scalar_value(dataset_from_nwb):
+    """
+    Some values in NWB are stored as scalar whereas others as np.ndarrays with 
+    dimension 1. Use this function to retrieve the scalar value itself.
+    """
+
+    if isinstance(dataset_from_nwb, np.ndarray):
+        return dataset_from_nwb.item()
+
+    return dataset_from_nwb
 
 
 def is_file_mies(path: str) -> bool:
@@ -38,7 +55,7 @@ def get_nwb_version(nwb_file: str) -> Dict[str, Any]:
     with h5py.File(nwb_file, 'r') as f:
         if "nwb_version" in f:         # In version 0 and 1 this is a dataset
             nwb_version = get_scalar_value(f["nwb_version"][()])
-            nwb_version_str = to_str(nwb_version)
+            nwb_version_str = py2to3.to_str(nwb_version)
             if nwb_version is not None and re.match("^NWB-", nwb_version_str):
                 return {"major": int(nwb_version_str[4]), "full": nwb_version_str}
 

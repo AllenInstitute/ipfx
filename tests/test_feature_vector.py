@@ -1,3 +1,5 @@
+from typing import Dict
+
 import numpy as np
 import pandas as pd
 import ipfx.feature_vectors as fv
@@ -14,9 +16,9 @@ ontology = StimulusOntology(ju.read(
     StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
 
 
-def make_epochs(voltage):
+def make_epochs(prototype: np.ndarray) -> Dict:
     return {
-        "sweep": (0, len(voltage) - 1), 
+        "sweep": (0, len(prototype) - 1), 
         "test": None, 
         "recording": None, 
         "experiment": None, 
@@ -55,11 +57,12 @@ def test_step_subthreshold_interpolation():
     assert np.all(output[17:19] == -10)
 
 
-def test_subthresh_norm_normalization(epochs):
+def test_subthresh_norm_normalization():
     np.random.seed(42)
     v = np.random.randn(100)
     t = np.arange(len(v))
     i = np.zeros_like(t)
+    epochs = make_epochs(v)
     sampling_rate = 1
     clamp_mode = "CurrentClamp"
     test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)

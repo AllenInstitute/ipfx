@@ -1,21 +1,12 @@
 import pytest
 import datetime
 import pynwb
-import h5py
+from unittest.mock import patch
 
 import numpy as np
 
 from ipfx.bin.run_feature_extraction import embed_spike_times
-
-
-def make_skeleton_nwb1_file(nwb1_file_name):
-
-    with h5py.File(nwb1_file_name, 'w') as fh:
-        dt = h5py.special_dtype(vlen=bytes)
-        dset = fh.create_dataset("nwb_version", (1,), dtype=dt)
-        dset[:] = "NWB-1"
-        fh.create_group("acquisition/timeseries")
-        fh.create_group("analysis")
+from ipfx.dataset.ephys_nwb_data import EphysNWBData
 
 
 def make_skeleton_nwb2_file(nwb2_file_name):
@@ -28,16 +19,27 @@ def make_skeleton_nwb2_file(nwb2_file_name):
     )
 
     device = nwbfile.create_device(name='electrode_0')
-    electrode = nwbfile.create_ic_electrode(name="elec0",
-                                            description='intracellular electrode',
-                                            device=device)
+    nwbfile.create_ic_electrode(
+        name="elec0",
+        description='intracellular electrode',
+        device=device
+    )
 
     io = pynwb.NWBHDF5IO(nwb2_file_name, 'w')
     io.write(nwbfile)
     io.close()
 
 
-@pytest.mark.parametrize('make_skeleton_nwb_file', (make_skeleton_nwb1_file, make_skeleton_nwb2_file))
+with patch.multiple(
+    EphysNWBData,
+    __abstractmethods__=[]
+):
+
+    class JustConcrete(EphysNWBData):
+        pass
+
+
+@pytest.mark.parametrize('make_skeleton_nwb_file', [make_skeleton_nwb2_file])
 def test_embed_spike_times_into_nwb(make_skeleton_nwb_file, tmpdir_factory):
 
     sweep_spike_times = {
@@ -51,12 +53,10 @@ def test_embed_spike_times_into_nwb(make_skeleton_nwb_file, tmpdir_factory):
 
     make_skeleton_nwb_file(input_nwb_file_name)
 
-    embed_spike_times(input_nwb_file_name, output_nwb_file_name, sweep_spike_times)
+    embed_spike_times(
+        input_nwb_file_name, output_nwb_file_name, sweep_spike_times
+    )
 
-    # TODO replace with nwb access
-    nwb_data = nwb_reader.create_nwb_reader(output_nwb_file_name)
-
+    reader = JustConcrete(output_nwb_file_name, None)
     for sweep_num, spike_times in sweep_spike_times.items():
-        assert np.allclose(nwb_data.get_spike_times(sweep_num), spike_times)
-
-
+        assert np.allclose(reader.get_spike_times(sweep_num), spike_times)

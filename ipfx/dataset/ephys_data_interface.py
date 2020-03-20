@@ -11,9 +11,10 @@ class EphysDataInterface(abc.ABC):
 
     """
 
-    def __init__(self, ontology: StimulusOntology):
+    def __init__(self, ontology: StimulusOntology, validate_stim: bool = True):
 
         self.ontology = ontology
+        self.validate_stim = validate_stim
 
     @abc.abstractproperty
     def sweep_numbers(self) -> Sequence[int]:

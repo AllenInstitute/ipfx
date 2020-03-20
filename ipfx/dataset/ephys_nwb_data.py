@@ -70,7 +70,10 @@ class EphysNWBData(EphysDataInterface):
                 nwb_file = BytesIO(fh.read())
 
         self.nwb_file = nwb_file
-        self.nwb = NWBHDF5IO(nwb_file, mode='r').read()
+        self._h5_file = h5py.File(nwb_file)
+        self.nwb = NWBHDF5IO(
+            path=self._h5_file.filename, mode='r', file=self._h5_file
+        ).read()
 
         self.acquisition_path = "acquisition"
         self.stimulus_path = "stimulus/presentation"
