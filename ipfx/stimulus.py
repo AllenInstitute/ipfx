@@ -26,7 +26,7 @@ class Stimulus(object):
 
 class StimulusOntology(object):
 
-    DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(os.path.dirname(__file__), 'defaults/stimulus_ontology.json')
+    DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(os.path.dirname(__file__),'defaults','stimulus_ontology.json')
 
     def __init__(self, stim_ontology_tags=None):
 

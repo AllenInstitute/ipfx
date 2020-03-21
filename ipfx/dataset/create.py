@@ -1,8 +1,12 @@
 from typing import Optional, Dict, Any
 import h5py
 from ipfx.dataset.ephys_data_set import EphysDataSet
-from ipfx.dataset.stimulus_ontology import StimulusOntology
-from ipfx.dataset.nwbdata import MIESNWB2Data, HBGNWB2Data
+from ipfx.stimulus import StimulusOntology
+from ipfx.dataset.hbg_nwb_data import HBGNWB2Data
+from ipfx.dataset.mies_nwb_data import MIESNWB2Data
+from ipfx.dataset.labnotebook import LabNotebookReaderIgorNwb
+
+import allensdk.core.json_utilities as ju
 
 
 def is_file_mies(path: str) -> bool:
@@ -73,12 +77,16 @@ def create_ephys_data_set(nwb_file: str,
 
     if not ontology_file:
         ontology_file = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
+    ontology = StimulusOntology(ju.read(ontology_file))
 
     if nwb_version["major"] == 2:
+
         if is_mies:
-            nwb_data = MIESNWB2Data(nwb_file, ontology_file)
+            labnotebook = LabNotebookReaderIgorNwb(nwb_file)
+            nwb_data = MIESNWB2Data(nwb_file, labnotebook, ontology)
+
         else:
-            nwb_data = HBGNWB2Data(nwb_file, ontology_file)
+            nwb_data = HBGNWB2Data(nwb_file, ontology)
 
     else:
         raise ValueError("Unsupported or unknown NWB major" +
