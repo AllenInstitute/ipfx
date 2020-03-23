@@ -5,6 +5,7 @@ from datetime import datetime
 
 from ipfx.stimulus import StimulusOntology
 
+
 class EphysDataInterface(abc.ABC):
     """
     The interface that any child class providing data to the EphysDataSet must implement
@@ -18,7 +19,7 @@ class EphysDataInterface(abc.ABC):
 
     @abc.abstractproperty
     def sweep_numbers(self) -> Sequence[int]:
-        """A time-ordered sequence of each sweep's integer identifer
+        """A time-ordered sequence of each sweep's integer identifier
         """
 
     @abc.abstractmethod
@@ -101,7 +102,7 @@ class EphysDataInterface(abc.ABC):
 
         Returns
         -------
-        The code (a short-form description) of the stimulus presented on the 
+        The codified name of the stimulus presented on the
         identified sweep
         """
         raise NotImplementedError
@@ -131,37 +132,6 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def build_sweep_map(self):
-        """
-        Build table for mapping sweep_number to the names of stimulus and acquisition groups in the nwb file
-        Returns
-        -------
-        """
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def drop_reacquired_sweeps(self):
-        """
-        If sweep was re-acquired, then drop earlier acquired sweep with the same sweep_number
-        """
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_sweep_map(self, sweep_number):
-        """
-        Parameters
-        ----------
-        sweep_number: int
-            real sweep number
-        Returns
-        -------
-        sweep_map: dict
-        """
-
-        raise NotImplementedError
 
     def get_stimulus_name(self, stim_code):
 
@@ -178,3 +148,17 @@ class EphysDataInterface(abc.ABC):
             else:
                 warnings.warn("Stimulus code {} is not in the ontology".format(stim_code))
                 return
+
+    @abc.abstractmethod
+    def get_clamp_mode(self, sweep_number) -> str:
+        """
+        Extract clamp mode from the class of Time Series
+        Parameters
+        ----------
+        sweep_number
+
+        Returns
+        -------
+
+        """
+        raise NotImplementedError

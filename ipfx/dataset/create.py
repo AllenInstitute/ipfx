@@ -4,11 +4,14 @@ import re
 import h5py
 import numpy as np
 
+import allensdk.core.json_utilities as ju
+
 from ipfx.dataset.ephys_data_set import EphysDataSet
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.hbg_nwb_data import HBGNWBData
 from ipfx.dataset.mies_nwb_data import MIESNWBData
 from ipfx import py2to3
+from ipfx.dataset.labnotebook import LabNotebookReaderIgorNwb
 
 
 def get_scalar_value(dataset_from_nwb):
@@ -85,7 +88,7 @@ def create_ephys_data_set(
     ----------
     nwb_file
     sweep_info
-    ontology_file
+    ontology
 
     Returns
     -------
@@ -98,12 +101,16 @@ def create_ephys_data_set(
 
     if not ontology:
         ontology = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
+    ontology = StimulusOntology(ju.read(ontology))
 
     if nwb_version["major"] == 2:
+
         if is_mies:
-            nwb_data = MIESNWBData(nwb_file, ontology)
+            labnotebook = LabNotebookReaderIgorNwb(nwb_file)
+            nwb_data = MIESNWB2Data(nwb_file, labnotebook, ontology)
+
         else:
-            nwb_data = HBGNWBData(nwb_file, ontology)
+            nwb_data = HBGNWB2Data(nwb_file, ontology)
 
     else:
         raise ValueError(

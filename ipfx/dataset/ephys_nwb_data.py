@@ -1,3 +1,4 @@
+from typing import Dict, Any, Tuple, Optional, Sequence
 import warnings
 
 import numpy as np
@@ -11,8 +12,7 @@ from pynwb import NWBHDF5IO
 from pynwb.icephys import (
     CurrentClampSeries, CurrentClampStimulusSeries,
     VoltageClampSeries, VoltageClampStimulusSeries,
-    IZeroClampSeries)
-from ipfx.py2to3 import to_str
+    IZeroClampSeries, PatchClampSeries)
 
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.ephys_data_interface import EphysDataInterface
@@ -50,25 +50,22 @@ class EphysNWBData(EphysDataInterface):
 
     """
 
-    SCALAR_ATTRS = ["bias_current",
-                    "stimulus_scale_factor",
-                    "bridge_balance",
-                    "stimulus_scale_factor"]
+    STIMULUS = (VoltageClampStimulusSeries, CurrentClampStimulusSeries)
+    RESPONSE = (VoltageClampSeries, CurrentClampSeries)
 
     def __init__(self,
                  nwb_file: str,
                  ontology: StimulusOntology,
                  load_into_memory: bool = True,
-                 validate_stim: bool = True,
                  ):
 
         super(EphysNWBData, self).__init__(
             ontology=ontology, validate_stim=validate_stim
         )
+
         if load_into_memory:
             with open(nwb_file, 'rb') as fh:
                 nwb_file = BytesIO(fh.read())
-
         self.nwb_file = nwb_file
         self._h5_file = h5py.File(nwb_file)
         self.nwb = NWBHDF5IO(
@@ -78,7 +75,38 @@ class EphysNWBData(EphysDataInterface):
         self.acquisition_path = "acquisition"
         self.stimulus_path = "stimulus/presentation"
         self.nwb_major_version = 2
-        self.build_sweep_map()
+
+    def _get_series(self, sweep_number: int,
+                    series_class: Tuple[PatchClampSeries]):
+        """
+        Get Time Series of a specified class
+        Parameters
+        ----------
+        sweep_number: int sweep number
+        series_class: pynwb.PatchClampSeries
+
+        Returns
+        -------
+        series: pynwb.PatchClampSeries
+        """
+        series = self.nwb.sweep_table.get_series(sweep_number)
+
+        if series is None:
+            raise ValueError("No TimeSeries found for sweep number {}.".format(sweep_number))
+
+        matching_series = []
+
+        for s in series:
+            if isinstance(s,series_class):
+                matching_series.append(s)
+
+        if len(matching_series) == 1:
+            return matching_series[0]
+        else:
+            raise ValueError("Found multiple stimulus series "
+                             "{[s.name for s in matching_series]} "
+                             "for sweep number {sweep_number}")
+
 
     def get_sweep_data(self, sweep_number):
         """
@@ -140,39 +168,45 @@ class EphysNWBData(EphysDataInterface):
 
     def get_sweep_attrs(self, sweep_number):
 
-        acquisition_group = self.get_sweep_map(sweep_number)["acquisition_group"]
+        rs = self._get_series(sweep_number,self.RESPONSE)
 
-        with h5py.File(self.nwb_file, 'r') as f:
-            sweep_ts = f[self.acquisition_path][acquisition_group]
-            attrs = dict(sweep_ts.attrs)
+        if isinstance(rs,VoltageClampSeries):
+            attrs = {
+                'gain': rs.gain,
+                'stimulus_description': rs.stimulus_description,
+                'sweep_number': sweep_number,
+                'clamp_mode': "VoltageClamp"
+            }
 
-            if self.nwb_major_version == 2:
-                for entry in sweep_ts.keys():
-                    if entry in ("data", "electrode"):
-                        continue
+        elif isinstance(rs,CurrentClampSeries):
 
-                    attrs[entry] = sweep_ts[entry][()]
-
-        for k in self.SCALAR_ATTRS:
-            if k in attrs.keys():
-                attrs[k] = get_scalar_value(attrs[k])
-
+            attrs = {
+                'gain': rs.gain,
+                'stimulus_description': rs.stimulus_description,
+                'sweep_number': sweep_number,
+                'bias_current': rs.bias_current,
+                'bridge_balance': rs.bridge_balance,
+                'clamp_mode': "CurrentClamp"
+            }
+        else:
+            raise ValueError(f"Must be response series {self.RESPONSE} ")
         return attrs
 
-    def get_stim_code(self, sweep_number):
-        stim_code = self.get_sweep_attrs(sweep_number)["stimulus_description"]
+    def get_sweep_metadata(self, sweep_number: int):
+        return NotImplementedError
+
+    @property
+    def sweep_numbers(self) -> Sequence[int]:
+        return NotImplementedError
+
+    def get_stimulus_code(self, sweep_number):
+        rs = self._get_series(sweep_number,self.RESPONSE)
+        stim_code = rs.stimulus_description
         if stim_code[-5:] == "_DA_0":
             stim_code = stim_code[:-5]
         return stim_code.split("[")[0]
 
-    def get_spike_times(self, sweep_number):
-
-        spikes = self.nwb.get_processing_module('spikes')
-        sweep_spikes = spikes.get_data_interface(f"Sweep_{sweep_number}")
-
-        return sweep_spikes.timestamps
-
-    def get_session_start_time(self):
+    def get_full_recording_date(self):
         """
         Extract session_start_time in nwb
         Use last value if more than one is present
@@ -193,37 +227,20 @@ class EphysNWBData(EphysDataInterface):
 
         return datetime_object
 
-    def get_recording_date(self):
 
-        datetime_object = self.get_session_start_time()
+    def get_sweep_metadata(self, sweep_number: int):
+        raise NotImplementedError
 
-        recording_date = datetime_object.strftime("%Y-%m-%d %H:%M:%S")
+    def get_stimulus_unit(self,sweep_number):
 
-        return recording_date
+        stimulus_series = self._get_series(sweep_number,self.STIMULUS)
 
-    def get_stimulus_unit(self, sweep_number):
+        return stimulus_series.unit
 
-        sweep_map = self.get_sweep_map(sweep_number)
+    def get_clamp_mode(self,sweep_number):
 
-        with h5py.File(self.nwb_file, 'r') as f:
-            sweep_stimulus = f[self.stimulus_path][sweep_map["stimulus_group"]]
-            stimulus_dataset = sweep_stimulus["data"]
+        return self.get_sweep_attrs(sweep_number)["clamp_mode"]
 
-            unit = self.get_unit_name(stimulus_dataset.attrs)
-            unit_str = self.get_long_unit_name(unit)
-
-            return unit_str
-
-    @staticmethod
-    def get_unit_name(stim_attrs):
-        if 'unit' in stim_attrs:
-            unit = to_str(stim_attrs["unit"])
-        elif 'units' in stim_attrs:
-            unit = to_str(stim_attrs["units"])
-        else:
-            unit = None
-
-        return unit
 
     @staticmethod
     def get_long_unit_name(unit):
@@ -243,110 +260,5 @@ class EphysNWBData(EphysDataInterface):
         if unit not in valid_SI_units:
             raise ValueError(F"Unit {unit} is not among the valid SI units {valid_SI_units}")
 
-    def get_starting_time(self, data_set_name):
-        with h5py.File(self.nwb_file, 'r') as f:
-            sweep_ts = f[self.acquisition_path][data_set_name]
-            return get_scalar_value(sweep_ts["starting_time"][()])
 
-    def build_sweep_map(self):
-        """
-        Build table for mapping sweep_number to the names of stimulus and acquisition groups in the nwb file
-        Returns
-        -------
-        """
 
-        sweep_map = []
-
-        for stim_group, acq_group in zip(self.get_stimulus_groups(), self.get_acquisition_groups()):
-            sweep_record = {}
-            sweep_record["acquisition_group"] = acq_group
-            sweep_record["stimulus_group"] = stim_group
-            sweep_record["sweep_number"] = self.get_sweep_number(acq_group)
-            sweep_record["starting_time"] = self.get_starting_time(acq_group)
-
-            sweep_map.append(sweep_record)
-
-        self.sweep_map_table = pd.DataFrame.from_records(sweep_map)
-
-        if sweep_map:
-            self.drop_reacquired_sweeps()
-
-    def drop_reacquired_sweeps(self):
-        """
-        If sweep was re-acquired, then drop earlier acquired sweep with the same sweep_number
-        """
-        self.sweep_map_table.sort_values(by="starting_time")
-        duplicates = self.sweep_map_table.duplicated(subset="sweep_number",keep="last")
-        reacquired_sweep_numbers = self.sweep_map_table[duplicates]["sweep_number"].values
-
-        if len(reacquired_sweep_numbers) > 0:
-            warnings.warn("Sweeps {} were reacquired. Keeping acquisitions of sweeps with the latest staring time.".
-                          format(reacquired_sweep_numbers))
-
-        self.sweep_map_table.drop_duplicates(subset="sweep_number", keep="last",inplace=True)
-
-    def get_sweep_map(self, sweep_number):
-        """
-        Parameters
-        ----------
-        sweep_number: int
-            real sweep number
-        Returns
-        -------
-        sweep_map: dict
-        """
-        if sweep_number is not None:
-            mask = self.sweep_map_table["sweep_number"] == sweep_number
-            st = self.sweep_map_table[mask]
-            return st.to_dict(orient='records')[0]
-        else:
-            raise ValueError("Invalid sweep number {}".format(sweep_number))
-
-    def get_acquisition_groups(self):
-
-        with h5py.File(self.nwb_file, 'r') as f:
-            if self.acquisition_path in f:
-                acquisition_groups = [e for e in f[self.acquisition_path].keys()]
-            else:
-                acquisition_groups = []
-
-        return acquisition_groups
-
-    def get_stimulus_groups(self):
-
-        with h5py.File(self.nwb_file, 'r') as f:
-            if self.stimulus_path in f:
-                stimulus_groups = [e for e in f[self.stimulus_path].keys()]
-            else:
-                stimulus_groups = []
-        return stimulus_groups
-
-    def get_pipeline_version(self):
-        """ Returns the AI pipeline version number, stored in the
-            metadata field 'generated_by'. If that field is
-            missing, version 0.0 is returned.
-            Borrowed from the AllenSDK
-
-            Returns
-            -------
-            int tuple: (major, minor)
-        """
-        try:
-            with h5py.File(self.nwb_file, 'r') as f:
-                if 'generated_by' in f["general"]:
-                    info = f["general/generated_by"]
-                    # generated_by stores array of keys and values
-                    # keys are even numbered, corresponding values are in
-                    #   odd indices
-                    for i in range(len(info)):
-                        if to_str(info[i]) == 'version':
-                            version = to_str(info[i+1])
-                            break
-            toks = version.split('.')
-            if len(toks) >= 2:
-                major = int(toks[0])
-                minor = int(toks[1])
-        except:  # noqa: E722
-            minor = 0
-            major = 0
-        return major, minor
