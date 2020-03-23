@@ -58,7 +58,7 @@ class EphysNWBData(EphysDataInterface):
                     "stimulus_scale_factor"]
 
     def __init__(self,
-                 nwb_file: str,
+                 nwb_file: None,
                  ontology: StimulusOntology,
                  load_into_memory: bool = True,
                  validate_stim: bool = True,
@@ -67,14 +67,20 @@ class EphysNWBData(EphysDataInterface):
         super().__init__(ontology=ontology)
         self.nwb_file = nwb_file
         
-        if load_into_memory:
-            with open(nwb_file, 'rb') as fh:
-                data = BytesIO(fh.read())
+        if isinstance(nwb_file, str):
+            if load_into_memory:
+                with open(nwb_file, 'rb') as fh:
+                    data = BytesIO(fh.read())
 
-            _h5_file = h5py.File(data, "r")
+                _h5_file = h5py.File(data, "r")
+                self.nwb = NWBHDF5IO(path=_h5_file.filename, mode="r+",file=_h5_file).read()
+            else:
+                self.nwb = NWBHDF5IO(nwb_file, mode='r').read()
+        elif isinstance(nwb_file, BytesIO):
+            _h5_file = h5py.File(nwb_file, "r")
             self.nwb = NWBHDF5IO(path=_h5_file.filename, mode="r+",file=_h5_file).read()
         else:
-            self.nwb = NWBHDF5IO(nwb_file, mode='r').read()
+            print("Invalid input NWB file (path/hdf5obj)")
 
         self.acquisition_path = "acquisition"
         self.stimulus_path = "stimulus/presentation"
