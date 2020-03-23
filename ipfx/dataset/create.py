@@ -89,8 +89,8 @@ def create_ephys_data_set(nwb_file: str,
             nwb_data = HBGNWB2Data(nwb_file, ontology)
 
     else:
-        raise ValueError("Unsupported or unknown NWB major" +
-                         "version {} ({})".format(nwb_version["major"], nwb_version["full"]))
+        raise ValueError(f"Unsupported or unknown NWB major"
+                         "version {nwb_version['major']} ({nwb_version['full]})")
 
 
     return EphysDataSet(sweep_info=sweep_info,
