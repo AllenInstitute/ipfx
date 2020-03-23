@@ -1,18 +1,37 @@
 import os
 import logging
 import pg8000
+
+from allensdk.core.authentication import credential_injector
+from allensdk.core.auth_config import LIMS_DB_CREDENTIAL_MAP
+
 from ipfx.py2to3 import to_str
 
-USER = "limsreader"
-HOST = "limsdb2"
-DATABASE = "lims2"
-PASSWORD = "limsro"
-PORT = 5432
+
+TIMEOUT = os.environ.get(
+    "IPFX_LIMS_TIMEOUT",
+    os.environ.get(
+        "IPFX_TEST_TIMEOUT",
+        None
+    )
+)
+if TIMEOUT is not None:
+    TIMEOUT = float(TIMEOUT)  # type: ignore
 
 
-def _connect(user=USER, host=HOST, database=DATABASE, password=PASSWORD, port=PORT):
+@credential_injector(LIMS_DB_CREDENTIAL_MAP)
+def _connect(user, host, dbname, password, port, timeout=TIMEOUT):
 
-    conn = pg8000.connect(user=user, host=host, database=database, password=password, port=port)
+    print(user, host, dbname, password, port)
+
+    conn = pg8000.connect(
+        user=user, 
+        host=host, 
+        database=dbname, 
+        password=password, 
+        port=port,
+        timeout=timeout
+    )
     return conn, conn.cursor()
 
 
@@ -24,7 +43,7 @@ def able_to_connect_to_lims():
         conn.close()
         return True
 
-    except Exception:
+    except pg8000.Error:
         return False
 
 
