@@ -3,7 +3,7 @@ import pytest
 import os
 
 import pynwb
-from ipfx.dataset.stimulus import StimulusOntology
+from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.hbg_nwb_data import HBGNWB2Data
 import allensdk.core.json_utilities as ju
 from dictdiffer import diff

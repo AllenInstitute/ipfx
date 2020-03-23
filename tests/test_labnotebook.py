@@ -8,6 +8,7 @@ from ipfx.dataset.labnotebook import LabNotebookReaderIgorNwb
 
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
+@pytest.mark.downloads_file
 @pytest.mark.parametrize('NWB_file', ['Ctgf-T2A-dgCre;Ai14-495723.05.02.01-compressed-V2.nwb'], indirect=True)
 def test_labnotebook_reader(NWB_file):
 
