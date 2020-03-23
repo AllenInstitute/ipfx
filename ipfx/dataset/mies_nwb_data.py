@@ -2,11 +2,6 @@ from typing import Dict, Any
 
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.labnotebook import LabNotebookReader
-
-from ipfx.stimulus import StimulusOntology
-from ipfx.dataset.labnotebook import (
-    LabNotebookReaderIgorNwb, LabNotebookReader
-)
 from ipfx.dataset.ephys_nwb_data import EphysNWBData, get_finite_or_none
 
 
@@ -22,6 +17,7 @@ class MIESNWBData(EphysNWBData):
             notebook: LabNotebookReader,
             ontology: StimulusOntology,
             load_into_memory: bool = True,
+            validate_stim: bool = True
     ):
         super(MIESNWBData, self).__init__(
             nwb_file=nwb_file,
@@ -29,13 +25,6 @@ class MIESNWBData(EphysNWBData):
             load_into_memory=load_into_memory,
             validate_stim=validate_stim
         )
-        self.notebook = notebook
-
-        super().__init__(nwb_file=nwb_file,
-                         ontology=ontology,
-                         load_into_memory=load_into_memory,
-                         )
-
         self.notebook = notebook
 
     def get_stim_code_ext(self, sweep_number):

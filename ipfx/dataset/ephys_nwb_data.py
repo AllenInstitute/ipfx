@@ -57,11 +57,11 @@ class EphysNWBData(EphysDataInterface):
                  nwb_file: str,
                  ontology: StimulusOntology,
                  load_into_memory: bool = True,
+                 validate_stim: bool = True
                  ):
 
         super(EphysNWBData, self).__init__(
-            ontology=ontology, validate_stim=validate_stim
-        )
+            ontology=ontology, validate_stim=validate_stim)
 
         if load_into_memory:
             with open(nwb_file, 'rb') as fh:

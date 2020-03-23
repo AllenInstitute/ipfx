@@ -1,5 +1,6 @@
 from typing import Optional, Dict, Any
 import re
+from pathlib import Path
 
 import h5py
 import numpy as np
@@ -101,16 +102,15 @@ def create_ephys_data_set(
 
     if not ontology:
         ontology = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
-    ontology = StimulusOntology(ju.read(ontology))
+    if isinstance(ontology, (str, Path)):
+        ontology = StimulusOntology(ju.read(ontology))
 
     if nwb_version["major"] == 2:
-
         if is_mies:
             labnotebook = LabNotebookReaderIgorNwb(nwb_file)
-            nwb_data = MIESNWB2Data(nwb_file, labnotebook, ontology)
-
+            nwb_data = MIESNWBData(nwb_file, labnotebook, ontology)
         else:
-            nwb_data = HBGNWB2Data(nwb_file, ontology)
+            nwb_data = HBGNWBData(nwb_file, ontology)
 
     else:
         raise ValueError(
