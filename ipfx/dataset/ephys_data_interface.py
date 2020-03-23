@@ -1,7 +1,7 @@
 from typing import Dict, Any, List, Optional
 import abc
 import warnings
-from ipfx.dataset.stimulus import StimulusOntology
+from ipfx.stimulus import StimulusOntology
 
 class EphysDataInterface(abc.ABC):
     """
