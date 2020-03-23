@@ -29,7 +29,7 @@ def _connect(user, host, dbname, password, port, timeout=TIMEOUT):
         host=host, 
         database=dbname, 
         password=password, 
-        port=port,
+        port=int(port),
         timeout=timeout
     )
     return conn, conn.cursor()

@@ -57,20 +57,27 @@ def get_nwb_version(nwb_file: str) -> Dict[str, Any]:
             nwb_version = get_scalar_value(f["nwb_version"][()])
             nwb_version_str = py2to3.to_str(nwb_version)
             if nwb_version is not None and re.match("^NWB-", nwb_version_str):
-                return {"major": int(nwb_version_str[4]), "full": nwb_version_str}
+                return {
+                    "major": int(nwb_version_str[4]), 
+                    "full": nwb_version_str
+                }
 
-        elif "nwb_version" in f.attrs:   # but in version 2 this is an attribute
+        elif "nwb_version" in f.attrs:   # in version 2 this is an attribute
             nwb_version = f.attrs["nwb_version"]
-            if nwb_version is not None and (re.match("^2", nwb_version) or re.match("^NWB-2", nwb_version)):
+            if nwb_version is not None and (
+                    re.match("^2", nwb_version) or
+                    re.match("^NWB-2", nwb_version)
+            ):
                 return {"major": 2, "full": nwb_version}
 
     return {"major": None, "full": None}
 
 
-def create_ephys_data_set(nwb_file: str,
-                          sweep_info: Optional[Dict[str,Any]],
-                          ontology_file: Optional[str]) -> EphysDataSet:
-
+def create_ephys_data_set(
+        nwb_file: str,
+        sweep_info: Optional[Dict[str, Any]] = None,
+        ontology: Optional[str] = None
+) -> EphysDataSet:
     """
     Create an ephys data set with the appropriate nwbdata reader class
 
@@ -89,20 +96,23 @@ def create_ephys_data_set(nwb_file: str,
     nwb_version = get_nwb_version(nwb_file)
     is_mies = is_file_mies(nwb_file)
 
-    if not ontology_file:
-        ontology_file = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
+    if not ontology:
+        ontology = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
 
     if nwb_version["major"] == 2:
         if is_mies:
-            nwb_data = MIESNWBData(nwb_file, ontology_file)
+            nwb_data = MIESNWBData(nwb_file, ontology)
         else:
-            nwb_data = HBGNWBData(nwb_file, ontology_file)
+            nwb_data = HBGNWBData(nwb_file, ontology)
 
     else:
-        raise ValueError("Unsupported or unknown NWB major" +
-                         "version {} ({})".format(nwb_version["major"], nwb_version["full"]))
+        raise ValueError(
+            "Unsupported or unknown NWB major version {} ({})".format(
+                nwb_version["major"], nwb_version["full"]
+            )
+        )
 
-
-    return EphysDataSet(sweep_info=sweep_info,
-                        data=nwb_data,
-                        )
+    return EphysDataSet(
+        sweep_info=sweep_info,
+        data=nwb_data,
+    )

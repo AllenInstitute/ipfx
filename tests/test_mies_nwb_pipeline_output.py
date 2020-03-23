@@ -71,13 +71,14 @@ def test_mies_nwb_pipeline_output(input_json, output_json, tmpdir_factory):
     if stimulus_ontology_file is not None:
         stimulus_ontology_file = rebase(test_dir, stimulus_ontology_file, True)
 
-    obtained = run_pipeline(pipeline_input["input_nwb_file"],
-                                        pipeline_input.get("input_h5_file", None),
-                                        pipeline_input["output_nwb_file"],
-                                        stimulus_ontology_file,
-                                        pipeline_input["qc_figs_dir"],
-                                        pipeline_input["qc_criteria"],
-                                        pipeline_input["manual_sweep_states"])
+    obtained = run_pipeline(
+        pipeline_input["input_nwb_file"],
+        pipeline_input["output_nwb_file"],
+        stimulus_ontology_file,
+        pipeline_input["qc_figs_dir"],
+        pipeline_input["qc_criteria"],
+        pipeline_input["manual_sweep_states"]
+    )
     print(type(obtained))
     ju.write(os.path.join(test_dir, 'pipeline_output.json'), obtained)
     obtained = ju.read(os.path.join(test_dir, 'pipeline_output.json'))
