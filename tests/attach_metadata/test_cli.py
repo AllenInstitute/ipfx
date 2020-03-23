@@ -3,7 +3,6 @@
 from typing import Dict
 import os
 import json
-import time
 import subprocess as sp
 from datetime import datetime
 import sys
@@ -30,18 +29,18 @@ class CliRunner:
             json.dump(in_json, in_json_file)
 
         out_json_path = os.path.join(self.tmpdir, "output.json")
-        start_time = time.time()
-        sp.check_call([
-            "python",
-            "-m",
-            "ipfx.attach_metadata",
-            "--input_json",
-            in_json_path,
-            "--output_json",
-            out_json_path
-        ])
-        duration = time.time() - start_time
-        assert duration < self.timeout_seconds
+        sp.check_call(
+            [
+                "python",
+                "-m",
+                "ipfx.attach_metadata",
+                "--input_json",
+                in_json_path,
+                "--output_json",
+                out_json_path
+            ],
+            timeout=self.timeout_seconds
+        )
 
         with open(out_json_path, "r") as out_json_file:
             return json.load(out_json_file)
