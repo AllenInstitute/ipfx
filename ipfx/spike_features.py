@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 # Allen Institute Software License - This software license is the 2-clause BSD
 # license plus a third clause that prohibits redistribution for commercial
 # purposes without further permission.
@@ -34,7 +33,6 @@ from __future__ import absolute_import
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-import warnings
 import logging
 import numpy as np
 from scipy.optimize import curve_fit

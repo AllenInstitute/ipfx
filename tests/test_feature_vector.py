@@ -397,7 +397,9 @@ def test_subthresh_norm_normalization():
 
 def test_subthresh_depol_norm_bad_steady_state_interval():
     with pytest.raises(ValueError):
-        fv.subthresh_depol_norm({}, {}, start=0, end=1, steady_state_interval=2)
+        fv.subthresh_depol_norm(
+            {}, {}, start=0, end=1, steady_state_interval=2
+        )
 
 
 def test_subthresh_depol_norm_empty_result():
@@ -631,7 +633,9 @@ def test_inst_freq_one_spike():
     start = 0
     end = 1
     width = 20
-    output = fv.inst_freq_vector([spike_info], start=start, end=end, width=width)
+    output = fv.inst_freq_vector(
+        [spike_info], start=start, end=end, width=width
+    )
     assert np.all(output >= 1 / (end - start))
 
 
@@ -646,7 +650,6 @@ def test_inst_freq_initial_freq():
 
 
 def test_inst_freq_between_sweep_interpolation():
-    feature = "test_feature_name"
     test_spike_times = ([0.25, 0.75], [0.2, 0.5, 0.6, 0.7])
     available_list = []
     for tst in test_spike_times:
@@ -1096,7 +1099,9 @@ def test_isi_shape_aligned():
 
     test_threshold_index = np.array([100, 220, 340])
     test_fast_trough_index = test_threshold_index + 20
-    test_threshold_v = np.random.randint(-100, -20, size=len(test_threshold_index))
+    test_threshold_v = np.random.randint(
+        -100, -20, size=len(test_threshold_index)
+    )
 
     test_spike_info = pd.DataFrame(
         {
@@ -1108,7 +1113,9 @@ def test_isi_shape_aligned():
     )
 
     n_points = 100
-    isi_norm = fv.isi_shape(test_sweep, test_spike_info, end, n_points=n_points)
+    isi_norm = fv.isi_shape(
+        test_sweep, test_spike_info, end, n_points=n_points
+    )
     assert len(isi_norm) == n_points
     assert isi_norm[0] == np.mean(
         test_sweep.v[test_fast_trough_index[:-1]] - test_threshold_v[:-1]
@@ -1136,7 +1143,9 @@ def test_isi_shape_skip_short():
     test_subsample = 3
     test_threshold_index = np.array([100, 130, 150 + 100 * test_subsample])
     test_fast_trough_index = test_threshold_index + 20
-    test_threshold_v = np.random.randint(-100, -20, size=len(test_threshold_index))
+    test_threshold_v = np.random.randint(
+        -100, -20, size=len(test_threshold_index)
+    )
 
     test_spike_info = pd.DataFrame(
         {
@@ -1148,7 +1157,9 @@ def test_isi_shape_skip_short():
     )
 
     n_points = 100
-    isi_norm = fv.isi_shape(test_sweep, test_spike_info, end, n_points=n_points)
+    isi_norm = fv.isi_shape(
+        test_sweep, test_spike_info, end, n_points=n_points
+    )
     assert len(isi_norm) == n_points
 
     # Should only use second ISI
@@ -1168,7 +1179,13 @@ def test_isi_shape_one_spike():
     print(v[280:300])
     t = np.arange(len(v))
     i = np.zeros_like(t)
-    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    epochs = {
+        "sweep": (0, len(v) - 1),
+        "test": None,
+        "recording": None,
+        "experiment": None,
+        "stim": None,
+    }
     sampling_rate = 1
     clamp_mode = "CurrentClamp"
     test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
@@ -1186,8 +1203,10 @@ def test_isi_shape_one_spike():
     })
 
     n_points = 100
-    isi_norm = fv.isi_shape(test_sweep, test_spike_info, end, n_points=n_points,
-        steady_state_interval=10, single_max_duration=500)
+    isi_norm = fv.isi_shape(
+        test_sweep, test_spike_info, end, n_points=n_points,
+        steady_state_interval=10, single_max_duration=500
+    )
     assert len(isi_norm) == n_points
 
     assert isi_norm[0] < 0

@@ -43,14 +43,14 @@ def mies_nwb_data(tmp_nwb_path):
 
 
 def test_create_mies(mies_nwb_data):
-    assert isinstance(mies_nwb_data,MIESNWBData)
+    assert isinstance(mies_nwb_data, MIESNWBData)
 
 
 def test_get_sweep_metadata(mies_nwb_data):
 
     expected = {
         'sweep_number': 4,
-        'stimulus_units': 'amperes',
+        'stimulus_units': 'Amps',
         'bridge_balance_mohm': 500.0,
         'leak_pa': 100.0,
         'stimulus_scale_factor': 200.0,

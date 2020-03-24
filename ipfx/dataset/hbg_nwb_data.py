@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.ephys_nwb_data import EphysNWBData, get_finite_or_none
@@ -14,12 +14,14 @@ class HBGNWBData(EphysNWBData):
                  nwb_file: str,
                  ontology: StimulusOntology,
                  load_into_memory: bool = True,
+                 validate_stim: bool = True
                  ):
-
-        super().__init__(nwb_file=nwb_file,
-                         ontology=ontology,
-                         load_into_memory=load_into_memory,
-                         )
+        super(HBGNWBData, self).__init__(
+            nwb_file=nwb_file,
+            ontology=ontology,
+            load_into_memory=load_into_memory,
+            validate_stim=validate_stim
+        )
 
     def get_stimulus_code_ext(self, sweep_number):
         return super().get_stimulus_code(sweep_number)
@@ -39,7 +41,8 @@ class HBGNWBData(EphysNWBData):
         }
 
         if self.ontology:
-            sweep_record["stimulus_name"] = self.get_stimulus_name(sweep_record["stimulus_code"])
+            sweep_record["stimulus_name"] = self.get_stimulus_name(
+                sweep_record["stimulus_code"]
+            )
 
         return sweep_record
-

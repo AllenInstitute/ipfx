@@ -1,22 +1,16 @@
 import numpy as np
-import pandas as pd
 import argschema as ags
-import warnings
 import logging
 import traceback
 from multiprocessing import Pool
 from functools import partial
 import os
-import json
 import h5py
 from ipfx.stimulus import StimulusOntology
 import allensdk.core.json_utilities as ju
 import ipfx.feature_vectors as fv
 import ipfx.lims_queries as lq
 import ipfx.script_utils as su
-import ipfx.error as er
-
-from ipfx.aibs_data_set import AibsDataSet
 
 
 class CollectFeatureVectorParameters(ags.ArgSchema):

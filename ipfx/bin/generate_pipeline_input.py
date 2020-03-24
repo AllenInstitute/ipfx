@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import ipfx.qc_feature_evaluator as qcp
 import allensdk.core.json_utilities as ju
 import os.path

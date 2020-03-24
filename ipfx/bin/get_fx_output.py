@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import ipfx.lims_queries as lq
 import glob
 import os

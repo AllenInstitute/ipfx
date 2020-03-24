@@ -74,3 +74,9 @@ target/
 
 # Development
 sandbox/
+
+#linters
+.mypy_cache
+
+#virtualenv
+venv

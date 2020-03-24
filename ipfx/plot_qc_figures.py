@@ -1,6 +1,3 @@
-import matplotlib
-matplotlib.use('agg')
-
 import logging
 import os
 import shutil
@@ -14,8 +11,11 @@ import scipy.misc
 import datetime
 import matplotlib.pyplot as plt
 import glob
-#import seaborn as sns
 from allensdk.config.manifest import Manifest
+
+import matplotlib
+matplotlib.use('agg')
+
 
 AXIS_Y_RANGE = [ -110, 60 ]
 

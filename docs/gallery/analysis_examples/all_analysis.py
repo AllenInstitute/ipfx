@@ -4,12 +4,8 @@ All Analysis
 
 Run all analyses on NWB file
 """
-from __future__ import print_function
 
 import os
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
 from allensdk.api.queries.cell_types_api import CellTypesApi
 from ipfx.aibs_data_set import AibsDataSet
 from ipfx.data_set_features import extract_data_set_features

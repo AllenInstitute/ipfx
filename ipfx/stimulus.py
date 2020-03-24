@@ -1,8 +1,6 @@
 import os
 import logging
-import allensdk.core.json_utilities as ju
 import warnings
-
 
 
 class Stimulus(object):

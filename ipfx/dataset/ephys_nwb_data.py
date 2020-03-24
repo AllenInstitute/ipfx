@@ -1,6 +1,5 @@
 from typing import Dict, Any, Tuple, Optional, Sequence
 import warnings
-import re
 
 import numpy as np
 import pandas as pd
@@ -37,7 +36,7 @@ def get_finite_or_none(d, key):
     except KeyError:
         return None
 
-    if np.isnan(value):
+    if value is None or np.isnan(value):
         return None
 
     return value
@@ -58,10 +57,11 @@ class EphysNWBData(EphysDataInterface):
                  nwb_file: None,
                  ontology: StimulusOntology,
                  load_into_memory: bool = True,
+                 validate_stim: bool = True
                  ):
 
-        super().__init__(ontology=ontology)
-        
+        super(EphysNWBData, self).__init__(
+            ontology=ontology, validate_stim=validate_stim)
         self.load_nwb(nwb_file, load_into_memory)
         
         self.acquisition_path = "acquisition"
@@ -123,7 +123,6 @@ class EphysNWBData(EphysDataInterface):
                              "{[s.name for s in matching_series]} "
                              "for sweep number {sweep_number}")
 
-
     def get_sweep_data(self, sweep_number):
         """
         Parameters
@@ -175,6 +174,13 @@ class EphysNWBData(EphysDataInterface):
         elif response is None:
             raise ValueError("Could not find one response TimeSeries for sweep number {}.".format(sweep_number))
 
+        if stimulus_unit == "Volts":
+            stimulus = stimulus * 1.0e3
+            response = response * 1.0e12 
+        elif stimulus_unit == "Amps":
+            stimulus = stimulus * 1.0e12
+            response = response * 1.0e3
+
         return {
             'stimulus': stimulus,
             'response': response,
@@ -184,9 +190,9 @@ class EphysNWBData(EphysDataInterface):
 
     def get_sweep_attrs(self, sweep_number):
 
-        rs = self._get_series(sweep_number,self.RESPONSE)
+        rs = self._get_series(sweep_number, self.RESPONSE)
 
-        if isinstance(rs,VoltageClampSeries):
+        if isinstance(rs, VoltageClampSeries):
             attrs = {
                 'gain': rs.gain,
                 'stimulus_description': rs.stimulus_description,
@@ -213,10 +219,10 @@ class EphysNWBData(EphysDataInterface):
 
     @property
     def sweep_numbers(self) -> Sequence[int]:
-        return NotImplementedError
+        return np.unique(self.nwb.sweep_table.sweep_number[:])
 
     def get_stimulus_code(self, sweep_number):
-        rs = self._get_series(sweep_number,self.RESPONSE)
+        rs = self._get_series(sweep_number, self.RESPONSE)
         stim_code = rs.stimulus_description
         if stim_code[-5:] == "_DA_0":
             stim_code = stim_code[:-5]
@@ -248,21 +254,22 @@ class EphysNWBData(EphysDataInterface):
         raise NotImplementedError
 
     def get_stimulus_unit(self,sweep_number):
-
         stimulus_series = self._get_series(sweep_number,self.STIMULUS)
-
-        return stimulus_series.unit
+        return type(self).get_long_unit_name(stimulus_series.unit)
 
     def get_clamp_mode(self,sweep_number):
-
         return self.get_sweep_attrs(sweep_number)["clamp_mode"]
 
+    def get_spike_times(self, sweep_number):
+        spikes = self.nwb.get_processing_module('spikes')
+        sweep_spikes = spikes.get_data_interface(f"Sweep_{sweep_number}")
+        return sweep_spikes.timestamps
 
     @staticmethod
     def get_long_unit_name(unit):
         if not unit:
             return "Unknown"
-        elif unit in ["Amps", "A", "amps"]:
+        elif unit in ["Amps", "A", "amps", "amperes"]:
             return "Amps"
         elif unit in ["Volts", "V", "volts"]:
             return "Volts"
@@ -272,7 +279,7 @@ class EphysNWBData(EphysDataInterface):
     @staticmethod
     def validate_SI_unit(unit):
 
-        valid_SI_units = ["Volts", "Amps", "amperes"]
+        valid_SI_units = ["Volts", "Amps"]
         if unit not in valid_SI_units:
             raise ValueError(F"Unit {unit} is not among the valid SI units {valid_SI_units}")
 

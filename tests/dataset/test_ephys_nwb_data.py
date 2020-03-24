@@ -101,7 +101,7 @@ def nwb_data(tmp_nwb_path):
 
 
 def test_get_stimulus_unit(nwb_data):
-    assert nwb_data.get_stimulus_unit(sweep_number=4) == "amperes"
+    assert nwb_data.get_stimulus_unit(sweep_number=4) == "Amps"
 
 
 def test_get_stimulus_code(nwb_data):
@@ -111,10 +111,10 @@ def test_get_stimulus_code(nwb_data):
 def test_get_sweep_data(nwb_data):
 
     expected = {
-        'stimulus': np.array([0, 3, 3, 3, 0])*1E-3,
-        'response': np.array([1, 2, 3, 4, 5])*1E-3,
+        'stimulus': np.array([0, 3, 3, 3, 0], dtype=float) * 1.0e9,
+        'response': np.array([1, 2, 3, 4, 5], dtype=float),
         'sampling_rate': 7000.0,
-        'stimulus_unit': 'amperes'
+        'stimulus_unit': 'Amps'
     }
 
     obtained = nwb_data.get_sweep_data(sweep_number=4)
