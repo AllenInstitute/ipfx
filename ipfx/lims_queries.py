@@ -22,8 +22,6 @@ if TIMEOUT is not None:
 @credential_injector(LIMS_DB_CREDENTIAL_MAP)
 def _connect(user, host, dbname, password, port, timeout=TIMEOUT):
 
-    print(user, host, dbname, password, port)
-
     conn = pg8000.connect(
         user=user, 
         host=host, 

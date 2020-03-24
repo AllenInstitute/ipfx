@@ -43,10 +43,10 @@ class MIESNWBData(EphysNWBData):
             "bridge_balance_mohm": get_finite_or_none(attrs, "bridge_balance"),
             "leak_pa": get_finite_or_none(attrs, "bias_current"),
             "stimulus_scale_factor": self.notebook.get_value(
-                "Scale Factor", sweep_num, None
+                "Scale Factor", sweep_number, None
             ),
-            "stimulus_code": self.get_stim_code(sweep_num),
-            "stimulus_code_ext": self.get_stim_code_ext(sweep_num),
+            "stimulus_code": self.get_stimulus_code(sweep_number),
+            "stimulus_code_ext": self.get_stim_code_ext(sweep_number),
             "clamp_mode": self.get_clamp_mode(sweep_number)
         }
 
