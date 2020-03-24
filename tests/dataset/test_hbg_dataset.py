@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 import pytest
-import os
 
 import pynwb
 from ipfx.stimulus import StimulusOntology
@@ -40,7 +39,7 @@ def hbg_nwb_data(tmp_nwb_path):
 def test_create_hbg(hbg_nwb_data):
     assert isinstance(hbg_nwb_data,HBGNWB2Data)
 
-def test_main_dat(hbg_nwb_data):
+def test_get_sweep_record(hbg_nwb_data):
 
     expected = {
         'sweep_number': 4,
@@ -55,11 +54,10 @@ def test_main_dat(hbg_nwb_data):
     obtained = hbg_nwb_data.get_sweep_record(sweep_num=4)
     assert expected == obtained
 
-# @pytest.mark.parametrize('ontology, NWB_file', [(None, 'H20.28.008.11.05-10.nwb')], indirect=True)
-# def test_get_clamp_mode(ontology, NWB_file):
+def  test_get_stim_code_ext(hbg_nwb_data):
 
-#     dataset = HBGNWB2Data(nwb_file=NWB_file, ontology=ontology())
-#     assert dataset.get_clamp_mode(10101) == dataset.VOLTAGE_CLAMP
-
+    expected = 'STIMULUS_CODE'
+    obtained = hbg_nwb_data.get_stim_code_ext(sweep_number=4)
+    assert expected == obtained
 
 
