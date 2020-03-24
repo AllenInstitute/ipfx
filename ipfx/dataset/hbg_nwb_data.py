@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.ephys_nwb_data import EphysNWBData, get_finite_or_none
@@ -14,6 +14,7 @@ class HBGNWBData(EphysNWBData):
                  nwb_file: str,
                  ontology: StimulusOntology,
                  load_into_memory: bool = True,
+                 validate_stim: bool = True
                  ):
         super(HBGNWBData, self).__init__(
             nwb_file=nwb_file,

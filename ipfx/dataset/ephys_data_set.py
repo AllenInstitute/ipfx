@@ -15,11 +15,6 @@ from ipfx.stimulus import StimulusOntology
 from ipfx.sweep import Sweep, SweepSet
 
 
-# TODO handle sweep info
-# TODO determine where constants ought to reside
-# here i think, but need to add stim and response
-
-
 class EphysDataSet(object):
 
     STIMULUS_UNITS = 'stimulus_units'

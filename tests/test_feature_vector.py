@@ -9,9 +9,6 @@ import allensdk.core.json_utilities as ju
 import pytest
 
 
-# TODO: restore coverage previously provided by inhouse tests
-
-
 ontology = StimulusOntology(ju.read(
     StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
 

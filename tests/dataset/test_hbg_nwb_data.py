@@ -35,7 +35,7 @@ def test_get_sweep_metadata(hbg_nwb_data):
 
     expected = {
         'sweep_number': 4,
-        'stimulus_units': 'amperes',
+        'stimulus_units': 'Amps',
         'bridge_balance_mohm': 500.0,
         'leak_pa': 100.0,
         'stimulus_scale_factor': 32.0,
