@@ -16,54 +16,95 @@ import pytest
 from .helpers_for_tests import download_file
 
 
-TEST_OUTPUT_DIR = os.path.join(
-    "/",
-    "allen",
-    "aibs",
-    "informatics",
-    "module_test_data",
-    "ipfx",
-    "test_feature_vector",
-)
-
 ontology = StimulusOntology(
     ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
 
 
 @pytest.fixture
-def feature_vector_input():
-
-    TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
-
-    nwb_file_name = "Pvalb-IRES-Cre;Ai14-415796.02.01.01.nwb"
-    nwb_file_full_path = os.path.join(TEST_DATA_PATH, nwb_file_name)
-
-    if not os.path.exists(nwb_file_full_path):
-        download_file(nwb_file_name, nwb_file_full_path)
-
-    data_set = AibsDataSet(nwb_file=nwb_file_full_path, ontology=ontology)
-
-    lsq_sweep_numbers = [4, 5, 6, 16, 17, 18, 19, 20, 21]
-
-    lsq_sweeps = data_set.sweep_set(lsq_sweep_numbers)
-    lsq_sweeps.select_epoch("recording")
-    lsq_sweeps.align_to_start_of_epoch("experiment")
-    lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(
-        lsq_sweeps.sweeps[0].i, lsq_sweeps.sweeps[0].t
-    )
-
-    lsq_end = lsq_start + lsq_dur
-    lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(
-        lsq_sweeps,
-        start=lsq_start,
-        end=lsq_end,
-        **dsf.detection_parameters(data_set.LONG_SQUARE)
-    )
-    lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx, subthresh_min_amp=-100.0)
-
-    lsq_features = lsq_an.analyze(lsq_sweeps)
-
-    return lsq_sweeps, lsq_features, lsq_start, lsq_end
+def subthreshold_sweeps():
+    return {
+        "index": [0, 1, 2, 3, 4],
+        "columns": [
+            "avg_rate",
+            "peak_deflect",
+            "stim_amp",
+            "v_baseline",
+            "sag",
+            "adapt",
+            "latency",
+            "isi_cv",
+            "mean_isi",
+            "median_isi",
+            "first_isi",
+        ],
+        "data": [
+            [
+                0.0,
+                (-70.65, 35892),
+                -29.999998092651367,
+                -68.25825500488281,
+                0.054702017456293106,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            ],
+            [
+                0.0,
+                (-72.2, 33470),
+                -50.0,
+                -68.39005279541016,
+                0.01751580648124218,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            ],
+            [
+                0.0,
+                (-73.66875, 79087),
+                -70.0,
+                -68.42821502685547,
+                0.004760173615068197,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            ],
+            [
+                0.0,
+                (-30.550001, 31322),
+                469.9999694824219,
+                -68.29730987548828,
+                -8.956585884094238,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            ],
+            [
+                0.0,
+                (-28.54375, 31625),
+                479.9999694824219,
+                -68.26968383789062,
+                -9.093791961669922,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            ],
+        ],
+    }
 
 
 def test_identify_sweep_for_isi_shape():
@@ -239,109 +280,32 @@ def test_isi_shape():
         def t(self):
             return np.arange(20)
 
-    obtained = fv.isi_shape(Sweep(), pd.DataFrame(sweep_spike_info), 50, n_points=10)
+    obtained = fv.isi_shape(
+        Sweep(), 
+        pd.DataFrame(sweep_spike_info), 
+        50, 
+        n_points=10
+    )
     assert np.allclose(np.arange(3.5, 13.5, 1.0), obtained)
 
 
-def test_identify_subthreshold_hyperpol_with_amplitudes():
-    sweeps = {
-        "index": [0, 1, 2, 3, 4],
-        "columns": [
-            "avg_rate",
-            "peak_deflect",
-            "stim_amp",
-            "v_baseline",
-            "sag",
-            "adapt",
-            "latency",
-            "isi_cv",
-            "mean_isi",
-            "median_isi",
-            "first_isi",
-        ],
-        "data": [
-            [
-                0.0,
-                (-70.65, 35892),
-                -29.999998092651367,
-                -68.25825500488281,
-                0.054702017456293106,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-            ],
-            [
-                0.0,
-                (-72.2, 33470),
-                -50.0,
-                -68.39005279541016,
-                0.01751580648124218,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-            ],
-            [
-                0.0,
-                (-73.66875, 79087),
-                -70.0,
-                -68.42821502685547,
-                0.004760173615068197,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-            ],
-            [
-                0.0,
-                (-30.550001, 31322),
-                469.9999694824219,
-                -68.29730987548828,
-                -8.956585884094238,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-            ],
-            [
-                0.0,
-                (-28.54375, 31625),
-                479.9999694824219,
-                -68.26968383789062,
-                -9.093791961669922,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-                np.nan,
-            ],
-        ],
-    }
-
+def test_identify_subthreshold_hyperpol_with_amplitudes(subthreshold_sweeps):
+  
     class SomeSweeps:
         @property
         def sweeps(self):
-            ndata = len(sweeps["data"][0])
-            nsweeps = len(sweeps["index"])
+            ndata = len(subthreshold_sweeps["data"][0])
+            nsweeps = len(subthreshold_sweeps["index"])
             return np.arange(nsweeps * ndata).reshape(nsweeps, ndata)
 
     obtained, _ = \
         fv.identify_subthreshold_hyperpol_with_amplitudes(
-            {"subthreshold_sweeps": pd.DataFrame(**sweeps)}, SomeSweeps()
+            {"subthreshold_sweeps": pd.DataFrame(**subthreshold_sweeps)},
+            SomeSweeps()
         )
 
     expected = {
-        -30.0: np.array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10]), 
+        -30.0: np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 
         -50.0: np.array([11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]), 
         -70.0: np.array([22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32])
     }
@@ -484,17 +448,55 @@ def test_subthresh_depol_norm_normalization():
     assert np.isclose(output[-1], 1)
 
 
-@pytest.mark.requires_inhouse_data
-def test_subthresh_depol_norm(feature_vector_input):
-    sweeps, features, start, end = feature_vector_input
-    amp_sweep_dict, deflect_dict = fv.identify_subthreshold_depol_with_amplitudes(
-        features, sweeps
+
+def test_identify_subthreshold_depol_with_amplitudes(subthreshold_sweeps):
+
+    class SomeSweeps:
+        @property
+        def sweeps(self):
+            ndata = len(subthreshold_sweeps["data"][0])
+            nsweeps = len(subthreshold_sweeps["index"])
+            return np.arange(nsweeps * ndata).reshape(nsweeps, ndata)
+
+    amp, deflect = fv.identify_subthreshold_depol_with_amplitudes(
+        {"subthreshold_sweeps": pd.DataFrame(**subthreshold_sweeps)},
+        SomeSweeps()
     )
-    temp_data = fv.subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end)
 
-    test_data = np.load(os.path.join(TEST_OUTPUT_DIR, "subthresh_depol_norm.npy"))
+    expected = {
+        "amp": {
+            470.0: np.array([33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43]), 
+            480.0: np.array([44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54])
+        },
+        "deflect": {
+            470.0: (-68.29730987548828, -30.550001), 
+            480.0: (-68.26968383789062, -28.54375)
+        }
+    }
+    obtained = {"amp": amp, "deflect": deflect}
+    diffs = list(diff(obtained, expected))
+    assert not diffs, diffs
 
-    assert np.array_equal(test_data, temp_data)
+
+def test_subthresh_depol_norm():
+
+    class Sweep:
+        @property
+        def v(self):
+            return np.arange(10)
+
+        @property
+        def t(self):
+            return np.arange(10)
+
+    amp_sweep_dict = {50: Sweep()}
+    deflect_dict = {50: (1, 2)}
+
+    obtained = fv.subthresh_depol_norm(
+        amp_sweep_dict, deflect_dict, 4, 7, subsample_interval=1,
+        steady_state_interval=2
+    )
+    assert np.allclose([2/3, 8/9, 10/9], obtained)
 
 
 def test_first_ap_no_sweeps():
