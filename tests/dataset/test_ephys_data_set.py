@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from ipfx.dataset.ephys_data_set import EphysDataSet, _nan_trailing_zeros
-from ipfx.dataset.ephys_data_interface import EphysDataInterface 
+from ipfx.dataset.ephys_data_interface import EphysDataInterface
 from ipfx.stimulus import StimulusOntology
 
 @pytest.mark.parametrize("base_arr", [
@@ -133,15 +133,8 @@ class EphysDataFixture(EphysDataInterface):
     def get_stimulus_unit(self, sweep_number: int) -> str:
         return self.SWEEPS[sweep_number]["meta"]["stimulus_units"]
 
-    def build_sweep_map(self):
-        raise NotImplementedError()
-
-    def drop_reacquired_sweeps(self):
-        raise NotImplementedError()
-
-    def get_sweep_map(self, sweep_number):
-        raise NotImplementedError()
-
+    def get_clamp_mode(self, sweep_number):
+        return self.SWEEPS[sweep_number]["meta"]["clamp_mode"]
 
 @pytest.fixture
 def dataset():
@@ -163,13 +156,13 @@ def test_sweep_table(dataset):
 
 def test_filtered_sweep_table(dataset):
     expected = pd.DataFrame([
-        swp["meta"] 
+        swp["meta"]
         for num, swp in EphysDataFixture.SWEEPS.items()
         if num in {1, 2}
     ])
     pd.testing.assert_frame_equal(
-        expected, 
-        dataset.filtered_sweep_table(clamp_mode=EphysDataSet.CURRENT_CLAMP), 
+        expected,
+        dataset.filtered_sweep_table(clamp_mode=EphysDataSet.CURRENT_CLAMP),
         check_like=True
     )
 
