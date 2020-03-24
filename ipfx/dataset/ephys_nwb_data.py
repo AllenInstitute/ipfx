@@ -55,22 +55,42 @@ class EphysNWBData(EphysDataInterface):
     RESPONSE = (VoltageClampSeries, CurrentClampSeries)
 
     def __init__(self,
-                 nwb_file: str,
+                 nwb_file: None,
                  ontology: StimulusOntology,
                  load_into_memory: bool = True,
                  ):
 
         super().__init__(ontology=ontology)
-        load_into_memory = False # not working
-        if load_into_memory:
-            with open(nwb_file, 'rb') as fh:
-                nwb_file = BytesIO(fh.read())
-        self.nwb_file = nwb_file
-        self.nwb = NWBHDF5IO(nwb_file, mode='r').read()
-
+        
+        self.load_nwb(nwb_file, load_into_memory)
+        
         self.acquisition_path = "acquisition"
         self.stimulus_path = "stimulus/presentation"
         self.nwb_major_version = 2
+        
+    def load_nwb(self, nwb_file: None, load_into_memory: bool = True):
+        """
+        Load NWB to self.nwb
+        
+        Parameters
+        ----------
+        nwb_file: NWB file path or hdf5 obj
+        load_into_memory: whether using load_into_memory approach to load NWB
+        """
+        self.nwb_file = nwb_file
+        if isinstance(nwb_file, str):
+            if load_into_memory:
+                with open(nwb_file, 'rb') as fh:
+                    data = BytesIO(fh.read())
+                _h5_file = h5py.File(data, "r")
+                self.nwb = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file).read()
+            else:
+                self.nwb = NWBHDF5IO(nwb_file, mode='r').read()
+        elif isinstance(nwb_file, BytesIO):
+            _h5_file = h5py.File(nwb_file, "r")
+            self.nwb = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file).read()
+        else:
+            raise TypeError("Invalid input NWB file (only accept NWB filepath or hdf5 obj)!")
 
     def _get_series(self, sweep_number: int,
                     series_class: Tuple[PatchClampSeries]):
