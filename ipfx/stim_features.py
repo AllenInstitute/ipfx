@@ -17,7 +17,6 @@ def get_stim_characteristics(i, t, test_pulse=True):
     start_idx = di_idx[start_idx_idx] + 1   # shift by one to compensate for diff()
     end_idx = di_idx[-1]
     if start_idx >= end_idx: # sweep has been cut off before stimulus end
-        print("foo", start_idx, end_idx, di_idx)
         return None, None, 0.0, None, None
 
     start_time = float(t[start_idx])
