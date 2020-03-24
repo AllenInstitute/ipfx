@@ -1,6 +1,9 @@
-from __future__ import print_function
+import os
+
 import numpy as np
 import pandas as pd
+from dictdiffer import diff
+
 from ipfx.aibs_data_set import AibsDataSet
 import ipfx.data_set_features as dsf
 import ipfx.stim_features as stf
@@ -10,7 +13,6 @@ from ipfx.stimulus import StimulusOntology
 from ipfx.sweep import Sweep, SweepSet
 import allensdk.core.json_utilities as ju
 import pytest
-import os
 from .helpers_for_tests import download_file
 
 
@@ -21,7 +23,7 @@ TEST_OUTPUT_DIR = os.path.join(
     "informatics",
     "module_test_data",
     "ipfx",
-    "test_feature_vector"
+    "test_feature_vector",
 )
 
 ontology = StimulusOntology(
@@ -206,14 +208,14 @@ def test_identify_sweep_for_isi_shape():
     class SomeSweeps:
         @property
         def sweeps(self):
-            ndata = len(sweeps["data"][3])
+            ndata = len(sweeps["data"][0])
             nsweeps = len(sweeps["index"])
             return np.arange(nsweeps * ndata).reshape(nsweeps, ndata)
 
     isi_sweep, isi_sweep_spike_info = fv.identify_sweep_for_isi_shape(
-        SomeSweeps(), 
-        {"sweeps": pd.DataFrame(**sweeps), "spikes_set": {5: "foo"}}, 
-        end - start
+        SomeSweeps(),
+        {"sweeps": pd.DataFrame(**sweeps), "spikes_set": {5: "foo"}},
+        end - start,
     )
 
     assert isi_sweep_spike_info == "foo"
@@ -225,38 +227,146 @@ def test_isi_shape():
     sweep_spike_info = {
         "fast_trough_index": [0, 10, -10000],
         "threshold_index": [-10000, 10, 20],
-        "threshold_v": [1, 2, -10000]
+        "threshold_v": [1, 2, -10000],
     }
 
     class Sweep:
         @property
         def v(self):
             return np.arange(20)
+
         @property
         def t(self):
             return np.arange(20)
 
-    obtained = fv.isi_shape(
-        Sweep(), pd.DataFrame(sweep_spike_info), 50, n_points=10)
-    assert np.allclose(
-        np.arange(3.5, 13.5, 1.0),
-        obtained
-    )
+    obtained = fv.isi_shape(Sweep(), pd.DataFrame(sweep_spike_info), 50, n_points=10)
+    assert np.allclose(np.arange(3.5, 13.5, 1.0), obtained)
 
 
-@pytest.mark.requires_inhouse_data
-def test_step_subthreshold(feature_vector_input):
-    sweeps, features, start, end = feature_vector_input
-    target_amps = [-90, -70, -50, -30, -10]
+def test_identify_subthreshold_hyperpol_with_amplitudes():
+    sweeps = {
+        "index": [0, 1, 2, 3, 4],
+        "columns": [
+            "avg_rate",
+            "peak_deflect",
+            "stim_amp",
+            "v_baseline",
+            "sag",
+            "adapt",
+            "latency",
+            "isi_cv",
+            "mean_isi",
+            "median_isi",
+            "first_isi",
+        ],
+        "data": [
+            [
+                0.0,
+                (-70.65, 35892),
+                -29.999998092651367,
+                -68.25825500488281,
+                0.054702017456293106,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            ],
+            [
+                0.0,
+                (-72.2, 33470),
+                -50.0,
+                -68.39005279541016,
+                0.01751580648124218,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            ],
+            [
+                0.0,
+                (-73.66875, 79087),
+                -70.0,
+                -68.42821502685547,
+                0.004760173615068197,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            ],
+            [
+                0.0,
+                (-30.550001, 31322),
+                469.9999694824219,
+                -68.29730987548828,
+                -8.956585884094238,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            ],
+            [
+                0.0,
+                (-28.54375, 31625),
+                479.9999694824219,
+                -68.26968383789062,
+                -9.093791961669922,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            ],
+        ],
+    }
 
-    subthresh_hyperpol_dict, _ = fv.identify_subthreshold_hyperpol_with_amplitudes(
-        features, sweeps
-    )
-    temp_data = fv.step_subthreshold(subthresh_hyperpol_dict, target_amps, start, end)
+    class SomeSweeps:
+        @property
+        def sweeps(self):
+            ndata = len(sweeps["data"][0])
+            nsweeps = len(sweeps["index"])
+            return np.arange(nsweeps * ndata).reshape(nsweeps, ndata)
 
-    test_data = np.load(os.path.join(TEST_OUTPUT_DIR, "step_subthresh.npy"))
+    obtained, _ = \
+        fv.identify_subthreshold_hyperpol_with_amplitudes(
+            {"subthreshold_sweeps": pd.DataFrame(**sweeps)}, SomeSweeps()
+        )
 
-    assert np.array_equal(test_data, temp_data)
+    expected = {
+        -30.0: np.array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10]), 
+        -50.0: np.array([11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]), 
+        -70.0: np.array([22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32])
+    }
+
+    differing = list(diff(expected, obtained))
+    assert not differing, differing
+
+
+def test_step_subthreshold():
+    class Sweep:
+        @property
+        def v(self):
+            return np.arange(10)
+
+        @property
+        def t(self):
+            return np.arange(10)
+
+    subthresh_hyperpol_dict = {
+        -30.0: Sweep()
+    }
+
+    obtained = fv.step_subthreshold(
+        subthresh_hyperpol_dict, [-30], 4, 6, subsample_interval=1)
+    assert np.allclose(obtained, [4, 5])
 
 
 def test_step_subthreshold_interpolation():
@@ -508,13 +618,13 @@ def test_psth_between_sweep_interpolation():
     si_list = [None, available_list[0], None, available_list[1], None]
     output = fv.psth_vector(si_list, start=start, end=end, width=width)
 
-    assert np.array_equal(output[:n_bins], output[n_bins: 2 * n_bins])
+    assert np.array_equal(output[:n_bins], output[n_bins : 2 * n_bins])
     assert np.array_equal(
-        output[3 * n_bins: 4 * n_bins], output[4 * n_bins: 5 * n_bins]
+        output[3 * n_bins : 4 * n_bins], output[4 * n_bins : 5 * n_bins]
     )
     assert np.array_equal(
         output[2 * n_bins : 3 * n_bins],
-        np.vstack([output[n_bins: 2 * n_bins], output[4 * n_bins: 5 * n_bins]]).mean(
+        np.vstack([output[n_bins : 2 * n_bins], output[4 * n_bins : 5 * n_bins]]).mean(
             axis=0
         ),
     )
@@ -1092,51 +1202,3 @@ def test_isi_shape_skip_short():
         ].mean()
         - test_threshold_v[1]
     )
-
-
-def test_isi_shape_one_spike():
-    # Test sweep
-    np.random.seed(42)
-    v = np.zeros(1000)
-    v[100:400] = np.linspace(-30, 0, 300)
-    print(v[280:300])
-    t = np.arange(len(v))
-    i = np.zeros_like(t)
-    epochs = {
-        "sweep": (0, len(v) - 1),
-        "test": None,
-        "recording": None,
-        "experiment": None,
-        "stim": None,
-    }
-    sampling_rate = 1
-    clamp_mode = "CurrentClamp"
-    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
-    end = t[-100]
-
-    test_threshold_index = [80]
-    test_fast_trough_index = [100]
-    test_threshold_v = [0]
-
-    test_spike_info = pd.DataFrame(
-        {
-            "threshold_index": test_threshold_index,
-            "fast_trough_index": test_fast_trough_index,
-            "threshold_v": test_threshold_v,
-            "fast_trough_t": test_fast_trough_index,
-        }
-    )
-
-    n_points = 100
-    isi_norm = fv.isi_shape(
-        test_sweep,
-        test_spike_info,
-        end,
-        n_points=n_points,
-        steady_state_interval=10,
-        single_max_duration=500,
-    )
-    assert len(isi_norm) == n_points
-
-    assert isi_norm[0] < 0
-    assert isi_norm[0] >= -30
