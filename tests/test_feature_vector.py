@@ -1,19 +1,12 @@
-import os
-
 import numpy as np
 import pandas as pd
 from dictdiffer import diff
 
-from ipfx.aibs_data_set import AibsDataSet
-import ipfx.data_set_features as dsf
-import ipfx.stim_features as stf
-import ipfx.stimulus_protocol_analysis as spa
 import ipfx.feature_vectors as fv
 from ipfx.stimulus import StimulusOntology
 from ipfx.sweep import Sweep, SweepSet
 import allensdk.core.json_utilities as ju
 import pytest
-from .helpers_for_tests import download_file
 
 
 ontology = StimulusOntology(
@@ -1101,45 +1094,6 @@ def test_isi_shape_aligned():
     test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
     end = t[-100]
 
-    test_threshold_index = np.array([100, 300, 500])
-    test_fast_trough_index = test_threshold_index + 20
-    test_threshold_v = np.random.randint(-100, -20, size=len(test_threshold_index))
-
-    test_spike_info = pd.DataFrame(
-        {
-            "threshold_index": test_threshold_index,
-            "fast_trough_index": test_fast_trough_index,
-            "threshold_v": test_threshold_v,
-            "fast_trough_t": test_fast_trough_index,
-        }
-    )
-
-    n_points = 100
-    isi_norm = fv.isi_shape(test_sweep, test_spike_info, end, n_points=n_points)
-    assert len(isi_norm) == n_points
-    assert isi_norm[0] == np.mean(
-        test_sweep.v[test_fast_trough_index[:-1]] - test_threshold_v[:-1]
-    )
-
-
-def test_isi_shape_aligned():
-    # Random test sweep
-    np.random.seed(42)
-    v = np.random.randn(1000)
-    t = np.arange(len(v))
-    i = np.zeros_like(t)
-    epochs = {
-        "sweep": (0, len(v) - 1),
-        "test": None,
-        "recording": None,
-        "experiment": None,
-        "stim": None,
-    }
-    sampling_rate = 1
-    clamp_mode = "CurrentClamp"
-    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
-    end = t[-100]
-
     test_threshold_index = np.array([100, 220, 340])
     test_fast_trough_index = test_threshold_index + 20
     test_threshold_v = np.random.randint(-100, -20, size=len(test_threshold_index))
@@ -1204,3 +1158,37 @@ def test_isi_shape_skip_short():
         ].mean()
         - test_threshold_v[1]
     )
+
+
+def test_isi_shape_one_spike():
+    # Test sweep
+    np.random.seed(42)
+    v = np.zeros(1000)
+    v[100:400] = np.linspace(-30, 0, 300)
+    print(v[280:300])
+    t = np.arange(len(v))
+    i = np.zeros_like(t)
+    epochs = {"sweep": (0, len(v) - 1), "test": None, "recording": None, "experiment": None, "stim": None}
+    sampling_rate = 1
+    clamp_mode = "CurrentClamp"
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+    end = t[-100]
+
+    test_threshold_index = [80]
+    test_fast_trough_index = [100]
+    test_threshold_v = [0]
+
+    test_spike_info = pd.DataFrame({
+        "threshold_index": test_threshold_index,
+        "fast_trough_index": test_fast_trough_index,
+        "threshold_v": test_threshold_v,
+        "fast_trough_t": test_fast_trough_index,
+    })
+
+    n_points = 100
+    isi_norm = fv.isi_shape(test_sweep, test_spike_info, end, n_points=n_points,
+        steady_state_interval=10, single_max_duration=500)
+    assert len(isi_norm) == n_points
+
+    assert isi_norm[0] < 0
+    assert isi_norm[0] >= -30
