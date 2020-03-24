@@ -23,7 +23,7 @@ class HBGNWB2Data(EphysNWBData):
                      validate_stim=validate_stim)
 
     def get_stim_code_ext(self, sweep_number):
-        return super().get_stim_code(sweep_number)
+        return super().get_stimulus_code(sweep_number)
 
     def get_sweep_record(self, sweep_num: int) -> Dict[str, Any]:
         attrs = self.get_sweep_attrs(sweep_num)
@@ -34,7 +34,7 @@ class HBGNWB2Data(EphysNWBData):
             "bridge_balance_mohm": get_finite_or_none(attrs, "bridge_balance"),
             "leak_pa": get_finite_or_none(attrs, "bias_current"),
             "stimulus_scale_factor": get_finite_or_none(attrs, "gain"),
-            "stimulus_code": self.get_stim_code(sweep_num),
+            "stimulus_code": self.get_stimulus_code(sweep_num),
             "stimulus_code_ext": self.get_stim_code_ext(sweep_num)
         }
 
