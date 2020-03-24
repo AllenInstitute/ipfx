@@ -2,23 +2,15 @@ import pytest
 import pynwb
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.mies_nwb_data import MIESNWBData
-import allensdk.core.json_utilities as ju
-from dictdiffer import diff
 from tests.dataset.test_ephys_nwb_data import nwbfile_to_test
 from ipfx.dataset.labnotebook import LabNotebookReader, LabNotebookReaderIgorNwb
 
 
 @pytest.fixture
 def tmp_nwb_path(tmpdir_factory):
-    nwb = tmpdir_factory.mktemp("test_nwb_data").join("test_ephys_data.nwb")
+    nwb = tmpdir_factory.mktemp("test_nwb_data").join("test_mies_data.nwb")
     return str(nwb)
 
-
-@pytest.fixture()
-def ontology():
-    return StimulusOntology([[('name', 'expected name'), ('code', 'STIMULUS_CODE')],
-                             [('name', 'test name'), ('code', 'extpexpend')]
-                             ])
 
 @pytest.fixture
 def mies_nwb_data(tmp_nwb_path):
