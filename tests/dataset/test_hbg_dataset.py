@@ -22,16 +22,8 @@ def hbg_nwb_data(tmp_nwb_path):
     with pynwb.NWBHDF5IO(path=tmp_nwb_path, mode="w") as writer:
         writer.write(nwbfile)
 
-    ontology =  StimulusOntology([[('name', 'ramp stimulus'), ('code', 'RAMP1')],
-                             [('name', 'extpinbath stimulus'), ('code', 'extpinbath')],
-                             [('name', 'extpbreakn stimulus'), ('code', 'extpbreakn')],
-                             [('name', 'Long square stimulus'), ('code', 'Long square')],
-                             [('name', 'Short square stimulus'), ('code', 'Short square')],
-                             [('name', 'Rheobase stimulus'), ('code', 'Rheobase')],
-                             [('name', 'Ramp stimulus'), ('code', 'Ramp')],
-                             [('name', 'Capacitance stimulus'), ('code', 'Capacitance')],
-                             [('name', 'Chirp stimulus'), ('code', 'Chirp')],
-                             [('name', 'extpexpend stimulus'), ('code', 'extpexpend')]
+    ontology =  StimulusOntology([[('name', 'expected name'), ('code', 'STIMULUS_CODE')],
+                             [('name', 'test name'), ('code', 'extpexpend')]
                              ])
 
     return HBGNWB2Data(nwb_file=tmp_nwb_path, ontology=ontology)
@@ -49,7 +41,7 @@ def test_get_sweep_record(hbg_nwb_data):
         'stimulus_scale_factor': 32.0,
         'stimulus_code': 'STIMULUS_CODE',
         'stimulus_code_ext': 'STIMULUS_CODE',
-        'stimulus_name': 'Unknown'}
+        'stimulus_name': 'expected name'}
 
     obtained = hbg_nwb_data.get_sweep_record(sweep_num=4)
     assert expected == obtained
