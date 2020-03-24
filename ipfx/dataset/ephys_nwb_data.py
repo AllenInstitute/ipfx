@@ -55,7 +55,7 @@ class EphysNWBData(EphysDataInterface):
     RESPONSE = (VoltageClampSeries, CurrentClampSeries)
 
     def __init__(self,
-                 nwb_file: str,
+                 nwb_file: None,
                  ontology: StimulusOntology,
                  load_into_memory: bool = True,
                  ):
@@ -75,7 +75,7 @@ class EphysNWBData(EphysDataInterface):
             _h5_file = h5py.File(nwb_file, "r")
             self.nwb = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file).read()
         else:
-            print("Invalid input NWB file, please input either NWB file path or hdf5 obj!")
+            raise TypeError("Invalid input NWB file (only accept NWB filepath or hdf5 obj)!")
 
         self.acquisition_path = "acquisition"
         self.stimulus_path = "stimulus/presentation"
