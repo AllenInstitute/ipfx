@@ -37,7 +37,7 @@ def get_empty_dataset():
 
     default_ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
     dataset = EphysDataSet(default_ontology)
-    dataset.build_sweep_table(sweep_info=[])
+    dataset.build_sweep_table(sweep_info=[], deprecation_warning=False)
 
     return dataset
 
@@ -105,27 +105,6 @@ def test_get_sweep_record():
     compare_dicts(expected, actual)
 
 
-def test_sweep_raises():
-
-    with pytest.raises(NotImplementedError):
-        ds = get_dataset()
-        ds.sweep(5)
-
-
-def test_set_sweep_raises_int():
-
-    with pytest.raises(NotImplementedError):
-        ds = get_dataset()
-        ds.sweep_set(5)
-
-
-def test_set_sweep_raises_list():
-
-    with pytest.raises(NotImplementedError):
-        ds = get_dataset()
-        ds.sweep_set([5, 6])
-
-
 def test_aligned_sweeps_raises():
     with pytest.raises(NotImplementedError):
         ds = get_dataset()
@@ -140,13 +119,6 @@ def test_get_clamp_mode_raises():
     with pytest.raises(NotImplementedError):
         ds = get_dataset()
         ds.get_clamp_mode(0)
-
-def test_extract_sweep_stim_info_raises():
-    with pytest.raises(NotImplementedError):
-        ds = get_dataset()
-        ds.extract_sweep_stim_info()
-
-
 
 
 def test_get_stimulus_name():
@@ -167,10 +139,3 @@ def test_get_stimulus_name_works():
 
     expected = {EphysDataSet.STIMULUS_CODE: stimulus_code, EphysDataSet.STIMULUS_NAME: "Test"}
     assert expected == d
-
-
-def test_get_sweep_data():
-
-    with pytest.raises(NotImplementedError):
-        ds = get_dataset()
-        ds.get_sweep_data(123)

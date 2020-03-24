@@ -116,9 +116,9 @@ class NwbReader(object):
     def get_long_unit_name(unit):
         if not unit:
             return "Unknown"
-        if unit.startswith('A'):
+        if unit[0] in {"a", "A"}:
             return "Amps"
-        elif unit.startswith('V'):
+        elif unit[0] in {"v", "V"}:
             return "Volts"
         else:
             return unit
@@ -126,7 +126,7 @@ class NwbReader(object):
     @staticmethod
     def validate_SI_unit(unit):
 
-        valid_SI_units = ["Volts", "Amps"]
+        valid_SI_units = {"Volts", "Amps"}
         if unit not in valid_SI_units:
             raise ValueError(F"Unit {unit} is not among the valid SI units {valid_SI_units}")
 
