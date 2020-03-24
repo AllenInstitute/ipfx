@@ -39,10 +39,14 @@ def able_to_connect_to_lims():
         conn, cursor = _connect()
         cursor.close()
         conn.close()
-        return True
-
     except pg8000.Error:
+        # the connection failed
         return False
+    except TypeError:
+        # a credential was missing
+        return False
+
+    return True
 
 
 def _select(cursor, query, parameters=None):
