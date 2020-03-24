@@ -61,8 +61,23 @@ class EphysNWBData(EphysDataInterface):
                  ):
 
         super().__init__(ontology=ontology)
-        self.nwb_file = nwb_file
         
+        self.load_nwb(nwb_file, load_into_memory)
+        
+        self.acquisition_path = "acquisition"
+        self.stimulus_path = "stimulus/presentation"
+        self.nwb_major_version = 2
+        
+    def load_nwb(self, nwb_file: None, load_into_memory: bool = True):
+        """
+        Load NWB to self.nwb
+        
+        Parameters
+        ----------
+        nwb_file: NWB file path or hdf5 obj
+        load_into_memory: whether using load_into_memory approach to load NWB
+        """
+        self.nwb_file = nwb_file
         if isinstance(nwb_file, str):
             if load_into_memory:
                 with open(nwb_file, 'rb') as fh:
@@ -76,10 +91,6 @@ class EphysNWBData(EphysDataInterface):
             self.nwb = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file).read()
         else:
             raise TypeError("Invalid input NWB file (only accept NWB filepath or hdf5 obj)!")
-
-        self.acquisition_path = "acquisition"
-        self.stimulus_path = "stimulus/presentation"
-        self.nwb_major_version = 2
 
     def _get_series(self, sweep_number: int,
                     series_class: Tuple[PatchClampSeries]):
