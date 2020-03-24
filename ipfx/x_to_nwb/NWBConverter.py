@@ -7,6 +7,8 @@ import logging
 
 import numpy as np
 
+from allensdk.deprecated import class_deprecated
+
 from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import CurrentClampStimulusSeries, VoltageClampStimulusSeries
 from pynwb.icephys import CurrentClampSeries, VoltageClampSeries
@@ -20,6 +22,10 @@ import ipfx.nwb_reader as nwb_reader
 log = logging.getLogger(__name__)
 
 
+@class_deprecated(
+    "Starting from ipfx 1.0.0, NWB1 will no longer be supported. Instead, "
+    "NWB2 will be supported. NWBConverter will be removed."
+)
 class NWBConverter:
 
     V_CLAMP_MODE = "voltage_clamp"

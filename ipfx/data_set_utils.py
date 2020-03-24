@@ -25,7 +25,8 @@ def create_data_set(sweep_info=None, nwb_file=None, ontology=None, api_sweeps=Tr
                           nwb_file=nwb_file,
                           ontology=ontology,
                           api_sweeps=api_sweeps,
-                          validate_stim=validate_stim)
+                          validate_stim=validate_stim,
+                          deprecation_warning=False)
 
     elif nwb_version["major"] == 1 or nwb_version["major"] == 0:
         return AibsDataSet(sweep_info=sweep_info,
@@ -33,7 +34,8 @@ def create_data_set(sweep_info=None, nwb_file=None, ontology=None, api_sweeps=Tr
                            ontology=ontology,
                            api_sweeps=api_sweeps,
                            h5_file=h5_file,
-                           validate_stim=validate_stim)
+                           validate_stim=validate_stim,
+                           deprecation_warning=False)
     else:
         raise ValueError("Unsupported or unknown NWB major" +
                          "version {} ({})".format(nwb_version["major"], nwb_version["full"]))

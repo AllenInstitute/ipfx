@@ -1,5 +1,7 @@
 import logging
 
+from allensdk.deprecated import class_deprecated
+
 from .ephys_data_set import EphysDataSet
 
 import ipfx.lab_notebook_reader as lab_notebook_reader
@@ -8,10 +10,24 @@ import ipfx.sweep_props as sp
 from ipfx.py2to3 import to_str
 
 
+@class_deprecated(
+    "Starting from ipfx 1.0.0, NWB1 will no longer be supported. Instead, "
+    "NWB2 will be supported. AibsDataSet will be removed."
+)
 class AibsDataSet(EphysDataSet):
-    def __init__(self, sweep_info=None, nwb_file=None, h5_file=None,
-                 ontology=None, api_sweeps=True, validate_stim=True):
-        super(AibsDataSet, self).__init__(ontology, validate_stim)
+    def __init__(
+            self, 
+            sweep_info=None, 
+            nwb_file=None, 
+            h5_file=None,
+            ontology=None, 
+            api_sweeps=True, 
+            validate_stim=True,
+            deprecation_warning=True
+    ):
+        super(AibsDataSet, self).__init__(
+            ontology, validate_stim, deprecation_warning=deprecation_warning
+        )
 
         self._nwb_data = nwb_reader.create_nwb_reader(nwb_file)
 
@@ -19,17 +35,13 @@ class AibsDataSet(EphysDataSet):
             sweep_info = sp.modify_sweep_info_keys(sweep_info) if api_sweeps else sweep_info
 
             # Remove sweeps not found in nwb_data sweep map
-            sweep_numbers_in_map = self.nwb_data.sweep_map_table["sweep_number"].tolist()
+            sweep_numbers_in_map = self._nwb_data.sweep_map_table["sweep_number"].tolist()
             sweep_info = [si for si in sweep_info if si["sweep_number"] in sweep_numbers_in_map]
         else:
             self.notebook = lab_notebook_reader.create_lab_notebook_reader(nwb_file, h5_file)
             sweep_info = self.extract_sweep_stim_info()
 
-        self.build_sweep_table(sweep_info)
-
-    @property
-    def nwb_data(self):
-        return self._nwb_data
+        self.build_sweep_table(sweep_info, deprecation_warning=False)
 
     def extract_sweep_stim_info(self):
         """
@@ -40,7 +52,7 @@ class AibsDataSet(EphysDataSet):
             where each dict includes sweep properties
         """
         sweep_info = []
-        for index, sweep_map in self.nwb_data.sweep_map_table.iterrows():
+        for index, sweep_map in self._nwb_data.sweep_map_table.iterrows():
             sweep_record = {}
             sweep_num = sweep_map["sweep_number"]
             sweep_record['sweep_number'] = sweep_num
@@ -72,7 +84,7 @@ class AibsDataSet(EphysDataSet):
 
     def get_stimulus_code(self, sweep_num):
 
-        stim_code = self.nwb_data.get_stim_code(sweep_num)
+        stim_code = self._nwb_data.get_stim_code(sweep_num)
         if not stim_code:
             stim_code = self.notebook.get_value("Stim Wave Name", sweep_num, "")
             logging.debug("Reading stim_code from Labnotebook")
@@ -89,12 +101,12 @@ class AibsDataSet(EphysDataSet):
 
     def get_stimulus_units(self, sweep_num):
 
-        unit_str = self.nwb_data.get_stimulus_unit(sweep_num)
+        unit_str = self._nwb_data.get_stimulus_unit(sweep_num)
         return unit_str
 
     def get_clamp_mode(self, sweep_num):
 
-        attrs = self.nwb_data.get_sweep_attrs(sweep_num)
+        attrs = self._nwb_data.get_sweep_attrs(sweep_num)
         ancestry = attrs["ancestry"]
 
         time_series_type = to_str(ancestry[-1])
@@ -108,4 +120,4 @@ class AibsDataSet(EphysDataSet):
         return clamp_mode
 
     def get_recording_date(self):
-        return self.nwb_data.get_recording_date()
+        return self._nwb_data.get_recording_date()

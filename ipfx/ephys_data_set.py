@@ -2,7 +2,8 @@ import warnings
 import logging
 import pandas as pd
 import numpy as np
-from ipfx.sweep import Sweep,SweepSet
+
+from ipfx.sweep import Sweep, SweepSet
 
 class EphysDataSet(object):
 
@@ -30,24 +31,49 @@ class EphysDataSet(object):
     VOLTAGE_CLAMP = "VoltageClamp"
     CURRENT_CLAMP = "CurrentClamp"
 
-    def __init__(self, ontology, validate_stim=True):
+    def __init__(
+            self, 
+            ontology, 
+            validate_stim=True, 
+            deprecation_warning=False
+    ):
         self.sweep_table = None
         self.ontology = ontology
         self.validate_stim = validate_stim
 
+        if deprecation_warning:
+            warnings.warn(np.VisibleDeprecationWarning((
+                "Instead of constructing {} instances "
+                "directly, use ipfx.data_set_utils.create_data_set"
+                "this will make it easier to transition to ipfx 1.0.0"
+            ).format(type(self))))
+
     @property
     def nwb_data(self):
-        raise NotImplementedError
+        warnings.warn(np.VisibleDeprecationWarning(
+                "In ipfx 1.0.0 nwb_data will not be a public attribute of "
+                "EphysDataSet"
+        ))
+        return self._nwb_data
 
-    def build_sweep_table(self, sweep_info=None):
+    
+    def build_sweep_table(self, sweep_info=None, deprecation_warning=True):
+
+        if deprecation_warning:
+            warnings.warn(np.VisibleDeprecationWarning(
+                "in ipfx version 1.0.0 build_sweep_table will not be a "
+                "public method of EphysDataSet"
+            ))
 
         if sweep_info:
-            self.add_clamp_mode(sweep_info)
+            self.add_clamp_mode(
+                sweep_info, deprecation_warning=deprecation_warning
+            )
             self.sweep_table = pd.DataFrame.from_records(sweep_info)
         else:
             self.sweep_table = pd.DataFrame(columns=self.COLUMN_NAMES)
 
-    def add_clamp_mode(self, sweep_info):
+    def add_clamp_mode(self, sweep_info, deprecation_warning=True):
         """
         Check if clamp mode is available and otherwise detect it
         Parameters
@@ -58,6 +84,12 @@ class EphysDataSet(object):
         -------
 
         """
+
+        if deprecation_warning:
+            warnings.warn(np.VisibleDeprecationWarning(
+                "in ipfx version 1.0.0 add_clamp_mode will not be a "
+                "public method of EphysDataSet"
+            ))
 
         for sweep_record in sweep_info:
             sweep_number = sweep_record["sweep_number"]
@@ -219,7 +251,7 @@ class EphysDataSet(object):
         }
         """
 
-        sweep_data = self.nwb_data.get_sweep_data(sweep_number)
+        sweep_data = self._nwb_data.get_sweep_data(sweep_number)
 
         response = sweep_data['response']
 
