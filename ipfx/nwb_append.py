@@ -1,86 +1,62 @@
-import os
+from pathlib import Path
+from typing import (
+    List, Dict, Optional, Union
+)
+
+import shutil
+
 import pynwb
-from allensdk.core.nwb_data_set import NwbDataSet
-from ipfx.dataset.create import get_nwb_version
+from hdmf.backends.hdf5.h5_utils import H5DataIO
 from pynwb import TimeSeries
 from pynwb import ProcessingModule
 
 
-class NwbAppender(object):
-
-    def __init__(self, nwb_file_name):
-        if os.path.isfile(nwb_file_name):
-            self.nwb_file_name = nwb_file_name
-        else:
-            raise FileNotFoundError(f"Cannot locate {nwb_file_name}")
-
-    def add_spike_times(self, sweep_num, spike_times):
-        raise NotImplementedError
-
-    def set_spike_time(self, sweep_spike_times):
-        raise NotImplementedError
+PathLike = Union[
+    str,
+    Path
+]
 
 
-class Nwb1Appender(NwbAppender):
+def append_spike_times(input_nwb_path: PathLike,
+                       sweep_spike_times: Dict[int, List[float]],
+                       output_nwb_path: Optional[PathLike] = None):
+    """
+        Appends spiketimes to an nwb2 file
 
-    def __init__(self, nwb_file_name):
-        NwbAppender.__init__(self, nwb_file_name)
-        self.nwbfile = NwbDataSet(self.nwb_file_name)
+        Paramters
+        ---------
 
-    def add_spike_times(self, sweep_spike_times):
+        input_nwb_path: location of input nwb file without spiketimes
 
-        for sweep_num, spike_times in sweep_spike_times.items():
-            self.nwbfile.set_spike_times(sweep_num, spike_times)
+        spike_times: Dict of sweep_num: spiketimes
 
+        output_nwb_path: optional location to write new nwb file with
+                         spiketimes, otherwise appends spiketimes to
+                         input file
 
-class Nwb2Appender(NwbAppender):
-
-    def __init__(self, nwb_file_name):
-        NwbAppender.__init__(self, nwb_file_name)
-
-        io = pynwb.NWBHDF5IO(self.nwb_file_name, 'a')
-        self.nwbfile = io.read()
-        io.close()
-
-    def add_spike_times(self, sweep_spike_times):
-
-        spike_module = ProcessingModule(name='spikes',
-                                        description='detected spikes')
-
-        for sweep_num, spike_times in sweep_spike_times.items():
-            ts = TimeSeries(timestamps=spike_times, name=f"Sweep_{sweep_num}")
-            spike_module.add_data_interface(ts)
-
-        self.nwbfile.add_processing_module(spike_module)
-
-        io = pynwb.NWBHDF5IO(self.nwb_file_name, 'w')
-        io.write(self.nwbfile)
-        io.close()
-
-
-def create_nwb_appender(nwb_file):
-    """Create an appropriate writer of the nwb_file
-
-    Parameters
-    ----------
-    nwb_file: str file name
-
-    Returns
-    -------
-    writer object
     """
 
-    if os.path.isfile(nwb_file):
-        nwb_version = get_nwb_version(nwb_file)
+    # Copy to new location
+    if output_nwb_path and output_nwb_path != input_nwb_path:
+        shutil.copy(input_nwb_path, output_nwb_path)
+        nwb_path = output_nwb_path
     else:
-        raise FileNotFoundError(f"Cannot locate {nwb_file}")
+        nwb_path = input_nwb_path
 
-    if nwb_version["major"] == 2:
-        return Nwb2Appender(nwb_file)
-    elif nwb_version["major"] == 1 or nwb_version["major"] == 0:
-        return Nwb1Appender(nwb_file)
-    else:
-        raise ValueError(
-            "Unsupported or unknown NWB major version {} ({})".format(
-                nwb_version["major"], nwb_version["full"])
-        )
+    nwb_io = pynwb.NWBHDF5IO(nwb_path, mode='a')
+    nwbfile = nwb_io.read()
+
+    # Create spike module
+    spike_module = ProcessingModule(name='spikes',
+                                    description='detected spikes')
+    for sweep_num, spike_times in sweep_spike_times.items():
+        wrapped_spike_times = H5DataIO(data=spike_times,
+                                       compression=True)
+        ts = TimeSeries(timestamps=wrapped_spike_times,
+                        name=f"Sweep_{sweep_num}")
+        spike_module.add_data_interface(ts)
+
+    nwbfile.add_processing_module(spike_module)
+
+    nwb_io.write(nwbfile)
+    nwb_io.close()

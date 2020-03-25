@@ -1,12 +1,9 @@
 import pytest
 import datetime
 import pynwb
-from unittest.mock import patch
-
 import numpy as np
 
-from ipfx.bin.run_feature_extraction import embed_spike_times
-from ipfx.dataset.ephys_nwb_data import EphysNWBData
+from ipfx.nwb_append import append_spike_times
 
 
 def make_skeleton_nwb2_file(nwb2_file_name):
@@ -30,17 +27,7 @@ def make_skeleton_nwb2_file(nwb2_file_name):
     io.close()
 
 
-with patch.multiple(
-    EphysNWBData,
-    __abstractmethods__=[]
-):
-
-    class JustConcrete(EphysNWBData):
-        pass
-
-
-@pytest.mark.parametrize('make_skeleton_nwb_file', [make_skeleton_nwb2_file])
-def test_embed_spike_times_into_nwb(make_skeleton_nwb_file, tmpdir_factory):
+def test_embed_spike_times_into_nwb(tmpdir_factory):
 
     sweep_spike_times = {
         3: [56.0, 44.6, 661.1],
@@ -51,12 +38,16 @@ def test_embed_spike_times_into_nwb(make_skeleton_nwb_file, tmpdir_factory):
     input_nwb_file_name = str(tmp_dir.join("input.nwb"))
     output_nwb_file_name = str(tmp_dir.join("output.nwb"))
 
-    make_skeleton_nwb_file(input_nwb_file_name)
+    make_skeleton_nwb2_file(input_nwb_file_name)
 
-    embed_spike_times(
-        input_nwb_file_name, output_nwb_file_name, sweep_spike_times
-    )
+    append_spike_times(input_nwb_file_name,
+                       sweep_spike_times,
+                       output_nwb_path=output_nwb_file_name)
 
-    reader = JustConcrete(output_nwb_file_name, None)
-    for sweep_num, spike_times in sweep_spike_times.items():
-        assert np.allclose(reader.get_spike_times(sweep_num), spike_times)
+    with pynwb.NWBHDF5IO(output_nwb_file_name, mode='r') as nwb_io:
+        nwbfile = nwb_io.read()
+
+        spikes = nwbfile.get_processing_module('spikes')
+        for sweep_num, spike_times in sweep_spike_times.items():
+            sweep_spikes = spikes.get_data_interface(f"Sweep_{sweep_num}").timestamps
+            assert np.allclose(sweep_spikes, spike_times)

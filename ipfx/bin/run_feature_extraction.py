@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import logging
-import shutil
 import argschema as ags
 import ipfx.error as er
 import ipfx.data_set_features as dsft
@@ -9,26 +8,11 @@ from ipfx._schemas import FeatureExtractionParameters
 from ipfx.data_set_utils import create_data_set
 import ipfx.sweep_props as sp
 import allensdk.core.json_utilities as ju
-import ipfx.nwb_append as appender
+from ipfx.nwb_append import append_spike_times
 
 import ipfx.plot_qc_figures as plotqc
 import ipfx.logging_utils as lu
 
-
-def embed_spike_times(input_nwb_file, output_nwb_file, sweep_spikes):
-
-    tmp_nwb_file = output_nwb_file + ".tmp"
-    shutil.copy(input_nwb_file, tmp_nwb_file)
-
-    nwb_data = appender.create_nwb_appender(tmp_nwb_file)
-    nwb_data.add_spike_times(sweep_spikes)
-
-    try:
-        shutil.move(tmp_nwb_file, output_nwb_file)
-    except OSError as e:
-        logging.error("Problem renaming file: %s -> %s" % (tmp_nwb_file, output_nwb_file))
-        raise e
-    logging.debug(f"Embedded spike times into the {output_nwb_file}")
 
 def collect_spike_times(sweep_features):
 
@@ -85,7 +69,9 @@ def run_feature_extraction(input_nwb_file,
 
     if not cell_state["failed_fx"]:
         sweep_spike_times = collect_spike_times(sweep_features)
-        embed_spike_times(input_nwb_file, output_nwb_file, sweep_spike_times)
+        append_spike_times(input_nwb_file,
+                           sweep_spike_times,
+                           output_nwb_path=output_nwb_file)
 
         if qc_fig_dir is None:
             logging.info("qc_fig_dir is not provided, will not save figures")
