@@ -1,4 +1,3 @@
-from __future__ import print_function
 import pytest
 import ipfx.spike_detector as spkd
 import numpy as np

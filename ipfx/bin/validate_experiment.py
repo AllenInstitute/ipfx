@@ -1,9 +1,9 @@
-from __future__ import print_function
 import allensdk.core.json_utilities as ju
 import numpy as np
 import sys
 import os
 import logging
+
 
 def nullisclose(a, b):
     if a is None or b is None:

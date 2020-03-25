@@ -4,7 +4,6 @@ Sweep QC Features
 
 Estimate sweep QC features
 """
-from __future__ import print_function
 
 import os
 import pandas as pd

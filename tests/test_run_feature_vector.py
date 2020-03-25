@@ -11,6 +11,12 @@ from dictdiffer import diff
 TEST_OUTPUT_DIR = "/allen/aibs/informatics/module_test_data/ipfx/test_feature_vector"
 
 
+@pytest.mark.skip(
+    reason=(
+        "this test relies on a lims query for now-unsupported NWB1 data, "
+        "it must be replaced with direct access to a well-known NWB2 file."
+    )
+)
 @pytest.mark.requires_lims
 @pytest.mark.slow
 @pytest.mark.skipif(
@@ -56,6 +62,12 @@ def test_feature_vector_extraction(tmpdir_factory):
 
         assert np.allclose(test_data, temp_data)
 
+@pytest.mark.skip(
+    reason=(
+        "this test relies on a lims query for now-unsupported NWB1 data, "
+        "it must be replaced with direct access to a well-known NWB2 file."
+    )
+)
 @pytest.mark.requires_lims
 @pytest.mark.slow
 @pytest.mark.skipif(

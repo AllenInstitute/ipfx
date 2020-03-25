@@ -1,9 +1,6 @@
-from __future__ import absolute_import
 import numpy as np
 import logging
-import pandas as pd
 from scipy import stats
-from . import stim_features as stf
 from . import data_set_features as dsf
 from . import stimulus_protocol_analysis as spa
 from . import time_series_utils as tsu

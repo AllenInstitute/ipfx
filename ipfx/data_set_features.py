@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 # Allen Institute Software License - This software license is the 2-clause BSD
 # license plus a third clause that prohibits redistribution for commercial
 # purposes without further permission.

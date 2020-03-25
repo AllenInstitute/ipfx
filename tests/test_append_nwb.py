@@ -16,9 +16,11 @@ def make_skeleton_nwb2_file(nwb2_file_name):
     )
 
     device = nwbfile.create_device(name='electrode_0')
-    electrode = nwbfile.create_ic_electrode(name="elec0",
-                                            description='intracellular electrode',
-                                            device=device)
+    nwbfile.create_ic_electrode(
+        name="elec0",
+        description='intracellular electrode',
+        device=device
+    )
 
     io = pynwb.NWBHDF5IO(nwb2_file_name, 'w')
     io.write(nwbfile)

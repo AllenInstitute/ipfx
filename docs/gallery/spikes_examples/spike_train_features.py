@@ -4,7 +4,6 @@ Spike Train Features
 
 Detect spike train features
 """
-from __future__ import print_function
 
 import os
 from allensdk.api.queries.cell_types_api import CellTypesApi

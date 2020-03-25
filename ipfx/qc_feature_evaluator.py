@@ -1,4 +1,5 @@
-import os, json
+import os
+import json
 import logging
 import numpy as np
 import ipfx.qc_features as qcf

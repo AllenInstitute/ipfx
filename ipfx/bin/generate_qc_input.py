@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import os
 from ipfx.bin.run_sweep_extraction import run_sweep_extraction
 from ipfx.bin.generate_se_input import generate_se_input, parse_args

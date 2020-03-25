@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import os
 import allensdk.core.json_utilities as ju
 import ipfx.sweep_props as sp

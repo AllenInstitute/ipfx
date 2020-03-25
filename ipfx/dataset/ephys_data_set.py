@@ -15,11 +15,6 @@ from ipfx.stimulus import StimulusOntology
 from ipfx.sweep import Sweep, SweepSet
 
 
-# TODO modify EphysDataInterface to accept sweep_info
-# TODO determine where constants ought to reside
-# here i think, but need to add stim and response
-
-
 class EphysDataSet(object):
 
     STIMULUS_UNITS = 'stimulus_units'
@@ -61,15 +56,20 @@ class EphysDataSet(object):
 
         """
         if not hasattr(self, "_sweep_table"):
-            self._sweep_table = pd.DataFrame([
-                self._data.get_sweep_metadata(num)
-                for num in self._data.sweep_numbers
-            ])
+
+            if not self._sweep_info:
+                self._sweep_table = pd.DataFrame([
+                    self._data.get_sweep_metadata(num)
+                    for num in self._data.sweep_numbers
+                ])
+            else:
+                self._sweep_table = pd.DataFrame(self._sweep_info)
         return self._sweep_table
 
     def __init__(
             self,
-            data: EphysDataInterface
+            data: EphysDataInterface,
+            sweep_info: Optional[Dict] = None
     ):
         """EphysDataSet is the preferred interface for running analyses or 
         pipeline code.
@@ -80,7 +80,11 @@ class EphysDataSet(object):
             handle any loading of data from external sources (such as NWB2 
             files)
         """
+        if sweep_info is None:
+            sweep_info = {}
+
         self._data: EphysDataInterface = data
+        self._sweep_info = sweep_info
 
     def _setup_stimulus_repeat_lookup(self):
         """Each sweep contains the ith repetition of some stimulus (from 1 -> 
@@ -191,7 +195,6 @@ class EphysDataSet(object):
         """
         return self.get_sweep_numbers(stimuli, clamp_mode)[-1]
 
-    # TODO apply scaling factor in EphysDataInterface
     def sweep(self, sweep_number: int) -> Sweep:
         """
         Create an instance of the Sweep class with the data loaded from the 

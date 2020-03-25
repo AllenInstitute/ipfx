@@ -4,8 +4,7 @@ import subprocess
 import os
 import numpy as np
 from pytest import approx
-from six.moves import urllib
-import six
+import urllib
 import shutil
 from pynwb import NWBHDF5IO, validate
 
@@ -32,7 +31,7 @@ def compare_dicts(d_ref, d):
 
             assert len(array) == len(array_ref)
             for index in range(len(array)):
-                if isinstance(array[index], (str, bytes, six.text_type)):
+                if isinstance(array[index], (str, bytes)):
                     assert array[index] == array_ref[index]
                 else:
                     assert array[index] == approx(array_ref[index])

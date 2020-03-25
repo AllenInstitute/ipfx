@@ -1,6 +1,14 @@
+import logging
+import os
+import json
+import traceback
+
 import numpy as np
 import pandas as pd
-import logging
+import h5py
+
+from allensdk.core.cell_types_cache import CellTypesCache
+
 import ipfx.lims_queries as lq
 import ipfx.stim_features as stf
 import ipfx.stimulus_protocol_analysis as spa
@@ -8,11 +16,7 @@ import ipfx.data_set_features as dsf
 import ipfx.time_series_utils as tsu
 import ipfx.error as er
 from ipfx.sweep import SweepSet
-from ipfx.aibs_data_set import AibsDataSet
-import h5py
-import os
-import json
-from allensdk.core.cell_types_cache import CellTypesCache
+from ipfx.dataset.create import create_ephys_data_set
 
 
 def lims_nwb_information(specimen_id):
@@ -51,7 +55,6 @@ def sdk_nwb_information(specimen_id):
 
 
 def dataset_for_specimen_id(specimen_id, data_source, ontology):
-    # Find or retrieve NWB file and ancillary info and construct an AibsDataSet object
     if data_source == "lims":
         nwb_path, h5_path = lims_nwb_information(specimen_id)
         if type(nwb_path) is dict and "error" in nwb_path:
@@ -59,7 +62,7 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology):
             return nwb_path
 
         try:
-            data_set = AibsDataSet(
+            data_set = create_ephys_data_set(
                 nwb_file=nwb_path, h5_file=h5_path, ontology=ontology)
         except Exception as detail:
             logging.warning("Exception when loading specimen {:d} from LIMS".format(specimen_id))
@@ -68,7 +71,7 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology):
     elif data_source == "sdk":
         nwb_path, sweep_info = sdk_nwb_information(specimen_id)
         try:
-            data_set = AibsDataSet(
+            data_set = create_ephys_data_set(
                 nwb_file=nwb_path, sweep_info=sweep_info, ontology=ontology)
         except Exception as detail:
             logging.warning("Exception when loading specimen {:d} via Allen SDK".format(specimen_id))

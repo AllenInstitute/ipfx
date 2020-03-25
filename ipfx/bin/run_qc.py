@@ -2,7 +2,6 @@
 import logging
 from ipfx.stimulus import StimulusOntology
 import ipfx.qc_feature_evaluator as qcp
-import ipfx.bin.make_stimulus_ontology as mso
 import argschema as ags
 from ipfx._schemas import QcParameters
 import allensdk.core.json_utilities as ju

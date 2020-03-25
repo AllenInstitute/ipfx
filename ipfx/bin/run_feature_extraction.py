@@ -46,8 +46,7 @@ def run_feature_extraction(input_nwb_file,
 
     data_set = create_data_set(sweep_info=sweep_info,
                                nwb_file=input_nwb_file,
-                               ontology=ont,
-                               api_sweeps=False)
+                               ontology=ont)
 
     try:
         cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
