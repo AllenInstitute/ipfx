@@ -14,22 +14,21 @@ from ipfx.qc_feature_extractor import cell_qc_features, sweep_qc_features
 # these values are used if the particular value cannot be computed.
 # a better name might be 'DEFAULT_VALUE_KEYS'
 MANUAL_KEYS = (
-    'manual_seal_gohm', 
-    'manual_initial_access_resistance_mohm', 
+    'manual_seal_gohm',
+    'manual_initial_access_resistance_mohm',
     'manual_initial_input_mohm'
 )
 
 
 def run_sweep_extraction(
-        input_nwb_file, 
-        stimulus_ontology_file, 
+        input_nwb_file,
+        stimulus_ontology_file,
         input_manual_values=None
 ):
     """
     Parameters
     ----------
     input_nwb_file
-    input_h5_file
     stimulus_ontology_file
     input_manual_values
 
@@ -79,7 +78,7 @@ def run_sweep_extraction(
 def main():
     """
     Usage:
-    python run_sweep_extraction.py 
+    python run_sweep_extraction.py
         --input_json INPUT_JSON --output_json OUTPUT_JSON
 
     """
