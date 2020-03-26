@@ -40,7 +40,6 @@ def main():
     #   reading back from disk
     pipe_input = ju.read(input_json)
     pipe_output = run_pipeline(pipe_input["input_nwb_file"],
-                          pipe_input.get("input_h5_file", None),
                           pipe_input["output_nwb_file"],
                           pipe_input.get("stimulus_ontology_file", None),
                           pipe_input.get("qc_fig_dir",None),

@@ -13,9 +13,6 @@ def generate_se_input(cell_dir,
 
     if specimen_id:
         input_nwb_file = lq.get_input_nwb_file(specimen_id)
-        input_h5_file = lq.get_input_h5_file(specimen_id)
-        if input_h5_file:
-            se_input['input_h5_file'] = input_h5_file
 
     se_input['input_nwb_file'] = input_nwb_file
 

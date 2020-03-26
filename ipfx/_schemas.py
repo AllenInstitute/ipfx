@@ -65,7 +65,6 @@ class FeatureExtractionParameters(ArgSchema):
 
 class SweepExtractionParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
-    input_h5_file = InputFile(description="input h5 file", required=False)
     stimulus_ontology_file = OutputFile(
         description="stimulus ontology JSON", required=False
     )
@@ -103,7 +102,6 @@ class ManualSweepState(DefaultSchema):
 class PipelineParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
     stimulus_ontology_file = OutputFile(description="blash", required=False)
-    input_h5_file = InputFile(desription="input h5 file", required=False)
     output_nwb_file = OutputFile(description="output nwb file", required=True)
     qc_fig_dir = OutputFile(
         description="output qc figure directory", required=False
