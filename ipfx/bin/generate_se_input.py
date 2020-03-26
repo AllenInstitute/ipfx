@@ -16,12 +16,8 @@ def generate_se_input(cell_dir,
 
     se_input['input_nwb_file'] = input_nwb_file
 
-    stim_ontology_json = os.path.join(cell_dir, 'stimulus_ontology.json')
-
     if not os.path.exists(cell_dir):
         os.makedirs(cell_dir)
-
-    se_input["stimulus_ontology_file"] = stim_ontology_json
 
     return se_input
 
