@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 
 from ipfx.sweep import Sweep, SweepSet
+from ipfx.stimulus import StimulusOntology
 
 class EphysDataSet(object):
 
@@ -37,8 +38,9 @@ class EphysDataSet(object):
             validate_stim=True, 
             deprecation_warning=False
     ):
+
         self.sweep_table = None
-        self.ontology = ontology
+        self.ontology = ontology or StimulusOntology.default()
         self.validate_stim = validate_stim
 
         if deprecation_warning:
