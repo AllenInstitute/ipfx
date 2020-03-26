@@ -9,9 +9,11 @@ import os
 import matplotlib.pyplot as plt
 from allensdk.api.queries.cell_types_api import CellTypesApi
 from ipfx.aibs_data_set import AibsDataSet
-from ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
+from ipfx.feature_extractor import (
+    SpikeFeatureExtractor, SpikeTrainFeatureExtractor
+)
 from ipfx.stimulus_protocol_analysis import ShortSquareAnalysis
-import ipfx.ephys_features as ft
+from ipfx.spike_features import estimate_adjusted_detection_parameters
 
 # download a specific experiment NWB file via AllenSDK
 ct = CellTypesApi()
@@ -24,16 +26,21 @@ sweep_info = ct.get_ephys_sweeps(specimen_id)
 
 # build a data set and find the short squares
 data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
-shsq_table = data_set.filtered_sweep_table(stimuli=data_set.ontology.short_square_names)
+shsq_table = data_set.filtered_sweep_table(
+    stimuli=data_set.ontology.short_square_names
+)
 shsq_sweep_set = data_set.sweep_set(shsq_table.sweep_number)
 
-# Estimate the dv cutoff and threshold fraction (we know stimulus starts at 0.27s)
-dv_cutoff, thresh_frac = ft.estimate_adjusted_detection_parameters(shsq_sweep_set.v,
-                                                                   shsq_sweep_set.t,
-                                                                   0.27, 0.271)
+# Estimate the dv cutoff and threshold fraction 
+# (we know stimulus starts at 0.27s)
+dv_cutoff, thresh_frac = estimate_adjusted_detection_parameters(
+    shsq_sweep_set.v, shsq_sweep_set.t, 0.27, 0.271
+)
 # Build the extractors 
 start = 0.27
-spx = SpikeExtractor(start=start, dv_cutoff=dv_cutoff, thresh_frac=thresh_frac)
+spx = SpikeFeatureExtractor(
+    start=start, dv_cutoff=dv_cutoff, thresh_frac=thresh_frac
+)
 sptrx = SpikeTrainFeatureExtractor(start=start, end=None)
 
 # Run the analysis
@@ -50,3 +57,5 @@ plt.xlim(0.265, 0.3)
 plt.xlabel("Time (s)")
 plt.ylabel("Membrane potential (mV)")
 plt.title("Lowest amplitude spiking sweeps")
+
+plt.show()

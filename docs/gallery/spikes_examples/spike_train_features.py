@@ -9,7 +9,7 @@ from __future__ import print_function
 import os
 from allensdk.api.queries.cell_types_api import CellTypesApi
 from ipfx.aibs_data_set import AibsDataSet
-from ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
+from ipfx.feature_extractor import SpikeFeatureExtractor, SpikeTrainFeatureExtractor
 
 # Download and access the experimental data
 ct = CellTypesApi()
@@ -28,7 +28,7 @@ sweep = dataset.sweep(sweep_number)
 
 # Extract information about the spikes
 start, end = 1.02, 2.02
-ext = SpikeExtractor(start=start, end=end)
+ext = SpikeFeatureExtractor(start=start, end=end)
 spikes_df = ext.process(t=sweep.t, v=sweep.v, i=sweep.i)
 
 st_ext = SpikeTrainFeatureExtractor(start=start, end=end)

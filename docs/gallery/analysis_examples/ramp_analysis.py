@@ -11,7 +11,9 @@ import numpy as np
 import seaborn as sns
 from allensdk.api.queries.cell_types_api import CellTypesApi
 from ipfx.aibs_data_set import AibsDataSet
-from ipfx.ephys_extractor import SpikeExtractor, SpikeTrainFeatureExtractor
+from ipfx.feature_extractor import (
+    SpikeFeatureExtractor, SpikeTrainFeatureExtractor
+)
 from ipfx.stimulus_protocol_analysis import RampAnalysis
 
 # download a specific experiment NWB file via AllenSDK
@@ -30,7 +32,7 @@ ramp_sweep_set = data_set.sweep_set(ramp_table.sweep_number)
 
 # Build the extractors (we know stimulus starts at 0.27 s)
 start = 0.27
-spx = SpikeExtractor(start=start, end=None)
+spx = SpikeFeatureExtractor(start=start, end=None)
 sptrx = SpikeTrainFeatureExtractor(start=start, end=None)
 
 # Run the analysis

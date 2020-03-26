@@ -6,8 +6,8 @@ Estimate spike detection parameters
 """
 
 from ipfx.aibs_data_set import AibsDataSet
-import ipfx.ephys_features as ft
-import ipfx.ephys_extractor as fx
+from ipfx.spike_features import estimate_adjusted_detection_parameters
+from ipfx.feature_extractor import SpikeFeatureExtractor
 
 from allensdk.api.queries.cell_types_api import CellTypesApi
 
@@ -29,14 +29,14 @@ ssq_table = data_set.filtered_sweep_table(stimuli=["Short Square"])
 ssq_set = data_set.sweep_set(ssq_table.sweep_number)
 
 # estimate the dv cutoff and threshold fraction
-dv_cutoff, thresh_frac = ft.estimate_adjusted_detection_parameters(ssq_set.v,
-                                                                   ssq_set.t,
-                                                                   1.02, 1.021)
+dv_cutoff, thresh_frac = estimate_adjusted_detection_parameters(
+    ssq_set.v, ssq_set.t, 1.02, 1.021
+)
 
 # detect spikes
 sweep_number = 16
 sweep = data_set.sweep(sweep_number)
-ext = fx.SpikeExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac)
+ext = SpikeFeatureExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac)
 spikes = ext.process(t=sweep.t, v=sweep.v, i=sweep.i)
 
 # and plot them

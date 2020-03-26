@@ -9,7 +9,7 @@ import os
 import matplotlib.pyplot as plt
 from allensdk.api.queries.cell_types_api import CellTypesApi
 from ipfx.aibs_data_set import AibsDataSet
-from ipfx.ephys_extractor import SpikeExtractor
+from ipfx.feature_extractor import SpikeFeatureExtractor
 
 # Download and access the experimental data
 ct = CellTypesApi()
@@ -27,7 +27,7 @@ sweep_number = 39
 sweep = dataset.sweep(sweep_number)
 
 # Configure the extractor to just detect spikes in the middle of the step
-ext = SpikeExtractor(start=1.25, end=1.75)
+ext = SpikeFeatureExtractor(start=1.25, end=1.75)
 results = ext.process(t=sweep.t, v=sweep.v, i=sweep.i)
 
 # Plot the results, showing two features of the detected spikes
@@ -44,6 +44,7 @@ plt.ylabel("Membrane potential (mV)")
 plt.axvline(1.25, linestyle="dotted", color="gray")
 plt.axvline(1.75, linestyle="dotted", color="gray")
 
+plt.show()
 
 ##################################
 # Link to the example data used here: http://celltypes.brain-map.org/experiment/electrophysiology/488679042

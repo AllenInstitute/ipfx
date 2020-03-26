@@ -9,7 +9,7 @@ from __future__ import print_function
 import os
 import pandas as pd
 from ipfx.aibs_data_set import AibsDataSet
-import ipfx.qc_features as qcf
+from ipfx.qc_feature_extractor import sweep_qc_features
 from allensdk.api.queries.cell_types_api import CellTypesApi
 
 
@@ -25,6 +25,6 @@ sweep_info = ct.get_ephys_sweeps(specimen_id)
 data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
 
 # run sweep QC
-sweep_features = qcf.sweep_qc_features(data_set)
+sweep_features = sweep_qc_features(data_set)
 
 print(pd.DataFrame(sweep_features).head())

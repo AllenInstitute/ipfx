@@ -8,8 +8,9 @@ from __future__ import print_function
 
 from builtins import str
 from ipfx.aibs_data_set import AibsDataSet
-import ipfx.ephys_features as ft
-import ipfx.ephys_extractor as efex
+from ipfx.feature_extractor import (
+    SpikeFeatureExtractor, SpikeTrainFeatureExtractor
+)
 import ipfx.stimulus_protocol_analysis as spa
 
 from allensdk.api.queries.cell_types_api import CellTypesApi
@@ -32,8 +33,8 @@ lsq_table = data_set.filtered_sweep_table(stimuli=data_set.ontology.long_square_
 lsq_set = data_set.sweep_set(lsq_table.sweep_number)
 
 # build the extractors
-spx = efex.SpikeExtractor(start=0.27, end=1.27)
-spfx = efex.SpikeTrainFeatureExtractor(start=0.27, end=1.27)
+spx = SpikeFeatureExtractor(start=0.27, end=1.27)
+spfx = SpikeTrainFeatureExtractor(start=0.27, end=1.27)
 
 # run the analysis and print out a few of the features
 lsqa = spa.LongSquareAnalysis(spx, spfx, subthresh_min_amp=-100.0)
