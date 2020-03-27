@@ -7,7 +7,6 @@ Detect ramp features
 
 import os
 import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
 from allensdk.api.queries.cell_types_api import CellTypesApi
 from ipfx.aibs_data_set import AibsDataSet
@@ -27,7 +26,9 @@ sweep_info = ct.get_ephys_sweeps(specimen_id)
 
 # Build the data set and find the ramp sweeps
 data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
-ramp_table = data_set.filtered_sweep_table(stimuli=data_set.ontology.ramp_names)
+ramp_table = data_set.filtered_sweep_table(
+    stimuli=data_set.ontology.ramp_names
+)
 ramp_sweep_set = data_set.sweep_set(ramp_table.sweep_number)
 
 # Build the extractors (we know stimulus starts at 0.27 s)
@@ -49,3 +50,5 @@ sns.rugplot(results["spiking_sweeps"]["latency"].values + start)
 plt.xlim(0, 11)
 plt.xlabel("Time (s)")
 plt.ylabel("Membrane potential (mV)")
+
+plt.show()

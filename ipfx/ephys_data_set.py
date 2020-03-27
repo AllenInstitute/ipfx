@@ -265,7 +265,8 @@ class EphysDataSet(object):
             sweep_end_idx = len(response)-1
 
         if recording_end_idx < sweep_end_idx:
-            response[recording_end_idx+1:] = np.nan
+            sweep_data["response"] = response[:recording_end_idx+1]
+            sweep_data["stimulus"] = sweep_data["stimulus"][:recording_end_idx+1]
 
         return sweep_data
 

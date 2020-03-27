@@ -68,4 +68,3 @@ plt.xlabel('Stimulus amplitude (pA)')
 plt.ylabel('Average firing rate (Hz)')
 
 plt.show()
-
