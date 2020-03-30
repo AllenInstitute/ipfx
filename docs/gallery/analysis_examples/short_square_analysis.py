@@ -53,7 +53,7 @@ for i, swp in enumerate(shsq_sweep_set.sweeps):
         plt.plot(swp.t, swp.v, linewidth=0.5, color="steelblue")
 
 # Set the plot limits to highlight where spikes are and axis labels
-plt.xlim(0.265, 0.3)
+plt.xlim(1.0, 1.15)
 plt.xlabel("Time (s)")
 plt.ylabel("Membrane potential (mV)")
 plt.title("Lowest amplitude spiking sweeps")
