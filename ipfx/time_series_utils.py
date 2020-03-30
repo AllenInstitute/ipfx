@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import scipy.signal as signal
 
@@ -48,12 +50,12 @@ def calculate_dvdt(v, t, filter=None):
         dv = np.diff(v)
 
     dt = np.diff(t)
-    dvdt = 1e-3 * dv / dt # in V/s = mV/ms
+    dvdt =  1e-3 * dv / dt # in V/s = mV/ms
 
-    # Remove nan values (in case any dt values == 0)
-    dvdt = dvdt[~np.isnan(dvdt)]
+    # some data sources, such as neuron, occasionally report 
+    # duplicate timestamps, so we require that dt is not 0
+    return dvdt[np.fabs(dt) > sys.float_info.epsilon]
 
-    return dvdt
 
 def has_fixed_dt(t):
     """Check that all time intervals are identical."""
