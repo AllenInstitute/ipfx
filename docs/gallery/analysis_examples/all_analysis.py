@@ -7,12 +7,21 @@ Run all analyses on NWB file
 from __future__ import print_function
 
 import os
-import matplotlib.pyplot as plt
+import warnings
+
 import numpy as np
-import seaborn as sns
+
 from allensdk.api.queries.cell_types_api import CellTypesApi
-from ipfx.aibs_data_set import AibsDataSet
+from ipfx.data_set_utils import create_data_set
 from ipfx.data_set_features import extract_data_set_features
+
+warnings.filterwarnings(
+    "ignore", category=np.VisibleDeprecationWarning,
+    message=(
+        "NWB1 support is deprecated for ipfx 1.0.0, but we will release an "
+        "NWB2 version of the data used in this example."
+    )
+)
 
 # download a specific experiment NWB file via AllenSDK
 ct = CellTypesApi()
@@ -29,7 +38,7 @@ sweep_info = [
     if sweep["stimulus_name"] != "Test"
 ]
 
-data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
+data_set = create_data_set(sweep_info=sweep_info, nwb_file=nwb_file)
 
 cell_features, sweep_features, cell_record, sweep_records = \
     extract_data_set_features(data_set, subthresh_min_amp=-100.0)

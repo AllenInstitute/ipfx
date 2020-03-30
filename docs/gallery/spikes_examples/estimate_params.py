@@ -5,7 +5,7 @@ Estimate Spike Detection Parameters
 Estimate spike detection parameters
 """
 
-from ipfx.aibs_data_set import AibsDataSet
+from ipfx.data_set_utils import create_data_set
 from ipfx.spike_features import estimate_adjusted_detection_parameters
 from ipfx.feature_extractor import SpikeFeatureExtractor
 
@@ -24,7 +24,7 @@ if not os.path.exists(nwb_file):
     ct.save_ephys_data(specimen_id, nwb_file)
 
 # build a data set and find the short squares
-data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
+data_set = create_data_set(sweep_info=sweep_info, nwb_file=nwb_file)
 ssq_table = data_set.filtered_sweep_table(stimuli=["Short Square"])
 ssq_set = data_set.sweep_set(ssq_table.sweep_number)
 
@@ -43,7 +43,7 @@ spikes = ext.process(t=sweep.t, v=sweep.v, i=sweep.i)
 plt.plot(sweep.t, sweep.v)
 plt.plot(spikes["peak_t"], spikes["peak_v"], 'r.')
 plt.plot(spikes["threshold_t"], spikes["threshold_v"], 'k.')
-plt.xlim(1.018,1.028)
+plt.xlim(1.018, 1.028)
 plt.xlabel('Time (s)')
 plt.ylabel('Membrane potential (mV)')
 plt.show()

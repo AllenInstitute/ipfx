@@ -9,7 +9,7 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 from allensdk.api.queries.cell_types_api import CellTypesApi
-from ipfx.aibs_data_set import AibsDataSet
+from ipfx.data_set_utils import create_data_set
 from ipfx.feature_extractor import (
     SpikeFeatureExtractor, SpikeTrainFeatureExtractor
 )
@@ -25,7 +25,7 @@ if not os.path.exists(nwb_file):
 sweep_info = ct.get_ephys_sweeps(specimen_id)
 
 # Build the data set and find the ramp sweeps
-data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
+data_set = create_data_set(sweep_info=sweep_info, nwb_file=nwb_file)
 ramp_table = data_set.filtered_sweep_table(
     stimuli=data_set.ontology.ramp_names
 )

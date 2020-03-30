@@ -4,7 +4,7 @@ Long Square Analysis
 
 Detect Long Square Features
 """
-from ipfx.aibs_data_set import AibsDataSet
+from ipfx.data_set_utils import create_data_set
 from ipfx.feature_extractor import (
     SpikeFeatureExtractor, SpikeTrainFeatureExtractor
 )
@@ -26,7 +26,7 @@ if not os.path.exists(nwb_file):
 sweep_info = ct.get_ephys_sweeps(specimen_id)
 
 # build a data set and find the long squares
-data_set = AibsDataSet(sweep_info=sweep_info, nwb_file=nwb_file)
+data_set = create_data_set(sweep_info=sweep_info, nwb_file=nwb_file)
 lsq_table = data_set.filtered_sweep_table(
     stimuli=data_set.ontology.long_square_names
 )
