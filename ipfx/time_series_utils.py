@@ -50,7 +50,7 @@ def calculate_dvdt(v, t, filter=None):
         dv = np.diff(v)
 
     dt = np.diff(t)
-    dvdt =  1e-3 * dv / dt # in V/s = mV/ms
+    dvdt = 1e-3 * dv / dt  # in V/s = mV/ms
 
     # some data sources, such as neuron, occasionally report 
     # duplicate timestamps, so we require that dt is not 0
