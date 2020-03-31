@@ -5,20 +5,26 @@ All Analysis
 Run all analyses on NWB file
 """
 import os
+
 from allensdk.api.queries.cell_types_api import CellTypesApi
 from ipfx.data_set_utils import create_data_set
 from ipfx.data_set_features import extract_data_set_features
 
-# download a specific experiment NWB file via AllenSDK
+# Download and access the experimental data
 ct = CellTypesApi()
-
+nwb_file = os.path.join(
+    os.path.dirname(os.getcwd()), 
+    "data",
+    "nwb2_H17.03.008.11.03.05.nwb"
+)
 specimen_id = 595570553
-nwb_file = "%d.nwb" % specimen_id
-if not os.path.exists(nwb_file):
-    ct.save_ephys_data(specimen_id, nwb_file)
-
-# Download extracted sweeps, excluding any without a proper stimulus presented
 sweep_info = ct.get_ephys_sweeps(specimen_id)
+sweep_info = [
+    sweep for sweep in sweep_info 
+    if sweep["stimulus_name"] != "Test"
+]
+
+# remove test sweeps
 sweep_info = [
     sweep for sweep in sweep_info 
     if sweep["stimulus_name"] != "Test"

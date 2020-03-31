@@ -16,15 +16,15 @@ from ipfx.stimulus_protocol_analysis import ShortSquareAnalysis
 from ipfx.spike_features import estimate_adjusted_detection_parameters
 from ipfx.epochs import get_stim_epoch
 
-# download a specific experiment NWB file via AllenSDK
+# Download and access the experimental data
 ct = CellTypesApi()
-
+nwb_file = os.path.join(
+    os.path.dirname(os.getcwd()), 
+    "data",
+    "nwb2_H17.03.008.11.03.05.nwb"
+)
 specimen_id = 595570553
-nwb_file = "%d.nwb" % specimen_id
-if not os.path.exists(nwb_file):
-    ct.save_ephys_data(specimen_id, nwb_file)
 sweep_info = ct.get_ephys_sweeps(specimen_id)
-
 # build a data set and find the short squares
 data_set = create_data_set(sweep_info=sweep_info, nwb_file=nwb_file)
 shsq_table = data_set.filtered_sweep_table(
@@ -66,6 +66,5 @@ plt.xlim(stim_start_time - 0.05, stim_end_time + 0.05)
 plt.xlabel("Time (s)")
 plt.ylabel("Membrane potential (mV)")
 plt.title("Lowest amplitude spiking sweeps")
-
 
 plt.show()
