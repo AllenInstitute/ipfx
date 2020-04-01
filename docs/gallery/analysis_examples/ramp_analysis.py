@@ -24,7 +24,6 @@ nwb_file = os.path.join(
     "data",
     "nwb2_H17.03.008.11.03.05.nwb"
 )
-raise ValueError(nwb_file)
 specimen_id = 595570553
 sweep_info = ct.get_ephys_sweeps(specimen_id)
 

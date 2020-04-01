@@ -6,3 +6,4 @@ pandas
 scipy
 numpy
 allensdk
+git-lfs<2.0.0

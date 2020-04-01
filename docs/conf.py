@@ -31,6 +31,12 @@ project_root = os.path.dirname(cwd)
 # version is used.
 sys.path.insert(0, project_root)
 
+# readthedocs does not support git lfs, so we have to fetch manually
+if os.environ.get("READTHEDOCS", "False") == "True":
+    import git_lfs
+    git_lfs.fetch(project_root)
+
+
 import ipfx
 
 # -- General configuration ---------------------------------------------
