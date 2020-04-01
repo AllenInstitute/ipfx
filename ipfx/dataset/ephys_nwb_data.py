@@ -1,4 +1,4 @@
-from typing import Dict, Any, Tuple, Optional, Sequence
+from typing import Dict, Any, Tuple, Optional, Sequence, Callable
 import warnings
 
 import numpy as np
@@ -77,20 +77,26 @@ class EphysNWBData(EphysDataInterface):
         nwb_file: NWB file path or hdf5 obj
         load_into_memory: whether using load_into_memory approach to load NWB
         """
+
         self.nwb_file = nwb_file
         if isinstance(nwb_file, str):
             if load_into_memory:
                 with open(nwb_file, 'rb') as fh:
                     data = BytesIO(fh.read())
                 _h5_file = h5py.File(data, "r")
-                self.nwb = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file).read()
+                reader = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file)
             else:
-                self.nwb = NWBHDF5IO(nwb_file, mode='r').read()
+                reader = NWBHDF5IO(nwb_file, mode='r')
         elif isinstance(nwb_file, BytesIO):
             _h5_file = h5py.File(nwb_file, "r")
-            self.nwb = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file).read()
+            reader = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file)
         else:
             raise TypeError("Invalid input NWB file (only accept NWB filepath or hdf5 obj)!")
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.nwb = reader.read()
+
 
     def _get_series(self, sweep_number: int,
                     series_class: Tuple[PatchClampSeries]):
@@ -282,6 +288,3 @@ class EphysNWBData(EphysDataInterface):
         valid_SI_units = ["Volts", "Amps"]
         if unit not in valid_SI_units:
             raise ValueError(F"Unit {unit} is not among the valid SI units {valid_SI_units}")
-
-
-

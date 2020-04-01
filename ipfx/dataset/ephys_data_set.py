@@ -56,20 +56,24 @@ class EphysDataSet(object):
 
         """
         if not hasattr(self, "_sweep_table"):
+            sweeps: List[Dict] = []
+            for num in self._data.sweep_numbers:
+                current = self._data.get_sweep_metadata(num)
 
-            if not self._sweep_info:
-                self._sweep_table = pd.DataFrame([
-                    self._data.get_sweep_metadata(num)
-                    for num in self._data.sweep_numbers
-                ])
-            else:
-                self._sweep_table = pd.DataFrame(self._sweep_info)
+                if self._sweep_info:
+                    info = self._sweep_info.get(num, None)
+                    if info is None:
+                        continue
+                    current.update(info)
+                sweeps.append(current)
+
+            self._sweep_table = pd.DataFrame(sweeps)
         return self._sweep_table
 
     def __init__(
             self,
             data: EphysDataInterface,
-            sweep_info: Optional[Dict] = None
+            sweep_info: Optional[List[Dict]] = None
     ):
         """EphysDataSet is the preferred interface for running analyses or 
         pipeline code.
@@ -80,11 +84,13 @@ class EphysDataSet(object):
             handle any loading of data from external sources (such as NWB2 
             files)
         """
-        if sweep_info is None:
-            sweep_info = {}
+        sweep_info = sweep_info or []
 
         self._data: EphysDataInterface = data
-        self._sweep_info = sweep_info
+
+        self._sweep_info: Dict = {}
+        for sweep in sweep_info:
+            self._sweep_info[sweep["sweep_number"]] = sweep
 
     def _setup_stimulus_repeat_lookup(self):
         """Each sweep contains the ith repetition of some stimulus (from 1 -> 
@@ -209,7 +215,7 @@ class EphysDataSet(object):
         sweep: Sweep object
         """
 
-        sweep_data = self._data.get_sweep_data(sweep_number)
+        sweep_data = self.get_sweep_data(sweep_number)
         sweep_metadata = self._data.get_sweep_metadata(sweep_number)
 
         time = np.arange(
@@ -218,7 +224,7 @@ class EphysDataSet(object):
 
         voltage, current = type(self)._voltage_current(
             sweep_data["stimulus"],
-            _nan_trailing_zeros(sweep_data["response"]), 
+            sweep_data["response"], 
             sweep_metadata["clamp_mode"], 
             enforce_equal_length=True,
         )
@@ -296,7 +302,18 @@ class EphysDataSet(object):
             }
         """
         sweep_data = cp.copy(self._data.get_sweep_data(sweep_number))
-        sweep_data["response"] = _nan_trailing_zeros(sweep_data["response"])
+
+        response = sweep_data['response']
+
+        nonzero = np.flatnonzero(response)
+        if len(nonzero) == 0:
+            recording_end_idx = 0
+        else:
+            recording_end_idx = nonzero[-1] + 1
+
+        sweep_data["response"] = response[:recording_end_idx]
+        sweep_data["stimulus"] = sweep_data["stimulus"][:recording_end_idx]
+
         return sweep_data
 
     def get_clamp_mode(self, sweep_number: int) -> str:
@@ -405,22 +422,3 @@ class EphysDataSet(object):
             )
 
         return voltage, current
-
-
-def _nan_trailing_zeros(
-        array: np.ndarray, 
-        inplace: bool = False
-) -> np.ndarray:
-    """If an array ends with one or more zeros, replace those zeros with 
-    np.nan
-    """
-
-    if not inplace:
-        array = array.copy()
-
-    nonzero = np.flatnonzero(array)
-    if len(nonzero) == 0 or nonzero[-1] + 1 >= len(array):
-        return array
-
-    array[nonzero[-1] + 1:] = np.nan
-    return array
