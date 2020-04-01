@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from allensdk.api.queries.cell_types_api import CellTypesApi
 from ipfx.data_set_utils import create_data_set
+from ipfx.epochs import get_stim_epoch
 from ipfx.feature_extractor import (
     SpikeFeatureExtractor, SpikeTrainFeatureExtractor
 )
@@ -29,25 +30,29 @@ data_set = create_data_set(sweep_info=sweep_info, nwb_file=nwb_file)
 ramp_table = data_set.filtered_sweep_table(
     stimuli=data_set.ontology.ramp_names
 )
-ramp_sweep_set = data_set.sweep_set(ramp_table.sweep_number)
+ramp_sweeps = data_set.sweep_set(ramp_table.sweep_number)
 
-# Build the extractors (we know stimulus starts at 0.27 s)
-start = 0.27
-spx = SpikeFeatureExtractor(start=start, end=None)
-sptrx = SpikeTrainFeatureExtractor(start=start, end=None)
+# find the start and end time of the stimulus 
+# (treating the first sweep as representative)
+stim_start_index, stim_end_index = get_stim_epoch(ramp_sweeps.i[0])
+stim_start_time = ramp_sweeps.t[0][stim_start_index]
+stim_end_time = ramp_sweeps.t[0][stim_end_index]
+
+spx = SpikeFeatureExtractor(start=stim_start_time, end=None)
+sptrx = SpikeTrainFeatureExtractor(start=stim_start_time, end=None)
 
 # Run the analysis
 ramp_analysis = RampAnalysis(spx, sptrx)
-results = ramp_analysis.analyze(ramp_sweep_set)
+results = ramp_analysis.analyze(ramp_sweeps)
 
 # Plot the sweeps and the latency to the first spike of each
 sns.set_style("white")
-for swp in ramp_sweep_set.sweeps:
+for swp in ramp_sweeps.sweeps:
     plt.plot(swp.t, swp.v, linewidth=0.5)
-sns.rugplot(results["spiking_sweeps"]["latency"].values + start)
+sns.rugplot(results["spiking_sweeps"]["latency"].values + stim_start_time)
 
 # Set the plot limits to highlight where spikes are and axis labels
-plt.xlim(0, 11)
+plt.xlim(stim_start_time, stim_end_time)
 plt.xlabel("Time (s)")
 plt.ylabel("Membrane potential (mV)")
 

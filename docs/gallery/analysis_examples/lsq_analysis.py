@@ -33,8 +33,7 @@ lsq_table = data_set.filtered_sweep_table(
 lsq_set = data_set.sweep_set(lsq_table.sweep_number)
 
 # find the start and end time of the stimulus 
-# (in this case, this is the same across long-square sweeps, 
-# so we'll just use the first)
+# (treating the first sweep as representative)
 stim_start_index, stim_end_index = get_stim_epoch(lsq_set.i[0])
 stim_start_time = lsq_set.t[0][stim_start_index]
 stim_end_time = lsq_set.t[0][stim_end_index]
