@@ -51,7 +51,7 @@ sphinx_gallery_conf = {
     # path where to save gallery generated examples
     'gallery_dirs'  : [ './auto_examples' ],
     'filename_pattern': '/.*py',
-    'backreferences_dir': False}
+    'backreferences_dir': None}
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -116,7 +116,7 @@ pygments_style = 'sphinx'
 
 # If true, keep warnings as "system message" paragraphs in the built
 # documents.
-#keep_warnings = False
+keep_warnings = True
 
 
 # -- Options for HTML output -------------------------------------------
