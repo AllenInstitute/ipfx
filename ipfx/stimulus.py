@@ -28,7 +28,8 @@ class StimulusOntology(object):
 
     DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(
         os.path.dirname(__file__), 
-        'defaults/stimulus_ontology.json'
+        "defaults",
+        "stimulus_ontology.json"
     )
 
     def __init__(self, stim_ontology_tags=None):
