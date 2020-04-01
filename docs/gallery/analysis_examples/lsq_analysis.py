@@ -4,12 +4,12 @@ Long Square Analysis
 
 Detect Long Square Features
 """
+import ipfx.stimulus_protocol_analysis as spa
+from ipfx.epochs import get_stim_epoch
 from ipfx.data_set_utils import create_data_set
 from ipfx.feature_extractor import (
     SpikeFeatureExtractor, SpikeTrainFeatureExtractor
 )
-import ipfx.stimulus_protocol_analysis as spa
-from ipfx.epochs import get_stim_epoch
 
 from allensdk.api.queries.cell_types_api import CellTypesApi
 

@@ -84,7 +84,5 @@ def main():
     make_default_stimulus_ontology()
 
 
-if __name__== "__main__": main()
-
-
-
+if __name__== "__main__": 
+    main()

@@ -36,10 +36,7 @@
 import pytest
 import ipfx.spike_features as spkf
 import numpy as np
-import os
 import ipfx.error as er
-
-path = os.path.dirname(__file__)
 
 
 def test_width_calculation(spike_test_pair):
@@ -51,7 +48,10 @@ def test_width_calculation(spike_test_pair):
     troughs = np.array([1089, 3741])
 
     expected_widths = np.array([0.000545, 0.000585])
-    assert np.allclose(spkf.find_widths(v, t, spikes, peaks, troughs), expected_widths)
+    assert np.allclose(
+        spkf.find_widths(v, t, spikes, peaks, troughs), 
+        expected_widths
+    )
 
 
 def test_width_calculation_too_many_troughs(spike_test_pair):
@@ -64,9 +64,3 @@ def test_width_calculation_too_many_troughs(spike_test_pair):
 
     with pytest.raises(er.FeatureError):
         spkf.find_widths(v, t, spikes, peaks, troughs)
-
-
-@pytest.mark.skipif(True, reason="not implemented")
-def test_width_calculation_with_burst():
-    # example sp 487663469, sweep 43
-    pass

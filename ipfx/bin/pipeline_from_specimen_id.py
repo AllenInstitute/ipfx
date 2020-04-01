@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import allensdk.core.json_utilities as ju
 import sys
 import os.path
@@ -25,7 +24,7 @@ def main():
     specimen_id = sys.argv[1]
     cell_name = specimen_id
 
-    cell_dir = os.path.join(OUTPUT_DIR,cell_name)
+    cell_dir = os.path.join(OUTPUT_DIR, cell_name)
 
     if not os.path.exists(cell_dir):
         os.makedirs(cell_dir)
@@ -41,7 +40,6 @@ def main():
     #   reading back from disk
     pipe_input = ju.read(input_json)
     pipe_output = run_pipeline(pipe_input["input_nwb_file"],
-                          pipe_input.get("input_h5_file", None),
                           pipe_input["output_nwb_file"],
                           pipe_input.get("stimulus_ontology_file", None),
                           pipe_input.get("qc_fig_dir",None),

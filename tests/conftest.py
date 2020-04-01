@@ -21,17 +21,23 @@ def load_array_from_zip_file(zip_file, file_name):
 
 @pytest.fixture()
 def spike_test_pair():
-    return load_array_from_zip_file("spike_test_pair.txt.zip", "spike_test_pair.txt")
+    return load_array_from_zip_file(
+        "spike_test_pair.txt.zip", "spike_test_pair.txt"
+    )
 
 
 @pytest.fixture()
 def spike_test_var_dt():
-    return load_array_from_zip_file("spike_test_var_dt.txt.zip", "spike_test_var_dt.txt")
+    return load_array_from_zip_file(
+        "spike_test_var_dt.txt.zip", "spike_test_var_dt.txt"
+    )
 
 
 @pytest.fixture()
 def spike_test_high_init_dvdt():
-    return load_array_from_zip_file("spike_test_high_init_dvdt.txt.zip", "spike_test_high_init_dvdt.txt")
+    return load_array_from_zip_file(
+        "spike_test_high_init_dvdt.txt.zip", "spike_test_high_init_dvdt.txt"
+    )
 
 
 @pytest.fixture()
@@ -63,7 +69,9 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    config.addinivalue_line("markers", "xnwbtest: mark test as part of NWB conversion set")
+    config.addinivalue_line(
+        "markers", "xnwbtest: mark test as part of NWB conversion set"
+    )
 
 
 _timeout_seconds = float(os.environ.get("IPFX_TEST_TIMEOUT", "0.0"))
@@ -74,9 +82,8 @@ def timeout_seconds():
 
 def pytest_collection_modifyitems(config, items):
     """
-    A pytest magic function. This function is called post-collection and gives us a hook for modifying the
-    collected items.
-
+    A pytest magic function. This function is called post-collection and gives 
+    us a hook for modifying the collected items.
     """
 
     skip_requires_lims = pytest.mark.skipif(
@@ -95,9 +102,18 @@ def pytest_collection_modifyitems(config, items):
         reason='depend on resources internal to the Allen Institute.'
     )
 
+    skip_download = pytest.mark.skipif(
+        os.getenv("ALLOW_TEST_DOWNLOADS", "false") != "true",
+        reason=(
+            "required to opt in to potentially flaky file-downloading tests"
+        )
+    )
+
     skip_timeout = pytest.mark.skipif(
         abs(_timeout_seconds) <= sys.float_info.epsilon,
-        reason="This test has a timeout (s) and this timeout was set to 0 seconds"
+        reason=(
+            "This test has a timeout (s) and this timeout was set to 0 seconds"
+        )
     )
 
     for item in items:
@@ -105,10 +121,13 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_requires_lims)
 
         if "xnwbtest" in item.keywords:
-           item.add_marker(skip_xnwb)
+            item.add_marker(skip_xnwb)
 
         if "requires_inhouse_data" in item.keywords:
             item.add_marker(skip_internal)
+
+        if "downloads_file" in item.keywords:
+            item.add_marker(skip_download)
 
         if "timeout_seconds" in item.fixturenames:
             item.add_marker(skip_timeout)

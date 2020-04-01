@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import os
 from ipfx.bin.run_sweep_extraction import run_sweep_extraction
 from ipfx.bin.generate_se_input import generate_se_input, parse_args
@@ -75,7 +74,6 @@ def main():
     ju.write(os.path.join(cell_dir,'se_input.json'), se_input)
 
     se_output = run_sweep_extraction(se_input["input_nwb_file"],
-                                     se_input.get("input_h5_file",None),
                                      se_input.get("stimulus_ontology_file", None))
 
     ju.write(os.path.join(cell_dir,'se_output.json'),se_output)

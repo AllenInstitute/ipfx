@@ -59,8 +59,6 @@ def test_mies_nwb_pipeline_output(input_json, output_json, tmpdir_factory):
     -------
 
     """
-    print((input_json, output_json))
-
     pipeline_input = ju.read(input_json)
     test_dir = str(tmpdir_factory.mktemp("test_mies_nwb2_specimens"))
 
@@ -71,18 +69,17 @@ def test_mies_nwb_pipeline_output(input_json, output_json, tmpdir_factory):
     if stimulus_ontology_file is not None:
         stimulus_ontology_file = rebase(test_dir, stimulus_ontology_file, True)
 
-    obtained = run_pipeline(pipeline_input["input_nwb_file"],
-                                        pipeline_input.get("input_h5_file", None),
-                                        pipeline_input["output_nwb_file"],
-                                        stimulus_ontology_file,
-                                        pipeline_input["qc_figs_dir"],
-                                        pipeline_input["qc_criteria"],
-                                        pipeline_input["manual_sweep_states"])
-    print(type(obtained))
+    obtained = run_pipeline(
+        pipeline_input["input_nwb_file"],
+        pipeline_input["output_nwb_file"],
+        stimulus_ontology_file,
+        pipeline_input["qc_figs_dir"],
+        pipeline_input["qc_criteria"],
+        pipeline_input["manual_sweep_states"]
+    )
+
     ju.write(os.path.join(test_dir, 'pipeline_output.json'), obtained)
     obtained = ju.read(os.path.join(test_dir, 'pipeline_output.json'))
-    print(type(obtained))
-#    assert 0
     expected = ju.read(output_json)
 
     output_diff = list(diff(expected, obtained, tolerance=0.001))

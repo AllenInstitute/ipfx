@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import numpy as np
 import logging
 from . import time_series_utils as tsu

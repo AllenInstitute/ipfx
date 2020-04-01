@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 # Allen Institute Software License - This software license is the 2-clause BSD
 # license plus a third clause that prohibits redistribution for commercial
 # purposes without further permission.
@@ -36,15 +35,12 @@ from __future__ import absolute_import
 #
 import numpy as np
 from pandas import DataFrame
-import warnings
-import logging
+
 from . import spike_features as spkf
 from . import subthresh_features as subf
 from . import spike_detector as spkd
 from . import spike_train_features as strf
-import six
 from . import time_series_utils as tsu
-from . import error as er
 
 
 class SpikeFeatureExtractor(object):

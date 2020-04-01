@@ -3,10 +3,12 @@
 import os
 import argparse
 import logging
-log = logging.getLogger(__name__)
 
 from ipfx.x_to_nwb.ABFConverter import ABFConverter
 from ipfx.x_to_nwb.DatConverter import DatConverter
+
+
+log = logging.getLogger(__name__)
 
 
 def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False, outputFeedbackChannel=False, multipleGroupsPerFile=False, compression=True):

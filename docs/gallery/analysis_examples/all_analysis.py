@@ -4,10 +4,7 @@ All Analysis
 
 Run all analyses on NWB file
 """
-from __future__ import print_function
-
 import os
-
 from allensdk.api.queries.cell_types_api import CellTypesApi
 from ipfx.data_set_utils import create_data_set
 from ipfx.data_set_features import extract_data_set_features
