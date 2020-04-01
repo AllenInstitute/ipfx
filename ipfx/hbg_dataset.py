@@ -1,8 +1,12 @@
-import pandas as pd
-import numpy as np
+from typing import Dict, Any
 import logging
 import warnings
+
+import pandas as pd
+import numpy as np
+
 import ipfx.nwb_reader as nwb_reader
+import ipfx.lab_notebook_reader as lab_notebook_reader
 
 from .ephys_data_set import EphysDataSet
 
@@ -28,44 +32,34 @@ class HBGDataSet(EphysDataSet):
         self.build_sweep_table(sweep_info, deprecation_warning=False)
 
 
+    def extract_sweep_record(self, sweep_num: int) -> Dict[str, Any]:
+        attrs = self.nwb_data.get_sweep_attrs(sweep_num)
+
+        sweep_record = {
+            "sweep_number": sweep_num,
+            "stimulus_units": self.get_stimulus_units(sweep_num),
+            "bridge_balance_mohm": get_finite_or_none(attrs, "bridge_balance"),
+            "leak_pa": get_finite_or_none(attrs, "bias_current"),
+            "stimulus_scale_factor": get_finite_or_none(attrs, "gain"),
+            "stimulus_code": self.get_stimulus_code(sweep_num),
+            "stimulus_code_ext": self.get_stimulus_code_ext(sweep_num)
+        }
+
+        if self.ontology:
+            sweep_record["stimulus_name"] = self.get_stimulus_name(sweep_record["stimulus_code"])
+
+        return sweep_record
+
+
     def extract_sweep_stim_info(self):
 
         logging.debug("Build sweep table")
 
         sweep_info = []
 
-        def get_finite_or_none(d, key):
-
-            try:
-                value = d[key]
-            except KeyError:
-                return None
-
-            if np.isnan(value):
-                return None
-
-            return value
-
-        for index, sweep_map in self._nwb_data.sweep_map_table.iterrows():
-            sweep_record = {}
+        for index, sweep_map in self.nwb_data.sweep_map_table.iterrows():
             sweep_num = sweep_map["sweep_number"]
-            sweep_record["sweep_number"] = sweep_num
-
-            attrs = self._nwb_data.get_sweep_attrs(sweep_num)
-
-            sweep_record["stimulus_units"] = self.get_stimulus_units(sweep_num)
-
-            sweep_record["bridge_balance_mohm"] = get_finite_or_none(attrs, "bridge_balance")
-            sweep_record["leak_pa"] = get_finite_or_none(attrs, "bias_current")
-            sweep_record["stimulus_scale_factor"] = get_finite_or_none(attrs, "gain")
-
-            sweep_record["stimulus_code"] = self.get_stimulus_code(sweep_num)
-            sweep_record["stimulus_code_ext"] = self.get_stimulus_code_ext(sweep_num)
-
-            if self.ontology:
-                sweep_record["stimulus_name"] = self.get_stimulus_name(sweep_record["stimulus_code"])
-
-            sweep_info.append(sweep_record)
+            sweep_info.append(self.extract_sweep_record(sweep_num))
 
         return sweep_info
 
@@ -100,3 +94,16 @@ class HBGDataSet(EphysDataSet):
 
     def get_recording_date(self):
         return self._nwb_data.get_recording_date()
+
+
+def get_finite_or_none(d, key):
+
+    try:
+        value = d[key]
+    except KeyError:
+        return None
+
+    if np.isnan(value):
+        return None
+
+    return value

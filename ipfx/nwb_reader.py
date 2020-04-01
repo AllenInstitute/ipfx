@@ -34,6 +34,9 @@ def get_scalar_value(dataset_from_nwb):
 
 class NwbReader(object):
 
+
+    SCALAR_ATTRS = ["bias_current", "stimulus_scale_factor", "bridge_balance", "stimulus_scale_factor"]
+
     def __init__(self, nwb_file, load_into_memory=True):
         if load_into_memory:
             with open(nwb_file, 'rb') as fh:
@@ -125,7 +128,6 @@ class NwbReader(object):
 
     @staticmethod
     def validate_SI_unit(unit):
-
         valid_SI_units = {"Volts", "Amps"}
         if unit not in valid_SI_units:
             raise ValueError(F"Unit {unit} is not among the valid SI units {valid_SI_units}")
@@ -181,6 +183,10 @@ class NwbReader(object):
                         continue
 
                     attrs[entry] = sweep_ts[entry][()]
+
+        for k in self.SCALAR_ATTRS:
+            if k in attrs.keys():
+                attrs[k] = get_scalar_value(attrs[k])
 
         return attrs
 
@@ -299,7 +305,7 @@ class NwbReader(object):
 class NwbXReader(NwbReader):
     """
     Read data from NWB v2 files created by run_x_to_nwb_conversion.py from
-    ABF/DAT files.
+    ABF/DAT files or new NWBv2 files from MIES.
     """
 
     def __init__(self, nwb_file):
@@ -315,7 +321,12 @@ class NwbXReader(NwbReader):
         return self.get_real_sweep_number(sweep_name)
 
     def get_stim_code(self, sweep_number):
-        return self.get_sweep_attrs(sweep_number)["stimulus_description"]
+
+        stim_code = self.get_sweep_attrs(sweep_number)["stimulus_description"]
+        if stim_code[-5:] == "_DA_0":
+            stim_code = stim_code[:-5]
+
+        return stim_code
 
     def get_spike_times(self, sweep_number):
 
@@ -334,27 +345,6 @@ class NwbXReader(NwbReader):
 
         if not isinstance(sweep_number, (int, np.uint64, np.int64)):
             raise ValueError("sweep_number must be an integer but it is {}".format(type(sweep_number)))
-
-        def getRawDataSourceType(experiment_description):
-            """
-            Return the original file format of the NWB file
-            """
-
-            d = {"abf": False, "dat": False, "unknown": False}
-
-            if experiment_description.startswith("PatchMaster"):
-                d["dat"] = True
-            elif experiment_description.startswith("Clampex"):
-                d["abf"] = True
-            elif experiment_description.startswith("IVSCC"):
-                d["nwb"] = True
-            else:
-                d["unknown"] = True
-
-            return d
-
-        rawDataSourceType = getRawDataSourceType(self.nwb.experiment_description)
-        assert not rawDataSourceType["unknown"], "Cannot handle data from this raw data source"
 
         series = self.nwb.sweep_table.get_series(sweep_number)
 
@@ -639,7 +629,7 @@ def get_nwb_version(nwb_file):
 
         elif "nwb_version" in f.attrs:   # but in version 2 this is an attribute
             nwb_version = f.attrs["nwb_version"]
-            if nwb_version is not None and re.match("^2", nwb_version):
+            if nwb_version is not None and (re.match("^2", nwb_version) or re.match("^NWB-2", nwb_version)):
                 return {"major": 2, "full": nwb_version}
 
     return {"major": None, "full": None}
