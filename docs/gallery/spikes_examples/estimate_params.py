@@ -16,12 +16,13 @@ import matplotlib.pyplot as plt
 
 # Download and access the experimental data
 ct = CellTypesApi()
+nwb_file = os.path.join(
+    os.path.dirname(os.getcwd()),
+    "data",
+    "nwb2_H17.03.008.11.03.05.nwb"
+)
 specimen_id = 595570553
-nwb_file = "%d.nwb" % specimen_id
 sweep_info = ct.get_ephys_sweeps(specimen_id)
-
-if not os.path.exists(nwb_file):
-    ct.save_ephys_data(specimen_id, nwb_file)
 
 # build a data set and find the short squares
 data_set = create_data_set(sweep_info=sweep_info, nwb_file=nwb_file)

@@ -11,18 +11,20 @@ import seaborn as sns
 from allensdk.api.queries.cell_types_api import CellTypesApi
 from ipfx.data_set_utils import create_data_set
 from ipfx.epochs import get_stim_epoch
+
 from ipfx.feature_extractor import (
     SpikeFeatureExtractor, SpikeTrainFeatureExtractor
 )
 from ipfx.stimulus_protocol_analysis import RampAnalysis
 
-# download a specific experiment NWB file via AllenSDK
+# Download and access the experimental data
 ct = CellTypesApi()
-
+nwb_file = os.path.join(
+    os.path.dirname(os.getcwd()), 
+    "data",
+    "nwb2_H17.03.008.11.03.05.nwb"
+)
 specimen_id = 595570553
-nwb_file = "%d.nwb" % specimen_id
-if not os.path.exists(nwb_file):
-    ct.save_ephys_data(specimen_id, nwb_file)
 sweep_info = ct.get_ephys_sweeps(specimen_id)
 
 # Build the data set and find the ramp sweeps

@@ -4,25 +4,26 @@ Long Square Analysis
 
 Detect Long Square Features
 """
-import ipfx.stimulus_protocol_analysis as spa
-from ipfx.epochs import get_stim_epoch
 from ipfx.data_set_utils import create_data_set
 from ipfx.feature_extractor import (
     SpikeFeatureExtractor, SpikeTrainFeatureExtractor
 )
+import ipfx.stimulus_protocol_analysis as spa
+from ipfx.epochs import get_stim_epoch
 
 from allensdk.api.queries.cell_types_api import CellTypesApi
 
 import os
 import matplotlib.pyplot as plt
 
-# download a specific experiment NWB file via AllenSDK
+# Download and access the experimental data
 ct = CellTypesApi()
-
+nwb_file = os.path.join(
+    os.path.dirname(os.getcwd()), 
+    "data",
+    "nwb2_H17.03.008.11.03.05.nwb"
+)
 specimen_id = 595570553
-nwb_file = "%d.nwb" % specimen_id
-if not os.path.exists(nwb_file):
-    ct.save_ephys_data(specimen_id, nwb_file)
 sweep_info = ct.get_ephys_sweeps(specimen_id)
 
 # build a data set and find the long squares

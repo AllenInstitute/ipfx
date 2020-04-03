@@ -1,8 +1,2 @@
 sphinx
 sphinx-gallery
-matplotlib
-pillow
-pandas
-scipy
-numpy
-allensdk

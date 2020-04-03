@@ -15,6 +15,7 @@
 
 import sys
 import os
+import subprocess as sp
 
 # If extensions (or modules to document with autodoc) are in another
 # directory, add these directories to sys.path here. If the directory is
@@ -30,6 +31,23 @@ project_root = os.path.dirname(cwd)
 # This lets us ensure that the source package is imported, and that its
 # version is used.
 sys.path.insert(0, project_root)
+
+# readthedocs does not install git-lfs, so we need to do so in order to access 
+# the example data
+# This workaround (courtesy of readthedocs developer @humitos) simply downloads
+# and invokes git-lfs
+is_rtd = os.environ.get("READTHEDOCS", "False") == "True"
+if is_rtd and sp.call(["git-lfs"], shell=True):
+    if not os.path.exists("git-lfs"):
+        sp.check_call(["wget", "https://github.com/git-lfs/git-lfs/releases/download/v2.7.1/git-lfs-linux-amd64-v2.7.1.tar.gz"])
+        sp.check_call(["tar", "xvzf", "git-lfs-linux-amd64-v2.7.1.tar.gz", "git-lfs"])
+
+    env = os.environ.copy()
+    env["PATH"] = f".:{env['PATH']}"
+
+    sp.check_call(["./git-lfs", "install"], env=env)
+    sp.check_call(["./git-lfs", "fetch"], env=env)
+    sp.check_call(["./git-lfs", "checkout"], env=env)
 
 import ipfx
 
