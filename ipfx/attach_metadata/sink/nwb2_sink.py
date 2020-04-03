@@ -85,6 +85,7 @@ class Nwb2Sink(MetadataSink):
         """
 
         set_container_sources(self.nwbfile, self._h5_file.filename)
+        self.nwbfile.set_modified(True)
         self._nwb_io.write(self.nwbfile)
         self._nwb_io.close()
         self._h5_file.close()
@@ -111,7 +112,10 @@ class Nwb2Sink(MetadataSink):
                 f"{len(keys)}"
             )
 
-        return self.nwbfile.icephys_electrodes[keys[0]]
+        electrode = self.nwbfile.icephys_electrodes[keys[0]]
+        electrode.set_modified(True)
+
+        return electrode
     
     def _get_sweep_series(
             self, 
@@ -140,6 +144,7 @@ class Nwb2Sink(MetadataSink):
         """
         if self.nwbfile.subject is None:
             self.nwbfile.subject = pynwb.file.Subject()
+        self.nwbfile.subject.set_modified(True)
         return self.nwbfile.subject
 
     def register(self, name: str, value: Any, sweep_id: Optional[int] = None):
