@@ -37,11 +37,8 @@ sys.path.insert(0, project_root)
 # This workaround (courtesy of readthedocs developer @humitos) simply downloads
 # and invokes git-lfs
 is_rtd = os.environ.get("READTHEDOCS", "False") == "True"
-print(is_rtd)
 if is_rtd and sp.call(["git-lfs"], shell=True):
-    print("on rtd")
     if not os.path.exists("git-lfs"):
-        print("fetching lfs")
         sp.check_call(["wget", "https://github.com/git-lfs/git-lfs/releases/download/v2.7.1/git-lfs-linux-amd64-v2.7.1.tar.gz"])
         sp.check_call(["tar", "xvzf", "git-lfs-linux-amd64-v2.7.1.tar.gz", "git-lfs"])
 
