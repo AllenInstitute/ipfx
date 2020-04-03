@@ -113,6 +113,23 @@ def test_serialize(tmpdir_factory, nwbfile):
         obt = reader.read()
         assert obt.identifier == "test session"
 
+
+def test_roundtrip(tmpdir_factory, nwbfile):
+    tmpdir = str(tmpdir_factory.mktemp("test_serialize"))
+    first_path = os.path.join(tmpdir, "first.nwb")
+    second_path = os.path.join(tmpdir, "second.nwb")
+
+    with pynwb.NWBHDF5IO(first_path, "w") as writer:
+        writer.write(nwbfile)
+
+    sink = nwb2_sink.Nwb2Sink(first_path)
+    sink.register("institution", "AIBS")
+    sink.serialize({"output_path": second_path})
+
+    with pynwb.NWBHDF5IO(second_path, "r") as reader:
+        obt = reader.read()
+        assert obt.institution == "AIBS"
+
 @pytest.mark.parametrize("name, value, sweep_id, getter, expected", [
     ["subject_id", "mouse01", None, lambda f: f.subject.subject_id, "mouse01"],
     ["institution", "aibs", None, lambda f: f.institution, "aibs"]
