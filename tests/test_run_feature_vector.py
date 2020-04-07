@@ -14,11 +14,12 @@ TEST_OUTPUT_DIR = os.path.join(current_directory, "data/feature_vector")
 
 nwb2_file1 = os.path.join(current_directory, "data/Vip-IRES-Cre;Ai14(IVSCC)-226110.03.01.nwb")
 nwb2_file2 = os.path.join(current_directory, "data/Vip-IRES-Cre;Ai14(IVSCC)-236654.04.02.nwb")
-
+print(f"*****nwbfile path in test_run_feature_vector {nwb2_file1}")
+assert 0
 test_nwb2_files = dict({500844783: nwb2_file1, 509604672: nwb2_file2})
 
 def test_feature_vector_extraction(tmpdir_factory):
-    
+
     temp_output_dir = str(tmpdir_factory.mktemp("feature_vector"))
     test_output_dir = TEST_OUTPUT_DIR
 

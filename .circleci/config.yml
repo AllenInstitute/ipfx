@@ -57,6 +57,7 @@ jobs:
             sudo apt-get -y install hdf5-tools
             . venv/bin/activate
             mkdir test-results
+            git lfs pull
             py.test --junitxml=test-results/junit.xml --verbose
 
 
