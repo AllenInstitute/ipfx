@@ -63,7 +63,7 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
 
         try:
             data_set = create_ephys_data_set(
-                nwb_file=nwb_path, h5_file=h5_path, ontology=ontology)
+                nwb_file=nwb_path, ontology=ontology)
         except Exception as detail:
             logging.warning("Exception when loading specimen {:d} from LIMS".format(specimen_id))
             logging.warning(detail)
