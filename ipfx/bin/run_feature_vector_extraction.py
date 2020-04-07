@@ -68,9 +68,39 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
         default=0.003
     )
 
-def data_for_specimen_id(specimen_id, sweep_qc_option, data_source, ontology,
-        ap_window_length=0.005, target_sampling_rate=50000, file_list=None):
-    
+def data_for_specimen_id(
+    specimen_id,
+    sweep_qc_option,
+    data_source,
+    ontology,
+    ap_window_length=0.005,
+    target_sampling_rate=50000,
+    file_list=None,
+):
+    """
+    Extract feature vector from given cell identified by the specimen_id
+    Parameters
+    ----------
+    specimen_id : int
+        cell identified
+    sweep_qc_option : str
+        see CollectFeatureVectorParameters input schema for details
+    data_source: str
+        see CollectFeatureVectorParameters input schema for details
+    ontology : stimulus.StimulusOntology
+        mapping of stimuli names to stimulus codes
+    ap_window_length : float
+        see CollectFeatureVectorParameters input schema for details
+    target_sampling_rate : float
+        sampling rate
+    file_list : list of str
+        nwbfile names
+    Returns
+    -------
+    dict :
+        features for a given cell specimen_id
+
+    """
     logging.debug("specimen_id: {}".format(specimen_id))
 
     # Find or retrieve NWB file and ancillary info and construct an AibsDataSet object
@@ -199,10 +229,54 @@ def data_for_specimen_id(specimen_id, sweep_qc_option, data_source, ontology,
 
     return result
 
-def run_feature_vector_extraction(output_dir, data_source, output_code, project,
-        output_file_type, sweep_qc_option, include_failed_cells, run_parallel,
-        ap_window_length, ids=None, file_list=None, **kwargs):
 
+def run_feature_vector_extraction(
+    output_dir,
+    data_source,
+    output_code,
+    project,
+    output_file_type,
+    sweep_qc_option,
+    include_failed_cells,
+    run_parallel,
+    ap_window_length,
+    ids=None,
+    file_list=None,
+    **kwargs
+):
+    """
+    Extract feature vector from a list of cells and save result to the output file(s)
+
+    Parameters
+    ----------
+    output_dir : str
+        see CollectFeatureVectorParameters input schema for details
+    data_source : str
+        see CollectFeatureVectorParameters input schema for details
+    output_code: str
+        see CollectFeatureVectorParameters input schema for details
+    project : str
+        see CollectFeatureVectorParameters input schema for details
+    output_file_type : str
+        see CollectFeatureVectorParameters input schema for details
+    sweep_qc_option: str
+        see CollectFeatureVectorParameters input schema for details
+    include_failed_cells: bool
+        see CollectFeatureVectorParameters input schema for details
+    run_parallel: bool
+        see CollectFeatureVectorParameters input schema for details
+    ap_window_length: float
+        see CollectFeatureVectorParameters input schema for details
+    ids: int
+        ids associated to each cell.
+    file_list: list of str
+        nwbfile names
+    kwargs
+
+    Returns
+    -------
+
+    """
     if ids is not None:
         specimen_ids = ids
     elif data_source == "lims":
@@ -222,7 +296,7 @@ def run_feature_vector_extraction(output_dir, data_source, output_code, project,
                                sweep_qc_option=sweep_qc_option,
                                data_source=data_source,
                                ontology=ontology,
-                               ap_window_length=ap_window_length, 
+                               ap_window_length=ap_window_length,
                                file_list=file_list)
 
     if run_parallel:
