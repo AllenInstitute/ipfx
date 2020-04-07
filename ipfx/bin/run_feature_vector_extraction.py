@@ -25,6 +25,11 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
         default=None,
         allow_none=True
     )
+    data_source = ags.fields.String(
+        description="Source of NWB files ('sdk' or 'lims' or 'filesystem')",
+        default="sdk",
+        validate=lambda x: x in ["sdk", "lims", "filesystem"]
+        )
     output_code = ags.fields.String(
         description="Code used for naming of output files",
         default="test"
@@ -34,6 +39,11 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
             "'npy' - multiple .npy files"),
         default="h5",
         validate=lambda x: x in ["h5", "npy"]
+    )
+    project = ags.fields.String(
+        description="Project code used for LIMS query",
+        default=None,
+        allow_none=True
     )
     sweep_qc_option = ags.fields.String(
         description=("Sweep-level QC option - "
@@ -58,31 +68,27 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
         default=0.003
     )
 
-
-def data_for_specimen_id(specimen_id, datasets, ontology, 
-                         ap_window_length=0.003, target_sampling_rate=50000):
-    """
-    get the features for the given NWB2 file
-
-    Parameters:
-        specimen_id: specimen ID
-        datasets: dict with ID:File_Path, ...
-        ontology: ontology
-        ap_window_length: ap window length
-        target_sampling_rate: target sampling rate
-
-    Output:
-        extracted features
-    """
+def data_for_specimen_id(specimen_id, sweep_qc_option, data_source, ontology,
+        ap_window_length=0.005, target_sampling_rate=50000, file_list=None):
     
-    data_set = create_ephys_data_set(datasets[specimen_id])
     logging.debug("specimen_id: {}".format(specimen_id))
+
+    # Find or retrieve NWB file and ancillary info and construct an AibsDataSet object
+    data_set = su.dataset_for_specimen_id(specimen_id, data_source, ontology, file_list)
+    if type(data_set) is dict and "error" in data_set:
+        logging.warning("Problem getting AibsDataSet for specimen {:d} from LIMS".format(specimen_id))
+        return data_set
 
     # Identify and preprocess long square sweeps
     try:
-        lsq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, 
-                                                        ontology.long_square_names)
-        (lsq_sweeps, lsq_features, _, lsq_start, lsq_end) = su.preprocess_long_square_sweeps(data_set, lsq_sweep_numbers)
+        lsq_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
+            ontology.long_square_names, sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id)
+        (lsq_sweeps,
+        lsq_features,
+        _,
+        lsq_start,
+        lsq_end) = su.preprocess_long_square_sweeps(data_set, lsq_sweep_numbers)
 
     except Exception as detail:
         logging.warning("Exception when preprocessing long square sweeps from specimen {:d}".format(specimen_id))
@@ -91,8 +97,11 @@ def data_for_specimen_id(specimen_id, datasets, ontology,
 
     # Identify and preprocess short square sweeps
     try:
-        ssq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.short_square_names)
-        ssq_sweeps, ssq_features, _ = su.preprocess_short_square_sweeps(data_set, ssq_sweep_numbers)
+        ssq_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
+            ontology.short_square_names, sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id)
+        ssq_sweeps, ssq_features, _ = su.preprocess_short_square_sweeps(data_set,
+            ssq_sweep_numbers)
     except Exception as detail:
         logging.warning("Exception when preprocessing short square sweeps from specimen {:d}".format(specimen_id))
         logging.warning(detail)
@@ -100,8 +109,11 @@ def data_for_specimen_id(specimen_id, datasets, ontology,
 
     # Identify and preprocess ramp sweeps
     try:
-        ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.ramp_names)
-        ramp_sweeps, ramp_features, _ = su.preprocess_ramp_sweeps(data_set, ramp_sweep_numbers)
+        ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
+            ontology.ramp_names, sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id)
+        ramp_sweeps, ramp_features, _ = su.preprocess_ramp_sweeps(data_set,
+            ramp_sweep_numbers)
     except Exception as detail:
         logging.warning("Exception when preprocessing ramp sweeps from specimen {:d}".format(specimen_id))
         logging.warning(detail)
@@ -109,8 +121,10 @@ def data_for_specimen_id(specimen_id, datasets, ontology,
 
     # Calculate desired feature vectors
     result = {}
-    result["id"] = [specimen_id]
-    
+
+    if data_source == "filesystem":
+        result["id"] = [specimen_id]
+
     try:
         (subthresh_hyperpol_dict,
         hyperpol_deflect_dict) = fv.identify_subthreshold_hyperpol_with_amplitudes(lsq_features,
@@ -185,27 +199,16 @@ def data_for_specimen_id(specimen_id, datasets, ontology,
 
     return result
 
-
-def run_feature_vector_extraction(output_dir, datasets, output_code,
+def run_feature_vector_extraction(output_dir, data_source, output_code, project,
         output_file_type, sweep_qc_option, include_failed_cells, run_parallel,
-        ap_window_length, ids=None, **kwargs):
-    """
-        extract feature vectors
+        ap_window_length, ids=None, file_list=None, **kwargs):
 
-        Parameters:
-            output_dir: output directory
-            output_file_type: h5 or npy
-            output_code: output code
-            datasets: Dict of input nwb2 files with IDs
-            ap_window_length: ap window length
-            include_failed_cells: whether include failed cells
-            run_parallel: whether run feature extraction in parallel
-
-        Output:
-            save extracted features into output files
-    """
-    
-    specimen_ids = ids
+    if ids is not None:
+        specimen_ids = ids
+    elif data_source == "lims":
+        specimen_ids = lq.project_specimen_ids(project, passed_only=not include_failed_cells)
+    else:
+        logging.error("Must specify input file if data source is not LIMS")
 
     if output_file_type == "h5":
         # Check that we can access the specified file before processing everything
@@ -216,9 +219,11 @@ def run_feature_vector_extraction(output_dir, datasets, output_code,
 
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
     get_data_partial = partial(data_for_specimen_id,
-                               datasets=datasets,
+                               sweep_qc_option=sweep_qc_option,
+                               data_source=data_source,
                                ontology=ontology,
-                               ap_window_length=ap_window_length)
+                               ap_window_length=ap_window_length, 
+                               file_list=file_list)
 
     if run_parallel:
         pool = Pool()
@@ -242,7 +247,6 @@ def run_feature_vector_extraction(output_dir, datasets, output_code,
     su.save_errors_to_json(error_set, output_dir, output_code)
 
     logging.info("Finished saving")
-
 
 def main():
     module = ags.ArgSchemaParser(schema_type=CollectFeatureVectorParameters)

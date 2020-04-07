@@ -20,14 +20,14 @@ class CollectFeatureParameters(ags.ArgSchema):
     include_failed_cells = ags.fields.Boolean(default=False)
     run_parallel = ags.fields.Boolean(default=True)
     data_source = ags.fields.String(
-        description="Source of NWB files ('sdk' or 'lims')",
+        description="Source of NWB files ('sdk' or 'lims' or 'filesystem')",
         default="sdk",
-        validate=lambda x: x in ["sdk", "lims"]
+        validate=lambda x: x in ["sdk", "lims", "filesystem"]
         )
 
 
-def data_for_specimen_id(specimen_id, passed_only, data_source, ontology):
-    data_set = su.dataset_for_specimen_id(specimen_id, data_source, ontology)
+def data_for_specimen_id(specimen_id, passed_only, data_source, ontology, file_list=None):
+    data_set = su.dataset_for_specimen_id(specimen_id, data_source, ontology, file_list)
     if type(data_set) is dict and "error" in data_set:
         logging.warning("Problem getting AibsDataSet for specimen {:d} from LIMS".format(specimen_id))
         return {}
@@ -234,7 +234,7 @@ def lin_sqrt_fit(x, y):
 
 
 def run_feature_collection(ids=None, project="T301", include_failed_sweeps=True, include_failed_cells=False,
-         output_file="", run_parallel=True, data_source="lims", **kwargs):
+         output_file="", run_parallel=True, data_source="lims", file_list=None, **kwargs):
     if ids is not None:
         specimen_ids = ids
     else:
@@ -246,7 +246,8 @@ def run_feature_collection(ids=None, project="T301", include_failed_sweeps=True,
     get_data_partial = partial(data_for_specimen_id,
                                passed_only=not include_failed_sweeps,
                                data_source=data_source,
-                               ontology=ontology)
+                               ontology=ontology,
+                               file_list=file_list)
 
     if run_parallel:
         pool = Pool()

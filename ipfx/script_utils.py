@@ -54,7 +54,7 @@ def sdk_nwb_information(specimen_id):
     return nwb_data_set.file_name, sweep_info
 
 
-def dataset_for_specimen_id(specimen_id, data_source, ontology):
+def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
     if data_source == "lims":
         nwb_path, h5_path = lims_nwb_information(specimen_id)
         if type(nwb_path) is dict and "error" in nwb_path:
@@ -75,6 +75,14 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology):
                 nwb_file=nwb_path, sweep_info=sweep_info, ontology=ontology)
         except Exception as detail:
             logging.warning("Exception when loading specimen {:d} via Allen SDK".format(specimen_id))
+            logging.warning(detail)
+            return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
+    elif data_source == "filesystem":
+        nwb_path = file_list[specimen_id]
+        try:
+            data_set = create_ephys_data_set(nwb_file=nwb_path)
+        except Exception as detail:
+            logging.warning("Exception when loading specimen {:d} via file system".format(specimen_id))
             logging.warning(detail)
             return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
     else:
