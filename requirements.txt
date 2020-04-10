@@ -9,7 +9,7 @@ argschema
 allensdk
 dictdiffer
 hdmf==1.1.2
-pyabf==2.2.0
+pyabf<2.3.0
 pynwb==1.0.2
 six
 watchdog

@@ -10,8 +10,8 @@ from subprocess import Popen, PIPE
 
 import numpy as np
 
-from pynwb.icephys import (CurrentClampStimulusSeries, VoltageClampStimulusSeries,
-                           CurrentClampSeries, VoltageClampSeries, IZeroClampSeries)
+from pynwb.icephys import CurrentClampStimulusSeries, VoltageClampStimulusSeries, CurrentClampSeries, \
+    VoltageClampSeries, IZeroClampSeries
 
 try:
     from pynwb.form.backends.hdf5.h5_utils import H5DataIO

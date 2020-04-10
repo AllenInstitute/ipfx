@@ -30,3 +30,11 @@ Output:
  * log.txt: run log
  * qc_figs: index.html includes cell figures and feature table and sweep.html includes sweep figures
 
+
+Deprecation Warning
+-------------------
+We are working towards a 1.0.0 release of ipfx! This will bring some new features, like NWB2 support, along with improvements to our documentation and testing. We will also drop support for
+- NWB1
+- Python 2
+
+Older versions of ipfx will continue to be available, but will receive only occasional bugfixes and patches.
