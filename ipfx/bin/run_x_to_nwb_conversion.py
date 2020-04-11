@@ -1,5 +1,6 @@
 #!/bin/env python
 
+import yaml
 import os
 import argparse
 import logging
@@ -9,7 +10,9 @@ from ipfx.x_to_nwb.ABFConverter import ABFConverter
 from ipfx.x_to_nwb.DatConverter import DatConverter
 
 
-def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False, outputFeedbackChannel=False, multipleGroupsPerFile=False, compression=True):
+def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False,
+            outputFeedbackChannel=False, multipleGroupsPerFile=False, compression=True,
+            metafile=None):
     """
     Convert the given file to a NeuroDataWithoutBorders file using pynwb
 
@@ -25,6 +28,7 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
     :param multipleGroupsPerFile: Write all Groups in the DAT file into one NWB
                                   file. By default we create one NWB per Group (ignored for ABF files).
     :param compression: Toggle compression for HDF5 datasets
+    :param metafile: The path to the metadata YAML file (optional)
 
     :return: path of the created NWB file
     """
@@ -53,16 +57,26 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
         else:
             raise ValueError(f"The output file {outFile} does already exist.")
 
+    # Load metadata from YAML file
+    if metafile is None:
+        metadata = None
+    else:
+        print(metafile)
+        with open(metafile) as f:
+            metadata = yaml.safe_load(f)
+
     if ext == ".abf":
         if outputMetadata:
             ABFConverter.outputMetadata(inFileOrFolder)
         else:
-            ABFConverter(inFileOrFolder, outFile, outputFeedbackChannel=outputFeedbackChannel, compression=compression)
+            ABFConverter(inFileOrFolder, outFile, outputFeedbackChannel=outputFeedbackChannel, compression=compression,
+                         metadata=metadata)
     elif ext == ".dat":
         if outputMetadata:
             DatConverter.outputMetadata(inFileOrFolder)
         else:
-            DatConverter(inFileOrFolder, outFile, multipleGroupsPerFile=multipleGroupsPerFile, compression=compression)
+            DatConverter(inFileOrFolder, outFile, multipleGroupsPerFile=multipleGroupsPerFile, compression=compression,
+                         metadata=metadata)
 
     else:
         raise ValueError(f"The extension {ext} is currently not supported.")
@@ -99,6 +113,8 @@ def main():
                         help="Output ADC data to the NWB file which stems from stimulus feedback channels.")
     abf_group.add_argument("--realDataChannel", type=str, action="append",
                         help=f"Define additional channels which hold non-feedback channel data. The default is {ABFConverter.adcNamesWithRealData}.")
+    abf_group.add_argument('--metafile', default=None, type=str,
+                           help='The path to the metadata YAML file.')
 
     dat_group.add_argument("--multipleGroupsPerFile", action="store_true", default=False,
                            help="Write all Groups from a DAT file into a single NWB file. By default we create one NWB file per Group.")
@@ -131,7 +147,8 @@ def main():
                 outputMetadata=args.outputMetadata,
                 outputFeedbackChannel=args.outputFeedbackChannel,
                 multipleGroupsPerFile=args.multipleGroupsPerFile,
-                compression=args.compression)
+                compression=args.compression,
+                metafile=args.metafile)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ import numpy as np
 import pyabf
 
 from pynwb.device import Device
+from pynwb.file import Subject
 from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import IntracellularElectrode
 
@@ -30,7 +31,7 @@ class ABFConverter:
     protocolStorageDir = None
     adcNamesWithRealData = ["IN 0", "IN 1", "IN 2", "IN 3"]
 
-    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True):
+    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True, metadata=None):
         """
         Convert the given ABF file to NWB
 
@@ -39,6 +40,7 @@ class ABFConverter:
         outFile               -- target filepath (must not exist)
         outputFeedbackChannel -- Output ADC data from feedback channels as well (useful for debugging only)
         compression           -- Toggle compression for HDF5 datasets
+        metadata              -- Metadata dictionary with user-defined values for some nwb fields
         """
 
         inFiles = []
@@ -52,6 +54,7 @@ class ABFConverter:
 
         self.outputFeedbackChannel = outputFeedbackChannel
         self.compression = compression
+        self.metadata = metadata
 
         self._settings = self._getJSONFiles(inFileOrFolder)
 
@@ -71,6 +74,10 @@ class ABFConverter:
         self.totalSeriesCount = self._getMaxTimeSeriesCount()
 
         nwbFile = self._createFile()
+
+        # If Subject information is present in metadata
+        if self.metadata is not None and 'Subject' in self.metadata:
+            nwbFile.subject = self._createSubject()
 
         device = self._createDevice()
         nwbFile.add_device(device)
@@ -306,23 +313,26 @@ class ABFConverter:
         if len(session_description) == 0:
             session_description = PLACEHOLDER
 
-        identifier = sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest()
-        session_start_time = self.refabf.abfDateTime
         creatorName = self.refabf._stringsIndexed.uCreatorName
         creatorVersion = formatVersion(self.refabf.creatorVersion)
-        experiment_description = (f"{creatorName} v{creatorVersion}")
-        source_script_file_name = "run_x_to_nwb_conversion.py"
-        source_script = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
-        session_id = PLACEHOLDER
+        nwbfile_kwargs = dict(
+            session_description=session_description,
+            identifier=sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest(),
+            session_start_time=self.refabf.abfDateTime,
+            experimenter=None,
+            experiment_description="{} v{}".format(creatorName, creatorVersion),
+            source_script_file_name="run_x_to_nwb_conversion.py",
+            source_script=json.dumps(getPackageInfo(), sort_keys=True, indent=4),
+            session_id=PLACEHOLDER
+        )
 
-        return NWBFile(session_description=session_description,
-                       identifier=identifier,
-                       session_start_time=session_start_time,
-                       experimenter=None,
-                       experiment_description=experiment_description,
-                       session_id=session_id,
-                       source_script_file_name=source_script_file_name,
-                       source_script=source_script)
+        if self.metadata and 'NWBFile' in self.metadata:
+            nwbfile_kwargs.update(self.metadata['NWBFile'])
+
+        # Create nwbfile with initial metadata
+        nwbfile = NWBFile(**nwbfile_kwargs)
+
+        return nwbfile
 
     def _createDevice(self):
         """
@@ -333,6 +343,12 @@ class ABFConverter:
         telegraph = self.refabf._adcSection.sTelegraphInstrument[0]
 
         return Device(f"{digitizer} with {telegraph}")
+
+    def _createSubject(self):
+        """
+        Create a pynwb Subject object from the metadata contents.
+        """
+        return Subject(**self.metadata['Subject'])
 
     def _createElectrodes(self, device):
         """
@@ -362,7 +378,6 @@ class ABFConverter:
         counter = 0
 
         for file_index, abf in enumerate(self.abfs):
-
             stimulus_description = ABFConverter._getProtocolName(abf.protocol)
             scale_factor = self._getScaleFactor(abf, stimulus_description)
 

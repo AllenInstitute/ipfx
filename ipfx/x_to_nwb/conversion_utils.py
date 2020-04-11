@@ -23,7 +23,6 @@ V_CLAMP_MODE = 0
 I_CLAMP_MODE = 1
 I0_CLAMP_MODE = 2
 
-
 # TODO Use the pint package if doing that manually gets too involved
 def parseUnit(unitString):
     """
