@@ -10,6 +10,7 @@ import numpy as np
 from pynwb.device import Device
 from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import IntracellularElectrode
+from pynwb.file import Subject
 
 from ipfx.x_to_nwb.hr_bundle import Bundle
 from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
@@ -22,7 +23,7 @@ log = logging.getLogger(__name__)
 
 class DatConverter:
 
-    def __init__(self, inFile, outFile, multipleGroupsPerFile=False, compression=True):
+    def __init__(self, inFile, outFile, multipleGroupsPerFile=False, compression=True, metadata=None):
         """
         Convert DAT files, created by PatchMaster, to NWB v2 files.
 
@@ -33,6 +34,7 @@ class DatConverter:
         multipleGroupsPerFile: switch determining if multiple DAT groups per
                                file are created or not
         compression: Toggle compression for HDF5 datasets
+        metadata: Metadata dictionary with user-defined values for some nwb fields
 
         Returns
         -------
@@ -44,6 +46,7 @@ class DatConverter:
 
         self.bundle = Bundle(inFile)
         self.compression = compression
+        self.metadata = metadata
 
         self._check()
 
@@ -62,6 +65,10 @@ class DatConverter:
         for elem in generateList(multipleGroupsPerFile, self.bundle.pul):
 
             nwbFile = self._createFile()
+
+            # If Subject information is present in metadata, add a Subject object
+            if self.metadata is not None and 'Subject' in self.metadata:
+                nwbFile.subject = Subject(**self.metadata['Subject'])
 
             device = self._createDevice()
             nwbFile.add_device(device)
@@ -298,7 +305,7 @@ class DatConverter:
     def _getAmplifierState(bundle, series, trace):
         """
         Different PatchMaster versions create different DAT file layouts. This function tries
-        to accomodate that as it returns the correct object.
+        to accommodate that as it returns the correct object.
 
         Parameters
         ----------
@@ -401,14 +408,19 @@ class DatConverter:
         source_script = json.dumps(getPackageInfo(), sort_keys=True, indent=4)
         session_id = PLACEHOLDER
 
-        return NWBFile(session_description=session_description,
-                       identifier=identifier,
-                       session_start_time=self.session_start_time,
-                       experimenter=None,
-                       experiment_description=experiment_description,
-                       session_id=session_id,
-                       source_script=source_script,
-                       source_script_file_name=source_script_file_name)
+        nwbfile_kwargs = dict(session_description=session_description,
+                              identifier=identifier,
+                              session_start_time=self.session_start_time,
+                              experimenter=None,
+                              experiment_description=experiment_description,
+                              session_id=session_id,
+                              source_script=source_script,
+                              source_script_file_name=source_script_file_name)
+
+        if self.metadata is not None and 'NWBFile' in self.metadata:
+            nwbfile_kwargs.update(self.metadata['NWBFile'])
+
+        return NWBFile(**nwbfile_kwargs)
 
     def _createDevice(self):
         """

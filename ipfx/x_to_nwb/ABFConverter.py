@@ -31,7 +31,7 @@ class ABFConverter:
     protocolStorageDir = None
     adcNamesWithRealData = ["IN 0", "IN 1", "IN 2", "IN 3"]
 
-    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True, metadata={}):
+    def __init__(self, inFileOrFolder, outFile, outputFeedbackChannel, compression=True, metadata=None):
         """
         Convert the given ABF file to NWB
 
@@ -54,6 +54,7 @@ class ABFConverter:
 
         self.outputFeedbackChannel = outputFeedbackChannel
         self.compression = compression
+        self.metadata = metadata
 
         self._settings = self._getJSONFiles(inFileOrFolder)
 
@@ -72,12 +73,11 @@ class ABFConverter:
 
         self.totalSeriesCount = self._getMaxTimeSeriesCount()
 
-        nwbFile = self._createFile(metadata=metadata)
+        nwbFile = self._createFile()
 
         # If Subject information is present in metadata
-        if 'Subject' in metadata:
-            subject = self._createSubject(**metadata['Subject'])
-            nwbFile.subject = subject
+        if self.metadata is not None and 'Subject' in self.metadata:
+            nwbFile.subject = self._createSubject()
 
         device = self._createDevice()
         nwbFile.add_device(device)
@@ -285,7 +285,7 @@ class ABFConverter:
 
         return sum(map(getCount, self.abfs))
 
-    def _createFile(self, metadata=None):
+    def _createFile(self):
         """
         Create a pynwb NWBFile object from the ABF file contents.
         """
@@ -315,7 +315,7 @@ class ABFConverter:
 
         creatorName = self.refabf._stringsIndexed.uCreatorName
         creatorVersion = formatVersion(self.refabf.creatorVersion)
-        meta_ini = dict(
+        nwbfile_kwargs = dict(
             session_description=session_description,
             identifier=sha256(" ".join([abf.fileGUID for abf in self.abfs]).encode()).hexdigest(),
             session_start_time=self.refabf.abfDateTime,
@@ -326,17 +326,11 @@ class ABFConverter:
             session_id=PLACEHOLDER
         )
 
-        # Overwrite default values with user-passed values
-        if metadata and 'NWBFile' in metadata:
-            meta_ini.update(metadata['NWBFile'])
+        if self.metadata and 'NWBFile' in self.metadata:
+            nwbfile_kwargs.update(self.metadata['NWBFile'])
 
         # Create nwbfile with initial metadata
-        nwbfile = NWBFile(**meta_ini)
-
-        # Creates LabMetaData container
-        if metadata and 'lab_meta_data' in metadata:
-            from ndx_dandi_icephys import DandiIcephysMetadata
-            nwbfile.add_lab_meta_data(DandiIcephysMetadata(**metadata['lab_meta_data']))
+        nwbfile = NWBFile(**nwbfile_kwargs)
 
         return nwbfile
 
@@ -350,14 +344,11 @@ class ABFConverter:
 
         return Device(f"{digitizer} with {telegraph}")
 
-    def _createSubject(self, **subject_fields):
+    def _createSubject(self):
         """
         Create a pynwb Subject object from the metadata contents.
         """
-        if 'date_of_birth' in subject_fields:
-            subject_fields.pop('date_of_birth')  # backwards compatibility
-            warnings.warn('date_of_birth removed from Subject info. Must update pynwb version to accept this field.')
-        return Subject(**subject_fields)
+        return Subject(**self.metadata['Subject'])
 
     def _createElectrodes(self, device):
         """

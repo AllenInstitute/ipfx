@@ -59,8 +59,9 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
 
     # Load metadata from YAML file
     if metafile is None:
-        metadata = {}
+        metadata = None
     else:
+        print(metafile)
         with open(metafile) as f:
             metadata = yaml.safe_load(f)
 
@@ -74,7 +75,8 @@ def convert(inFileOrFolder, overwrite=False, fileType=None, outputMetadata=False
         if outputMetadata:
             DatConverter.outputMetadata(inFileOrFolder)
         else:
-            DatConverter(inFileOrFolder, outFile, multipleGroupsPerFile=multipleGroupsPerFile, compression=compression)
+            DatConverter(inFileOrFolder, outFile, multipleGroupsPerFile=multipleGroupsPerFile, compression=compression,
+                         metadata=metadata)
 
     else:
         raise ValueError(f"The extension {ext} is currently not supported.")
@@ -111,7 +113,7 @@ def main():
                         help="Output ADC data to the NWB file which stems from stimulus feedback channels.")
     abf_group.add_argument("--realDataChannel", type=str, action="append",
                         help=f"Define additional channels which hold non-feedback channel data. The default is {ABFConverter.adcNamesWithRealData}.")
-    abf_group.add_argument('--metafile', default=None, type=argparse.FileType('r'),
+    abf_group.add_argument('--metafile', default=None, type=str,
                            help='The path to the metadata YAML file.')
 
     dat_group.add_argument("--multipleGroupsPerFile", action="store_true", default=False,
