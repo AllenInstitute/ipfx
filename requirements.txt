@@ -15,4 +15,3 @@ six
 watchdog
 pg8000
 pyyaml
-ndx-labmetadata-abf

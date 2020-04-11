@@ -520,10 +520,6 @@ class ABFConverter:
                     d["capacitance_compensation"] = settings["GetNeutralizationCap"]
                 else:
                     d["capacitance_compensation"] = np.nan
-            elif clampMode == I0_CLAMP_MODE:
-                d["bias_current"] = np.nan
-                d["bridge_balance"] = np.nan
-                d["capacitance_compensation"] = np.nan
             else:
                 warnings.warn("Unsupported clamp mode {clampMode}")
         else:
@@ -617,22 +613,6 @@ class ABFConverter:
                                                       whole_cell_series_resistance_comp=settings["whole_cell_series_resistance_comp"])  # noqa: E501
 
                     elif clampMode in (I_CLAMP_MODE, I0_CLAMP_MODE):
-                        acquistion_data = seriesClass(name=name,
-                                                      data=data,
-                                                      sweep_number=np.uint64(cycle_id),
-                                                      unit=unit,
-                                                      electrode=electrode,
-                                                      gain=gain,
-                                                      resolution=resolution,
-                                                      conversion=conversion,
-                                                      starting_time=starting_time,
-                                                      rate=rate,
-                                                      description=description,
-                                                      bias_current=settings["bias_current"],
-                                                      bridge_balance=settings["bridge_balance"],
-                                                      stimulus_description=stimulus_description,
-                                                      capacitance_compensation=settings["capacitance_compensation"])
-                    elif clampMode == I0_CLAMP_MODE:
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
                                                       sweep_number=np.uint64(cycle_id),
