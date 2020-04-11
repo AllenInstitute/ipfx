@@ -1,7 +1,7 @@
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
-from ipfx.data_set_utils import create_data_set
+from ipfx.dataset.create import create_ephys_data_set
 from ipfx.stimulus import StimulusOntology
 import allensdk.core.json_utilities as ju
 
@@ -89,6 +89,7 @@ def get_vertical_offset(data):
 def main():
 
     """
+    Plot sweeps of a given ephys nwb file
     # Usage:
     $ python plot_ephys_nwb_file.py NWB_FILE_NAME
 
@@ -100,12 +101,12 @@ def main():
     stimulus_ontology_file = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
     ont = StimulusOntology(ju.read(stimulus_ontology_file))
 
-    data_set = create_data_set(nwb_file=nwb_file,validate_stim=False,ontology=ont)
-
-    vclamp_sweep_table = data_set.sweep_table[data_set.sweep_table["clamp_mode"] == "VoltageClamp"]
+    data_set = create_ephys_data_set(nwb_file=nwb_file)
+    vclamp_sweep_table = data_set.filtered_sweep_table(clamp_mode=data_set.VOLTAGE_CLAMP)
     plot_data_set(data_set, vclamp_sweep_table, nwb_file)
 
-    iclamp_sweep_table = data_set.sweep_table[data_set.sweep_table["clamp_mode"] == "CurrentClamp"]
+    data_set = create_ephys_data_set(nwb_file=nwb_file)
+    iclamp_sweep_table = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP)
     plot_data_set(data_set, iclamp_sweep_table, nwb_file)
 
     plt.show()
