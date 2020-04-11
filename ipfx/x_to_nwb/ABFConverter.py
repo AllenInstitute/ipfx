@@ -535,10 +535,6 @@ class ABFConverter:
                 d["bias_current"] = np.nan
                 d["bridge_balance"] = np.nan
                 d["capacitance_compensation"] = np.nan
-            elif clampMode == I0_CLAMP_MODE:
-                d["bias_current"] = np.nan
-                d["bridge_balance"] = np.nan
-                d["capacitance_compensation"] = np.nan
             else:
                 warnings.warn("Unsupported clamp mode {clampMode}")
 
