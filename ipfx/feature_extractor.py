@@ -265,7 +265,7 @@ class SpikeTrainFeatureExtractor(object):
         features = strf.basic_spike_train_features(t, spikes_df, self.start, self.end, exclude_clipped=exclude_clipped)
 
         if self.start is None:
-            self.start = t[0]
+            self.start = 0.0
 
         if extra_features is None:
             extra_features = []
