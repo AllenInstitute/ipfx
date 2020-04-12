@@ -1,4 +1,3 @@
 reference_*
-*.nwb
 *.hdf5
 test-reports

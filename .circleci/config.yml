@@ -54,7 +54,6 @@ jobs:
       - run:
           name: run tests
           command: |
-            sudo apt-get -y install hdf5-tools
             . venv/bin/activate
             mkdir test-results
             curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
