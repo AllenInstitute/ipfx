@@ -41,7 +41,6 @@ def rebase(new_base: str, path: str, mkdir: bool = False) ->  str:
     return str(new_path)
 
 
-@pytest.mark.requires_inhouse_data
 @pytest.mark.slow
 @pytest.mark.parametrize('input_json,output_json', test_specimens_params)
 def test_mies_nwb_pipeline_output(input_json, output_json, tmpdir_factory):
@@ -66,8 +65,6 @@ def test_mies_nwb_pipeline_output(input_json, output_json, tmpdir_factory):
     pipeline_input["qc_figs_dir"] = None
 
     stimulus_ontology_file = pipeline_input.get("stimulus_ontology_file", None)
-    if stimulus_ontology_file is not None:
-        stimulus_ontology_file = rebase(test_dir, stimulus_ontology_file, True)
 
     obtained = run_pipeline(
         pipeline_input["input_nwb_file"],
