@@ -53,6 +53,8 @@ def append_spike_times(input_nwb_path: PathLike,
         wrapped_spike_times = H5DataIO(data=spike_times,
                                        compression=True)
         ts = TimeSeries(timestamps=wrapped_spike_times,
+                        unit='seconds',
+                        data=wrapped_spike_times,
                         name=f"Sweep_{sweep_num}")
         spike_module.add_data_interface(ts)
 
