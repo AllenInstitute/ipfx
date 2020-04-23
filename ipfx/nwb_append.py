@@ -9,6 +9,7 @@ import pynwb
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 from pynwb import TimeSeries
 from pynwb import ProcessingModule
+import numpy as np
 
 
 PathLike = Union[
@@ -50,7 +51,7 @@ def append_spike_times(input_nwb_path: PathLike,
     spike_module = ProcessingModule(name='spikes',
                                     description='detected spikes')
     for sweep_num, spike_times in sweep_spike_times.items():
-        wrapped_spike_times = H5DataIO(data=spike_times,
+        wrapped_spike_times = H5DataIO(data=np.asarray(spike_times),
                                        compression=True)
         ts = TimeSeries(timestamps=wrapped_spike_times,
                         unit='seconds',
