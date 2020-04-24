@@ -61,5 +61,5 @@ def append_spike_times(input_nwb_path: PathLike,
 
     nwbfile.add_processing_module(spike_module)
 
-    nwb_io.write(nwbfile)
+    nwb_io.write(nwbfile, cache_spec=False)
     nwb_io.close()
