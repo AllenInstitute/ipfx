@@ -109,7 +109,7 @@ def test_serialize(tmpdir_factory, nwbfile):
 
     sink.serialize({"output_path": out_path})
 
-    with pynwb.NWBHDF5IO(out_path, "r") as reader:
+    with pynwb.NWBHDF5IO(out_path, "r", load_namespaces=True) as reader:
         obt = reader.read()
         assert obt.identifier == "test session"
 
@@ -126,7 +126,7 @@ def test_roundtrip(tmpdir_factory, nwbfile):
     sink.register("institution", "AIBS")
     sink.serialize({"output_path": second_path})
 
-    with pynwb.NWBHDF5IO(second_path, "r") as reader:
+    with pynwb.NWBHDF5IO(second_path, "r", load_namespaces=True) as reader:
         obt = reader.read()
         assert obt.institution == "AIBS"
 

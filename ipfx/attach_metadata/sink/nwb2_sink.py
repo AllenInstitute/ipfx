@@ -74,7 +74,8 @@ class Nwb2Sink(MetadataSink):
         self._nwb_io = pynwb.NWBHDF5IO(
             path=self._h5_file.filename,
             mode="r+",
-            file=self._h5_file
+            file=self._h5_file,
+            load_namespaces=True
         )
         self.nwbfile = self._nwb_io.read()
 

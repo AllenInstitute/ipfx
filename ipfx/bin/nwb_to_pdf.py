@@ -227,7 +227,7 @@ def gather_sweeps(nwbfile):
     sort PatchClampSeries according to cycle_id
     '''
     sweeps = SweepCollection()
-    with NWBHDF5IO(nwbfile, 'r') as io:
+    with NWBHDF5IO(nwbfile, 'r', load_namespaces=True) as io:
         nwb = io.read()
         for key in nwb.acquisition:
             acquisition = nwb.get_acquisition(key)
@@ -297,7 +297,7 @@ def check_stimset_reconstruction(nwbfile, outfile):
     plt.rcParams['axes.grid'] = True
     box_props = {"boxstyle": 'round', "facecolor": 'wheat', "alpha": 0.5}
 
-    with NWBHDF5IO(nwbfile, 'r') as io:
+    with NWBHDF5IO(nwbfile, 'r', load_namespaces=True) as io:
         nwb = io.read()
 
         with PdfPages(outfile) as pdf:

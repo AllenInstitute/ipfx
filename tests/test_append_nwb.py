@@ -44,7 +44,7 @@ def test_embed_spike_times_into_nwb(tmpdir_factory):
                        sweep_spike_times,
                        output_nwb_path=output_nwb_file_name)
 
-    with pynwb.NWBHDF5IO(output_nwb_file_name, mode='r') as nwb_io:
+    with pynwb.NWBHDF5IO(output_nwb_file_name, mode='r', load_namespaces=True) as nwb_io:
         nwbfile = nwb_io.read()
 
         spikes = nwbfile.get_processing_module('spikes')

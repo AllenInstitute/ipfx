@@ -6,6 +6,7 @@ import json
 import subprocess as sp
 from datetime import datetime
 import sys
+import shutil
 
 import yaml
 import pynwb
@@ -135,13 +136,53 @@ def test_cli_nwb2(cli_runner):
     os.remove(in_nwb_path)  # make sure we aren't linking
     obt_nwb_path = out_json["sinks"]["nwb2"]["targets"][0]["output_path"]
 
-    with pynwb.NWBHDF5IO(path=obt_nwb_path, mode="r") as reader:
+    with pynwb.NWBHDF5IO(path=obt_nwb_path, mode="r", load_namespaces=True) as reader:
         obt = reader.read()
         assert obt.subject.subject_id == "23"
         assert np.allclose(
             obt.get_acquisition("a timeseries").data[:],
             [1, 2, 3]
         )
+
+def test_cli_mies(cli_runner):
+    in_nwb_path = os.path.join(cli_runner.tmpdir, "input.nwb")
+    out_nwb_path = os.path.join(cli_runner.tmpdir, "meta.nwb")
+
+    shutil.copyfile(
+        os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), 
+            "data", "nwb", "Ctgf-T2A-dgCre;Ai14-495723.05.02.01.nwb"
+        ), 
+        in_nwb_path
+    )
+
+    input_json = {
+        "metadata": [
+            {
+                "name": "subject_id",
+                "value": "23",
+                "sinks": ["nwb2"]
+            }
+        ],
+        "nwb2_sinks": [
+            {
+                "name": "nwb2",
+                "config": {"nwb_path": in_nwb_path},
+                "targets": [
+                    {"output_path": out_nwb_path}
+                ]
+            }
+        ]
+    }
+
+    out_json = cli_runner.run(input_json)
+    os.remove(in_nwb_path)  # make sure we aren't linking
+    obt_nwb_path = out_json["sinks"]["nwb2"]["targets"][0]["output_path"]
+
+    with pynwb.NWBHDF5IO(path=obt_nwb_path, mode="r", load_namespaces=True) as reader:
+        obt = reader.read()
+        assert obt.subject.subject_id == "23"
+        assert "device_ITC18USB_Dev_0" in obt.devices
 
 
 def test_cli_multisink(cli_runner):
@@ -184,7 +225,7 @@ def test_cli_multisink(cli_runner):
     os.remove(in_nwb_path)
 
     obt_nwb_path = out_json["sinks"]["nwb2"]["targets"][0]["output_path"]
-    with pynwb.NWBHDF5IO(path=obt_nwb_path, mode="r") as reader:
+    with pynwb.NWBHDF5IO(path=obt_nwb_path, mode="r", load_namespaces=True) as reader:
         obt = reader.read()
         assert obt.subject.subject_id == "23"
 

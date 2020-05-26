@@ -84,12 +84,12 @@ class EphysNWBData(EphysDataInterface):
                 with open(nwb_file, 'rb') as fh:
                     data = BytesIO(fh.read())
                 _h5_file = h5py.File(data, "r")
-                reader = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file)
+                reader = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file, load_namespaces=True)
             else:
-                reader = NWBHDF5IO(nwb_file, mode='r')
+                reader = NWBHDF5IO(nwb_file, mode='r', load_namespaces=True)
         elif isinstance(nwb_file, BytesIO):
             _h5_file = h5py.File(nwb_file, "r")
-            reader = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file)
+            reader = NWBHDF5IO(path=_h5_file.filename, mode="r",file=_h5_file, load_namespaces=True)
         else:
             raise TypeError("Invalid input NWB file (only accept NWB filepath or hdf5 obj)!")
 
