@@ -3,7 +3,6 @@ from setuptools import setup, find_packages
 
 with open("requirements.txt", "r") as requirements_file:
     required = requirements_file.read().splitlines()
-    required = [req for req in required if not "git+" in req] # TODO remove this pending hdmf, pynwb releases
 
 version_file_path = os.path.join(
     os.path.dirname(__file__),
