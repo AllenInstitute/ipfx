@@ -113,7 +113,7 @@ def validate_nwb(filename):
     """
 
     if os.path.exists(filename):
-        with NWBHDF5IO(filename, mode='r') as io:
+        with NWBHDF5IO(filename, mode='r', load_namespaces=True) as io:
             try:
                 errors = validate(io)
             except Exception as e:

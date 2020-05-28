@@ -44,7 +44,7 @@ def append_spike_times(input_nwb_path: PathLike,
     else:
         nwb_path = input_nwb_path
 
-    nwb_io = pynwb.NWBHDF5IO(nwb_path, mode='a')
+    nwb_io = pynwb.NWBHDF5IO(nwb_path, mode='a', load_namespaces=True)
     nwbfile = nwb_io.read()
 
     # Create spike module
