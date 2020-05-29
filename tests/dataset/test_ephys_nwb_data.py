@@ -130,6 +130,7 @@ def test_get_sweep_attrs(nwb_data):
         'bias_current': 100.0,
         'bridge_balance': 500.0,
         'gain': 32.0,
+        'capacitance_compensation': None,
         'clamp_mode': 'CurrentClamp',
     }
 
@@ -140,7 +141,7 @@ def test_get_sweep_attrs(nwb_data):
 
 def test_get_clamp_mode(nwb_data):
 
-    attrs = nwb_data.get_sweep_attrs(4);
+    attrs = nwb_data.get_sweep_attrs(4)
 
     assert attrs['clamp_mode'] == "CurrentClamp"
 

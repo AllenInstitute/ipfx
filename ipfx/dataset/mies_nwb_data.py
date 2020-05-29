@@ -42,6 +42,14 @@ class MIESNWBData(EphysNWBData):
             "stimulus_units": self.get_stimulus_unit(sweep_number),
             "bridge_balance_mohm": get_finite_or_none(attrs, "bridge_balance"),
             "leak_pa": get_finite_or_none(attrs, "bias_current"),
+            "cap_neutralization": get_finite_or_none(attrs, "capacitance_compensation"),
+            "cp_fast": get_finite_or_none(attrs, "capacitance_fast"),
+            "cp_slow": get_finite_or_none(attrs, "capacitance_slow"),
+            "rs_comp_bandwidth": get_finite_or_none(attrs, "resistance_comp_bandwidth"),
+            "rs_comp_correction": get_finite_or_none(attrs, "resistance_comp_correction"),
+            "rs_comp_prediction": get_finite_or_none(attrs, "resistance_comp_prediction"),
+            "whole_cell_cap_comp": get_finite_or_none(attrs, "whole_cell_capacitance_comp"),
+            "whole_cell_sr_comp": get_finite_or_none(attrs, "whole_cell_series_resistance_comp"),
             "stimulus_scale_factor": self.notebook.get_value(
                 "Scale Factor", sweep_number, None
             ),

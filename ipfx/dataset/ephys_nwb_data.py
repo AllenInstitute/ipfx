@@ -63,15 +63,15 @@ class EphysNWBData(EphysDataInterface):
         super(EphysNWBData, self).__init__(
             ontology=ontology, validate_stim=validate_stim)
         self.load_nwb(nwb_file, load_into_memory)
-        
+
         self.acquisition_path = "acquisition"
         self.stimulus_path = "stimulus/presentation"
         self.nwb_major_version = 2
-        
+
     def load_nwb(self, nwb_file: None, load_into_memory: bool = True):
         """
         Load NWB to self.nwb
-        
+
         Parameters
         ----------
         nwb_file: NWB file path or hdf5 obj
@@ -182,7 +182,7 @@ class EphysNWBData(EphysDataInterface):
 
         if stimulus_unit == "Volts":
             stimulus = stimulus * 1.0e3
-            response = response * 1.0e12 
+            response = response * 1.0e12
         elif stimulus_unit == "Amps":
             stimulus = stimulus * 1.0e12
             response = response * 1.0e3
@@ -203,6 +203,13 @@ class EphysNWBData(EphysDataInterface):
                 'gain': rs.gain,
                 'stimulus_description': rs.stimulus_description,
                 'sweep_number': sweep_number,
+                'capacitance_fast': rs.capacitance_fast,
+                'capacitance_slow': rs.capacitance_slow,
+                'resistance_comp_bandwidth': rs.resistance_comp_bandwidth,
+                'resistance_comp_correction': rs.resistance_comp_correction,
+                'resistance_comp_prediction': rs.resistance_comp_prediction,
+                'whole_cell_capacitance_comp': rs.whole_cell_capacitance_comp,
+                'whole_cell_series_resistance_comp': rs.whole_cell_series_resistance_comp,
                 'clamp_mode': "VoltageClamp"
             }
 
@@ -214,6 +221,7 @@ class EphysNWBData(EphysDataInterface):
                 'sweep_number': sweep_number,
                 'bias_current': rs.bias_current,
                 'bridge_balance': rs.bridge_balance,
+                'capacitance_compensation': rs.capacitance_compensation,
                 'clamp_mode': "CurrentClamp"
             }
         else:

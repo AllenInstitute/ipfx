@@ -26,7 +26,6 @@ def mies_nwb_data(tmp_nwb_path):
          [('name', 'test name'), ('code', 'extpexpend')]
          ])
 
-
     class Notebook(LabNotebookReader):
 
         def get_value(self, key, sweep_num, default):
@@ -53,14 +52,20 @@ def test_get_sweep_metadata(mies_nwb_data):
         'stimulus_units': 'Amps',
         'bridge_balance_mohm': 500.0,
         'leak_pa': 100.0,
+        "cap_neutralization": None,
+        "cp_fast": None,
+        "cp_slow": None,
+        "rs_comp_bandwidth": None,
+        "rs_comp_correction": None,
+        "rs_comp_prediction": None,
+        "whole_cell_cap_comp": None,
+        "whole_cell_sr_comp": None,
         'stimulus_scale_factor': 200.0,
         'stimulus_code': 'STIMULUS_CODE',
         'stimulus_code_ext': 'STIMULUS_CODE[1]',
         'clamp_mode': 'CurrentClamp',
-        'stimulus_name': 'expected name',
+        'stimulus_name': 'expected name'
     }
 
     obtained = mies_nwb_data.get_sweep_metadata(sweep_number=4)
     assert expected == obtained
-
-
