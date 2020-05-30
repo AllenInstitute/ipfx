@@ -58,13 +58,15 @@ def test_mies_nwb_pipeline_output(input_json, output_json, tmpdir_factory):
     -------
 
     """
-    pipeline_input = ju.read(input_json)
+    base_dir = Path(__file__).parents[1]
+    pipeline_input = ju.read(base_dir.joinpath(input_json))
     test_dir = str(tmpdir_factory.mktemp("test_mies_nwb2_specimens"))
 
+    pipeline_input["input_nwb_file"] = str(base_dir.joinpath(pipeline_input["input_nwb_file"]))
     pipeline_input["output_nwb_file"] = os.path.join(test_dir, "output.nwb")  # Modify path for the test output
     pipeline_input["qc_figs_dir"] = None
 
-    stimulus_ontology_file = pipeline_input.get("stimulus_ontology_file", None)
+    stimulus_ontology_file = base_dir.joinpath(pipeline_input["stimulus_ontology_file"])
 
     obtained = run_pipeline(
         pipeline_input["input_nwb_file"],
@@ -77,17 +79,18 @@ def test_mies_nwb_pipeline_output(input_json, output_json, tmpdir_factory):
 
     ju.write(os.path.join(test_dir, 'pipeline_output.json'), obtained)
     obtained = ju.read(os.path.join(test_dir, 'pipeline_output.json'))
-    expected = ju.read(output_json)
+    expected = ju.read(base_dir.joinpath(output_json))
 
+    # TODO add new MCC settings to expected['sweep_extraction']['sweep_features']
     output_diff = list(diff(expected, obtained, tolerance=0.001))
 
-    # There is a known issue with newer MIES-generated NWBs: They report 
-    # recording date in offsetless UTC, rather than local time +- an offset to 
+    # There is a known issue with newer MIES-generated NWBs: They report
+    # recording date in offsetless UTC, rather than local time +- an offset to
     # UTC as in the older generation.
     unacceptable = []
     for item in output_diff:
         if not "recording_date" in item[1]:
-            unacceptable.append(item)      
+            unacceptable.append(item)
 
     if unacceptable:
         print(unacceptable)
