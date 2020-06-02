@@ -70,6 +70,22 @@ class EphysDataSet(object):
             self._sweep_table = pd.DataFrame(sweeps)
         return self._sweep_table
 
+    @property
+    def sweep_info(self):
+        return list(self._sweep_info.values())
+
+    @sweep_info.setter
+    def sweep_info(self, value):
+        if not isinstance(value, dict):
+            self._sweep_info: Dict = {}
+            for sweep in value:
+                self._sweep_info[sweep["sweep_number"]] = sweep
+        else:
+            self._sweep_info = value
+        
+        if hasattr(self, "_sweep_table"):
+            del self._sweep_table
+
     def __init__(
             self,
             data: EphysDataInterface,
@@ -84,13 +100,8 @@ class EphysDataSet(object):
             handle any loading of data from external sources (such as NWB2 
             files)
         """
-        sweep_info = sweep_info or []
-
         self._data: EphysDataInterface = data
-
-        self._sweep_info: Dict = {}
-        for sweep in sweep_info:
-            self._sweep_info[sweep["sweep_number"]] = sweep
+        self.sweep_info = sweep_info or []
 
     def _setup_stimulus_repeat_lookup(self):
         """Each sweep contains the ith repetition of some stimulus (from 1 -> 
