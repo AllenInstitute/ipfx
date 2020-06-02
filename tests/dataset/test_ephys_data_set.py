@@ -139,6 +139,9 @@ def test_sweep_table(dataset):
         expected, dataset.sweep_table, check_like=True
     )
 
+def test_sweep_info_setter(dataset):
+    dataset.sweep_info = [{"sweep_number": 2}, {"sweep_number": 3}]
+    assert set(dataset.sweep_table["sweep_number"].tolist()) == {2, 3}
 
 def test_filtered_sweep_table(dataset):
     expected = pd.DataFrame([
