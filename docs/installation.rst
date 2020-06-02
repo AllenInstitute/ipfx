@@ -15,7 +15,7 @@ We suggest installing ``ipfx`` into a managed Python environment, such as those 
 Installing for development
 --------------------------
 
-If you wish to make contributions to ``ipfx`` (thank you!), you must clone the `git repository <https://github.com/alleninstitute/ipfx>`_. We will need to install `git-lfs <https://git-lfs.github.com/>`_ before cloning (we store some test data in lfs). Once you have cloned ``ipfx``, simply pip install it into your environment:
+If you wish to make contributions to ``ipfx`` (thank you!), you must clone the `git repository <https://github.com/alleninstitute/ipfx>`_. You will need to install `git-lfs <https://git-lfs.github.com/>`_ before cloning (we store some test data in lfs). Once you have cloned ``ipfx``, simply pip install it into your environment:
 
 .. code-block:: bash
 
