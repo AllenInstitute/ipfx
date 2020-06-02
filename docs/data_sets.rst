@@ -43,7 +43,7 @@ by stimulus type that can be used to compute stimulus-specific features (e.g. us
     from ipfx.utilities import prepare_sweep_info
 
     data_set = create_ephys_data_set(nwb_file=nwb_path)
-    data_set.sweep_info = prepare_sweep_info(data_set)
+    data_set.sweep_info = prepare_sweep_info(data_set) # removing any failed sweeps
 
     cell_features, sweep_features, cell_record, sweep_records = extract_data_set_features(data_set)
 
