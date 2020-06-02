@@ -11,12 +11,12 @@ This software is designed for use in the Allen Institute for Brain Science elect
 
 ## Quickstart:
 
-To run:
+To run::
 
-```bash
- $ cd ipfx/ipfx/bin
- $ python pipeline_from_nwb.py input_nwb_file
-```
+    bash
+    $ cd ipfx/ipfx/bin
+    $ python pipeline_from_nwb.py input_nwb_file
+
 User must specify the OUTPUT_DIR inside the pipeline_from_nwb.py
 
 Input:
@@ -37,4 +37,4 @@ We are working towards a 1.0.0 release of ipfx! This will bring some new feature
 - NWB1
 - Python 2
 
-Older versions of ipfx will continue to be available, but will receive only occasional bugfixes and patches.
+Older versions of ipfx will continue to be available, but may receive only occasional bugfixes and patches.

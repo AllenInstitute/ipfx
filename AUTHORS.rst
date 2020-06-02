@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* David Feng <davidf@alleninstitute.org> @dyf
+* Marmot <Marmot@AllenInstitute.onmicrosoft.com>
 * Nathan Gouwens <nathang@alleninstitute.org> @gouwens
 
 Contributors
