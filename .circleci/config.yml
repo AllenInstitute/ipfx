@@ -121,6 +121,8 @@ workflows:
           requires:
             - build
           filters:
+            tags:
+              only: /v\d+(\.\d+)*(.[A-Za-z][0-9A-Za-z]*)*/
             branches:
               only: master
 
