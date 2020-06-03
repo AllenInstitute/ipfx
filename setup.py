@@ -51,6 +51,7 @@ setup(
     version=version,
     description="""Intrinsic Physiology Feature Extractor (IPFX) - tool for computing neuronal features from the intracellular electrophysiological recordings""",
     long_description=readme,
+    long_description_content_type='text/markdown',
     author="Allen Institute for Brain Science",
     author_email="Marmot@AllenInstitute.onmicrosoft.com",
     url="https://github.com/AllenInstitute/ipfx",
