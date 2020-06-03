@@ -5,7 +5,7 @@ advance open science!
 Give a brief overview of the issue you are solving. Succinctly
 explain the GitHub issue you are addressing and the underlying problem
 of the ticket. The commit header and body should also include this
-message, for good commit messages see the [contribution guidelines](https://github.com/AllenInstitute/IPFX/blob/master/CONTRIBUTING.md).
+message, for good commit messages see the [contribution guidelines](CONTRIBUTING.md).
 
 
 # Addresses:
@@ -46,7 +46,7 @@ your configuration
 
 # Checklist
 - [ ] My code follows
-      [Allen Institute Contribution Guidelines](https://github.com/AllenInstitute/IPFX/blob/master/CONTRIBUTING.md)
+      [Allen Institute Contribution Guidelines](CONTRIBUTING.md)
 - [ ] My code is unit tested and does not decrease test coverage
 - [ ] I have performed a self review of my own code
 - [ ] My code is well-documented, and the docstrings conform to
