@@ -132,7 +132,13 @@ def test_roundtrip(tmpdir_factory, nwbfile):
 
 @pytest.mark.parametrize("name, value, sweep_id, getter, expected", [
     ["subject_id", "mouse01", None, lambda f: f.subject.subject_id, "mouse01"],
-    ["institution", "aibs", None, lambda f: f.institution, "aibs"]
+    ["institution", "aibs", None, lambda f: f.institution, "aibs"],
+    ["session_id", "12345", None, lambda f: f.session_id, "12345"],
+    ["age", "P56D", None, lambda f: f.subject.age, "P56D"],
+    ["date_of_birth", "2019-05-12 17:00:00 -0700", None, lambda f: f.subject.date_of_birth, "2019-05-12 17:00:00 -0700"],
+    ["genotype", "Gad2-IRES-Cre/wt;Ai14(RCL-tdT)/wt", None, lambda f: f.subject.genotype, "Gad2-IRES-Cre/wt;Ai14(RCL-tdT)/wt"],
+    ["sex", "F", None, lambda f: f.subject.sex, "F"],
+    ["species", "Mus musculus", None, lambda f: f.subject.species, "Mus musculus"]
 ])
 def test_register(nwbfile, name, value, sweep_id, getter, expected):
 

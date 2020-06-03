@@ -37,6 +37,12 @@ class Nwb2Sink(MetadataSink):
             "institution",
             "electrode_id",
             "electrode_resistance",
+            "session_id",
+            "age",
+            "genotype",
+            "sex",
+            "species",
+            "date_of_birth"
         }
 
     @property
@@ -176,6 +182,18 @@ class Nwb2Sink(MetadataSink):
                 self._get_single_ic_electrode().name = str(value)
             elif name == "electrode_resistance":
                 self._get_single_ic_electrode().resistance = value
+            elif name == "session_id":
+                self.nwbfile.session_id = value
+            elif name == "age":
+                self._get_subject().age = value
+            elif name == "genotype":
+                self._get_subject().genotype = value
+            elif name == "sex":
+                self._get_subject().sex = value
+            elif name == "species":
+                self._get_subject().species = value
+            elif name == "date_of_birth":
+                self._get_subject().date_of_birth = value
             else:
                 self._cant_attach(name, sweep_id)
 
