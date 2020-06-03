@@ -27,3 +27,5 @@ or a predetermined release date is approaching
   - [ ] [Deployment Plan](http://bamboo.corp.alleninstitute.org/deploy/viewDeploymentProjectEnvironments.action?id=164855841)
 - [ ] After release/deployment, merge release branch back into dev and delete the release branch
 - [ ] Announce release on https://community.brain-map.org
+
+*note: CircleCI will deploy the release version of ipfx from the master branch to pypi when the command "git tag v#.#.#" (e.g. "git tag v1.0.0") runs.
