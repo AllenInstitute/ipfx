@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import (
     List, Dict, Any, Set, Optional, Union
 )
+import datetime
 
 import pynwb
 import h5py
@@ -193,7 +194,7 @@ class Nwb2Sink(MetadataSink):
             elif name == "species":
                 self._get_subject().species = value
             elif name == "date_of_birth":
-                self._get_subject().date_of_birth = value
+                self._get_subject().date_of_birth = datetime.datetime.strptime(value, f"%Y-%m-%d %H:%M:%S %z")
             else:
                 self._cant_attach(name, sweep_id)
 

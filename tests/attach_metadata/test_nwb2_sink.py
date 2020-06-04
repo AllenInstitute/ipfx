@@ -6,7 +6,7 @@ components which are tested there rather than here, namely:
     _reload_nwbfile
     _commit_nwb_changes
 """
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import io
 import os
 
@@ -135,16 +135,35 @@ def test_roundtrip(tmpdir_factory, nwbfile):
     ["institution", "aibs", None, lambda f: f.institution, "aibs"],
     ["session_id", "12345", None, lambda f: f.session_id, "12345"],
     ["age", "P56D", None, lambda f: f.subject.age, "P56D"],
-    ["date_of_birth", "2019-05-12 17:00:00 -0700", None, lambda f: f.subject.date_of_birth, "2019-05-12 17:00:00 -0700"],
-    ["genotype", "Gad2-IRES-Cre/wt;Ai14(RCL-tdT)/wt", None, lambda f: f.subject.genotype, "Gad2-IRES-Cre/wt;Ai14(RCL-tdT)/wt"],
+    ["date_of_birth", "2019-05-12 17:00:00 -0700", None, 
+        lambda f: f.subject.date_of_birth, datetime(
+            2019, 5, 12, 17, 0, tzinfo=timezone(timedelta(hours=-7))
+        )
+    ],
+    ["genotype", "Gad2-IRES-Cre/wt;Ai14(RCL-tdT)/wt", None, 
+        lambda f: f.subject.genotype, "Gad2-IRES-Cre/wt;Ai14(RCL-tdT)/wt"
+    ],
     ["sex", "F", None, lambda f: f.subject.sex, "F"],
-    ["species", "Mus musculus", None, lambda f: f.subject.species, "Mus musculus"]
+    ["species", "Mus musculus", None, lambda f: f.subject.species, 
+        "Mus musculus"
+    ],
 ])
-def test_register(nwbfile, name, value, sweep_id, getter, expected):
+def test_register(
+        tmpdir_factory, nwbfile, name, value, sweep_id, getter, expected
+):
+    tmpdir = tmpdir_factory.mktemp("test_register")
+    path = os.path.join(str(tmpdir), "test.nwb")
 
     sink = nwb2_sink.Nwb2Sink(None)
     sink.nwbfile = nwbfile
 
     sink.register(name, value, sweep_id)
-    obtained = getter(sink.nwbfile)
+
+    with pynwb.NWBHDF5IO(path, "w") as writer:
+        writer.write(nwbfile)
+
+    with pynwb.NWBHDF5IO(path, "r") as reader:
+        obt_nwb = reader.read()
+
+    obtained = getter(obt_nwb)
     assert obtained == expected
