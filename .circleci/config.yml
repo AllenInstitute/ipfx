@@ -69,3 +69,60 @@ jobs:
       - store_artifacts:
           path: test-results
           destination: tr1
+
+
+  deploy_pypi:
+    docker:
+      - image: circleci/python:3.7
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: configure pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+
+      - run:
+          name: setup_venv
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -U twine setuptools wheel
+
+      - run:
+          name: check_version
+          command: |
+            . venv/bin/activate
+            python setup.py check_version -e $CIRCLE_TAG
+
+      - run:
+          name: build wheels
+          command: |
+            . venv/bin/activate
+            python setup.py sdist
+            python setup.py bdist_wheel
+
+      - run:
+          name: deploy
+          command: |
+            . venv/bin/activate
+            twine upload dist/* --verbose --config-file ~/.pypirc
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build
+      - deploy_pypi:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /v\d+(\.\d+)*(.[A-Za-z][0-9A-Za-z]*)*/
+            branches:
+              only: master
+

@@ -1,13 +1,13 @@
 Welcome to Intrinsic Physiology Feature Extractor (ipfx)
 ========================================================
 
-ipfx is a python package for computing intrinsic cell features from electrophysiology data.  This includes:
+ipfx is a python 2/3 package for computing intrinsic cell features from electrophysiology data.  This includes:
 
     * action potential detection (e.g. threshold time and voltage)
     * cell quality control (e.g. resting potential stability)
     * stimulus-specific cell features (e.g. input resistance)
 
-This software is designed for use in the Allen Institute for Brain Science electrophysiology data processing pipeline. For more information on ipfx, please see the [documentation](ipfx.rtfd.io) (especially the [installation instructions](https://ipfx.readthedocs.io/en/latest/installation.html) and [code examples](https://ipfx.readthedocs.io/en/latest/auto_examples/index.html)).
+This software is designed for use in the Allen Institute for Brain Science electrophysiology data processing pipeline.
 
 ## Quickstart:
 
@@ -31,6 +31,10 @@ Output:
  * qc_figs: index.html includes cell figures and feature table and sweep.html includes sweep figures
 
 
-## Contributing
+Deprecation Warning
+-------------------
+We are working towards a 1.0.0 release of ipfx! This will bring some new features, like NWB2 support, along with improvements to our documentation and testing. We will also drop support for
+- NWB1
+- Python 2
 
-Thank you for your interest in contributing to IPFX! We welcome contributions, from bug reports and feature requests, to code. Please see the [contribution guide](CONTRIBUTING.md) for more information.
+Older versions of ipfx will continue to be available, but may receive only occasional bugfixes and patches.

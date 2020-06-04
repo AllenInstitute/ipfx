@@ -243,7 +243,7 @@ latex_elements = {
 latex_documents = [
     ('index', 'ipfx.tex',
      u'ipfx Documentation',
-     u'David Feng', 'manual'),
+     u'Allen Institute for Brain Science', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at
@@ -274,7 +274,7 @@ latex_documents = [
 man_pages = [
     ('index', 'ipfx',
      u'ipfx Documentation',
-     [u'David Feng'], 1)
+     [u'Allen Institute for Brain Science'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -289,7 +289,7 @@ man_pages = [
 texinfo_documents = [
     ('index', 'ipfx',
      u'ipfx Documentation',
-     u'David Feng',
+     u'Allen Institute for Brain Science',
      'ipfx',
      'intrinsic physiology feature extractor',
      'Miscellaneous'),
