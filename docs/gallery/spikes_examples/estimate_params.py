@@ -5,36 +5,35 @@ Estimate Spike Detection Parameters
 Estimate spike detection parameters
 """
 
+import os
 from ipfx.data_set_utils import create_data_set
 from ipfx.spike_features import estimate_adjusted_detection_parameters
 from ipfx.feature_extractor import SpikeFeatureExtractor
-
-from allensdk.api.queries.cell_types_api import CellTypesApi
-
-import os
+from ipfx.utilities import drop_failed_sweeps
 import matplotlib.pyplot as plt
 
 # Download and access the experimental data
-ct = CellTypesApi()
 nwb_file = os.path.join(
     os.path.dirname(os.getcwd()),
     "data",
     "nwb2_H17.03.008.11.03.05.nwb"
 )
-specimen_id = 595570553
-sweep_info = ct.get_ephys_sweeps(specimen_id)
 
-# build a data set and find the short squares
-data_set = create_data_set(sweep_info=sweep_info, nwb_file=nwb_file)
-ssq_table = data_set.filtered_sweep_table(stimuli=["Short Square"])
-ssq_set = data_set.sweep_set(ssq_table.sweep_number)
+# Create data set from the nwb file and find the short squares
+data_set = create_data_set(nwb_file=nwb_file)
+
+# Drop failed sweeps: sweeps with incomplete recording or failing QC criteria
+drop_failed_sweeps(data_set)
+
+short_square_table = data_set.filtered_sweep_table(stimuli=["Short Square"])
+ssq_set = data_set.sweep_set(short_square_table.sweep_number)
 
 # estimate the dv cutoff and threshold fraction
 dv_cutoff, thresh_frac = estimate_adjusted_detection_parameters(
     ssq_set.v, ssq_set.t, 1.02, 1.021
 )
 
-# detect spikes
+# detect spikes  in a given sweep number
 sweep_number = 16
 sweep = data_set.sweep(sweep_number)
 ext = SpikeFeatureExtractor(dv_cutoff=dv_cutoff, thresh_frac=thresh_frac)

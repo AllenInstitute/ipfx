@@ -2,65 +2,71 @@
 Long Square Analysis
 ====================
 
-Detect Long Square Features
+Calculate Features of Long Square sweeps
 """
-from ipfx.data_set_utils import create_data_set
+
 from ipfx.feature_extractor import (
     SpikeFeatureExtractor, SpikeTrainFeatureExtractor
 )
 import ipfx.stimulus_protocol_analysis as spa
 from ipfx.epochs import get_stim_epoch
-
-from allensdk.api.queries.cell_types_api import CellTypesApi
+from ipfx.dataset.create import create_ephys_data_set
+from ipfx.utilities import drop_failed_sweeps
 
 import os
 import matplotlib.pyplot as plt
 
 # Download and access the experimental data
-ct = CellTypesApi()
 nwb_file = os.path.join(
-    os.path.dirname(os.getcwd()), 
+    os.path.dirname(os.getcwd()),
     "data",
     "nwb2_H17.03.008.11.03.05.nwb"
 )
-specimen_id = 595570553
-sweep_info = ct.get_ephys_sweeps(specimen_id)
+# Create Ephys Data Set
+data_set = create_ephys_data_set(nwb_file=nwb_file)
 
-# build a data set and find the long squares
-data_set = create_data_set(sweep_info=sweep_info, nwb_file=nwb_file)
-lsq_table = data_set.filtered_sweep_table(
+# Drop failed sweeps: sweeps with incomplete recording or failing QC criteria
+drop_failed_sweeps(data_set)
+
+# get sweep table of Long Square sweeps
+long_square_table = data_set.filtered_sweep_table(
     stimuli=data_set.ontology.long_square_names
 )
-lsq_set = data_set.sweep_set(lsq_table.sweep_number)
+long_square_sweeps = data_set.sweep_set(long_square_table.sweep_number)
 
-# find the start and end time of the stimulus 
+# Select epoch corresponding to the actual recording from the sweeps
+# and align sweeps so that the experiment would start at the same time
+long_square_sweeps.select_epoch("recording")
+long_square_sweeps.align_to_start_of_epoch("experiment")
+
+# find the start and end time of the stimulus
 # (treating the first sweep as representative)
-stim_start_index, stim_end_index = get_stim_epoch(lsq_set.i[0])
-stim_start_time = lsq_set.t[0][stim_start_index]
-stim_end_time = lsq_set.t[0][stim_end_index]
+stim_start_index, stim_end_index = get_stim_epoch(long_square_sweeps.i[0])
+stim_start_time = long_square_sweeps.t[0][stim_start_index]
+stim_end_time = long_square_sweeps.t[0][stim_end_index]
 
 # build the extractors
-spx = SpikeFeatureExtractor(start=stim_start_time, end=stim_end_time)
-spfx = SpikeTrainFeatureExtractor(start=stim_start_time, end=stim_end_time)
+spfx = SpikeFeatureExtractor(start=stim_start_time, end=stim_end_time)
+sptfx = SpikeTrainFeatureExtractor(start=stim_start_time, end=stim_end_time)
 
 # run the analysis and print out a few of the features
-lsqa = spa.LongSquareAnalysis(spx, spfx, subthresh_min_amp=-100.0)
-data = lsqa.analyze(lsq_set)
+long_square_analysis = spa.LongSquareAnalysis(spfx, sptfx, subthresh_min_amp=-100.0)
+data = long_square_analysis.analyze(long_square_sweeps)
 
 fields_to_print = [
-    'tau', 
-    'v_baseline', 
-    'input_resistance', 
-    'vm_for_sag', 
-    'fi_fit_slope', 
-    'sag', 
+    'tau',
+    'v_baseline',
+    'input_resistance',
+    'vm_for_sag',
+    'fi_fit_slope',
+    'sag',
     'rheobase_i'
 ]
 
 for field in fields_to_print:
     print("%s: %s" % (field, str(data[field])))
 
-# plot stim amp vs. firing rate
+# Plot stimulus amplitude vs. firing rate
 spiking_sweeps = data['spiking_sweeps'].sort_values(by='stim_amp')
 plt.plot(spiking_sweeps.stim_amp,
          spiking_sweeps.avg_rate)

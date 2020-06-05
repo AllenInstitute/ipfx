@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from ipfx.qc_feature_extractor import sweep_qc_features
 import ipfx.sweep_props as sweep_props
@@ -7,15 +7,15 @@ from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.ephys_data_set import EphysDataSet
 
 
-def prepare_sweep_info(
+def drop_failed_sweeps(
         dataset: EphysDataSet,
         stimulus_ontology: Optional[StimulusOntology] = None,
         qc_criteria: Optional[Dict] = None
 ) -> List[Dict]:
-    """A convenience which extracts and QCs sweeps in preparation for dataset 
+    """A convenience which extracts and QCs sweeps in preparation for dataset
     feature extraction. This function:
     1. extracts sweep qc features
-    2. removes tagged sweeps
+    2. removes sweeps tagged with failure messages
     3. sets sweep states based on qc results
 
     Parameters
@@ -39,4 +39,5 @@ def prepare_sweep_info(
     )
     sweep_props.assign_sweep_states(sweep_states, sweep_features)
 
-    return sweep_features
+    dataset.sweep_info = sweep_features
+
