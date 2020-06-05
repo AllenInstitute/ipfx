@@ -49,7 +49,6 @@ of :py:class:`~ipfx.sweep.Sweep` objects:
                            Sweep(t=t2, v=v2, i=i2) ])
 
 
-
 Sweeps corresponding to the same stimulus type may have different stimulus start time.
 This happens because sweeps may have different duration of the test pulse epoch preceding the stimulus epoch.
 To perform the analysis, we must align a sweep set to have the same stimulus start times.
@@ -134,6 +133,7 @@ to calculate the QC features:
 
     from ipfx.qc_feature_extractor import sweep_qc_features, cell_qc_features
 
+    dataset = create_ephys_data_set(nwb_file="path/to/experiment.nwb")
     sweep_qc_features = sweep_qc_features(dataset)
     cell_features, cell_tags = cell_qc_features(dataset)
 
@@ -143,10 +143,10 @@ and to calculate the analysis features:
 
     from ipfx.data_set_features import extract_data_set_features
 
+    drop_failed_sweeps(data_set)     # sweeps with incomplete recording or failing QC criteria
     cell_features, sweep_features, cell_record, sweep_records = extract_data_set_features(dataset)
 
 this code block does the following:
-    1. Compute spike times and spike features for all current-clamp sweeps
-    2. Compute long square response features
-    3. Compute short square response features
-    4. Compute ramp response features
+    1. Creates a dataset
+    2. Drops failed sweeps that cannot be used for feature extraction
+    3. Computes features for the Long Square, Short Square and Ramp sweeps
