@@ -61,6 +61,17 @@ jobs:
             git lfs pull
             py.test --junitxml=test-results/junit.xml --verbose
 
+      - run:
+          name: check env vars
+          command: |
+            echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+          env:
+            RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+          command: |
+            echo $RELEASE_VERSION
+            echo ${{ steps.vars.outputs.tag }}
+            echo $CIRCLE_TAG
+            echo "check env vars"
 
       - store_test_results:
           path: test-results
@@ -78,18 +89,6 @@ jobs:
 
     steps:
       - checkout
-
-      - name: Set output
-        id: vars
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
-      - name: Check output
-        env:
-          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
-        run: |
-          echo $RELEASE_VERSION
-          echo ${{ steps.vars.outputs.tag }}
-          echo $CIRCLE_TAG
-          echo "check env vars"
 
       - run:
           name: configure pypirc
