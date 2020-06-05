@@ -50,6 +50,15 @@ jobs:
             . venv/bin/activate
             pip install -r test_requirements.txt
 
+      - run:
+          name: check env vars
+          id: vars
+          run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+          command: |
+            echo ${{ steps.vars.outputs.tag }}
+            echo $CIRCLE_TAG
+            echo "check env vars"
+
       # run tests!
       - run:
           name: run tests
@@ -60,14 +69,6 @@ jobs:
             sudo apt-get -y install git-lfs
             git lfs pull
             py.test --junitxml=test-results/junit.xml --verbose
-
-      - run:
-          name: check env vars
-          command: |
-            echo ::set-output name=tag::${GITHUB_REF#refs/*/}
-            echo ${{ steps.vars.outputs.tag }}
-            echo $CIRCLE_TAG
-            echo "check env vars"
 
       - store_test_results:
           path: test-results
