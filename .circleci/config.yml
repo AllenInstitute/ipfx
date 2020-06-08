@@ -54,6 +54,7 @@ jobs:
           name: check env vars
           command: |
             echo "CIRCLE_TAG: $CIRCLE_TAG"
+            echo "test ..."
 
       # run tests!
       - run:
