@@ -124,7 +124,7 @@ workflows:
       - build:
           filters:
             tags:
-              only: /^v.*/
+              only: /v\d+(\.\d+)*(.[A-Za-z][0-9A-Za-z]*)*/
       - deploy_pypi:
           requires:
             - build
