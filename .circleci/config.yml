@@ -113,16 +113,16 @@ jobs:
             twine upload dist/* --verbose --config-file ~/.pypirc
 
 workflows:
-  version: 2
-  build_and_deploy:
-    jobs:
-      - build
-      - deploy_pypi:
-          requires:
+    version: 2
+    build_and_deploy:
+        jobs:
             - build
-          filters:
-            tags:
-              only: /^v\d+(\.\d+)*(\.[0-9A-Za-z]*)*/
-            branches:
-              only: master
+            - deploy_pypi:
+                requires:
+                    - build
+                filters:
+                    tags:
+                        only: /^v\d+(\.\d+)*(\.[0-9A-Za-z]*)*/
+                    branches:
+                        only: master
 
