@@ -96,6 +96,7 @@ jobs:
       - run:
           name: check_version
           command: |
+            echo "CIRCLE_TAG: $CIRCLE_TAG"
             . venv/bin/activate
             python setup.py check_version -e $CIRCLE_TAG
 
