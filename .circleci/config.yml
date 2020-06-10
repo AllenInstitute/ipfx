@@ -96,6 +96,7 @@ jobs:
       - run:
           name: check_version
           command: |
+            echo "CIRCLE_TAG: $CIRCLE_TAG"
             . venv/bin/activate
             python setup.py check_version -e $CIRCLE_TAG
 
@@ -116,13 +117,20 @@ workflows:
   version: 2
   build_and_deploy:
     jobs:
-      - build
+      - build:
+          filters:
+            tags:
+              only: /^v\d+(\.\d+)*(\.[0-9A-Za-z]*)*/
+            branches:
+              ignore: /.*/
       - deploy_pypi:
           requires:
             - build
           filters:
             tags:
-              only: /v\d+(\.\d+)*(.[A-Za-z][0-9A-Za-z]*)*/
+              only: /^v\d+(\.\d+)*(\.[0-9A-Za-z]*)*/
             branches:
-              only: master
-
+              ignore: /.*/
+  run_tests:
+    jobs:
+      - build

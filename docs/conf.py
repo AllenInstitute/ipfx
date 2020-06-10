@@ -62,7 +62,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.mathjax',
               'sphinx_gallery.gen_gallery',
-              'm2r']
+              'm2r',
+              'numpydoc']
 
 sphinx_gallery_conf = {
     # path to your examples scripts
