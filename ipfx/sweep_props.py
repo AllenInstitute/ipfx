@@ -1,7 +1,7 @@
 import logging
 import re
 
-from .ephys_data_set import EphysDataSet
+from ipfx.dataset.ephys_data_set import EphysDataSet
 
 
 def override_auto_sweep_states(manual_sweep_states,sweep_states):

@@ -8,8 +8,6 @@ Calculate features of Ramp sweeps
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
-from allensdk.api.queries.cell_types_api import CellTypesApi
-from ipfx.data_set_utils import create_data_set
 from ipfx.epochs import get_stim_epoch
 from ipfx.dataset.create import create_ephys_data_set
 from ipfx.utilities import drop_failed_sweeps
@@ -20,7 +18,6 @@ from ipfx.feature_extractor import (
 from ipfx.stimulus_protocol_analysis import RampAnalysis
 
 # Download and access the experimental data
-ct = CellTypesApi()
 nwb_file = os.path.join(
     os.path.dirname(os.getcwd()),
     "data",

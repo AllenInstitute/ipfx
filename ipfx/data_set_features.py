@@ -36,7 +36,7 @@
 import numpy as np
 import logging
 from .feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
-from . import ephys_data_set as eds
+from ipfx.dataset.ephys_data_set import EphysDataSet
 from . import spike_features as spkf
 from . import stimulus_protocol_analysis as spa
 from . import stim_features as stf
@@ -46,17 +46,10 @@ from . import logging_utils as lu
 
 DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
-# DETECTION_PARAMETERS = {
-#     eds.EphysDataSet.SHORT_SQUARE: { 'est_window': (1.02, 1.021), 'thresh_frac_floor': 0.1 },
-#     eds.EphysDataSet.SHORT_SQUARE_TRIPLE: { 'est_window': (2.02, 2.021), 'thresh_frac_floor': 0.1 },
-#     eds.EphysDataSet.RAMP: { 'start': 1.02 },
-#     eds.EphysDataSet.LONG_SQUARE: { 'start': 1.02, 'end': 2.02 }
-# }
-
 DETECTION_PARAMETERS = {
-    eds.EphysDataSet.SHORT_SQUARE: {'thresh_frac_floor': 0.1 },
-    eds.EphysDataSet.RAMP: { },
-    eds.EphysDataSet.LONG_SQUARE: { }
+    EphysDataSet.SHORT_SQUARE: {'thresh_frac_floor': 0.1 },
+    EphysDataSet.RAMP: { },
+    EphysDataSet.LONG_SQUARE: { }
 }
 
 
