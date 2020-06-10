@@ -7,7 +7,7 @@ from dateutil import parser as dateparser
 
 from io import BytesIO
 import h5py
-from pynwb import NWBHDF5IO
+from pynwb import NWBHDF5IO as _NWBHDF5IO
 
 from pynwb.icephys import (
     CurrentClampSeries, CurrentClampStimulusSeries,
@@ -16,6 +16,16 @@ from pynwb.icephys import (
 
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.ephys_data_interface import EphysDataInterface
+
+
+class NWBHDF5IO(_NWBHDF5IO):
+    """
+    Simple alias to suppress 'ignoring namespace' errors in NWBHDF5IO
+    """
+    def __init__(self, *args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="ignoring namespace*")
+            super().__init__(*args, **kwargs)
 
 
 def get_scalar_value(dataset_from_nwb):
