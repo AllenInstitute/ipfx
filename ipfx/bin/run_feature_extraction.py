@@ -5,7 +5,7 @@ import ipfx.error as er
 import ipfx.data_set_features as dsft
 from ipfx.stimulus import StimulusOntology
 from ipfx._schemas import FeatureExtractionParameters
-from ipfx.data_set_utils import create_data_set
+from ipfx.dataset.create import create_ephys_data_set
 import ipfx.sweep_props as sp
 import allensdk.core.json_utilities as ju
 from ipfx.nwb_append import append_spike_times
@@ -45,9 +45,9 @@ def run_feature_extraction(input_nwb_file,
         logging.info(F"Ontology is not provided, using default {StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE}")
     ont = StimulusOntology(ju.read(stimulus_ontology_file))
 
-    data_set = create_data_set(sweep_info=sweep_info,
-                               nwb_file=input_nwb_file,
-                               ontology=ont)
+    data_set = create_ephys_data_set(sweep_info=sweep_info,
+                                     nwb_file=input_nwb_file,
+                                     ontology=ont)
 
     try:
         cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)

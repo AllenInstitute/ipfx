@@ -4,7 +4,7 @@ import allensdk.core.json_utilities as json_utilities
 import argschema as ags
 
 from ipfx._schemas import SweepExtractionParameters
-from ipfx.data_set_utils import create_data_set
+from ipfx.dataset.create import create_ephys_data_set
 from ipfx.logging_utils import log_pretty_header
 from ipfx.bin.make_stimulus_ontology import make_stimulus_ontology_from_lims
 from ipfx.stimulus import StimulusOntology
@@ -56,7 +56,7 @@ def run_sweep_extraction(
         )
 
     ont = StimulusOntology(json_utilities.read(stimulus_ontology_file))
-    ds = create_data_set(
+    ds = create_ephys_data_set(
         nwb_file=input_nwb_file,
         ontology=ont
     )
