@@ -15,7 +15,7 @@ To run:
 
 ```bash
  $ cd ipfx/ipfx/bin
- $ python pipeline_from_nwb.py input_nwb_file
+ $ python pipeline_from_nwb.py input_nwb_file outputdir
 ```
 User must specify the OUTPUT_DIR inside the pipeline_from_nwb.py
 
@@ -33,7 +33,7 @@ Output:
 
 Deprecation Warning
 -------------------
-We are working towards a 1.0.0 release of ipfx! This will bring some new features, like NWB2 support, along with improvements to our documentation and testing. We will also drop support for
+The 1.0.0 release of ipfx brings some new features, like NWB2 support, along with improvements to our documentation and testing. We will also drop support for
 - NWB1
 - Python 2
 
