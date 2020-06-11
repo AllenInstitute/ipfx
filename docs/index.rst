@@ -32,5 +32,5 @@ to datasets of single cells saved in the NWB file format,
 to constructing a standalone data processing pipeline alike the
 Allen Institute electrophysiology :doc:`pipeline` to process thousands of datasets
 
-To get started check out the quick tutorial :doc:`quick_start`
+To get started check out the quick tutorial :doc:`tutorial`
 or dive into complete examples :ref:`examples-index`.
