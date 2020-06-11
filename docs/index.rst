@@ -4,6 +4,7 @@
 
    installation
    quick_start
+   tutorial
    stimuli
    authors
    auto_examples/index

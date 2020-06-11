@@ -11,6 +11,10 @@ This software is designed for use in the Allen Institute for Brain Science elect
 
 For usage and installation instructions, see the [documentation](https://ipfx.readthedocs.io/en/latest//).
 
+Quick Start
+------------
+For runing the pipeline, please see the [quick_start](docs/quick_start.rst) 
+
 Contributing
 ------------
 We welcome contributions! Please see our [contribution guide](CONTRIBUTING.md) for more information. Thank you!
