@@ -31,7 +31,8 @@ def run_feature_extraction(input_nwb_file,
                            output_nwb_file,
                            qc_fig_dir,
                            sweep_info,
-                           cell_info):
+                           cell_info,
+                           write_spikes=True):
 
     lu.log_pretty_header("Extract ephys features", level=1)
 
@@ -69,9 +70,10 @@ def run_feature_extraction(input_nwb_file,
 
     if not cell_state["failed_fx"]:
         sweep_spike_times = collect_spike_times(sweep_features)
-        append_spike_times(input_nwb_file,
-                           sweep_spike_times,
-                           output_nwb_path=output_nwb_file)
+        if write_spikes:
+            append_spike_times(input_nwb_file,
+                               sweep_spike_times,
+                               output_nwb_path=output_nwb_file)
 
         if qc_fig_dir is None:
             logging.info("qc_fig_dir is not provided, will not save figures")

@@ -18,7 +18,8 @@ def run_pipeline(
         stimulus_ontology_file,
         qc_fig_dir,
         qc_criteria,
-        manual_sweep_states
+        manual_sweep_states,
+        write_spikes=True,
 ):
 
     se_output = run_sweep_extraction(
@@ -57,7 +58,10 @@ def run_pipeline(
         qc_fig_dir,
         se_output['sweep_features'],
         se_output['cell_features'],
+        write_spikes,
     )
+
+    log_pretty_header("Analysis completed!", level=1)
 
     return {
         "sweep_extraction": se_output,
@@ -82,11 +86,11 @@ def main():
         module.args.get("stimulus_ontology_file", None),
         module.args.get("qc_fig_dir", None),
         module.args.get("qc_criteria", None),
-        module.args.get("manual_sweep_states", None)
+        module.args.get("manual_sweep_states", None),
+        module.args.get("write_spikes", None),
     )
 
     json_utilities.write(module.args["output_json"], output)
-    log_pretty_header("Analysis completed!", level=1)
 
 
 if __name__ == "__main__":
