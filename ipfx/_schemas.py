@@ -108,7 +108,7 @@ class PipelineParameters(ArgSchema):
     )
     qc_criteria = Nested(QcCriteria, required=True)
     manual_sweep_states = Nested(ManualSweepState, required=False, many=True)
-
+    write_spikes = Boolean(description="Flag for writing spike times", required=False)
 
 class OutputSchema(DefaultSchema):
     input_parameters = Nested(FeatureExtractionParameters,

@@ -20,6 +20,11 @@ def main():
     )
     parser.add_argument("input_nwb_file", type=str)
     parser.add_argument("output_dir", type=str)
+    parser.add_argument("--write_spikes",
+                        type=bool,
+                        default=False,
+                        help="If true will attempt to append spike times to the nwb file",
+                        )
     parser.add_argument("--input_json", type=str, default="input_json")
     parser.add_argument("--output_json", type=str, default="output_json")
 
@@ -50,7 +55,8 @@ def main():
                                    pipeline_input.get("stimulus_ontology_file", None),
                                    pipeline_input.get("qc_fig_dir", None),
                                    pipeline_input["qc_criteria"],
-                                   pipeline_input["manual_sweep_states"])
+                                   pipeline_input["manual_sweep_states"],
+                                   args["write_spikes"])
 
     ju.write(os.path.join(cell_dir, output_json), pipeline_output)
 

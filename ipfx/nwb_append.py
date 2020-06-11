@@ -47,19 +47,26 @@ def append_spike_times(input_nwb_path: PathLike,
     nwb_io = pynwb.NWBHDF5IO(nwb_path, mode='a', load_namespaces=True)
     nwbfile = nwb_io.read()
 
-    # Create spike module
-    spike_module = ProcessingModule(name='spikes',
-                                    description='detected spikes')
-    for sweep_num, spike_times in sweep_spike_times.items():
-        wrapped_spike_times = H5DataIO(data=np.asarray(spike_times),
-                                       compression=True)
-        ts = TimeSeries(timestamps=wrapped_spike_times,
-                        unit='seconds',
-                        data=wrapped_spike_times,
-                        name=f"Sweep_{sweep_num}")
-        spike_module.add_data_interface(ts)
+    spikes_module = "spikes"
+    # Add spikes only if not previously added
+    if spikes_module not in nwbfile.processing.keys():
+        spike_module = ProcessingModule(name=spikes_module,
+                                        description='detected spikes')
+        for sweep_num, spike_times in sweep_spike_times.items():
+            wrapped_spike_times = H5DataIO(data=np.asarray(spike_times),
+                                           compression=True)
+            ts = TimeSeries(timestamps=wrapped_spike_times,
+                            unit='seconds',
+                            data=wrapped_spike_times,
+                            name=f"Sweep_{sweep_num}")
+            spike_module.add_data_interface(ts)
 
-    nwbfile.add_processing_module(spike_module)
+        nwbfile.add_processing_module(spike_module)
 
-    nwb_io.write(nwbfile)
+        nwb_io.write(nwbfile)
+    else:
+        raise ValueError("Cannot add spikes times to the nwb file: "
+                         "spikes times already exist!")
+
     nwb_io.close()
+
