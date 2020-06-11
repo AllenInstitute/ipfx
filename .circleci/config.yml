@@ -73,7 +73,7 @@ jobs:
 
   deploy_pypi:
     docker:
-      - image: circleci/python:3.7
+      - image: circleci/python:3.6
     working_directory: ~/repo
 
     steps:

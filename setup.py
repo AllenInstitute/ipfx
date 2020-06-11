@@ -49,7 +49,7 @@ class CheckVersionCommand(Command):
 
 
 setup(
-    name='ipfx',
+    name='IPFX',
     version=version,
     description="""Intrinsic Physiology Feature Extractor (IPFX) - tool for computing neuronal features from the intracellular electrophysiological recordings""",
     long_description=readme,
@@ -68,7 +68,7 @@ setup(
         "License :: Other/Proprietary License", # Allen Institute Software License
         "Natural Language :: English",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.6",
         "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
     cmdclass={'check_version': CheckVersionCommand}
