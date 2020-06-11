@@ -5,8 +5,7 @@ To run:
 
 .. code-block:: bash
 
-    $ cd ipfx/ipfx/bin
-    $ python pipeline_from_nwb.py input_nwb_file outputdir
+    $ python -m ipfx.bin.run_pipeline_from_nwb_file <input_nwb_file> <outputdir>
 
 Input:
  
