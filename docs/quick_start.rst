@@ -9,7 +9,8 @@ To run:
     $ python pipeline_from_nwb.py input_nwb_file outputdir
 
 Input:
-* input_nwb_file: a full path to the NWB file with cell ephys recordings
+ 
+ * input_nwb_file: a full path to the NWB file with cell ephys recordings
 
 Output:
 

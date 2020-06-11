@@ -14,7 +14,7 @@ For usage and installation instructions, see the [documentation](https://ipfx.re
 
 Quick Start
 ------------
-For runing the pipeline, please see the [quick_start](docs/quick_start.rst) 
+To get started check out the quick tutorial [quick_start](docs/quick_start.rst) 
 
 Contributing
 ------------
