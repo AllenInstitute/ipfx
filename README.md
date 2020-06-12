@@ -10,11 +10,11 @@ IPFX is a Python package for computing intrinsic cell features from electrophysi
 
 This software is designed for use in the Allen Institute for Brain Science electrophysiology data processing pipeline.
 
-For usage and installation instructions, see the [documentation](https://ipfx.readthedocs.io/en/latest//).
+For usage and installation instructions, see the [documentation](https://ipfx.readthedocs.io/en/latest/).
 
 Quick Start
 ------------
-To start analyzing data now, check out the [quick_start](docs/quick_start.rst) . For a more in depth guide to IPFX, see [tutorial](docs/tutorial.rst) 
+To start analyzing data now, check out the [quick_start](https://ipfx.readthedocs.io/en/latest/quick_start.html) . For a more in depth guide to IPFX, see [tutorial](https://ipfx.readthedocs.io/en/latest/tutorial.html)
 
 Contributing
 ------------
