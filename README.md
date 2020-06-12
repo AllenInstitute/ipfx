@@ -14,7 +14,7 @@ For usage and installation instructions, see the [documentation](https://ipfx.re
 
 Quick Start
 ------------
-To get started check out the quick tutorial [quick_start](docs/quick_start.rst) 
+To start analyzing data now, check out the [quick_start](docs/quick_start.rst) . For a more in depth guide to IPFX, see [tutorial](docs/tutorial.rst) 
 
 Contributing
 ------------
