@@ -27,6 +27,7 @@ def main():
                         )
     parser.add_argument("--input_json", type=str, default="input_json")
     parser.add_argument("--output_json", type=str, default="output_json")
+    parser.add_argument("--qc_fig_dir", type=str, default=None)
 
     args = vars(parser.parse_args())
     output_dir = args["output_dir"]
@@ -53,7 +54,7 @@ def main():
     pipeline_output = run_pipeline(pipeline_input["input_nwb_file"],
                                    pipeline_input["output_nwb_file"],
                                    pipeline_input.get("stimulus_ontology_file", None),
-                                   pipeline_input.get("qc_fig_dir", None),
+                                   pipeline_input.get("qc_fig_dir", args["qc_fig_dir"]),
                                    pipeline_input["qc_criteria"],
                                    pipeline_input["manual_sweep_states"],
                                    args["write_spikes"])
