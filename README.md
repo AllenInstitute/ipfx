@@ -18,7 +18,7 @@ To start analyzing data now, check out the [quick_start](https://ipfx.readthedoc
 
 Contributing
 ------------
-We welcome contributions! Please see our [contribution guide](CONTRIBUTING.md) for more information. Thank you!
+We welcome contributions! Please see our [contribution guide](https://github.com/AllenInstitute/ipfx/blob/master/CONTRIBUTING.md) for more information. Thank you!
 
 Deprecation Warning
 -------------------
