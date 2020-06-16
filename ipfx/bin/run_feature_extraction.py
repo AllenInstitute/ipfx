@@ -49,40 +49,35 @@ def run_feature_extraction(input_nwb_file,
                                      nwb_file=input_nwb_file,
                                      ontology=ont)
 
-    try:
-        cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
+    (cell_features, sweep_features, cell_record, sweep_records, cell_state) = \
+        dsft.extract_data_set_features(data_set)
 
-        if cell_info: cell_record.update(cell_info)
+    if cell_info:
+        cell_record.update(cell_info)
 
-        cell_state = {"failed_fx": False, "fail_fx_message": None}
+    cell_state = {"failed_fx": False, "fail_fx_message": None}
 
-        feature_data = { 'cell_features': cell_features,
-                         'sweep_features': sweep_features,
-                         'cell_record': cell_record,
-                         'sweep_records': sweep_records,
-                         'cell_state': cell_state
-                         }
+    feature_data = {'cell_features': cell_features,
+                    'sweep_features': sweep_features,
+                    'cell_record': cell_record,
+                    'sweep_records': sweep_records,
+                    'cell_state': cell_state
+                    }
 
-    except (er.FeatureError,IndexError) as e:
-        cell_state = {"failed_fx":True, "fail_fx_message": str(e)}
-        logging.warning(e)
-        feature_data = {'cell_state': cell_state}
+    sweep_spike_times = collect_spike_times(sweep_features)
+    if write_spikes:
+        append_spike_times(input_nwb_file,
+                           sweep_spike_times,
+                           output_nwb_path=output_nwb_file)
 
-    if not cell_state["failed_fx"]:
-        sweep_spike_times = collect_spike_times(sweep_features)
-        if write_spikes:
-            append_spike_times(input_nwb_file,
-                               sweep_spike_times,
-                               output_nwb_path=output_nwb_file)
+    if qc_fig_dir is None:
+        logging.info("qc_fig_dir is not provided, will not save figures")
+    else:
+        plotqc.display_features(qc_fig_dir, data_set, feature_data)
 
-        if qc_fig_dir is None:
-            logging.info("qc_fig_dir is not provided, will not save figures")
-        else:
-            plotqc.display_features(qc_fig_dir, data_set, feature_data)
-
-        # On Windows int64 keys of sweep numbers cannot be converted to str by json.dump when serializing.
-        # Thus, we are converting them here:
-        feature_data["sweep_features"] = {str(k): v for k, v in feature_data["sweep_features"].items()}
+    # On Windows int64 keys of sweep numbers cannot be converted to str by json.dump when serializing.
+    # Thus, we are converting them here:
+    feature_data["sweep_features"] = {str(k): v for k, v in feature_data["sweep_features"].items()}
 
     return feature_data
 
