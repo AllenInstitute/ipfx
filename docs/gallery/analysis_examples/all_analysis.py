@@ -23,7 +23,7 @@ data_set = create_ephys_data_set(nwb_file=nwb_file)
 drop_failed_sweeps(data_set)
 
 # Calculate ephys features
-cell_features, sweep_features, cell_record, sweep_records = \
+cell_features, sweep_features, cell_record, sweep_records, _ = \
     extract_data_set_features(data_set, subthresh_min_amp=-100.0)
 
 print(cell_record)
