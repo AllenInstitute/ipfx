@@ -43,8 +43,20 @@ class MIESNWBData(EphysNWBData):
             "bridge_balance_mohm": get_finite_or_none(attrs, "bridge_balance"),
             "leak_pa": get_finite_or_none(attrs, "bias_current"),
             "cap_neutralization": get_finite_or_none(attrs, "capacitance_compensation"),
-            "cp_fast": get_finite_or_none(attrs, "capacitance_fast"),
-            "cp_slow": get_finite_or_none(attrs, "capacitance_slow"),
+            # we could use get_finite_or_none(attrs, "capacitance_fast") here
+            "cp_fast_cap": self.notebook.get_value(
+                "Fast compensation capacitance", sweep_number, None
+            ),
+            "cp_fast_tau": self.notebook.get_value(
+                "Fast compensation time", sweep_number, None
+            ),
+            # we could use get_finite_or_none(attrs, "capacitance_slow") here
+            "cp_slow_cap": self.notebook.get_value(
+                "Slow compensation capacitance", sweep_number, None
+            ),
+            "cp_slow_tau": self.notebook.get_value(
+                "Slow compensation time", sweep_number, None
+            ),
             "rs_comp_bandwidth": get_finite_or_none(attrs, "resistance_comp_bandwidth"),
             "rs_comp_correction": get_finite_or_none(attrs, "resistance_comp_correction"),
             "rs_comp_prediction": get_finite_or_none(attrs, "resistance_comp_prediction"),
@@ -52,6 +64,9 @@ class MIESNWBData(EphysNWBData):
             "whole_cell_sr_comp": get_finite_or_none(attrs, "whole_cell_series_resistance_comp"),
             "stimulus_scale_factor": self.notebook.get_value(
                 "Scale Factor", sweep_number, None
+            ),
+            "vclamp_holding_level": self.notebook.get_value(
+                "V-Clamp Holding Level", sweep_number, None
             ),
             "stimulus_code": self.get_stimulus_code(sweep_number),
             "stimulus_code_ext": self.get_stim_code_ext(sweep_number),
