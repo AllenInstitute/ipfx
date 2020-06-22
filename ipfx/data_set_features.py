@@ -183,21 +183,6 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
     return subthresh_min_amp, min_amp_delta
 
 
-def get_sweep_numbers(data_set, sweep_names):
-    """
-        Parameters
-        ----------
-        data_set: ephys data_set
-        sweep_names: attribute of stimulus ontology
-                     [coarse_long_square_names, long_square_names,
-                      short_square_names, ramp_names]
-    """
-    sweeps = data_set.filtered_sweep_table(
-                clamp_mode=data_set.CURRENT_CLAMP,
-                stimuli=getattr(data_set.ontology, sweep_names))
-    return sweeps['sweep_number'].sort_values().values
-
-
 def safe_fn(fvalue_on_failure=None):
     def safe_fn_decorator(fn):
         @functools.wraps(fn)
@@ -222,7 +207,9 @@ def safe_fn(fvalue_on_failure=None):
 def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     lu.log_pretty_header("Long Squares:", level=2)
 
-    long_square_sweep_numbers = get_sweep_numbers(data_set, 'long_square_names')
+    long_square_sweep_numbers = data_set.get_sweep_numbers(
+        data_set.ontology.long_square_names,
+        clamp_mode=data_set.CURRENT_CLAMP)
     if len(long_square_sweep_numbers) == 0:
         raise er.FeatureError("No long_square sweeps available for feature extraction")
 
@@ -271,8 +258,9 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
 def extract_cell_short_square_features(data_set):
     lu.log_pretty_header("Short Squares:", level=2)
 
-    short_square_sweep_numbers = get_sweep_numbers(data_set,
-                                                   "short_square_names")
+    short_square_sweep_numbers = data_set.get_sweep_numbers(
+        data_set.ontology.short_square_names,
+        clamp_mode=data_set.CURRENT_CLAMP)
     if len(short_square_sweep_numbers) == 0:
         raise er.FeatureError("No short square sweeps available for feature extraction")
 
@@ -302,7 +290,9 @@ def extract_cell_short_square_features(data_set):
 def extract_cell_ramp_features(data_set):
     lu.log_pretty_header("Ramps:", level=2)
 
-    ramp_sweep_numbers = get_sweep_numbers(data_set, "ramp_names")
+    ramp_sweep_numbers = data_set.get_sweep_numbers(
+        data_set.ontology.ramp_names,
+        clamp_mode=data_set.CURRENT_CLAMP)
     if len(ramp_sweep_numbers) == 0:
         raise er.FeatureError("No ramp sweeps available for feature extraction")
 
