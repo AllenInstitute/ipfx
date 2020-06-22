@@ -55,8 +55,6 @@ def run_feature_extraction(input_nwb_file,
     if cell_info:
         cell_record.update(cell_info)
 
-    cell_state = {"failed_fx": False, "fail_fx_message": None}
-
     feature_data = {'cell_features': cell_features,
                     'sweep_features': sweep_features,
                     'cell_record': cell_record,
