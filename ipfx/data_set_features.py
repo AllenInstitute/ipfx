@@ -313,27 +313,6 @@ def extract_cell_ramp_features(data_set):
         )
 
 
-def extract_cell_features(data_set, subthresh_min_amp=None):
-
-    lu.log_pretty_header("Analyzing cell features:", level=2)
-
-    cell_state = {"failed_fx": False, "fail_fx_message": None}
-    cell_features = {}
-
-    cell_features['long_squares'] = extract_cell_long_square_features(
-                                        data_set,
-                                        subthresh_min_amp,
-                                        cell_state=cell_state)
-    cell_features['short_squares'] = extract_cell_short_square_features(
-                                        data_set,
-                                        cell_state=cell_state)
-    cell_features['ramps'] = extract_cell_ramp_features(
-                                data_set,
-                                cell_state=cell_state)
-
-    return cell_features, cell_state
-
-
 def extract_data_set_features(data_set, subthresh_min_amp=None):
     """
 
@@ -356,7 +335,21 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     """
 
     # extract cell-level features
-    cell_features, cell_state = extract_cell_features(data_set)
+    lu.log_pretty_header("Analyzing cell features:", level=2)
+
+    cell_state = {"failed_fx": False, "fail_fx_message": None}
+    cell_features = {}
+
+    cell_features['long_squares'] = extract_cell_long_square_features(
+                                        data_set,
+                                        subthresh_min_amp,
+                                        cell_state=cell_state)
+    cell_features['short_squares'] = extract_cell_short_square_features(
+                                        data_set,
+                                        cell_state=cell_state)
+    cell_features['ramps'] = extract_cell_ramp_features(
+                                data_set,
+                                cell_state=cell_state)
 
     # compute sweep features
     iclamp_sweeps = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP)
