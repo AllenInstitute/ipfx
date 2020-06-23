@@ -90,6 +90,8 @@ all available features for a given dataset in one call.
 IPFX supports datasets stored in `Neurodata Without Borders 2.0 <https://nwb.org>`_ (NWB) format
 via a :py:class:`~ipfx.dataset.ephys_data_set.EphysDataSet` class, which provides a well-known interface to all of the data in an experiment.
 The data released by the Allen Institute is hosted on the DANDI public archive in the NWB format.
+Refer to :doc:`download_data` page for the instructions on downloading the data files.
+
 To create an instance of the :py:class:`~ipfx.dataset.ephys_data_set.EphysDataSet`:
 
 .. code-block:: python
