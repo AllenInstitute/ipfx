@@ -144,7 +144,7 @@ def extractors_for_sweeps(sweep_set,
     return sfx, stfx
 
 
-@record_errors()
+@record_errors
 @safe_fn()
 def extract_sweep_features(data_set, sweep_table):
     sweep_groups = sweep_table.groupby(data_set.STIMULUS_NAME)[data_set.SWEEP_NUMBER]
@@ -212,7 +212,7 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
     return subthresh_min_amp, min_amp_delta
 
 
-@record_errors()
+@record_errors
 @safe_fn()
 def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     lu.log_pretty_header("Long Squares:", level=2)
@@ -264,7 +264,7 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     return long_squares_features
 
 
-@record_errors()
+@record_errors
 @safe_fn()
 def extract_cell_short_square_features(data_set):
     lu.log_pretty_header("Short Squares:", level=2)
@@ -297,7 +297,7 @@ def extract_cell_short_square_features(data_set):
         )
 
 
-@record_errors()
+@record_errors
 @safe_fn()
 def extract_cell_ramp_features(data_set):
     lu.log_pretty_header("Ramps:", level=2)
