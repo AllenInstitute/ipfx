@@ -79,6 +79,7 @@ def record_errors(fn):
             {'failed_fx': failed,
              'fail_fx_message': str(errors) if failed else None}
             )
+    return wrapper
 
 
 def safe_fn(fvalue_on_failure=None):
