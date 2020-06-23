@@ -69,6 +69,33 @@ def detection_parameters(stimulus_name):
     return DETECTION_PARAMETERS.get(stimulus_name, {})
 
 
+def record_errors(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        result, errors = fn(*args, **kwargs)
+        failed = (errors is not None)
+        return (
+            result,
+            {'failed_fx': failed,
+             'fail_fx_message': str(errors) if failed else None}
+            )
+
+
+def safe_fn(fvalue_on_failure=None):
+    def safe_fn_decorator(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, cell_state=None, **kwargs):
+            try:
+                result = fn(*args, **kwargs)
+                e = None
+            except Exception as e:
+                logging.warning(e)
+                result = fvalue_on_failure
+            return result, e
+        return wrapper
+    return safe_fn_decorator
+
+
 def extractors_for_sweeps(sweep_set,
                           dv_cutoff=20., thresh_frac=0.05,
                           reject_at_stim_start_interval=0,
@@ -117,6 +144,8 @@ def extractors_for_sweeps(sweep_set,
     return sfx, stfx
 
 
+@record_errors()
+@safe_fn()
 def extract_sweep_features(data_set, sweep_table):
     sweep_groups = sweep_table.groupby(data_set.STIMULUS_NAME)[data_set.SWEEP_NUMBER]
 
@@ -183,26 +212,7 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
     return subthresh_min_amp, min_amp_delta
 
 
-def safe_fn(fvalue_on_failure=None):
-    def safe_fn_decorator(fn):
-        @functools.wraps(fn)
-        def wrapper(*args, cell_state=None, **kwargs):
-            try:
-                result = fn(*args, **kwargs)
-            except (er.FeatureError, IndexError) as e:
-                logging.warning(e)
-                if cell_state:
-                    if cell_state["failed_fx"]:
-                        cell_state["fail_fx_message"].append('; '+str(e))
-                    else:
-                        cell_state["failed_fx"] = True
-                        cell_state["fail_fx_message"] = str(e)
-                result = fvalue_on_failure
-            return result
-        return wrapper
-    return safe_fn_decorator
-
-
+@record_errors()
 @safe_fn()
 def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     lu.log_pretty_header("Long Squares:", level=2)
@@ -254,6 +264,7 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     return long_squares_features
 
 
+@record_errors()
 @safe_fn()
 def extract_cell_short_square_features(data_set):
     lu.log_pretty_header("Short Squares:", level=2)
@@ -286,6 +297,7 @@ def extract_cell_short_square_features(data_set):
         )
 
 
+@record_errors()
 @safe_fn()
 def extract_cell_ramp_features(data_set):
     lu.log_pretty_header("Ramps:", level=2)
@@ -338,27 +350,38 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     lu.log_pretty_header("Analyzing cell features:", level=2)
 
     cell_state = {"failed_fx": False, "fail_fx_message": None}
+    feature_states = {}
     cell_features = {}
 
-    cell_features['long_squares'] = extract_cell_long_square_features(
-                                        data_set,
-                                        subthresh_min_amp,
-                                        cell_state=cell_state)
-    cell_features['short_squares'] = extract_cell_short_square_features(
-                                        data_set,
-                                        cell_state=cell_state)
-    cell_features['ramps'] = extract_cell_ramp_features(
-                                data_set,
-                                cell_state=cell_state)
+    (cell_features['long_squares'], feature_states['long_squares_state']) = \
+        extract_cell_long_square_features(
+            data_set,
+            subthresh_min_amp)
+
+    (cell_features['short_squares'], feature_states['short_squares_state']) = \
+        extract_cell_short_square_features(data_set)
+
+    (cell_features['ramps'], feature_states['ramps_state']) = \
+        extract_cell_ramp_features(data_set)
 
     # compute sweep features
     iclamp_sweeps = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP)
-    sweep_features = extract_sweep_features(data_set, iclamp_sweeps)
+    sweep_features, feature_states['sweep_features_state'] = \
+        extract_sweep_features(data_set, iclamp_sweeps)
 
     # shuffle peak deflection for the subthreshold long squares
     if cell_features["long_squares"]:
         for s in cell_features["long_squares"]["subthreshold_sweeps"]:
             sweep_features[s['sweep_number']]['peak_deflect'] = s['peak_deflect']
+
+    # if all failed, set cell state to failed
+    if all([feature_states[feature]['failed_fx'] for feature
+            in feature_states.keys()]):
+
+        cell_state['failed_fx'] = True
+        message = '; '.join([feature_states[feature]['fail_fx_message']
+                             for feature in feature_states.keys()])
+        cell_state['fail_fx_message'] = message
 
     cell_record = fr.build_cell_feature_record(cell_features)
     sweep_records = fr.build_sweep_feature_record(data_set.sweep_table, sweep_features)
