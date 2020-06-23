@@ -16,7 +16,9 @@ from ipfx.spike_features import estimate_adjusted_detection_parameters
 from ipfx.epochs import get_stim_epoch
 from ipfx.utilities import drop_failed_sweeps
 
-# Download and access the experimental data
+# Download and access the experimental data from DANDI archive per instructions in the documentation
+# Example below will use an nwb file provided with the package
+
 nwb_file = os.path.join(
     os.path.dirname(os.getcwd()),
     "data",
