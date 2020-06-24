@@ -21,3 +21,22 @@ Output:
  * output.nwb: NWB file including spike times
  * log.txt: run log
  * qc_figs: index.html includes cell figures and feature table and sweep.html includes sweep figures
+
+
+Electrophysilogy Data
+---------------------
+The Distributed Archives for Neurophysiology Data Integration (DANDI) hosts electrophysiology files. DANDI supports data download using HTTP and the DANDI command line client [pip install dandi].
+
+The paths to individual data files are listed in the [file manifest]. Directory paths are available here:
+
+ * Mouse data (114 GB): https://dandiarchive.org/dandiset/000020
+ * Human data (12 GB): https://dandiarchive.org/dandiset/000023
+
+Example:
+
+Download all mouse ephys data:
+
+.. code-block:: bash
+
+    pip install dandi
+    dandi download https://dandiarchive.org/dandiset/000020
