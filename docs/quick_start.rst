@@ -23,20 +23,36 @@ Output:
  * qc_figs: index.html includes cell figures and feature table and sweep.html includes sweep figures
 
 
-Electrophysilogy Data
----------------------
-The Distributed Archives for Neurophysiology Data Integration (DANDI) hosts electrophysiology files. DANDI supports data download using HTTP and the DANDI command line client [pip install dandi].
+Step-by-step guideline
+----------------------
 
-The paths to individual data files are listed in the [file manifest]. Directory paths are available here:
+ * create a clean environment with conda
 
- * Mouse data (114 GB): https://dandiarchive.org/dandiset/000020
- * Human data (12 GB): https://dandiarchive.org/dandiset/000023
+.. code-block:: bash
 
-Example:
+    conda create -n myenv python=3.6
+    conda activate myenv
 
-Download all mouse ephys data:
+ * install ipfx from pypi with "pip install ipfx"
+
+ * download example datasets (mouse data ~114 GB) with dandi
 
 .. code-block:: bash
 
     pip install dandi
     dandi download https://dandiarchive.org/dandiset/000020
+
+ * pick one dataset, e.g. sub-599387254_ses-601506492_icephys.nwb from mouse data, create output directory for saving the results, for example
+
+.. code-block:: bash
+
+     mkdir outputs
+     mkdir outputs/qc
+
+then run ipfx feature extraction
+
+.. code-block:: bash
+
+    python -m ipfx.bin.run_pipeline_from_nwb_file sub-599387254_ses-601506492_icephys.nwb outputs --qc_fig_dir outputs/qc
+
+The extract features will be saved into outputs/sub-599387254_ses-601506492_icephys/output_json. The figures can be found in outputs/qc.
