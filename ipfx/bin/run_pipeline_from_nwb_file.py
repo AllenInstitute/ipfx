@@ -18,16 +18,41 @@ def main():
     parser = argparse.ArgumentParser(
         description="Process an nwb file through the ephys pipeline"
     )
-    parser.add_argument("input_nwb_file", type=str)
-    parser.add_argument("output_dir", type=str)
-    parser.add_argument("--write_spikes",
-                        type=bool,
-                        default=False,
-                        help="If true will attempt to append spike times to the nwb file",
-                        )
-    parser.add_argument("--input_json", type=str, default="input_json")
-    parser.add_argument("--output_json", type=str, default="output_json")
-    parser.add_argument("--qc_fig_dir", type=str, default=None)
+    parser.add_argument(
+        "input_nwb_file", type=str, help="process this NWB2 file"
+    )
+    parser.add_argument(
+        "output_dir", type=str, help="outputs will be written here"
+    )
+    parser.add_argument(
+        "--write_spikes", type=bool, default=False,
+        help="If true will attempt to append spike times to the nwb file",
+    )
+    parser.add_argument(
+        "--input_json", type=str, default="input_json",
+        help=(
+            "write pipeline input json file here (relative to "
+            "OUTPUT_DIR/cell_name, where cell_name is the extensionless "
+            "basename of the input NWB file)"
+        )
+    )
+    parser.add_argument(
+        "--output_json", type=str, default="output_json", 
+        help=(
+            "write output json file here (relative to OUTPUT_DIR/cell_name, "
+            "where cell_name is the extensionless basename of the input NWB "
+            "file)"
+        )
+    )
+    parser.add_argument(
+        "--qc_fig_dir", type=str, default=None, const="qc_figs", nargs="?",
+        help=(
+            "Generate qc figures and store them here (relative to "
+            "OUTPUT_DIR/cell_name, where cell_name is the extensionless "
+            "basename of the input nwb file). If you supply --qc_fig_dir with " 
+            "no arguments, the path will be OUTPUT_DIR/cell_name/qc_figs"
+        )
+    )
 
     args = vars(parser.parse_args())
     output_dir = args["output_dir"]
@@ -43,8 +68,12 @@ def main():
 
     lu.configure_logger(cell_dir)
 
-    pipeline_input = generate_pipeline_input(cell_dir=cell_dir,
-                                             input_nwb_file=input_nwb_file)
+    pipeline_input = generate_pipeline_input(
+        cell_dir=cell_dir,
+        input_nwb_file=input_nwb_file,
+        plot_figures=args["qc_fig_dir"] is not None,
+        qc_fig_dirname=args["qc_fig_dir"]
+    )
 
     input_json = os.path.join(cell_dir, input_json)
     ju.write(input_json, pipeline_input)
@@ -54,7 +83,7 @@ def main():
     pipeline_output = run_pipeline(pipeline_input["input_nwb_file"],
                                    pipeline_input["output_nwb_file"],
                                    pipeline_input.get("stimulus_ontology_file", None),
-                                   pipeline_input.get("qc_fig_dir", args["qc_fig_dir"]),
+                                   pipeline_input.get("qc_fig_dir", None),
                                    pipeline_input["qc_criteria"],
                                    pipeline_input["manual_sweep_states"],
                                    args["write_spikes"])
