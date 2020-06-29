@@ -49,8 +49,9 @@ def run_feature_extraction(input_nwb_file,
                                      nwb_file=input_nwb_file,
                                      ontology=ont)
 
-    (cell_features, sweep_features, cell_record, sweep_records, cell_state) = \
-        dsft.extract_data_set_features(data_set)
+    (cell_features, sweep_features,
+     cell_record, sweep_records,
+     cell_state, feature_states) = dsft.extract_data_set_features(data_set)
 
     if cell_state['failed_fx']:
         feature_data = {'cell_state': cell_state}
@@ -65,11 +66,15 @@ def run_feature_extraction(input_nwb_file,
                         'cell_state': cell_state
                         }
 
-        sweep_spike_times = collect_spike_times(sweep_features)
         if write_spikes:
-            append_spike_times(input_nwb_file,
-                               sweep_spike_times,
-                               output_nwb_path=output_nwb_file)
+            if not feature_states['sweep_features_state']['failed_fx']:
+                sweep_spike_times = collect_spike_times(sweep_features)
+                append_spike_times(input_nwb_file,
+                                   sweep_spike_times,
+                                   output_nwb_path=output_nwb_file)
+            else:
+                logging.warn("extract_sweep_features failed, "
+                             "unable to write spikes")
 
         if qc_fig_dir is None:
             logging.info("qc_fig_dir is not provided, will not save figures")
