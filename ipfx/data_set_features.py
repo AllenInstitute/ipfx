@@ -82,19 +82,19 @@ def record_errors(fn):
     return wrapper
 
 
-def safe_fn(fvalue_on_failure=None):
-    def safe_fn_decorator(fn):
+def fallback_on_error(fallback_value=None, catch_errors=(Exception)):
+    def fallback_on_error_decorator(fn):
         @functools.wraps(fn)
         def wrapper(*args, cell_state=None, **kwargs):
             try:
                 result = fn(*args, **kwargs)
                 e = None
-            except Exception as e:
+            except catch_errors as e:
                 logging.warning(e)
-                result = fvalue_on_failure
+                result = fallback_value
             return result, e
         return wrapper
-    return safe_fn_decorator
+    return fallback_on_error_decorator
 
 
 def extractors_for_sweeps(sweep_set,
@@ -146,7 +146,7 @@ def extractors_for_sweeps(sweep_set,
 
 
 @record_errors
-@safe_fn()
+@fallback_on_error()
 def extract_sweep_features(data_set, sweep_table):
     sweep_groups = sweep_table.groupby(data_set.STIMULUS_NAME)[data_set.SWEEP_NUMBER]
 
@@ -214,7 +214,7 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
 
 
 @record_errors
-@safe_fn()
+@fallback_on_error()
 def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     lu.log_pretty_header("Long Squares:", level=2)
 
@@ -266,7 +266,7 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
 
 
 @record_errors
-@safe_fn()
+@fallback_on_error()
 def extract_cell_short_square_features(data_set):
     lu.log_pretty_header("Short Squares:", level=2)
 
@@ -284,8 +284,9 @@ def extract_cell_short_square_features(data_set):
                                         ssq_sweeps.sweeps[0].i,
                                         ssq_sweeps.sweeps[0].t)
 
+    SSQ_WINDOW = 0.001
     ssq_spx, ssq_spfx = extractors_for_sweeps(ssq_sweeps,
-                                              est_window=[ssq_start, ssq_start+0.001],
+                                              est_window=[ssq_start, ssq_start+SSQ_WINDOW],
                                               **detection_parameters(data_set.SHORT_SQUARE))
 
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
@@ -299,7 +300,7 @@ def extract_cell_short_square_features(data_set):
 
 
 @record_errors
-@safe_fn()
+@fallback_on_error()
 def extract_cell_ramp_features(data_set):
     lu.log_pretty_header("Ramps:", level=2)
 
