@@ -6,7 +6,7 @@ PARENT_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(PARENT_DIR, "data_release")
 ARCHIVE_INFO = pd.DataFrame(
     {
-        "organism": ["human", "mouse"],
+        "dataset": ["human", "mouse"],
         "size (GB)": [12,114],
         "archive_url": [
             "https://dandiarchive.org/dandiset/000023",
@@ -21,29 +21,39 @@ ARCHIVE_INFO = pd.DataFrame(
             os.path.join(DATA_DIR, "20200625_patchseq_metadata_mouse.csv")
         ],
     }
-)
+).set_index("dataset")
 
 
-def get_archive_info(organism: str)-> Tuple[str, pd.DataFrame, pd.DataFrame]:
+def get_archive_info(
+        dataset: str, 
+        archive_info:pd.DataFrame = ARCHIVE_INFO
+)-> Tuple[str, pd.DataFrame, pd.DataFrame]:
     """
     Provide information about released archive
 
     Parameters
     ----------
-    organism : name of the organism
+    dataset : name of the dataset to query. Currently supported options are:
+        - human
+        - mouse
+    archive_info : dataframe of metadata and manifest files for each supported 
+        dataset. Dataset name is the index. 
 
     Returns
     -------
     Information about the archive
     """
-    archives_df = ARCHIVE_INFO.set_index("organism")
 
-    if organism in archives_df.index.values:
-        file_manifest = pd.read_csv(archives_df.loc[organism]["file_manifest_path"])
-        experiment_metadata = pd.read_csv(archives_df.loc[organism]["experiment_metadata_path"])
-        archive_url = archives_df.loc[organism]["archive_url"]
+    if dataset in archive_info.index.values:
+        file_manifest_path = archive_info.at[dataset, "file_manifest_path"]
+        metadata_path = archive_info.at[dataset, "experiment_metadata_path"]
+        archive_url = archive_info.at[dataset, "archive_url"]
     else:
-        raise ValueError(f"No archive for the organism '{organism}'. "
-                         f"Choose from the known organisms: {archives_df.index.values}")
-    return archive_url, file_manifest, experiment_metadata
+        raise ValueError(
+            f"No archive for the dataset '{dataset}'. Choose from the known "
+            f"datasets: {archive_info.index.values}"
+        )
 
+    file_manifest = pd.read_csv(file_manifest_path)
+    experiment_metadata = pd.read_csv(metadata_path)
+    return archive_url, file_manifest, experiment_metadata

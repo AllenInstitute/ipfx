@@ -31,12 +31,12 @@ For example, to obtain detailed information about Human data archive:
 .. code-block:: python
 
     from ipfx.data_access import get_archive_info
-    archive_url, file_manifest, experiment_metadata = get_archive_info(organism="human")
+    archive_url, file_manifest, experiment_metadata = get_archive_info(dataset="human")
 
 where ``archive_uri`` is the DANDI URL for the Human data,
 ``file_manifest`` is a pandas.DataFrame of file manifest and
 ``experiment_metadata`` is a pandas.DataFrame of experiment metadata.
-To obtain the same information for the Mouse data, change to `organism="mouse"` in the function argument.
+To obtain the same information for the Mouse data, change to `dataset="mouse"` in the function argument.
 
 You can download data files by directly entering the DANDI's archive_uri in your browser.
 Alternatively, a more powerful option is to install DANDI's command line client:
