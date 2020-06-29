@@ -29,7 +29,7 @@ def main():
         help="If true will attempt to append spike times to the nwb file",
     )
     parser.add_argument(
-        "--input_json", type=str, default="input_json",
+        "--input_json", type=str, default="input.json",
         help=(
             "write pipeline input json file here (relative to "
             "OUTPUT_DIR/cell_name, where cell_name is the extensionless "
@@ -37,7 +37,7 @@ def main():
         )
     )
     parser.add_argument(
-        "--output_json", type=str, default="output_json", 
+        "--output_json", type=str, default="output.json", 
         help=(
             "write output json file here (relative to OUTPUT_DIR/cell_name, "
             "where cell_name is the extensionless basename of the input NWB "
@@ -50,7 +50,8 @@ def main():
             "Generate qc figures and store them here (relative to "
             "OUTPUT_DIR/cell_name, where cell_name is the extensionless "
             "basename of the input nwb file). If you supply --qc_fig_dir with " 
-            "no arguments, the path will be OUTPUT_DIR/cell_name/qc_figs"
+            "no arguments, the path will be OUTPUT_DIR/cell_name/qc_figs. If "
+            "this argument is not supplied, no figures will be generated."
         )
     )
 
