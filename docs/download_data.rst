@@ -21,7 +21,7 @@ recorded from each cell. The files with the intracellular electrophysiological r
 
 In turn, the experiment metadata table includes information about the experimental conditions
 for each cell("specimen_id" column). This table could be used to select the desired cells
-satisfying a particular experimental conditions. Then, given the desired "specimen_ids",
+satisfying particular experimental conditions. Then, given the desired "specimen_ids",
 you can find the corresponding DANDI urls of these data from the file manifest.
 
 IPFX includes a utility that provides file manifest and experiment data of the published archives.
@@ -36,7 +36,7 @@ For example, to obtain detailed information about Human data archive:
 where ``archive_uri`` is the DANDI URL for the Human data,
 ``file_manifest`` is a pandas.DataFrame of file manifest and
 ``experiment_metadata`` is a pandas.DataFrame of experiment metadata.
-To obtain the same information for the Mouse data, chnage to `organism="mouse"` in the function argument.
+To obtain the same information for the Mouse data, change to `organism="mouse"` in the function argument.
 
 You can download data files by directly entering the DANDI's archive_uri in your browser.
 Alternatively, a more powerful option is to install DANDI's command line client:

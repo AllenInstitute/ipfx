@@ -2,8 +2,9 @@ import pandas as pd
 from typing import Tuple
 import os
 
+PARENT_DIR = os.path.dirname(__file__)
+DATA_DIR = os.path.join(PARENT_DIR, "data_release")
 ARCHIVE_INFO = pd.DataFrame(
-
     {
         "organism": ["human", "mouse"],
         "size (GB)": [12,114],
@@ -12,12 +13,12 @@ ARCHIVE_INFO = pd.DataFrame(
             "https://dandiarchive.org/dandiset/000020",
         ],
         "file_manifest_path":[
-            os.path.join(os.path.dirname(__file__), "../data_release/2020-06-15_human_file_manifest.csv"),
-            os.path.join(os.path.dirname(__file__), "../data_release/2020-06-15_mouse_file_manifest.csv"),
+            os.path.join(DATA_DIR, "2020-06-26_human_file_manifest.csv"),
+            os.path.join(DATA_DIR, "2020-06-26_mouse_file_manifest.csv"),
         ],
         "experiment_metadata_path": [
-            os.path.join(os.path.dirname(__file__), "../data_release/20200625_patchseq_metadata_human_need_t-types.csv"),
-            os.path.join(os.path.dirname(__file__), "../data_release/20200611_aibs_patchseq_metadata_mouse.csv")
+            os.path.join(DATA_DIR, "20200625_patchseq_metadata_human.csv"),
+            os.path.join(DATA_DIR, "20200625_patchseq_metadata_mouse.csv")
         ],
     }
 )
