@@ -14,7 +14,9 @@ import ipfx.qc_feature_evaluator as qcp
 from ipfx.stimulus import StimulusOntology
 
 
-# Download and access the experimental data
+# Download and access the experimental data from DANDI archive per instructions in the documentation
+# Example below will use an nwb file provided with the package
+
 nwb_file = os.path.join(
     os.path.dirname(os.getcwd()),
     "data",
