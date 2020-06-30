@@ -19,7 +19,7 @@ def run_pipeline(
         qc_fig_dir,
         qc_criteria,
         manual_sweep_states,
-        write_spikes=True,
+        write_spikes=True
 ):
 
     se_output = run_sweep_extraction(

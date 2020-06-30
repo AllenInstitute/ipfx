@@ -19,8 +19,8 @@ Input:
 
 Output:
 
- * pipeline_input.json: input parameters
- * pipeline_output.json: output including cell features
+ * input.json: input parameters
+ * output.json: output including cell features
  * output.nwb: NWB file including spike times
  * log.txt: run log
  * qc_figs: index.html includes cell figures and feature table and sweep.html includes sweep figures
