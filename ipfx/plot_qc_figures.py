@@ -595,26 +595,29 @@ def plot_cell_figures(data_set, figure_data, image_dir, sizes):
     logging.info("saving sweep feature figures")
     plot_sweep_value_figures(data_set.sweep_table, image_dir, sizes, cell_image_files)
 
-    logging.info("saving tau and vi figs")
-    plot_subthreshold_long_square_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+    if cell_features["long_squares"]:
+        logging.info("saving tau and vi figs")
+        plot_subthreshold_long_square_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
-    logging.info("saving short square figs")
-    plot_short_square_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+        logging.info("saving rheo figs")
+        plot_rheo_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
-    logging.info("saving ramps")
-    plot_ramp_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+        logging.info("saving thumbnail figs")
+        plot_hero_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
-    logging.info("saving rheo figs")
-    plot_rheo_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+        logging.info("saving fi curve figs")
+        plot_fi_curve_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
-    logging.info("saving thumbnail figs")
-    plot_hero_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+        logging.info("saving sag figs")
+        plot_sag_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
-    logging.info("saving fi curve figs")
-    plot_fi_curve_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+    if cell_features["short_squares"]:
+        logging.info("saving short square figs")
+        plot_short_square_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
-    logging.info("saving sag figs")
-    plot_sag_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
+    if cell_features["ramps"]:
+        logging.info("saving ramps")
+        plot_ramp_figures(data_set, cell_features, lims_features, sweep_features, image_dir, sizes, cell_image_files)
 
     return cell_image_files
 
