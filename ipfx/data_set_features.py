@@ -85,14 +85,15 @@ def record_errors(fn):
 def fallback_on_error(fallback_value=None, catch_errors=(Exception)):
     def fallback_on_error_decorator(fn):
         @functools.wraps(fn)
-        def wrapper(*args, cell_state=None, **kwargs):
+        def wrapper(*args, **kwargs):
             try:
                 result = fn(*args, **kwargs)
-                e = None
+                error = None
             except catch_errors as e:
                 logging.warning(e)
                 result = fallback_value
-            return result, e
+                error = e
+            return result, error
         return wrapper
     return fallback_on_error_decorator
 
