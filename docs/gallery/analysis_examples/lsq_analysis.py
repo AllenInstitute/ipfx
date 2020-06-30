@@ -16,7 +16,9 @@ from ipfx.utilities import drop_failed_sweeps
 import os
 import matplotlib.pyplot as plt
 
-# Download and access the experimental data
+# Download and access the experimental data from DANDI archive per instructions in the documentation
+# Example below will use an nwb file provided with the package
+
 nwb_file = os.path.join(
     os.path.dirname(os.getcwd()),
     "data",

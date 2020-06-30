@@ -10,7 +10,9 @@ import matplotlib.pyplot as plt
 from ipfx.dataset.create import create_ephys_data_set
 from ipfx.feature_extractor import SpikeFeatureExtractor
 
-# Download and access the experimental data
+# Download and access the experimental data from DANDI archive per instructions in the documentation
+# Example below will use an nwb file provided with the package
+
 nwb_file = os.path.join(
     os.path.dirname(os.getcwd()),
     "data",
