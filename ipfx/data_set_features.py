@@ -147,7 +147,7 @@ def extractors_for_sweeps(sweep_set,
 
 
 @record_errors
-@fallback_on_error()
+@fallback_on_error(fallback_value={})
 def extract_sweep_features(data_set, sweep_table):
     sweep_groups = sweep_table.groupby(data_set.STIMULUS_NAME)[data_set.SWEEP_NUMBER]
 
