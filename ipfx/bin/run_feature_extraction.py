@@ -49,31 +49,32 @@ def run_feature_extraction(input_nwb_file,
                                      nwb_file=input_nwb_file,
                                      ontology=ont)
 
-    try:
-        cell_features, sweep_features, cell_record, sweep_records = dsft.extract_data_set_features(data_set)
+    (cell_features, sweep_features,
+     cell_record, sweep_records,
+     cell_state, feature_states) = dsft.extract_data_set_features(data_set)
 
-        if cell_info: cell_record.update(cell_info)
-
-        cell_state = {"failed_fx": False, "fail_fx_message": None}
-
-        feature_data = { 'cell_features': cell_features,
-                         'sweep_features': sweep_features,
-                         'cell_record': cell_record,
-                         'sweep_records': sweep_records,
-                         'cell_state': cell_state
-                         }
-
-    except (er.FeatureError,IndexError) as e:
-        cell_state = {"failed_fx":True, "fail_fx_message": str(e)}
-        logging.warning(e)
+    if cell_state['failed_fx']:
         feature_data = {'cell_state': cell_state}
+    else:
+        if cell_info:
+            cell_record.update(cell_info)
 
-    if not cell_state["failed_fx"]:
-        sweep_spike_times = collect_spike_times(sweep_features)
+        feature_data = {'cell_features': cell_features,
+                        'sweep_features': sweep_features,
+                        'cell_record': cell_record,
+                        'sweep_records': sweep_records,
+                        'cell_state': cell_state
+                        }
+
         if write_spikes:
-            append_spike_times(input_nwb_file,
-                               sweep_spike_times,
-                               output_nwb_path=output_nwb_file)
+            if not feature_states['sweep_features_state']['failed_fx']:
+                sweep_spike_times = collect_spike_times(sweep_features)
+                append_spike_times(input_nwb_file,
+                                   sweep_spike_times,
+                                   output_nwb_path=output_nwb_file)
+            else:
+                logging.warn("extract_sweep_features failed, "
+                             "unable to write spikes")
 
         if qc_fig_dir is None:
             logging.info("qc_fig_dir is not provided, will not save figures")
