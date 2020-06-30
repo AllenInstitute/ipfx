@@ -144,7 +144,9 @@ and to calculate the analysis features:
     from ipfx.data_set_features import extract_data_set_features
 
     drop_failed_sweeps(data_set)     # sweeps with incomplete recording or failing QC criteria
-    cell_features, sweep_features, cell_record, sweep_records, cell_state = extract_data_set_features(dataset)
+    (cell_features, sweep_features,
+     cell_record, sweep_records,
+     cell_state, feature_states) = dsft.extract_data_set_features(data_set)
 
 this code block does the following:
     1. Creates a dataset
