@@ -88,7 +88,14 @@ class EphysDataSet(object):
 
     @property
     def sweep_numbers(self):
-        """ Returns a numpy.ndarray containing the sweep numbers. """
+        """ Returns array containing all sweep numbers in this data set.
+
+        Returns
+        -------
+        sweep_numbers : numpy.ndarray
+            Array containing all the sweep numbers
+
+        """
         return self._data.sweep_numbers
 
     def __init__(
