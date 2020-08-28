@@ -9,7 +9,6 @@ import scipy.fftpack as fftpack
 from scipy.signal import savgol_filter
 
 from ipfx.error import FeatureError
-from . import offpipeline_utils as op
 from . import feature_vectors as fv
 from . import time_series_utils as tsu
 
@@ -19,19 +18,14 @@ CHIRP_CODES = [
             "C2CHIRP171103", # only one example
         ]
 
-def extract_chirp_features(specimen_id, data_source='lims', sweep_qc_option='none', method_params={}):
-    try:
-        dataset = op.dataset_for_specimen_id(specimen_id, data_source=data_source, ontology=ontology_with_chirps())
-        sweepset = op.sweepset_by_type_qc(dataset, specimen_id, stimuli_names=["Chirp"])
-    except:
-        logging.warning("Error loading data for specimen {:d}.".format(specimen_id), exc_info=True)
-        return {}
 
-def extract_chirp_features(sweepset):
+def extract_chirp_features(sweepset, **params):
     results = []
     for sweep in sweepset.sweeps:
         try:
-            results.append(chirp_sweep_features(sweep, method_params=method_params))
+            result = chirp_sweep_features(sweep, **params)
+            results['sweep_number'] = sweep.sweep_number
+            results.append(result)
         except FeatureError as exc:
             logging.debug(exc)
         except Exception:
@@ -43,9 +37,10 @@ def extract_chirp_features(sweepset):
         return {}
 
     mean_results = {key: np.mean([res[key] for res in results]) for key in results[0]}
+    mean_results['sweeps'] = results
     return mean_results
 
-def chirp_sweep_amp_phase(sweep, min_freq=1., max_freq=35., smooth_bw=2, **transform_params):
+def chirp_sweep_amp_phase(sweep, min_freq=1., max_freq=35., smooth_bw=2, raw=False, **transform_params):
     """ Calculate amplitude and phase of chirp response
 
     Parameters
@@ -70,20 +65,23 @@ def chirp_sweep_amp_phase(sweep, min_freq=1., max_freq=35., smooth_bw=2, **trans
     Z = v / i
     amp = np.abs(Z)
     phase = np.angle(Z)
-
-    # pick odd number, approx number of points for smooth_bw interval
-    n_filt = int(np.rint(1/(freq[1]-freq[0])))*smooth_bw + 1
-    filt = lambda x: savgol_filter(x, n_filt, 5)
-    amp, phase = map(filt, [amp, phase])
+    if raw:
+        return amp, phase, freq
     
     # window before or after smoothing?
     low_ind = tsu.find_time_index(xf, min_freq)
     high_ind = tsu.find_time_index(xf, max_freq)
     amp, phase, freq = map(lambda x: x[low_ind:high_ind], [amp, phase, freq])
+    
+    # pick odd number, approx number of points for smooth_bw interval
+    n_filt = int(np.rint(1/(freq[1]-freq[0])))*smooth_bw + 1
+    filt = lambda x: savgol_filter(x, n_filt, 5)
+    amp, phase = map(filt, [amp, phase])
+
     return amp, phase, freq
 
 def transform_sweep(sweep, n_sample=10000):
-    """ Calculate Fourier transform of sweep
+    """ Calculate Fourier transform of sweep current and voltage
     """
     sweep.select_epoch("stim")
     if np.all(sweep.v[-10:] == 0):
@@ -97,9 +95,7 @@ def transform_sweep(sweep, n_sample=10000):
     pad = int(width*np.ceil(N/width) - N)
     v = fv._subsample_average(np.pad(v, (pad,0), 'constant', constant_values=np.nan), width)
     i = fv._subsample_average(np.pad(i, (pad,0), 'constant', constant_values=np.nan), width)
-    t = t[::width]
-
-    dt = t[1] - t[0]
+    dt = t[width] - t[0]
     xf = np.linspace(0.0, 1.0/(2.0*dt), len(v)//2)
 
     v_fft = fftpack.fft(v)
