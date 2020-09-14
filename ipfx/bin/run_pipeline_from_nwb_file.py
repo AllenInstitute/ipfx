@@ -25,6 +25,12 @@ def main():
         "output_dir", type=str, help="outputs will be written here"
     )
     parser.add_argument(
+        "--qc_criteria_json", type=str, default=None,
+        help=(
+            "Path to QC criteria json (if not using IPFX defaults)"
+        )
+    )
+    parser.add_argument(
         "--write_spikes", type=bool, default=False,
         help="If true will attempt to append spike times to the nwb file",
     )
@@ -73,7 +79,8 @@ def main():
         cell_dir=cell_dir,
         input_nwb_file=input_nwb_file,
         plot_figures=args["qc_fig_dir"] is not None,
-        qc_fig_dirname=args["qc_fig_dir"]
+        qc_fig_dirname=args["qc_fig_dir"],
+        qc_criteria_json=args["qc_criteria_json"]
     )
 
     input_json = os.path.join(cell_dir, input_json)

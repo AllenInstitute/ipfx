@@ -9,7 +9,8 @@ def generate_pipeline_input(cell_dir=None,
                             specimen_id=None,
                             input_nwb_file=None,
                             plot_figures=False,
-                            qc_fig_dirname="qc_figs"):
+                            qc_fig_dirname="qc_figs",
+                            qc_criteria_json=None):
 
     se_input = generate_se_input(cell_dir,
                                  specimen_id=specimen_id,
@@ -27,7 +28,10 @@ def generate_pipeline_input(cell_dir=None,
         pipe_input['qc_fig_dir'] = os.path.join(cell_dir, qc_fig_dirname)
 
     pipe_input['output_nwb_file'] = os.path.join(cell_dir, "output.nwb")
-    pipe_input['qc_criteria'] = ju.read(qcp.DEFAULT_QC_CRITERIA_FILE)
+    if qc_criteria_json is not None:
+        pipe_input['qc_criteria'] = ju.read(qc_criteria_json)
+    else:
+        pipe_input['qc_criteria'] = ju.read(qcp.DEFAULT_QC_CRITERIA_FILE)
 
     return pipe_input
 
