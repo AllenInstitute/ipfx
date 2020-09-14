@@ -38,7 +38,9 @@ def run_feature_extraction(input_nwb_file,
 
     sp.drop_failed_sweeps(sweep_info)
     if len(sweep_info) == 0:
-        raise er.FeatureError("There are no QC-passed sweeps available to analyze")
+        logging.warning("There are no QC-passed sweeps available to analyze")
+        cell_state = {"failed_fx": True, "fail_fx_message": "There are no QC-passed sweeps available to analyze"}
+        return {'cell_state': cell_state}
 
     if not stimulus_ontology_file:
         stimulus_ontology_file = StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
@@ -54,7 +56,7 @@ def run_feature_extraction(input_nwb_file,
      cell_state, feature_states) = dsft.extract_data_set_features(data_set)
 
     if cell_state['failed_fx']:
-        feature_data = {'cell_state': cell_state}
+        return {'cell_state': cell_state}
     else:
         if cell_info:
             cell_record.update(cell_info)
