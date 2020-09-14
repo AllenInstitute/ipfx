@@ -159,7 +159,11 @@ class Segment(ABC):
         """
         Return the number of points of this segment.
         """
-        return math.trunc(duration / self.sampleInterval)
+        num_points = duration / self.sampleInterval
+        num_points_int = int(np.round(num_points))
+        if not math.isclose(num_points, num_points_int):
+            raise ValueError(f"Segment duration {duration} is not divisible by sample interval {self.sampleInterval}")
+        return num_points_int
 
     def getAmplitude(self, channelRec, segmentRec):
         """
