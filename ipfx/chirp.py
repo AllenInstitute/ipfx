@@ -95,8 +95,8 @@ def chirp_amp_phase(sweep_set, start=0.6, end=20.6, down_rate=2000,
     current_rate = np.rint(1 / (t[1] - t[0]))
     if current_rate > down_rate:
         width = int(current_rate / down_rate)
-        ds_v = ds_v = fv._subsample_average(avg_v, width)
-        ds_i = fv._subsample_average(avg_i, width)
+        ds_v = ds_v = tsu.subsample_average(avg_v, width)
+        ds_i = tsu.subsample_average(avg_i, width)
         ds_t = t[::width]
     else:
         ds_v = avg_v
