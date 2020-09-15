@@ -38,6 +38,7 @@ import numpy as np
 import logging
 from .feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
 from ipfx.dataset.ephys_data_set import EphysDataSet
+from . import chirp_features as chf
 from . import spike_features as spkf
 from . import stimulus_protocol_analysis as spa
 from . import stim_features as stf
@@ -327,6 +328,20 @@ def extract_cell_ramp_features(data_set):
         [dict(sweep_number=sn) for sn in ramp_sweep_numbers]
         )
 
+@record_errors
+@fallback_on_error()
+def extract_cell_chirp_features(data_set):
+    lu.log_pretty_header("Chirps:", level=2)
+
+    sweep_numbers = data_set.get_sweep_numbers(
+        data_set.ontology.chirp_names,
+        clamp_mode=data_set.CURRENT_CLAMP)
+    if len(sweep_numbers) == 0:
+        raise er.FeatureError("No chirp sweeps available for feature extraction")
+    
+    sweepset = data_set.sweep_set(sweep_numbers)
+    chirp_features = chf.extract_chirp_features(sweepset)
+    return chirp_features
 
 def extract_data_set_features(data_set, subthresh_min_amp=None):
     """
@@ -366,6 +381,9 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
 
     (cell_features['ramps'], feature_states['ramps_state']) = \
         extract_cell_ramp_features(data_set)
+
+    (cell_features['chirps'], feature_states['chirps_state']) = \
+        extract_cell_chirp_features(data_set)
 
     # compute sweep features
     iclamp_sweeps = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP)
