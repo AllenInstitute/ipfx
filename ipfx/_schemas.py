@@ -56,6 +56,7 @@ class FeatureExtractionParameters(ArgSchema):
         description="stimulus ontology JSON", required=False
     )
     output_nwb_file = OutputFile(description="output nwb file", required=True)
+    output_json = OutputFile(description="output feature json file", required=True)
     qc_fig_dir = OutputFile(
         description="output qc figure directory", required=False
     )
@@ -68,9 +69,12 @@ class SweepExtractionParameters(ArgSchema):
     stimulus_ontology_file = OutputFile(
         description="stimulus ontology JSON", required=False
     )
+    update_ontology = Boolean(description="update stimulus ontology file from LIMS (if path is provided)", default=True)
+    # TODO: these values below seem unused
     manual_seal_gohm = Float(description="blah")
     manual_initial_access_resistance_mohm = Float(description="blah")
     manual_initial_input_mohm = Float(description="blah")
+    output_json = OutputFile(description="output feature json file", required=True)
 
 
 class QcCriteria(DefaultSchema):
@@ -92,6 +96,7 @@ class QcParameters(ArgSchema):
     qc_criteria = Nested(QcCriteria, required=True)
     sweep_features = Nested(QcSweepFeatures, many=True, required=True)
     cell_features = Nested(CellFeatures)
+    output_json = OutputFile(description="output feature json file", required=True)
 
 
 class ManualSweepState(DefaultSchema):
@@ -102,7 +107,9 @@ class ManualSweepState(DefaultSchema):
 class PipelineParameters(ArgSchema):
     input_nwb_file = InputFile(description="input nwb file", required=True)
     stimulus_ontology_file = OutputFile(description="blash", required=False)
+    update_ontology = Boolean(description="update stimulus ontology file from LIMS (if path is provided)", default=True)
     output_nwb_file = OutputFile(description="output nwb file", required=True)
+    output_json = OutputFile(description="output feature json file", required=True)
     qc_fig_dir = OutputFile(
         description="output qc figure directory", required=False
     )
