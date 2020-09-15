@@ -128,7 +128,7 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
         delta_t = swp.t[1] - swp.t[0]
         subsample_width = int(np.round(subsample_interval / delta_t))
         end_index = tsu.find_time_index(swp.t, end + extend_duration)
-        subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
+        subsampled_v = tsu.subsample_average(swp.v[start_index:end_index], subsample_width)
         subsampled_dict[amp] = subsampled_v
 
     extend_length = int(np.round(extend_duration / subsample_interval))
@@ -178,13 +178,6 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
     return np.hstack(output_list)
 
 
-def _subsample_average(x, width):
-    """Downsamples x by averaging `width` points"""
-
-    avg = np.nanmean(x.reshape(-1, width), axis=1)
-    return avg
-
-
 def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
                    extend_duration=0.2, subsample_interval=0.01):
     """ Subthreshold step response closest to target amplitude normalized to baseline and peak deflection
@@ -223,7 +216,7 @@ def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
     delta_t = swp.t[1] - swp.t[0]
     subsample_width = int(np.round(subsample_interval / delta_t))
     end_index = tsu.find_time_index(swp.t, end + extend_duration)
-    subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
+    subsampled_v = tsu.subsample_average(swp.v[start_index:end_index], subsample_width)
     subsampled_v -= base
     subsampled_v /= delta
 
@@ -285,7 +278,7 @@ def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
     delta_t = swp.t[1] - swp.t[0]
     subsample_width = int(np.round(subsample_interval / delta_t))
     end_index = tsu.find_time_index(swp.t, end + extend_duration)
-    subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
+    subsampled_v = tsu.subsample_average(swp.v[start_index:end_index], subsample_width)
     subsampled_v -= base
     subsampled_v /= delta
 
@@ -386,7 +379,7 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
             if width == 0:
                 logging.debug("found isi shorter than specified width; skipping")
                 continue
-            isi_norm = _subsample_average(isi_raw[:width * n_points], width)
+            isi_norm = tsu.subsample_average(isi_raw[:width * n_points], width)
             isi_list.append(isi_norm)
 
         isi_norm = np.vstack(isi_list).mean(axis=0)
@@ -422,7 +415,7 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
         width = len(isi_raw) // n_points
         isi_raw = isi_raw[:width * n_points] # ensure division will work
 
-        isi_norm = _subsample_average(isi_raw, width)
+        isi_norm = tsu.subsample_average(isi_raw, width)
 
     return isi_norm
 
@@ -480,7 +473,7 @@ def first_ap_vectors(sweeps_list, spike_info_list,
 
     if sampling_rate > target_sampling_rate:
         sampling_factor = int(sampling_rate // target_sampling_rate)
-        avg_ap = _subsample_average(avg_ap, sampling_factor)
+        avg_ap = tsu.subsample_average(avg_ap, sampling_factor)
 
     return avg_ap, np.diff(avg_ap)
 
@@ -544,7 +537,7 @@ def noise_ap_features(noise_sweeps,
     grand_avg_ap = np.vstack(avg_ap_list).mean(axis=0)
     if sampling_rate > target_sampling_rate:
         sampling_factor = sampling_rate // target_sampling_rate
-        grand_avg_ap = _subsample_average(grand_avg_ap, sampling_factor)
+        grand_avg_ap = tsu.subsample_average(grand_avg_ap, sampling_factor)
 
     return grand_avg_ap, np.diff(grand_avg_ap)
 

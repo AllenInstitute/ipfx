@@ -108,3 +108,12 @@ def flatnotnan(a):
     return notnan.flatten()
 
 
+def subsample_average(x, width):
+    """Downsamples x by averaging `width` points"""
+    N = len(x)
+    if N % width != 0:
+        pad = int(width*np.ceil(N/width) - N)
+        x = np.pad(x, (pad,0), 'constant', constant_values=np.nan)
+    avg = np.nanmean(x.reshape(-1, width), axis=1)
+    return avg
+
