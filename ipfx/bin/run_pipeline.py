@@ -19,12 +19,14 @@ def run_pipeline(
         qc_fig_dir,
         qc_criteria,
         manual_sweep_states,
-        write_spikes=True
+        write_spikes=True,
+        update_ontology=True
 ):
 
     se_output = run_sweep_extraction(
         input_nwb_file,
-        stimulus_ontology_file
+        stimulus_ontology_file,
+        update_ontology=update_ontology
     )
 
     sweep_props.drop_tagged_sweeps(se_output["sweep_features"])
@@ -81,6 +83,7 @@ def main():
         module.args.get("qc_criteria", None),
         module.args.get("manual_sweep_states", None),
         module.args.get("write_spikes", None),
+        module.args["update_stimulus_ontology"],
     )
 
     json_utilities.write(module.args["output_json"], output)

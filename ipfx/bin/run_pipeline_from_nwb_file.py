@@ -25,9 +25,15 @@ def main():
         "output_dir", type=str, help="outputs will be written here"
     )
     parser.add_argument(
-        "--qc_criteria_json", type=str, default=None,
+        "--qc_criteria_file", type=str, default=None,
         help=(
             "Path to QC criteria json (if not using IPFX defaults)"
+        )
+    )
+    parser.add_argument(
+        "--stimulus_ontology_file", type=str, default=None,
+        help=(
+            "Path to stimulus ontology json (if not using IPFX defaults)"
         )
     )
     parser.add_argument(
@@ -80,7 +86,8 @@ def main():
         input_nwb_file=input_nwb_file,
         plot_figures=args["qc_fig_dir"] is not None,
         qc_fig_dirname=args["qc_fig_dir"],
-        qc_criteria_json=args["qc_criteria_json"]
+        qc_criteria_file=args["qc_criteria_file"],
+        stimulus_ontology_file=args["stimulus_ontology_file"]
     )
 
     input_json = os.path.join(cell_dir, input_json)
@@ -94,7 +101,9 @@ def main():
                                    pipeline_input.get("qc_fig_dir", None),
                                    pipeline_input["qc_criteria"],
                                    pipeline_input["manual_sweep_states"],
-                                   args["write_spikes"])
+                                   args["write_spikes"],
+                                #    if we provide an ontology here, want to use it
+                                   update_ontology=False)
 
     ju.write(os.path.join(cell_dir, output_json), pipeline_output)
 

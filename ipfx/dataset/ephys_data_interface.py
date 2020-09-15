@@ -143,6 +143,7 @@ class EphysDataInterface(abc.ABC):
             return stim.tags(tag_type="name")[0][-1]
 
         except KeyError:
+            # TODO: Not being reached - ontology returns unknown with a warning!
             if self.validate_stim:
                 raise
             else:
