@@ -22,8 +22,10 @@ MANUAL_KEYS = (
 
 def run_sweep_extraction(
         input_nwb_file,
-        stimulus_ontology_file,
-        input_manual_values=None
+        stimulus_ontology_file=None,
+        input_manual_values=None,
+        update_ontology=True,
+        **unused_args
 ):
     """
     Parameters
@@ -45,9 +47,9 @@ def run_sweep_extraction(
         if mk in input_manual_values:
             manual_values[mk] = input_manual_values[mk]
 
-    if stimulus_ontology_file:
+    if stimulus_ontology_file and update_ontology:
         make_stimulus_ontology_from_lims(stimulus_ontology_file)
-    else:
+    if stimulus_ontology_file is None:
         stimulus_ontology_file = \
             StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE
         logging.info(
@@ -85,8 +87,7 @@ def main():
 
     module = ags.ArgSchemaParser(schema_type=SweepExtractionParameters)
     output = run_sweep_extraction(
-        module.args["input_nwb_file"],
-        module.args.get("stimulus_ontology_file", None)
+        **module.args
     )
 
     json_utilities.write(module.args["output_json"], output)
