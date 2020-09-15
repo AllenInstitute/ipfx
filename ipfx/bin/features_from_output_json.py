@@ -94,6 +94,11 @@ spike_adapt_features = [
 invert_features = ["first_isi"]
 spike_threshold_shift_features = ["trough_v", "fast_trough_v", "peak_v"]
 
+chirp_features = [
+    '3db_freq',
+    'peak_freq',
+    'peak_ratio',
+]
 
 def extract_pipeline_output(output_json, save_qc_info=False):
     output = ju.read(output_json)
@@ -128,6 +133,10 @@ def extract_fx_output(cell_features):
     if short_squares is not None:
         mean_spike_0 = short_squares["mean_spike_0"]
         add_features_to_record(ss_spike_features, mean_spike_0, record, suffix="_short_square")
+
+    chirps = cell_features.get('chirps')
+    if chirps is not None:
+        add_features_to_record(chirp_features, chirps, record, suffix="_chirp")
 
     offset_feature_values(spike_threshold_shift_features, record, "threshold_v")
     invert_feature_values(invert_features, record)
