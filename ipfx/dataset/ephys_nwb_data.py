@@ -108,7 +108,7 @@ class EphysNWBData(EphysDataInterface):
             warnings.simplefilter("ignore")
             self.nwb = reader.read()
 
-    @lru_cache
+    @lru_cache(maxsize=None)
     def _get_series(self, sweep_number: int,
                     series_class: Tuple[PatchClampSeries]):
         """
