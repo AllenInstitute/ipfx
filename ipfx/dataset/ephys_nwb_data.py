@@ -1,4 +1,4 @@
-from typing import Dict, Any, Tuple, Optional, Sequence, Callable
+from typing import Dict, Tuple, Sequence, Union
 import warnings
 from functools import lru_cache
 
@@ -140,56 +140,45 @@ class EphysNWBData(EphysDataInterface):
                              "{[s.name for s in matching_series]} "
                              "for sweep number {sweep_number}")
 
-    def get_sweep_data(self, sweep_number):
-        """
+    def get_sweep_data(
+        self, sweep_number: int
+    ) -> Dict[str, Union[np.ndarray, str, float]]:
+        """Extracts numpy arrays, stimulus unit, and sampling rate from sweep.
+
+        Grabs stimulus and response PatchClampSeries and extracts numpy arrays
+        for the stimulus and response time series data as well as the stimulus
+        unit and sampling rate
+
         Parameters
         ----------
         sweep_number: int
+            Integer specifying the sweep to extract data from
+
+        Returns
+        -------
+        sweep_data : Dict[str, Union[np.ndarray, str, float]]
+            Dictionary of sweep data, which includes stimulus and response
+            numpy arrays as well as stimulus units and sampling rate.
+
         """
 
         if not isinstance(sweep_number, (int, np.uint64, np.int64)):
             raise ValueError("sweep_number must be an integer but it is {}".format(type(sweep_number)))
 
-        series = self.nwb.sweep_table.get_series(sweep_number)
-
-        if series is None:
-            raise ValueError("No TimeSeries found for sweep number {}.".format(sweep_number))
-
         # we need one "*ClampStimulusSeries" and one "*ClampSeries"
 
-        response = None
-        stimulus = None
-        for s in series:
+        # grab stimulus series and extract appropriate data from it
+        stimulus_series = self._get_series(sweep_number, self.STIMULUS)
+        stimulus = stimulus_series.data[:] * float(stimulus_series.conversion)
+        stimulus_unit = self.get_long_unit_name(stimulus_series.unit)
+        self.validate_SI_unit(stimulus_unit)
+        stimulus_rate = float(stimulus_series.rate)
 
-            if isinstance(s, (VoltageClampSeries, CurrentClampSeries, IZeroClampSeries)):
-                if response is not None:
-                    raise ValueError("Found multiple response TimeSeries in NWB file for sweep number {}.".format(sweep_number))
-
-                response = s.data[:] * float(s.conversion)
-            elif isinstance(s, (VoltageClampStimulusSeries, CurrentClampStimulusSeries)):
-                if stimulus is not None:
-                    raise ValueError("Found multiple stimulus TimeSeries in NWB file for sweep number {}.".format(sweep_number))
-
-                    response = s.data[:] * float(s.conversion)
-                    response_unit = self.get_long_unit_name(s.unit)
-                    self.validate_SI_unit(response_unit)
-
-                elif isinstance(s, (VoltageClampStimulusSeries, CurrentClampStimulusSeries)):
-                    if stimulus is not None:
-                        raise ValueError("Found multiple stimulus TimeSeries in NWB file for sweep number {}.".format(sweep_number))
-
-                    stimulus = s.data[:] * float(s.conversion)
-                    stimulus_unit = self.get_long_unit_name(s.unit)
-                    self.validate_SI_unit(stimulus_unit)
-
-                    stimulus_rate = float(s.rate)
-                else:
-                    raise ValueError("Unexpected TimeSeries {}.".format(type(s)))
-
-        if stimulus is None:
-            raise ValueError("Could not find one stimulus TimeSeries for sweep number {}.".format(sweep_number))
-        elif response is None:
-            raise ValueError("Could not find one response TimeSeries for sweep number {}.".format(sweep_number))
+        # grab response series and extract appropriate data from it
+        response_series = self._get_series(sweep_number, self.RESPONSE)
+        response = response_series.data[:] * float(response_series.conversion)
+        response_unit = self.get_long_unit_name(response_series.unit)
+        self.validate_SI_unit(response_unit)
 
         if stimulus_unit == "Volts":
             stimulus = stimulus * 1.0e3
