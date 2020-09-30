@@ -1,10 +1,14 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## [1.0.1] = 2020-09-22
-- Added `@lru_cache(maxsize=None)` decorator to `EphysNWBData._get_series()` to improve performance.
+## Unreleased
+
+### Added
+- `@lru_cache(maxsize=None)` decorator to `EphysNWBData._get_series()` to improve performance by using caching.
+
+### Changed
+- `EphysNWBData.get_sweep_data()` now uses cached values from `EphysNWBData._get_series()`
 - Made error checking for `EphysNWBData._get_series()` more robust.
-- Refactored `EphysNWBData.get_sweep_data()` to use cached values from `_get_series()`
 
 ## [1.0.0] = 2020-06-30
 
