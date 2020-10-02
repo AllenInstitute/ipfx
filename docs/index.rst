@@ -5,12 +5,13 @@
    installation
    quick_start
    tutorial
+   download_data
    stimuli
-   authors
    auto_examples/index
    pipeline
    API Documentation <ipfx>
    Github <https://github.com/alleninstitute/ipfx>
+   authors
    Releases <https://github.com/alleninstitute/ipfx/releases>
 
 

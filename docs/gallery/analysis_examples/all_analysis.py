@@ -9,7 +9,10 @@ import os
 from ipfx.dataset.create import create_ephys_data_set
 from ipfx.data_set_features import extract_data_set_features
 from ipfx.utilities import drop_failed_sweeps
-# Download and access the experimental data
+
+# Download and access the experimental data from DANDI archive per instructions in the documentation
+# Example below will use an nwb file provided with the package
+
 nwb_file = os.path.join(
     os.path.dirname(os.getcwd()),
     "data",

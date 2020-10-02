@@ -63,7 +63,7 @@ setup(
     setup_requires=['pytest-runner'],
     keywords=["neuroscience", "bioinformatics", "scientific"],
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",
         "License :: Other/Proprietary License", # Allen Institute Software License
         "Natural Language :: English",
