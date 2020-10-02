@@ -84,18 +84,19 @@ def plot_single_ap_values(data_set, sweep_numbers, lims_features, sweep_features
 
     plt.figure(figs[0].number)
 
-    yvals = [float(lims_features[k + "_v_" + type_name]) for k in gen_features if lims_features[k + "_v_" + type_name] is not None]
+    yvals = [lims_features[k + "_v_" + type_name] for k in gen_features]
     xvals = range(len(yvals))
+    xticks = [k for k in gen_features]
 
     plt.scatter(xvals, yvals, color='blue', marker='_', s=40, zorder=100)
-    plt.xticks(xvals, ['thr', 'pk', 'tr', 'ftr', 'str'])
+    plt.xticks(xvals, xticks)
     plt.title(type_name + ": voltages")
 
     plt.figure(figs[1].number)
-    yvals = [float(lims_features[k + "_t_" + type_name]) for k in gen_features if lims_features[k + "_t_" + type_name] is not None]
+    yvals = [lims_features[k + "_t_" + type_name] for k in gen_features]
     xvals = range(len(yvals))
     plt.scatter(xvals, yvals, color='blue', marker='_', s=40, zorder=100)
-    plt.xticks(xvals, ['thr', 'pk', 'tr', 'ftr', 'str'])
+    plt.xticks(xvals, xticks)
     plt.title(type_name + ": times")
 
     plt.figure(figs[2].number)
