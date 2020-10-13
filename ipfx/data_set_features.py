@@ -91,7 +91,7 @@ def fallback_on_error(fallback_value=None, catch_errors=(Exception)):
                 result = fn(*args, **kwargs)
                 error = None
             except catch_errors as e:
-                logging.warning(e)
+                logging.warning(e, exc_info=True)
                 result = fallback_value
                 error = e
             return result, error

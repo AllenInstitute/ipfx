@@ -103,10 +103,17 @@ def extract_clamp_seal(data_set, tags, manual_values=None):
                                  seal_data.i,
                                  seal_data.t)
 
-        if seal_gohm is None or not np.isfinite(seal_gohm):
-            raise er.FeatureError("Could not compute seal")
+        if not np.isfinite(seal_gohm):
+            logging.warning("Could not compute seal")
+            seal_gohm = None
 
-    except IndexError as e:
+    except IndexError:
+        logging.warning("No seal sweep.")
+        seal_gohm = None
+    except Exception:
+        logging.exception("Failure computing seal.")
+        seal_gohm = None
+    if seal_gohm is None:
         # seal is not available, for whatever reason. log error
         tags.append("Seal is not available")
         # look for manual seal value and use it if it's available
@@ -171,9 +178,9 @@ def extract_input_resistance(breakin_sweep,tags,manual_values):
                                           breakin_sweep.i,
                                           breakin_sweep.t)
 
-    except Exception as e:
-        logging.warning("Error reading input resistance.")
-        raise
+    except Exception:
+        logging.exception("Error reading input resistance.")
+        ir = None
 
     # apply manual value if it's available
     if ir is None:
@@ -192,9 +199,9 @@ def extract_initial_access_resistance(breakin_sweep,tags,manual_values):
                                                    breakin_sweep.i,
                                                    breakin_sweep.t)
 
-    except Exception as e:
-        logging.warning("Error reading initial access resistance.")
-        raise
+    except Exception:
+        logging.exception("Error reading initial access resistance.")
+        sr = None
 
     # apply manual value if it's available
     if sr is None:
