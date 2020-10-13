@@ -136,8 +136,8 @@ class EphysNWBData(EphysDataInterface):
             return matching_series[0]
         else:
             raise ValueError("Found multiple stimulus series "
-                             "{[s.name for s in matching_series]} "
-                             "for sweep number {sweep_number}")
+                             f"{[s.name for s in matching_series]} "
+                             f"for sweep number {sweep_number}")
 
     def get_sweep_data(self, sweep_number):
         """
