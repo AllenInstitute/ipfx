@@ -60,11 +60,27 @@ def test_get_square_pulse_idx():
         assert up_idx,down_idx == qcf.get_square_pulse_idx(v)
 
 
-def test_truncated_pulse():
+def test_truncated_pulse_at_end():
 
     v = [0, 0, 1, 1, 0, 0, 2, 2, 0, 0, 0, 2, 2, 2]
+    up_idx = [6]
+    down_idx = [7]
 
-    with pytest.raises(AssertionError, match="Truncated square pulse"):
+    assert up_idx, down_idx == qcf.get_square_pulse_idx(v)
+
+
+def test_truncated_pulse_at_start():
+    v = [1, 1, 0, 0, 2, 2, 0, 0, 0, 2, 2, 2, 0, 0, 2, 2, 0]
+    up_idx = [9, 14]
+    down_idx = [11, 15]
+
+    assert up_idx, down_idx == qcf.get_square_pulse_idx(v)
+
+
+def test_invalid_square_pulse():
+    v = [0, 0, 1, 1, 2, 2, 0, 0, 1, 1, 2, 2, 0, 0]
+
+    with pytest.raises(AssertionError, match="Invalid square pulse"):
         qcf.get_square_pulse_idx(v)
 
 

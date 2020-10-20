@@ -16,6 +16,7 @@ def measure_electrode_0(curr, hz, t=0.005):
     else:
         return None
 
+
 def measure_seal(v, curr, t):
 
     return 1e-9 * get_r_from_stable_pulse_response(v*1e-3, curr*1e-12, t)
@@ -130,10 +131,19 @@ def get_square_pulse_idx(v):
     """
     dv = np.diff(v)
 
-    up_idx = np.flatnonzero(dv > 0)[1:] # skip the very first pulse (test pulse)
+    up_idx = np.flatnonzero(dv > 0)[1:]  # skip the very first pulse (test pulse)
     down_idx = np.flatnonzero(dv < 0)[1:]
 
-    assert len(up_idx) == len(down_idx), "Truncated square pulse"
+    # If we have more downs than ups, there is a potential
+    # truncated pulse at the beginning. If we have
+    # more ups, the truncated pulse can be at the end, so drop it.
+    if len(up_idx) < len(down_idx):
+        down_idx = down_idx[1:]
+    elif len(up_idx) > len(down_idx):
+        up_idx = up_idx[:-1]
+
+    # If we still have an unequal number of ups and downs, raise an error.
+    assert len(up_idx) == len(down_idx), "Invalid square pulse"
 
     for up_ix, down_ix in zip(up_idx, down_idx):
         assert up_ix < down_ix, "Negative square pulse"
