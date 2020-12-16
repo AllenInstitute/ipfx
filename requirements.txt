@@ -1,7 +1,7 @@
 argschema<2.0.0
 allensdk
 dictdiffer
-h5py>=2.10.0
+h5py==2.10.0
 marshmallow==3.0.0rc6
 matplotlib>=1.4.3
 numpy>=1.15.4,<1.19.0
