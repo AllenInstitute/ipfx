@@ -63,7 +63,8 @@ def run_feature_extraction(input_nwb_file,
                         'sweep_features': sweep_features,
                         'cell_record': cell_record,
                         'sweep_records': sweep_records,
-                        'cell_state': cell_state
+                        'cell_state': cell_state,
+                        'feature_states': feature_states
                         }
 
         if write_spikes:
