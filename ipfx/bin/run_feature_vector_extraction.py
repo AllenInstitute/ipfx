@@ -257,6 +257,8 @@ def run_feature_vector_extraction(
     include_failed_cells,
     run_parallel,
     ap_window_length,
+    needed_amplitudes,
+    amp_tolerance,
     ids=None,
     file_list=None,
     **kwargs
