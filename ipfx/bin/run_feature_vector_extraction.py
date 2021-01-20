@@ -26,9 +26,9 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
         allow_none=True
     )
     data_source = ags.fields.String(
-        description="Source of NWB files ('sdk' or 'lims' or 'filesystem')",
+        description="Source of NWB files ('sdk', 'lims', or 'lims-nwb2')",
         default="sdk",
-        validate=lambda x: x in ["sdk", "lims", "filesystem"]
+        validate=lambda x: x in ["sdk", "lims", "lims-nwb2", "filesystem"]
         )
     output_code = ags.fields.String(
         description="Code used for naming of output files",

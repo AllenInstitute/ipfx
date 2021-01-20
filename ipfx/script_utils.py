@@ -16,7 +16,17 @@ import ipfx.data_set_features as dsf
 import ipfx.time_series_utils as tsu
 import ipfx.error as er
 from ipfx.sweep import SweepSet
+<<<<<<< Updated upstream
 from ipfx.dataset.create import create_ephys_data_set
+=======
+from ipfx.aibs_data_set import AibsDataSet
+from ipfx.dataset.create import create_ephys_data_set
+import h5py
+import os
+import json
+from allensdk.core.cell_types_cache import CellTypesCache
+import traceback
+>>>>>>> Stashed changes
 
 
 def lims_nwb_information(specimen_id):
@@ -25,10 +35,15 @@ def lims_nwb_information(specimen_id):
         logging.warning("No ephys ROI result found for {:d}".format(specimen_id))
         return {"error": {"type": "no_ephys_roi_result", "details": "roi ID was None"}}, None
 
-    nwb_path = lq.get_nwb_path_from_lims(roi_id)
-    if (nwb_path is None) or (len(nwb_path) == 0): # could not find an NWB file
-        logging.warning("No NWB file for {:d}".format(specimen_id))
-        return {"error": {"type": "no_nwb", "details": "empty nwb path"}}, None
+
+    try:
+        nwb_path = lq.get_nwb_path_from_lims(roi_id)
+        if (nwb_path is None) or (len(nwb_path) == 0): # could not find an NWB file
+            logging.warning("No NWB file for {:d}".format(specimen_id))
+            return {"error": {"type": "no_nwb", "details": "empty nwb path"}}, None
+    except:
+        logging.warning("Could not get NWB file path for {:d}".format(specimen_id))
+        return {"error": {"type": "no_nwb", "details": "exception getting nwb path"}}, None
 
     # Check if NWB has lab notebook information, or if additional hdf5 file is needed
     h5_path = None
@@ -47,6 +62,26 @@ def lims_nwb_information(specimen_id):
     return nwb_path, h5_path
 
 
+def lims_nwb2_information(specimen_id):
+    """Try to get an NWB2 path from LIMS"""
+
+    _, roi_id, _ = lq.get_specimen_info_from_lims_by_id(specimen_id)
+    if roi_id is None:
+        logging.warning("No ephys ROI result found for {:d}".format(specimen_id))
+        return {"error": {"type": "no_ephys_roi_result", "details": "roi ID was None"}}
+
+    try:
+        nwb_path = lq.get_nwb2_path_from_lims(roi_id)
+        if (nwb_path is None) or (len(nwb_path) == 0): # could not find an NWB file
+            logging.warning("No NWB file for {:d}".format(specimen_id))
+            return {"error": {"type": "no_nwb2", "details": "empty/nonexistent nwb path"}}
+    except:
+        logging.warning("Could not get NWB file path for {:d}".format(specimen_id))
+        return {"error": {"type": "no_nwb2", "details": "exception getting nwb path"}}
+
+    return nwb_path
+
+
 def sdk_nwb_information(specimen_id):
     ctc = CellTypesCache()
     nwb_data_set = ctc.get_ephys_data(specimen_id)
@@ -54,20 +89,44 @@ def sdk_nwb_information(specimen_id):
     return nwb_data_set.file_name, sweep_info
 
 
-def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
-    if data_source == "lims":
-        nwb_path, h5_path = lims_nwb_information(specimen_id)
-        if type(nwb_path) is dict and "error" in nwb_path:
-            logging.warning("Problem getting NWB file for specimen {:d} from LIMS".format(specimen_id))
-            return nwb_path
+def dataset_for_nwb1(specimen_id, ontology):
+    nwb_path, h5_path = lims_nwb_information(specimen_id) # h5_path now unused with new create_ephys_data_set?
+    if type(nwb_path) is dict and "error" in nwb_path:
+        logging.warning("Problem getting NWB file for specimen {:d} from LIMS".format(specimen_id))
+        return nwb_path
 
+    try:
+        data_set = create_ephys_data_set(
+            nwb_file=nwb_path, ontology=ontology)
+    except Exception as detail:
+        logging.warning("Exception when loading NWB1 for specimen {:d} from LIMS".format(specimen_id))
+        logging.warning(detail)
+        return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
+
+    return data_set
+
+
+def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
+    # Find or retrieve NWB file and ancillary info and construct an EphysDataSet object
+
+    if data_source == "lims":
+            return dataset_for_nwb1(specimen_id, ontology)
+
+    elif data_source == "lims-nwb2":
+        nwb2_path = lims_nwb2_information(specimen_id)
+        if type(nwb2_path) is dict and "error" in nwb2_path:
+            if nwb2_path["error"]["type"] == "no_nwb2":
+                # try to get NWB1 file instead
+                return dataset_for_nwb1(specimen_id, ontology)
+            else:
+                return nwb2_path
         try:
-            data_set = create_ephys_data_set(
-                nwb_file=nwb_path, ontology=ontology)
-        except Exception as detail:
-            logging.warning("Exception when loading specimen {:d} from LIMS".format(specimen_id))
+            data_set = create_ephys_data_set(nwb_file=nwb2_path)
+        except:
+            logging.warning("Exception when loading NWB2 (and attempting NWB1) for specimen {:d} from LIMS".format(specimen_id))
             logging.warning(detail)
             return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
+
     elif data_source == "sdk":
         nwb_path, sweep_info = sdk_nwb_information(specimen_id)
         try:
@@ -77,6 +136,7 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
             logging.warning("Exception when loading specimen {:d} via Allen SDK".format(specimen_id))
             logging.warning(detail)
             return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
+
     elif data_source == "filesystem":
         nwb_path = file_list[specimen_id]
         try:
@@ -85,6 +145,7 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
             logging.warning("Exception when loading specimen {:d} via file system".format(specimen_id))
             logging.warning(detail)
             return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
+
     else:
         logging.error("invalid data source specified ({})".format(data_source))
 

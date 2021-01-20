@@ -682,9 +682,21 @@ def _identify_suprathreshold_indices(features, target_amplitudes,
         target_amplitudes, amp_tolerance)
     n_matches = np.sum([s is not None for s in sweeps_to_use])
 
-    if len(target_amplitudes) > 1 and n_matches <= 1 and shift is not None:
-        logging.debug("Found only one spiking sweep that matches expected amplitude levels; attempting to shift by {} pA".format(shift))
-        sweeps_to_use = _spiking_sweeps_at_levels(amps - shift, sweep_indexes,
+    if len(target_amplitudes) > 1 and n_needed_matches <= 1 and shift is not None:
+        logging.debug("Found only one spiking sweep that matches expected amplitude levels; attempting to shift by up to {} pA".format(shift))
+
+
+        found_match = False
+        for amp in amps:
+            if (amp <= shift) and (amp > 0):
+                found_match = True
+                logging.debug("Trying shift of {} pA".format(amp))
+                actual_shift = amp
+                break
+        if not found_match:
+            actual_shift = shift
+
+        sweeps_to_use = _spiking_sweeps_at_levels(amps - actual_shift, sweep_indexes,
             target_amplitudes, amp_tolerance)
         n_matches = np.sum([s is not None for s in sweeps_to_use])
 
