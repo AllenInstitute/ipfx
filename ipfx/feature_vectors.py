@@ -581,7 +581,7 @@ def first_ap_waveform(sweep, spikes, length_in_points):
 
 
 def identify_suprathreshold_spike_info(features, target_amplitudes,
-        shift=None, amp_tolerance=0):
+        shift=None, amp_tolerance=0, needed_amplitudes=None):
     """ Find spike information for sweeps matching desired amplitudes relative to rheobase
 
     Parameters
@@ -606,12 +606,12 @@ def identify_suprathreshold_spike_info(features, target_amplitudes,
 
     spike_data = features["spikes_set"]
     sweeps_to_use = _identify_suprathreshold_indices(
-        features, target_amplitudes, shift, amp_tolerance)
+        features, target_amplitudes, shift, amp_tolerance, needed_amplitudes=needed_amplitudes)
     return [spike_data[ind] if ind is not None else None for ind in sweeps_to_use]
 
 
 def identify_suprathreshold_sweeps(sweeps, features, target_amplitudes,
-        shift=None, amp_tolerance=0):
+        shift=None, amp_tolerance=0, needed_amplitudes=None):
     """ Find spike information for sweeps matching desired amplitudes relative to rheobase
 
     Parameters
@@ -628,7 +628,8 @@ def identify_suprathreshold_sweeps(sweeps, features, target_amplitudes,
         A value of None means that no shift is attempted.
     amp_tolerance: float (optional, default 0)
         Tolerance for matching amplitude (pA)
-
+    needed_amplitudes: list-like (optional, default None)
+        Subset of `target_amplitudes` of which at least two are required
     Returns
     -------
     sweeps: list
@@ -637,12 +638,12 @@ def identify_suprathreshold_sweeps(sweeps, features, target_amplitudes,
     """
 
     sweeps_to_use = _identify_suprathreshold_indices(
-        features, target_amplitudes, shift, amp_tolerance)
+        features, target_amplitudes, shift, amp_tolerance, needed_amplitudes=needed_amplitudes)
     return [sweeps.sweeps[ind] if ind is not None else None for ind in sweeps_to_use]
 
 
 def _identify_suprathreshold_indices(features, target_amplitudes,
-        shift=None, amp_tolerance=0):
+        shift=None, amp_tolerance=0, needed_amplitudes=None):
     """ Find indices for sweeps matching desired amplitudes relative to rheobase
 
     Parameters
@@ -680,28 +681,62 @@ def _identify_suprathreshold_indices(features, target_amplitudes,
 
     sweeps_to_use = _spiking_sweeps_at_levels(amps, sweep_indexes,
         target_amplitudes, amp_tolerance)
+    orig_rheo_ind = sweeps_to_use[0]
     n_matches = np.sum([s is not None for s in sweeps_to_use])
+    if needed_amplitudes is not None:
+        n_needed_matches = np.sum([s is not None for s, a in zip(sweeps_to_use, target_amplitudes) if a in needed_amplitudes])
+    else:
+        n_needed_matches = n_matches
 
     if len(target_amplitudes) > 1 and n_needed_matches <= 1 and shift is not None:
-        logging.debug("Found only one spiking sweep that matches expected amplitude levels; attempting to shift by up to {} pA".format(shift))
-
-
-        found_match = False
-        for amp in amps:
-            if (amp <= shift) and (amp > 0):
-                found_match = True
-                logging.debug("Trying shift of {} pA".format(amp))
-                actual_shift = amp
-                break
-        if not found_match:
-            actual_shift = shift
-
-        sweeps_to_use = _spiking_sweeps_at_levels(amps - actual_shift, sweep_indexes,
+        logging.debug("Found only one spiking sweep that matches expected amplitude levels; attempting to shift by {} pA".format(shift))
+        sweeps_to_use = _spiking_sweeps_at_levels(amps - shift, sweep_indexes,
             target_amplitudes, amp_tolerance)
         n_matches = np.sum([s is not None for s in sweeps_to_use])
+        if needed_amplitudes is not None:
+            n_needed_matches = np.sum([s is not None for s, a in zip(sweeps_to_use, target_amplitudes) if a in needed_amplitudes])
+        else:
+            n_needed_matches = n_matches
 
-    if len(target_amplitudes) > 1 and n_matches <= 1:
-        raise er.FeatureError("Could not find at least two spiking sweeps matching requested amplitude levels")
+    # Compensate for earlier issue where shifting could lose the rheobase sweep
+    if sweeps_to_use[0] is None:
+        sweeps_to_use[0] = orig_rheo_ind
+        n_needed_matches += 1
+
+    if len(target_amplitudes) > 1 and n_needed_matches <= 1:
+        # last ditch - see if number of spikes on rheo and next highest available are same (or +20 is less) and try those
+        alt_target_amplitudes = sorted(np.unique(amps))
+        alt_sweeps_to_use = _spiking_sweeps_at_levels(amps, sweep_indexes,
+            alt_target_amplitudes, amp_tolerance=0)
+        alt_rheo_ind = alt_sweeps_to_use[0]
+        logging.debug(alt_target_amplitudes)
+        logging.debug(sweeps_to_use)
+        start_range = 1
+        keep_going = True
+        found_match = False
+        for i, try_ind in enumerate(alt_sweeps_to_use[1:]):
+            logging.debug(f"Trying sweep at index {try_ind}")
+            logging.debug(f"Sweep at {alt_target_amplitudes[i + 1]} had {np.round(sweep_table.at[try_ind, 'avg_rate'])} spikes/s vs rheo {np.round(sweep_table.at[alt_rheo_ind, 'avg_rate'])}")
+            if np.round(sweep_table.at[alt_rheo_ind, "avg_rate"]) >= np.round(sweep_table.at[try_ind, "avg_rate"]):
+                alt_shift = np.round(sweep_table.at[try_ind, "stim_amp"] - sweep_table.at[alt_rheo_ind, "stim_amp"])
+                logging.debug(f"Trying shift of {alt_shift} pA")
+                sweeps_to_use = _spiking_sweeps_at_levels(amps - alt_shift, sweep_indexes,
+                    target_amplitudes, amp_tolerance)
+                n_matches = np.sum([s is not None for s in sweeps_to_use])
+                if needed_amplitudes is not None:
+                    n_needed_matches = np.sum([s is not None for s, a in zip(sweeps_to_use, target_amplitudes) if a in needed_amplitudes])
+                else:
+                    n_needed_matches = n_matches
+                if len(target_amplitudes) > 1 and n_needed_matches <= 1:
+                    logging.debug("No match yet")
+                else:
+                    found_match = True
+                    break
+            else:
+                break
+
+        if not found_match:
+            raise er.FeatureError(f"Could not find at least two spiking sweeps matching requested amplitude levels (available: {amps})")
 
     return sweeps_to_use
 
@@ -728,6 +763,9 @@ def psth_vector(spike_info_list, start, end, width=50):
     """
 
     vector_list = []
+    if spike_info_list[0] is None:
+        logging.warning("Rheobase sweep appears to be missing")
+
     for si in spike_info_list:
         if si is None:
             vector_list.append(None)
@@ -771,6 +809,9 @@ def inst_freq_vector(spike_info_list, start, end, width=20):
     output: array
         Concatenated vector of binned instantaneous firing rates (spikes/s)
     """
+
+    if spike_info_list[0] is None:
+        logging.warning("Rheobase sweep appears to be missing")
 
     vector_list = []
     for si in spike_info_list:
@@ -821,6 +862,9 @@ def spike_feature_vector(feature, spike_info_list, start, end, width=20):
     output: array
         Concatenated vector of binned spike features
     """
+
+    if spike_info_list[0] is None:
+        logging.warning("Rheobase sweep appears to be missing")
 
     vector_list = []
     for si in spike_info_list:

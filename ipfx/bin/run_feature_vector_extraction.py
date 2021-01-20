@@ -75,6 +75,8 @@ def data_for_specimen_id(
     ontology,
     ap_window_length=0.005,
     target_sampling_rate=50000,
+    needed_amplitudes=None,
+    amp_tolerance=0.,
     file_list=None,
 ):
     """
@@ -208,7 +210,11 @@ def data_for_specimen_id(
 
         target_amplitudes = np.arange(0, 120, 20)
         supra_info_list = fv.identify_suprathreshold_spike_info(
-            lsq_features, target_amplitudes, shift=10)
+            lsq_features,
+            target_amplitudes,
+            shift=10,
+            amp_tolerance=amp_tolerance,
+            needed_amplitudes=needed_amplitudes)
         result["psth"] = fv.psth_vector(supra_info_list, lsq_start, lsq_end)
         result["inst_freq"] = fv.inst_freq_vector(supra_info_list, lsq_start, lsq_end)
 
@@ -297,6 +303,8 @@ def run_feature_vector_extraction(
                                data_source=data_source,
                                ontology=ontology,
                                ap_window_length=ap_window_length,
+                               needed_amplitudes=needed_amplitudes,
+                               amp_tolerance=amp_tolerance,
                                file_list=file_list)
 
     if run_parallel:
