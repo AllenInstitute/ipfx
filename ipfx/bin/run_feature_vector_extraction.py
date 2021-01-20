@@ -67,6 +67,17 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
         description="Duration after threshold for AP shape (s)",
         default=0.003
     )
+    needed_amplitudes = ags.fields.List(
+        ags.fields.Integer,
+        allow_none=True,
+        default=None,
+        cli_as_single_argument=True
+    )
+    amp_tolerance = ags.fields.Float(
+        default=0.
+    )
+
+
 
 def data_for_specimen_id(
     specimen_id,
