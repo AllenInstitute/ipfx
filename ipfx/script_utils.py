@@ -16,17 +16,12 @@ import ipfx.data_set_features as dsf
 import ipfx.time_series_utils as tsu
 import ipfx.error as er
 from ipfx.sweep import SweepSet
-<<<<<<< Updated upstream
-from ipfx.dataset.create import create_ephys_data_set
-=======
-from ipfx.aibs_data_set import AibsDataSet
 from ipfx.dataset.create import create_ephys_data_set
 import h5py
 import os
 import json
 from allensdk.core.cell_types_cache import CellTypesCache
 import traceback
->>>>>>> Stashed changes
 
 
 def lims_nwb_information(specimen_id):
