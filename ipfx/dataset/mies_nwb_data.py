@@ -57,5 +57,32 @@ class MIESNWBData(EphysNWBData):
 
         return sweep_record
 
-    def get_notebook_value(self, name, sweep_num, default_val):
-        return self.notebook.get_value(name, sweep_num, default_val)
+    def get_notebook_value(self, key: str, sweep_number: int, default_value):
+        """A wrapper function for LabNotebookReader.get_value().
+
+        Takes the key from a MIES lab notebook entry and returns the value
+        associated with it. If the value does not exist then this function will
+        return the default_value instead.
+
+        Some useful voltage clamp amplifier settings keys:
+        'V-Clamp Holding Level', 'RsComp Bandwidth', 'RsComp Correction',
+        'RsComp Prediction', 'Whole Cell Comp Cap', 'Whole Cell Comp Resist'
+
+        Some useful current clamp amplifier settings keys:
+        'I-Clamp Holding Level', 'Neut Cap Value', 'Bridge Bal Value'
+
+        Parameters
+        ----------
+        key : str
+            Represents the name of the value to find in the lab notebook
+        sweep_number : int
+            Sweep number for which to look up the value
+        default_value : Any
+            This will be returned if there is no value associated with the key
+
+        Returns
+        -------
+        Values obtained from lab notebook
+
+        """
+        return self.notebook.get_value(key, sweep_number, default_value)

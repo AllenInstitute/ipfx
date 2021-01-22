@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Added `get_notebook_value()` wrapper function to `EphysDataSet` as well as `EphysDataInterface` and it's subclasses.
 ### Changed
+- Fixed a typo in registered enabled names for `LabNotebookReader` by changing `Neut Cap Enable` to `Neut Cap Enabled`.
 
 ## [1.0.2] = 2021-01-06
 
