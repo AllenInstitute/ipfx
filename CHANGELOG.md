@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 
 ### Added
-
+- Added `get_notebook_value()` wrapper function to `EphysDataSet` as well as `EphysDataInterface` and it's subclasses.
 ### Changed
 
 ## [1.0.2] = 2021-01-06
