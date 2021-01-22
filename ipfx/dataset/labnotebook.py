@@ -5,10 +5,10 @@ from ipfx.py2to3 import to_str
 class LabNotebookReader(object):
     """
         The Lab Notebook Reader class
-        
+
         This class reads two sections: numeric data and text data
     """
-    
+
     def __init__(self):
         self.register_enabled_names()
 
@@ -26,7 +26,7 @@ class LabNotebookReader(object):
         self.enabled["Whole Cell Comp Cap"] = "Whole Cell Comp Enable"
         self.enabled["Whole Cell Comp Resist"] = "Whole Cell Comp Enable"
         self.enabled["I-Clamp Holding Level"] = "I-Clamp Holding Enable"
-        self.enabled["Neut Cap Value"] = "Neut Cap Enable"
+        self.enabled["Neut Cap Value"] = "Neut Cap Enabled"
         self.enabled["Bridge Bal Value"] = "Bridge Bal Enable"
 
     def get_numeric_value(self, name, data_col, sweep_col, enable_col, sweep_num, default_val):
@@ -53,12 +53,12 @@ class LabNotebookReader(object):
 
             Returns
             -------
-            
+
             last non-empty entry in specified column
             for specified sweep number
         """
         data = self.val_number
-        
+
         return_val = default_val
         for sample in data:
             swp = sample[sweep_col][0]
@@ -87,13 +87,13 @@ class LabNotebookReader(object):
 
             Returns
             -------
-            
+
             last non-empty entry in specified column
             for specified sweep number
         """
 
         data = self.val_text
-        
+
         return_val = default_val
         for sample in data:
             swp = sample[sweep_col][0]
@@ -133,12 +133,12 @@ class LabNotebookReader(object):
             Returns
             -------
             values obtained from lab notebook
-            
+
         """
 
         numeric_fields = [to_str(c) for c in self.colname_number[0]]
         text_fields = [to_str(c) for c in self.colname_text[0]]
-        
+
         if name in numeric_fields:
             sweep_idx = numeric_fields.index("SweepNum")
             enable_idx = None
@@ -162,7 +162,7 @@ class LabNotebookReader(object):
             return default_val
 
 class LabNotebookReaderIgorNwb(LabNotebookReader):
-    """ 
+    """
         LabNotebookReaderIgorNwb:
         Loads lab notebook data out of an Igor-generated NWB file.
         Module input is the name of the nwb file.
@@ -183,7 +183,7 @@ class LabNotebookReaderIgorNwb(LabNotebookReader):
         self.val_number = notebook["numericalValues"][()]
         self.colname_number = notebook["numericalKeys"][()]
         h5.close()
-        
+
         self.register_enabled_names()
 
     def get_textual_values(self):

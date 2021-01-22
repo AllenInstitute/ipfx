@@ -43,15 +43,15 @@ class EphysDataSet(object):
 
     @property
     def ontology(self) -> StimulusOntology:
-        """The stimulus ontology maps codified description of the stimulus type 
+        """The stimulus ontology maps codified description of the stimulus type
         to the human-readable descriptions.
         """
         return self._data.ontology
 
     @property
     def sweep_table(self) -> pd.DataFrame:
-        """Each row of the sweep table contains the metadata for a single 
-        sweep. In particular details of the stimulus presented and the clamp 
+        """Each row of the sweep table contains the metadata for a single
+        sweep. In particular details of the stimulus presented and the clamp
         mode. See EphysDataInterface.get_sweep_metadata for more information.
 
         """
@@ -82,7 +82,7 @@ class EphysDataSet(object):
                 self._sweep_info[sweep["sweep_number"]] = sweep
         else:
             self._sweep_info = value
-        
+
         if hasattr(self, "_sweep_table"):
             del self._sweep_table
 
@@ -91,21 +91,21 @@ class EphysDataSet(object):
             data: EphysDataInterface,
             sweep_info: Optional[List[Dict]] = None
     ):
-        """EphysDataSet is the preferred interface for running analyses or 
+        """EphysDataSet is the preferred interface for running analyses or
         pipeline code.
 
         Parameters
         ----------
-        data : This object must implement the EphysDataInterface. It will 
-            handle any loading of data from external sources (such as NWB2 
+        data : This object must implement the EphysDataInterface. It will
+            handle any loading of data from external sources (such as NWB2
             files)
         """
         self._data: EphysDataInterface = data
         self.sweep_info = sweep_info or []
 
     def _setup_stimulus_repeat_lookup(self):
-        """Each sweep contains the ith repetition of some stimulus (from 1 -> 
-        the number of times that stimulus was presented). Find i for each 
+        """Each sweep contains the ith repetition of some stimulus (from 1 ->
+        the number of times that stimulus was presented). Find i for each
         sweep.
 
         Notes
@@ -148,16 +148,16 @@ class EphysDataSet(object):
 
         if stimuli:
             mask = st[self.STIMULUS_CODE].apply(
-                self.ontology.stimulus_has_any_tags, 
-                args=(stimuli,), 
+                self.ontology.stimulus_has_any_tags,
+                args=(stimuli,),
                 tag_type="code"
             )
             st = st[mask.astype(bool)]
 
         if stimuli_exclude:
             mask = ~st[self.STIMULUS_CODE].apply(
-                self.ontology.stimulus_has_any_tags, 
-                args=(stimuli_exclude,), 
+                self.ontology.stimulus_has_any_tags,
+                args=(stimuli_exclude,),
                 tag_type="code"
             )
             st = st[mask.astype(bool)]
@@ -198,7 +198,7 @@ class EphysDataSet(object):
             stimuli: Collection[str],
             clamp_mode: Optional[str] = None
     ) -> int:
-        """Convenience for getting the integer identifier of the temporally 
+        """Convenience for getting the integer identifier of the temporally
         latest sweep matching argued criteria.
 
         Parameters
@@ -214,7 +214,7 @@ class EphysDataSet(object):
 
     def sweep(self, sweep_number: int) -> Sweep:
         """
-        Create an instance of the Sweep class with the data loaded from the 
+        Create an instance of the Sweep class with the data loaded from the
         from a file
 
         Parameters
@@ -235,8 +235,8 @@ class EphysDataSet(object):
 
         voltage, current = type(self)._voltage_current(
             sweep_data["stimulus"],
-            sweep_data["response"], 
-            sweep_metadata["clamp_mode"], 
+            sweep_data["response"],
+            sweep_metadata["clamp_mode"],
             enforce_equal_length=True,
         )
 
@@ -258,15 +258,15 @@ class EphysDataSet(object):
         return sweep
 
     def sweep_set(
-            self, 
+            self,
             sweep_numbers: Union[Sequence[int], int, None] = None
     ) -> SweepSet:
-        """Construct a SweepSet object, which offers convenient access to an 
+        """Construct a SweepSet object, which offers convenient access to an
         ordered collection of sweeps.
 
         Parameters
         ----------
-        sweep_numbers : Identifiers for the sweeps which will make up this set. 
+        sweep_numbers : Identifiers for the sweeps which will make up this set.
             If None, use all available sweeps.
 
         Returns
@@ -328,12 +328,12 @@ class EphysDataSet(object):
         return sweep_data
 
     def get_clamp_mode(self, sweep_number: int) -> str:
-        """Obtain the clamp mode of a given sweep. Should be one of 
+        """Obtain the clamp mode of a given sweep. Should be one of
         EphysDataSet.VOLTAGE_CLAMP or EphysDataSet.CURRENT_CLAMP
 
         Parameters
         ----------
-        sweep_number : identifier for the sweep whose clamp mode will be 
+        sweep_number : identifier for the sweep whose clamp mode will be
             returned
 
         Returns
@@ -347,7 +347,7 @@ class EphysDataSet(object):
 
         Parameters
         ----------
-        sweep_number : identifier for the sweep whose stimulus code will be 
+        sweep_number : identifier for the sweep whose stimulus code will be
             returned
 
         Returns
@@ -357,14 +357,14 @@ class EphysDataSet(object):
         return self._data.get_stimulus_code(sweep_number)
 
     def get_stimulus_code_ext(self, sweep_number: int) -> str:
-        """Obtain the extended stimulus code for a sweep. This is the stimulus 
-        code for that sweep augmented with an integer counter describing the 
-        number of presentations of that stimulus up to and including the 
+        """Obtain the extended stimulus code for a sweep. This is the stimulus
+        code for that sweep augmented with an integer counter describing the
+        number of presentations of that stimulus up to and including the
         requested sweep.
 
         Parameters
         ----------
-        sweep_number : identifies the sweep whose extended stimulus code will 
+        sweep_number : identifies the sweep whose extended stimulus code will
         be returned
 
         Returns
@@ -383,7 +383,7 @@ class EphysDataSet(object):
 
         Parameters
         ----------
-        sweep_number : identifies the sweep whose stimulus unit will be 
+        sweep_number : identifies the sweep whose stimulus unit will be
             returned
 
         Returns
@@ -392,15 +392,18 @@ class EphysDataSet(object):
         """
         return self._data.get_sweep_metadata(sweep_number)["stimulus_units"]
 
+    def get_notebook_value(self, name, sweep_num, default_val):
+        return self._data.get_notebook_value(name, sweep_num, default_val)
+
     @classmethod
     def _voltage_current(
             cls,
             stimulus: np.ndarray,
-            response: np.ndarray, 
+            response: np.ndarray,
             clamp_mode: str,
             enforce_equal_length: bool = True
     ) -> Tuple[np.array, np.array]:
-        """Resolve the stimulus and response arrays from a sweep's data into 
+        """Resolve the stimulus and response arrays from a sweep's data into
         voltage and current, using the clamp mode as a guide
 
         Parameters
@@ -408,14 +411,14 @@ class EphysDataSet(object):
         stimulus : stimulus trace
         response : response trace
         clamp_mode : Used to map stimulus and response to voltage and current
-        enforce_equal_length : Raise a ValueError if the stimulus and 
+        enforce_equal_length : Raise a ValueError if the stimulus and
             response arrays have uneven numbers of samples
 
         Returns
         -------
         The voltage and current traces.
 
-        """            
+        """
 
         if clamp_mode == cls.VOLTAGE_CLAMP:
             voltage = stimulus

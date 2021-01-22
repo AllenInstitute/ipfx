@@ -298,10 +298,6 @@ class EphysNWBData(EphysDataInterface):
 
         return datetime_object
 
-
-    def get_sweep_metadata(self, sweep_number: int):
-        raise NotImplementedError
-
     def get_stimulus_unit(self,sweep_number):
         stimulus_series = self._get_series(sweep_number,self.STIMULUS)
         return type(self).get_long_unit_name(stimulus_series.unit)
@@ -313,6 +309,9 @@ class EphysNWBData(EphysDataInterface):
         spikes = self.nwb.get_processing_module('spikes')
         sweep_spikes = spikes.get_data_interface(f"Sweep_{sweep_number}")
         return sweep_spikes.timestamps
+
+    def get_notebook_value(self, name, sweep_num, default_val):
+        return NotImplementedError
 
     @staticmethod
     def get_long_unit_name(unit):

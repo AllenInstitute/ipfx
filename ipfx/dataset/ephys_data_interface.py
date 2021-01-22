@@ -132,7 +132,6 @@ class EphysDataInterface(abc.ABC):
 
         raise NotImplementedError
 
-
     def get_stimulus_name(self, stim_code):
 
         if not self.ontology:
@@ -161,4 +160,8 @@ class EphysDataInterface(abc.ABC):
         -------
 
         """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_notebook_value(self, name, sweep_num, default_val):
         raise NotImplementedError

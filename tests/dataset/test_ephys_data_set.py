@@ -59,6 +59,11 @@ class EphysDataFixture(EphysDataInterface):
                 "stimulus": np.array([0, 1, 1, 0, 1, 1, 1, 1, 0, 0]),
                 "response": np.arange(0, 5, 0.5),
                 "sampling_rate": 1.5
+            },
+            "notebook": {
+                "I-Clamp Holding Level": -10.0,
+                "Neut Cap Value": 1.0,
+                "Bridge Bal Value": 10.0
             }
         },
         2: {
@@ -76,6 +81,11 @@ class EphysDataFixture(EphysDataInterface):
                 "stimulus": np.array([0, 1, 1, 0, 1, 1, 1, 1, 0, 0]),
                 "response": np.arange(10)[::-1],
                 "sampling_rate": 1.5
+            },
+            "notebook": {
+                "I-Clamp Holding Level": -10.0,
+                "Neut Cap Value": 1.0,
+                "Bridge Bal Value": 10.0
             }
         },
         3: {
@@ -93,6 +103,14 @@ class EphysDataFixture(EphysDataInterface):
                 "stimulus": np.array([0, 1, 1, 0, 1, 1, 1, 1, 0, 0]),
                 "response": np.arange(10),
                 "sampling_rate": 1.5
+            },
+            "notebook": {
+                "V-Clamp Holding Level": -70.0,
+                "RsComp Bandwidth": 1.0,
+                "RsComp Correction": 80.0,
+                "RsComp Prediction": 80.0,
+                "Whole Cell Comp Cap": 4.0,
+                "Whole Cell Comp Resist": 8.0
             }
         }
     }
@@ -122,6 +140,14 @@ class EphysDataFixture(EphysDataInterface):
     def get_clamp_mode(self, sweep_number):
         return self.SWEEPS[sweep_number]["meta"]["clamp_mode"]
 
+    def get_notebook_value(self, name, sweep_num, default_val):
+        notebook_vals = self.SWEEPS[sweep_num]['notebook']
+        if name in notebook_vals.keys():
+            return notebook_vals[name]
+        else:
+            return default_val
+
+
 @pytest.fixture
 def dataset():
     return EphysDataSet(EphysDataFixture(DEFAULT_ONT))
@@ -139,9 +165,11 @@ def test_sweep_table(dataset):
         expected, dataset.sweep_table, check_like=True
     )
 
+
 def test_sweep_info_setter(dataset):
     dataset.sweep_info = [{"sweep_number": 2}, {"sweep_number": 3}]
     assert set(dataset.sweep_table["sweep_number"].tolist()) == {2, 3}
+
 
 def test_filtered_sweep_table(dataset):
     expected = pd.DataFrame([
@@ -201,3 +229,18 @@ def test_get_stimulus_code_ext(dataset):
 
 def test_get_stimulus_units(dataset):
     assert "amperes" == dataset.get_stimulus_units(1)
+
+
+def test_get_notebook_value(dataset):
+    # test current clamp sweep
+    assert -10.0 == dataset.get_notebook_value("I-Clamp Holding Level", 1, None)
+    assert 1.0 == dataset.get_notebook_value("Neut Cap Value", 1, None)
+    assert 10.0 == dataset.get_notebook_value("Bridge Bal Value", 1, None)
+
+    # test voltage clamp sweep
+    assert -70.0 == dataset.get_notebook_value("V-Clamp Holding Level", 3, None)
+    assert 1.0 == dataset.get_notebook_value("RsComp Bandwidth", 3, None)
+    assert 80.0 == dataset.get_notebook_value("RsComp Correction", 3, None)
+    assert 80.0 == dataset.get_notebook_value("RsComp Prediction", 3, None)
+    assert 4.0 == dataset.get_notebook_value("Whole Cell Comp Cap", 3, None)
+    assert 8.0 == dataset.get_notebook_value("Whole Cell Comp Resist", 3, None)

@@ -56,3 +56,6 @@ class MIESNWBData(EphysNWBData):
             )
 
         return sweep_record
+
+    def get_notebook_value(self, name, sweep_num, default_val):
+        return self.notebook.get_value(name, sweep_num, default_val)
