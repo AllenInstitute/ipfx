@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 ### Changed
+
+
+## [1.0.3] = 2021-02-02
 Bug fixes:
 - Fixed memory leak in method of `EphysNWBData` caused by `@lru_cache` decorator
 
