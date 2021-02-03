@@ -22,16 +22,6 @@ Changed:
 Bug fixes:
 - Fix segment length rounding error in the DAT file converter
 
-## [1.0.2] = 2021-01-06
-
-Changed:
-- Add features_state information to the pipeline output json
-- Improve performance of loading sweeps from NWB2 files by using LRU cache
-- More robust error checking when loading time_series
-
-Bug fixes:
-- Fix segment length rounding error in the DAT file converter
-
 ## [1.0.0] = 2020-06-30
 
 1.0.0 is the first public release of IPFX. As of this version:
