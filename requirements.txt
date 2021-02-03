@@ -4,6 +4,7 @@ dictdiffer
 h5py==2.10.0
 marshmallow==3.0.0rc6
 matplotlib>=1.4.3
+methodtools
 numpy>=1.15.4,<1.19.0
 pandas>=0.25.1,<=0.25.3
 pg8000
