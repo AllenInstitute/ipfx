@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 ### Changed
+Bug fixes:
+- Fixed memory leak in method of `EphysNWBData` caused by `@lru_cache` decorator
+
+## [1.0.2] = 2021-01-06
+
+Changed:
+- Add features_state information to the pipeline output json
+- Improve performance of loading sweeps from NWB2 files by using LRU cache
+- More robust error checking when loading time_series
+
+Bug fixes:
+- Fix segment length rounding error in the DAT file converter
 
 ## [1.0.2] = 2021-01-06
 

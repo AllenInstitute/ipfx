@@ -1,9 +1,8 @@
 from typing import Dict, Tuple, Sequence, Union, Type
 import warnings
-from functools import lru_cache
+from methodtools import lru_cache
 
 import numpy as np
-import pandas as pd
 from dateutil import parser as dateparser
 
 from io import BytesIO
