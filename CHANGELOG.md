@@ -4,11 +4,23 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 
 ### Added
-- `@lru_cache(maxsize=None)` decorator to `EphysNWBData._get_series()` to improve performance by using caching.
 
 ### Changed
-- `EphysNWBData.get_sweep_data()` now uses cached values from `EphysNWBData._get_series()`
-- Made error checking for `EphysNWBData._get_series()` more robust.
+
+
+## [1.0.3] = 2021-02-02
+Bug fixes:
+- Fixed memory leak in method of `EphysNWBData` caused by `@lru_cache` decorator
+
+## [1.0.2] = 2021-01-06
+
+Changed:
+- Add features_state information to the pipeline output json
+- Improve performance of loading sweeps from NWB2 files by using LRU cache
+- More robust error checking when loading time_series
+
+Bug fixes:
+- Fix segment length rounding error in the DAT file converter
 
 ## [1.0.0] = 2020-06-30
 
