@@ -33,7 +33,7 @@ def get_stim_characteristics(i, t, test_pulse=True):
         amplitude = float(peak_low)
 
     if np.isnan(amplitude):
-        amplitude = 0.0
+        return None, None, 0.0, None, None
 
     return start_time, duration, amplitude, start_idx, end_idx
 
