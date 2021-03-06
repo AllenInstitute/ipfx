@@ -58,6 +58,9 @@ def test_mies_nwb_pipeline_output(input_json, output_json, tmpdir_factory):
     -------
 
     """
+    base_path = Path(__file__).parents[1]
+    os.chdir(base_path)
+
     pipeline_input = ju.read(input_json)
     test_dir = str(tmpdir_factory.mktemp("test_mies_nwb2_specimens"))
 
@@ -81,13 +84,13 @@ def test_mies_nwb_pipeline_output(input_json, output_json, tmpdir_factory):
 
     output_diff = list(diff(expected, obtained, tolerance=0.001))
 
-    # There is a known issue with newer MIES-generated NWBs: They report 
-    # recording date in offsetless UTC, rather than local time +- an offset to 
+    # There is a known issue with newer MIES-generated NWBs: They report
+    # recording date in offsetless UTC, rather than local time +- an offset to
     # UTC as in the older generation.
     unacceptable = []
     for item in output_diff:
         if not "recording_date" in item[1]:
-            unacceptable.append(item)      
+            unacceptable.append(item)
 
     if unacceptable:
         print(unacceptable)

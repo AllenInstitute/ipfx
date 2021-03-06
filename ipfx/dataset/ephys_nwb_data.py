@@ -297,10 +297,6 @@ class EphysNWBData(EphysDataInterface):
 
         return datetime_object
 
-
-    def get_sweep_metadata(self, sweep_number: int):
-        raise NotImplementedError
-
     def get_stimulus_unit(self,sweep_number):
         stimulus_series = self._get_series(sweep_number,self.STIMULUS)
         return type(self).get_long_unit_name(stimulus_series.unit)
@@ -312,6 +308,37 @@ class EphysNWBData(EphysDataInterface):
         spikes = self.nwb.get_processing_module('spikes')
         sweep_spikes = spikes.get_data_interface(f"Sweep_{sweep_number}")
         return sweep_spikes.timestamps
+
+    def get_notebook_value(self, key: str, sweep_number: int, default_value):
+        """A wrapper function for LabNotebookReader.get_value().
+        Only implemented in data sets that have a lab notebook.
+
+        Takes the key from a MIES lab notebook entry and returns the value
+        associated with it. If the value does not exist then this function will
+        return the default_value instead.
+
+        Some useful voltage clamp amplifier settings keys:
+        'V-Clamp Holding Level', 'RsComp Bandwidth', 'RsComp Correction',
+        'RsComp Prediction', 'Whole Cell Comp Cap', 'Whole Cell Comp Resist'
+
+        Some useful current clamp amplifier settings keys:
+        'I-Clamp Holding Level', 'Neut Cap Value', 'Bridge Bal Value'
+
+        Parameters
+        ----------
+        key : str
+            Represents the name of the value to find in the lab notebook
+        sweep_number : int
+            Sweep number for which to look up the value
+        default_value : Any
+            This will be returned if there is no value associated with the key
+
+        Returns
+        -------
+        Values obtained from lab notebook
+
+        """
+        return NotImplementedError
 
     @staticmethod
     def get_long_unit_name(unit):

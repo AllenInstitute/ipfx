@@ -26,13 +26,21 @@ def mies_nwb_data(tmp_nwb_path):
          [('name', 'test name'), ('code', 'extpexpend')]
          ])
 
-
     class Notebook(LabNotebookReader):
 
         def get_value(self, key, sweep_num, default):
             return {
                 ("Scale Factor", 4): 200.0,
-                ("Set Sweep Count", 4): "1"
+                ("Set Sweep Count", 4): "1",
+                ("I-Clamp Holding Level", 4): -10.0,
+                ("Neut Cap Value", 4): 1.0,
+                ("Bridge Bal Value", 4): 10.0,
+                ("V-Clamp Holding Level", 4): -70.0,
+                ("RsComp Bandwidth", 4): 1.0,
+                ("RsComp Correction", 4): 80.0,
+                ("RsComp Prediction", 4): 80.0,
+                ("Whole Cell Comp Cap", 4): 4.0,
+                ("Whole Cell Comp Resist", 4): 8.0
             }.get((key, sweep_num), default)
 
     fake_notebook = Notebook()
@@ -64,3 +72,32 @@ def test_get_sweep_metadata(mies_nwb_data):
     assert expected == obtained
 
 
+def test_get_notebook_value(mies_nwb_data):
+
+    expected = {
+        "I-Clamp Holding Level": -10.0,
+        "Neut Cap Value": 1.0,
+        "Bridge Bal Value": 10.0,
+        "V-Clamp Holding Level": -70.0,
+        "RsComp Bandwidth": 1.0,
+        "RsComp Correction": 80.0,
+        "RsComp Prediction": 80.0,
+        "Whole Cell Comp Cap": 4.0,
+        "Whole Cell Comp Resist": 8.0
+    }
+
+    obtained = {
+        name: mies_nwb_data.get_notebook_value(name, 4, None)
+        for name in expected.keys()
+    }
+
+    assert expected == obtained
+
+    expected_none = {name: None for name in expected.keys()}
+
+    obtained_none = {
+        name: mies_nwb_data.get_notebook_value(name, 1, None)
+        for name in expected.keys()
+    }
+
+    assert expected_none == obtained_none
