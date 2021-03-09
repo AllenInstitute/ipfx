@@ -12,7 +12,7 @@ version_file_path = os.path.join(
     "version.txt"
 )
 with open(version_file_path, "r") as version_file:
-    version = version_file.read()
+    version = version_file.readline().strip()
 
 
 readme_path = os.path.join(
