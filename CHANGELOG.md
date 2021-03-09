@@ -9,6 +9,9 @@ All notable changes to this project will be documented in this file.
 
 
 ## [1.0.3] = 2021-02-02
+Changed:
+- Adds new 'Stimulus contains NaN values' tag and error handling to qc_feature_extractor
+
 Bug fixes:
 - Fixed memory leak in method of `EphysNWBData` caused by `@lru_cache` decorator
 
