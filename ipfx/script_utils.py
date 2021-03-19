@@ -17,6 +17,8 @@ import ipfx.time_series_utils as tsu
 import ipfx.error as er
 from ipfx.sweep import SweepSet
 from ipfx.dataset.create import create_ephys_data_set
+from ipfx.aibs_data_set import AibsDataSet
+
 import h5py
 import os
 import json
@@ -30,14 +32,13 @@ def lims_nwb_information(specimen_id):
         logging.warning("No ephys ROI result found for {:d}".format(specimen_id))
         return {"error": {"type": "no_ephys_roi_result", "details": "roi ID was None"}}, None
 
-
     try:
         nwb_path = lq.get_nwb_path_from_lims(roi_id)
         if (nwb_path is None) or (len(nwb_path) == 0): # could not find an NWB file
-            logging.warning("No NWB file for {:d}".format(specimen_id))
+            logging.warning("No NWB1 file for {:d}".format(specimen_id))
             return {"error": {"type": "no_nwb", "details": "empty nwb path"}}, None
     except:
-        logging.warning("Could not get NWB file path for {:d}".format(specimen_id))
+        logging.warning("Could not get NWB1 file path for {:d}".format(specimen_id))
         return {"error": {"type": "no_nwb", "details": "exception getting nwb path"}}, None
 
     # Check if NWB has lab notebook information, or if additional hdf5 file is needed
@@ -68,10 +69,10 @@ def lims_nwb2_information(specimen_id):
     try:
         nwb_path = lq.get_nwb2_path_from_lims(roi_id)
         if (nwb_path is None) or (len(nwb_path) == 0): # could not find an NWB file
-            logging.warning("No NWB file for {:d}".format(specimen_id))
+            logging.warning("No NWB2 file for {:d}".format(specimen_id))
             return {"error": {"type": "no_nwb2", "details": "empty/nonexistent nwb path"}}
     except:
-        logging.warning("Could not get NWB file path for {:d}".format(specimen_id))
+        logging.warning("Could not get NWB2 file path for {:d}".format(specimen_id))
         return {"error": {"type": "no_nwb2", "details": "exception getting nwb path"}}
 
     return nwb_path
@@ -91,8 +92,8 @@ def dataset_for_nwb1(specimen_id, ontology):
         return nwb_path
 
     try:
-        data_set = create_ephys_data_set(
-            nwb_file=nwb_path, ontology=ontology)
+        data_set = AibsDataSet(
+            nwb_file=nwb_path, h5_file=h5_path, ontology=ontology)
     except Exception as detail:
         logging.warning("Exception when loading NWB1 for specimen {:d} from LIMS".format(specimen_id))
         logging.warning(detail)
@@ -116,7 +117,7 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
             else:
                 return nwb2_path
         try:
-            data_set = create_ephys_data_set(nwb_file=nwb2_path)
+            data_set = create_ephys_data_set(nwb_file=nwb2_path, load_into_memory=False)
         except:
             logging.warning("Exception when loading NWB2 (and attempting NWB1) for specimen {:d} from LIMS".format(specimen_id))
             logging.warning(detail)
@@ -346,9 +347,13 @@ def organize_results(specimen_ids, results):
 
     for k in all_keys:
         if k not in result_sizes:
-            for r in results:
+            for r, sp_id in zip(results, specimen_ids):
                 if k in r and r[k] is not None:
-                    result_sizes[k] = len(r[k])
+                    if k not in result_sizes:
+                        result_sizes[k] = len(r[k])
+                    elif len(r[k]) != result_sizes[k]:
+                        print(f"found result with length {len(r[k])} when expecting length {result_sizes[k]} for {k}; specimen ID {sp_id}")
+
         data = np.array([r[k] if k in r else np.nan * np.zeros(result_sizes[k])
                         for r in results])
         output[k] = data
