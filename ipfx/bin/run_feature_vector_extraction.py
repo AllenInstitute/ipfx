@@ -114,12 +114,13 @@ def data_for_specimen_id(
         features for a given cell specimen_id
 
     """
+    logging.info(f"Starting to process {specimen_id}")
     logging.debug("specimen_id: {}".format(specimen_id))
 
     # Find or retrieve NWB file and ancillary info and construct an AibsDataSet object
     data_set = su.dataset_for_specimen_id(specimen_id, data_source, ontology, file_list)
     if type(data_set) is dict and "error" in data_set:
-        logging.warning("Problem getting AibsDataSet for specimen {:d} from LIMS".format(specimen_id))
+        logging.warning("Problem getting data set for specimen {:d} from LIMS".format(specimen_id))
         return data_set
 
     # Identify and preprocess long square sweeps
@@ -182,7 +183,7 @@ def data_for_specimen_id(
         depol_deflect_dict) = fv.identify_subthreshold_depol_with_amplitudes(lsq_features,
             lsq_sweeps)
         result["subthresh_depol_norm"] = fv.subthresh_depol_norm(subthresh_depol_dict,
-            depol_deflect_dict, lsq_start, lsq_end)
+            depol_deflect_dict, np.round(lsq_start, decimals=3), np.round(lsq_end, decimals=3))
         isi_sweep, isi_sweep_spike_info = fv.identify_sweep_for_isi_shape(
             lsq_sweeps, lsq_features, lsq_end - lsq_start)
         result["isi_shape"] = fv.isi_shape(isi_sweep, isi_sweep_spike_info, lsq_end)
@@ -226,6 +227,7 @@ def data_for_specimen_id(
             shift=10,
             amp_tolerance=amp_tolerance,
             needed_amplitudes=needed_amplitudes)
+
         result["psth"] = fv.psth_vector(supra_info_list, lsq_start, lsq_end)
         result["inst_freq"] = fv.inst_freq_vector(supra_info_list, lsq_start, lsq_end)
 
@@ -243,6 +245,12 @@ def data_for_specimen_id(
         logging.warning("Exception when processing specimen {:d}".format(specimen_id))
         logging.warning(detail)
         return {"error": {"type": "processing", "details": traceback.format_exc(limit=None)}}
+
+    logging.info(f"Successfully processed {specimen_id}")
+
+    # Flush the LRU cache for the data_set object
+    if hasattr(data_set, "_data") and hasattr(data_set._data, "_get_series"):
+        data_set._data._get_series.cache_clear()
 
     return result
 
@@ -308,6 +316,7 @@ def run_feature_vector_extraction(
         h5_file = h5py.File(os.path.join(output_dir, "fv_{}.h5".format(output_code)))
         h5_file.close()
 
+
     ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
 
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
@@ -342,6 +351,7 @@ def run_feature_vector_extraction(
     su.save_errors_to_json(error_set, output_dir, output_code)
 
     logging.info("Finished saving")
+
 
 def main():
     module = ags.ArgSchemaParser(schema_type=CollectFeatureVectorParameters)
