@@ -19,6 +19,8 @@ from pynwb.file import Subject
 from pynwb import NWBHDF5IO, NWBFile
 from pynwb.icephys import IntracellularElectrode
 
+from ndx_dandi_icephys import DandiIcephysMetadata
+
 from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, I0_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, createCycleID
@@ -76,8 +78,16 @@ class ABFConverter:
         nwbFile = self._createFile()
 
         # If Subject information is present in metadata
-        if self.metadata is not None and 'Subject' in self.metadata:
-            nwbFile.subject = self._createSubject()
+        if self.metadata is not None:
+            if 'Subject' in self.metadata:
+                nwbFile.subject = self._createSubject()
+            if 'lab_meta_data' in self.metadata:
+                nwbFile.add_lab_meta_data(
+                    DandiIcephysMetadata(
+                        cell_id=self.metadata['lab_meta_data'].get('cell_id', None),
+                        tissue_sample_id=self.metadata['lab_meta_data'].get('tissue_sample_id', None),
+                    )
+                )
 
         device = self._createDevice()
         nwbFile.add_device(device)
@@ -505,7 +515,7 @@ class ABFConverter:
                     d["whole_cell_capacitance_comp"] = np.nan
                     d["whole_cell_series_resistance_comp"] = np.nan
 
-            elif clampMode in (I_CLAMP_MODE, I0_CLAMP_MODE):
+            elif clampMode in (I_CLAMP_MODE,):
                 if settings["GetHoldingEnable"]:
                     d["bias_current"] = settings["GetHolding"]
                 else:
@@ -608,7 +618,7 @@ class ABFConverter:
                                                       whole_cell_capacitance_comp=settings["whole_cell_capacitance_comp"],  # noqa: E501
                                                       whole_cell_series_resistance_comp=settings["whole_cell_series_resistance_comp"])  # noqa: E501
 
-                    elif clampMode in (I_CLAMP_MODE, I0_CLAMP_MODE):
+                    elif clampMode is I_CLAMP_MODE:
                         acquistion_data = seriesClass(name=name,
                                                       data=data,
                                                       sweep_number=np.uint64(cycle_id),
@@ -624,6 +634,20 @@ class ABFConverter:
                                                       bridge_balance=settings["bridge_balance"],
                                                       stimulus_description=stimulus_description,
                                                       capacitance_compensation=settings["capacitance_compensation"])
+                    elif clampMode is I0_CLAMP_MODE:
+                        acquistion_data = seriesClass(
+                            name=name,
+                            data=data,
+                            sweep_number=np.uint64(cycle_id),
+                            unit=unit,
+                            electrode=electrode,
+                            gain=gain,
+                            resolution=resolution,
+                            conversion=conversion,
+                            starting_time=starting_time,
+                            rate=rate,
+                            description=description,
+                        )
                     else:
                         raise ValueError(f"Unsupported clamp mode {clampMode}.")
 
