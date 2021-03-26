@@ -59,9 +59,38 @@ def extract_electrode_0(data_set, tags):
 
         e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
 
-    except IndexError as e:
-        tags.append("Electrode 0 is not available")
-        e0 = None
+    except IndexError as e:  # ontology.bath_names did not find any bath sweeps
+        try:
+            # collect all smoke test sweeps and the first cell attached sweep
+            smoke_test_sweeps = data_set.get_sweep_numbers(ontology.smoketest_names)
+            cell_attached_sweep = data_set.get_sweep_numbers(ontology.seal_names)[0]
+
+            e0 = None
+            for smoke_test_sweep in smoke_test_sweeps:
+                # look for smoke test sweeps ran before first cell attached sweep to
+                # determine if in-bath sweep was ran with smoke test stimulus wave
+                if smoke_test_sweep < cell_attached_sweep:
+                    bath_data = data_set.sweep(smoke_test_sweep)
+                    seal = qcf.measure_seal(bath_data.v, bath_data.i, bath_data.t)
+
+                    if abs(seal) < 0.01:  # less than 10 MOhms
+                        e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
+                    else:
+                        # ignore sweep if seal is too high 
+                        pass
+                else:
+                    # ignore somke test sweeps that occur after first cell attached sweep
+                    pass
+
+            if e0 == None:
+                # all smoke test sweeps were inspected and none occurred before 
+                # the first cell attached sweep or none had a seal within range
+                tags.append("Electrode 0 is not available")
+
+        # no smoke test sweeps or no cell attached sweeps were found
+        except IndexError as e:
+            tags.append("Electrode 0 is not available")
+            e0 = None
 
     return e0
 

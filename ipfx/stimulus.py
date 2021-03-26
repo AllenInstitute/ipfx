@@ -68,6 +68,7 @@ class StimulusOntology(object):
         self.seal_names = ( 'EXTPCllATT', )
         self.breakin_names = ( 'EXTPBREAKN', )
         self.extp_names = ( 'EXTP', )
+        self.smoketest_names = ( 'EXTPSMOKET', )
 
     def find(self, tag, tag_type=None):
         """

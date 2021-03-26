@@ -2,6 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 ## Unreleased
+- Expands extract_electrode_0 function to try to determine if in-bath sweep was ran with smoke test stimulus wave if in-bath wave name was not found in stimulus ontology.
 
 ### Added
 
