@@ -36,6 +36,47 @@ def extract_blowout(data_set, tags):
     return blowout_mv
 
 
+def filter_smoketests(smoke_test_sweeps, cell_attached_sweep):
+    """
+    Find SmokeTest sweeps collected before CellAttached sweep
+
+    Parameters
+    ----------
+    smoke_test_sweeps: list 
+        sweep numbers 
+    cell_attached_sweep: int
+        sweep number 
+
+    Returns
+    -------
+    candidate_sweeps: list
+        sweep numbers 
+    """
+
+    candidate_sweeps = [sweep for sweep in smoke_test_sweeps if sweep < cell_attached_sweep]
+
+    return candidate_sweeps
+
+
+def minimum_e0(e0_candidates):
+    """
+    Find minimum electrode 0
+
+    Parameters
+    ----------
+    e0_candidates: list
+
+    Returns
+    -------
+    e0: float 
+    """
+    if len(e0_candidates) > 0:
+        e0 = min(e0_candidates, key=abs)
+    else:
+        e0 = None
+    return e0
+
+
 def extract_electrode_0(data_set, tags):
     """
     Measure electrode zero
@@ -64,27 +105,24 @@ def extract_electrode_0(data_set, tags):
             # collect all smoke test sweeps and the first cell attached sweep
             smoke_test_sweeps = data_set.get_sweep_numbers(ontology.smoketest_names)
             cell_attached_sweep = data_set.get_sweep_numbers(ontology.seal_names)[0]
+            
+            # find only smoketest sweeps that were ran before cell attached sweep
+            inbath_candidates = filter_smoketests(smoke_test_sweeps, cell_attached_sweep)
 
-            e0 = None
-            for smoke_test_sweep in smoke_test_sweeps:
-                # look for smoke test sweeps ran before first cell attached sweep to
-                # determine if in-bath sweep was ran with smoke test stimulus wave
-                if smoke_test_sweep < cell_attached_sweep:
-                    bath_data = data_set.sweep(smoke_test_sweep)
-                    seal = qcf.measure_seal(bath_data.v, bath_data.i, bath_data.t)
+            # check pipette resistance of inbath_candidates sweeps and append to 
+            # e0_candidates if pipette resistance is less than 10 MOhms. 
+            e0_candidates = []
+            for sweep in inbath_candidates:
+                bath_data = data_set.sweep(sweep)
+                seal = qcf.measure_seal(bath_data.v, bath_data.i, bath_data.t)
+                print(seal)
+                if abs(seal) < 0.01:
+                    e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
+                    e0_candidates.append(e0)
 
-                    if abs(seal) < 0.01:  # less than 10 MOhms
-                        e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
-                    else:
-                        # ignore sweep if seal is too high 
-                        pass
-                else:
-                    # ignore somke test sweeps that occur after first cell attached sweep
-                    pass
-
+            # use e0 candidate with the lowest absolute value
+            e0 = minimum_e0(e0_candidates)
             if e0 == None:
-                # all smoke test sweeps were inspected and none occurred before 
-                # the first cell attached sweep or none had a seal within range
                 tags.append("Electrode 0 is not available")
 
         # no smoke test sweeps or no cell attached sweeps were found
