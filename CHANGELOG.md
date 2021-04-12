@@ -2,7 +2,12 @@
 All notable changes to this project will be documented in this file.
 
 ## Unreleased
-
+This pull request adds a line of code to the get_stim_epoch function in epochs.py to 
+remove np.nan values from the array of differences between data points before removing 
+all non-zero values. This change allows get_stim_epoch to find the correct ending index 
+of the stimlus epoch and the correct ending index of the experiment epoch as well since
+it relys on the stimulus epoch, which should fix the issue of sweeps being incorrectly 
+tagged with "Recording stopped before completing the experiment epoch".
 ### Added
 
 ### Changed

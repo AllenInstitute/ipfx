@@ -108,6 +108,7 @@ def get_stim_epoch(i, test_pulse=True):
     """
 
     di = np.diff(i)
+    di = di[~np.isnan(di)] # != NaN
     di_idx = np.flatnonzero(di)   # != 0
 
     if test_pulse:
