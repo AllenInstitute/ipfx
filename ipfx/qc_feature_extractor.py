@@ -92,13 +92,16 @@ def extract_electrode_0(data_set, tags):
     e0: float
     """
 
+    max_pipette_resistance = 0.0075 # 7.5 MOhms
     ontology = data_set.ontology
 
     try:
         bath_sweep_number = data_set.get_sweep_numbers(ontology.bath_names)[-1]
         bath_data = data_set.sweep(bath_sweep_number)
-
-        e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
+        seal = qcf.measure_seal(bath_data.i, bath_data.sampling_rate)
+        
+        if abs(seal) <= max_pipette_resistance:
+            e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
 
     except IndexError as e:  # ontology.bath_names did not find any bath sweeps
         try:
@@ -115,8 +118,8 @@ def extract_electrode_0(data_set, tags):
             for sweep in inbath_candidates:
                 bath_data = data_set.sweep(sweep)
                 seal = qcf.measure_seal(bath_data.v, bath_data.i, bath_data.t)
-                print(seal)
-                if abs(seal) < 0.01:
+                # print(seal)
+                if abs(seal) <= max_pipette_resistance:
                     e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
                     e0_candidates.append(e0)
 
