@@ -307,7 +307,8 @@ def check_sweep_integrity(sweep, is_ramp):
             if sweep.epochs["recording"][1] < sweep.epochs["experiment"][1]:
                 tags.append("Recording stopped before completing the experiment epoch")
 
-    if np.isnan(sweep.i).any():
+    sweep_stim = sweep.i[sweep.epochs["stim"][0] : sweep.epochs["stim"][1]]
+    if np.isnan(sweep_stim).any():
         tags.append("Stimulus contains NaN values")
 
     return tags
