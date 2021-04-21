@@ -91,35 +91,34 @@ def extract_electrode_0(data_set, tags):
     -------
     e0: float
     """
-
-    max_pipette_resistance = 0.0075 # 7.5 MOhms
+   
     ontology = data_set.ontology
 
     try:
         bath_sweep_number = data_set.get_sweep_numbers(ontology.bath_names)[-1]
         bath_data = data_set.sweep(bath_sweep_number)
-        seal = qcf.measure_seal(bath_data.i, bath_data.sampling_rate)
         
-        if abs(seal) <= max_pipette_resistance:
-            e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
+        e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
 
     except IndexError as e:  # ontology.bath_names did not find any bath sweeps
         try:
+            print('tyring smoketest')
             # collect all smoke test sweeps and the first cell attached sweep
             smoke_test_sweeps = data_set.get_sweep_numbers(ontology.smoketest_names)
             cell_attached_sweep = data_set.get_sweep_numbers(ontology.seal_names)[0]
-            
+            print(smoke_test_sweeps, cell_attached_sweep)
             # find only smoketest sweeps that were ran before cell attached sweep
             inbath_candidates = filter_smoketests(smoke_test_sweeps, cell_attached_sweep)
-
+            print(inbath_candidates)
             # check pipette resistance of inbath_candidates sweeps and append to 
-            # e0_candidates if pipette resistance is less than 10 MOhms. 
+            # e0_candidates if pipette resistance is less than max_pipette_resistance. 
             e0_candidates = []
+            max_pipette_resistance = 7.5   # MOhms
             for sweep in inbath_candidates:
                 bath_data = data_set.sweep(sweep)
-                seal = qcf.measure_seal(bath_data.v, bath_data.i, bath_data.t)
-                # print(seal)
-                if abs(seal) <= max_pipette_resistance:
+                pipette_resistance = qcf.measure_input_resistance(bath_data.v, bath_data.i, bath_data.t)
+                print(pipette_resistance)
+                if abs(pipette_resistance) < max_pipette_resistance:
                     e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
                     e0_candidates.append(e0)
 
