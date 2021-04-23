@@ -114,7 +114,8 @@ def get_stim_epoch(i, test_pulse=True):
     if test_pulse:
         di_idx = di_idx[2:]     # drop the first up/down (test pulse) if present
 
-    if len(di_idx) == 0:    # if no stimulus is found
+    # if no stimulus is found, len(di_idx=0), or end of stimulus is not found, len(di_idx=1)
+    if len(di_idx) < 2:    
         return None
 
     start_idx = di_idx[0] + 1   # shift by one to compensate for diff()
