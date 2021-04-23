@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 
 ## Unreleased
+This change adds a check of the electrode resistance (eR) for the EXTPINBATH 
+sweep in extract_electrode_0 and only extracts e0 (baseline electrode current)
+if eR is less than max_eR (max allowable electrode resistance). If eR exceeds 
+max_eR then e0 is set to None and new tag that indicates eR exceeds max_eR is 
+appended to tags list.
+
 
 ### Added
 
