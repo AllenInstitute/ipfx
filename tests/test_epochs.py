@@ -114,6 +114,11 @@ def test_get_test_epoch(i, sampling_rate, test_epoch):
                                  [0, 0, 1, 1, 0, 0, 2, 2, 2, 0, 0, np.nan, np.nan],
                                  (6, 8)
                              ),
+                             #   stim epoch has no ending index
+                             (
+                                 [0, 0, 1, 1, 0, 0, 2, 2, 2, np.nan, np.nan, np.nan], 
+                                 None
+                             )
 
                          ]
                          )
