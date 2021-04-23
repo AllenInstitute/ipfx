@@ -62,7 +62,7 @@ def extract_electrode_0(data_set, tags):
         if eR < max_eR:
             e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
         else:
-            tags.append("Pipette Resistance {} exceeds max pipette resistance {}".format(eR, max_eR))
+            tags.append("Pipette Resistance {} MOhms exceeds max pipette resistance {} MOhms".format(eR, max_eR))
             e0 = None
 
     except IndexError as e:
