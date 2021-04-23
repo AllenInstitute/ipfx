@@ -52,12 +52,18 @@ def extract_electrode_0(data_set, tags):
     """
 
     ontology = data_set.ontology
+    max_eR = 7.5    # max electrode resistance in MOhms 
 
     try:
         bath_sweep_number = data_set.get_sweep_numbers(ontology.bath_names)[-1]
         bath_data = data_set.sweep(bath_sweep_number)
 
-        e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
+        eR = qcf.measure_input_resistance(bath_data.v, bath_data.i, bath_data.t)
+        if eR < max_eR:
+            e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
+        else:
+            tags.append("Pipette Resistance {} exceeds max pipette resistance {}".format(eR, max_eR))
+            e0 = None
 
     except IndexError as e:
         tags.append("Electrode 0 is not available")
