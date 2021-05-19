@@ -14,7 +14,7 @@ class Sweep(object):
         else:
             self.epochs = {}
 
-        self.selected_epoch_name = "sweep"
+        self.selected_epoch_name = "recording"
 
         if self.clamp_mode == "CurrentClamp":
             self.response = self._v
