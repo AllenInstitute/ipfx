@@ -14,16 +14,15 @@ class Sweep(object):
         else:
             self.epochs = {}
 
-        self.selected_epoch_name = "recording"
-
         if self.clamp_mode == "CurrentClamp":
-            self.response = self._v
-            self.stimulus = self._i
+            self._response = self._v
+            self._stimulus = self._i
         else:
-            self.response = self._i
-            self.stimulus = self._v
+            self._response = self._i
+            self._stimulus = self._v
 
         self.detect_epochs()
+        self.selected_epoch_name = "recording"
 
     @property
     def t(self):
@@ -54,22 +53,23 @@ class Sweep(object):
         """
 
         if "test" not in self.epochs:
-            self.epochs["test"] = ep.get_test_epoch(self.stimulus,self.sampling_rate)
+            self.epochs["test"] = ep.get_test_epoch(self._stimulus, self.sampling_rate)
         if self.epochs["test"]:
             test_pulse = True
         else:
             test_pulse = False
 
-        epoch_detectors = {
-            "sweep": ep.get_sweep_epoch(self.response),
-            "recording": ep.get_recording_epoch(self.response),
-            "experiment": ep.get_experiment_epoch(self._i, self.sampling_rate,test_pulse),
-            "stim": ep.get_stim_epoch(self.stimulus, test_pulse),
-        }
-
-        for epoch_name, epoch_detector in epoch_detectors.items():
-            if epoch_name not in self.epochs:
-                self.epochs[epoch_name] = epoch_detector
+        if "sweep" not in self.epochs:
+            self.epochs["sweep"] = ep.get_sweep_epoch(self._i)
+        self.select_epoch("sweep")
+        if "recording" not in self.epochs:
+            self.epochs["recording"] = ep.get_recording_epoch(self._response)
+        self.select_epoch("recording")
+        stim = self.i if self.clamp_mode == "CurrentClamp" else self.v
+        if "stim" not in self.epochs:
+            self.epochs["stim"] = ep.get_stim_epoch(stim, test_pulse)
+        if "experiment" not in self.epochs:
+            self.epochs["experiment"] = ep.get_experiment_epoch(stim, self.sampling_rate, test_pulse)
 
 
 class SweepSet(object):
