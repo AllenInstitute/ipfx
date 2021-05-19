@@ -51,27 +51,6 @@ def get_last_noise_epoch(idx1, hz):
     return idx1-int(NOISE_EPOCH * hz), idx1
 
 
-def get_recording_epoch(response):
-    """
-    Detect response epoch defined as interval from start to the last non-nan value of the response
-
-    Parameters
-    ----------
-    response: float np.array
-
-    Returns
-    -------
-    start,end: int
-        indices of the epoch
-    """
-
-    if len(tsu.flatnotnan(response)) == 0:
-        end_idx = 0
-    else:
-        end_idx = tsu.flatnotnan(response)[-1]
-    return 0, end_idx
-
-
 def get_sweep_epoch(response):
     """
     Defined as interval including entire sweep

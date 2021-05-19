@@ -116,25 +116,6 @@ def test_get_stim_epoch(i, stim_epoch):
     assert stim_epoch == ep.get_stim_epoch(i)
 
 
-@pytest.mark.parametrize('response,'
-                         'recording_epoch',
-                         [
-                             (
-                                 [0, 0, 1, 1.5, 0, 0, 2, 3, 4, 1, np.nan, np.nan],
-                                 (0, 9)
-                             ),
-
-                             #   zero array
-                             (
-                                 [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                                 (0, 0)
-                             ),
-
-                         ]
-                         )
-def test_get_recording_epoch(response, recording_epoch):
-    assert recording_epoch == ep.get_recording_epoch(response)
-
 
 @pytest.mark.parametrize('response,'
                          'sweep_epoch',

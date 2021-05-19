@@ -6,8 +6,8 @@ import numpy as np
 def sweep():
 
     i = [0,0,1,1,0,0,0,2,2,2,2,2,0,0,0,0]
-    v = [0,0,1,2,1,0,0,1,2,3,1,np.nan,np.nan,np.nan,np.nan,np.nan]
-    sampling_rate = 2
+    v = [0,0,1,2,1,0,0,1,2,3,1,1,np.nan,np.nan,np.nan,np.nan]
+    sampling_rate = 10
     dt = 1./sampling_rate
     t = np.arange(0,len(v))*dt
 
@@ -19,9 +19,9 @@ def test_select_epoch(sweep):
     i_sweep = sweep.i
     v_sweep = sweep.v
 
-    sweep.select_epoch("recording")
-    assert np.all(sweep.i == [0,0,1,1,0,0,0,2,2,2,2])
-    assert np.all(sweep.v == [0,0,1,2,1,0,0,1,2,3,1])
+    sweep.select_epoch("stim")
+    assert np.all(sweep.i == [2,2,2,2,2])
+    assert np.all(sweep.v == [1,2,3,1,1])
 
     sweep.select_epoch("sweep")
     assert np.all(sweep.i == i_sweep)

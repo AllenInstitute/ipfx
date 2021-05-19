@@ -36,9 +36,7 @@ long_square_table = data_set.filtered_sweep_table(
 )
 long_square_sweeps = data_set.sweep_set(long_square_table.sweep_number)
 
-# Select epoch corresponding to the actual recording from the sweeps
-# and align sweeps so that the experiment would start at the same time
-long_square_sweeps.select_epoch("recording")
+# Align sweeps so that the experiment would start at the same time
 long_square_sweeps.align_to_start_of_epoch("experiment")
 
 # find the start and end time of the stimulus

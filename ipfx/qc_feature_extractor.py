@@ -303,8 +303,8 @@ def check_sweep_integrity(sweep, is_ramp):
             tags.append(F"{k} epoch is missing")
 
     if not is_ramp:
-        if sweep.epochs["recording"] and sweep.epochs["experiment"]:
-            if sweep.epochs["recording"][1] < sweep.epochs["experiment"][1]:
+        if sweep.epochs["sweep"] and sweep.epochs["experiment"]:
+            if sweep.epochs["sweep"][1] < sweep.epochs["experiment"][1]:
                 tags.append("Recording stopped before completing the experiment epoch")
 
     if np.isnan(sweep.i).any():
@@ -353,7 +353,7 @@ def current_clamp_sweep_qc_features(sweep, is_ramp):
     # measure mean and rms of Vm at end of recording
     # do not check for ramps, because they do not have enough time to recover
 
-    _, rec_end_idx = ep.get_recording_epoch(voltage)
+    _, rec_end_idx = ep.get_sweep_epoch(voltage)
 
     if not is_ramp:
         idx0, idx1 = ep.get_last_stability_epoch(rec_end_idx, hz)

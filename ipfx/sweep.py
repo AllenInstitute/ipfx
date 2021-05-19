@@ -62,7 +62,6 @@ class Sweep(object):
 
         epoch_detectors = {
             "sweep": ep.get_sweep_epoch(self.response),
-            "recording": ep.get_recording_epoch(self.response),
             "experiment": ep.get_experiment_epoch(self._i, self.sampling_rate,test_pulse),
             "stim": ep.get_stim_epoch(self.stimulus, test_pulse),
         }
