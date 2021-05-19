@@ -32,6 +32,7 @@ def get_stim_characteristics(i, t, test_pulse=True):
     else:
         amplitude = float(peak_low)
 
+    # this is very unlikely, but possible for zero stim with mid-sweep NaNs
     if np.isnan(amplitude):
         return None, None, 0.0, None, None
 

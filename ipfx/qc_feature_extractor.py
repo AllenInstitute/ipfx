@@ -287,7 +287,7 @@ def sweep_qc_features(data_set):
             qc_features = current_clamp_sweep_qc_features(sweep, is_ramp)
             sweep_features.update(qc_features)
         else:
-            logging.warning("sweep {}: {}".format(sweep_num, tags))
+            logging.info("sweep {}: {}".format(sweep_num, tags))
 
         sweeps_features.append(sweep_features)
 

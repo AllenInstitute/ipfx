@@ -316,11 +316,12 @@ class EphysDataSet(object):
 
         response = sweep_data['response']
 
-        nonzero = np.flatnonzero(response)
-        if len(nonzero) == 0:
+        valid_data = (response != 0) & ~np.isnan(response)
+        valid_i = np.flatnonzero(valid_data)
+        if len(valid_i) == 0:
             recording_end_idx = 0
         else:
-            recording_end_idx = nonzero[-1] + 1
+            recording_end_idx = valid_i[-1] + 1
 
         sweep_data["response"] = response[:recording_end_idx]
         sweep_data["stimulus"] = sweep_data["stimulus"][:recording_end_idx]
