@@ -61,9 +61,9 @@ class Sweep(object):
 
         if "sweep" not in self.epochs:
             self.epochs["sweep"] = ep.get_sweep_epoch(self._i)
-        self.select_epoch("sweep")
         if "recording" not in self.epochs:
             self.epochs["recording"] = ep.get_recording_epoch(self._response)
+        # get valid recording by selecting epoch and using i/v prop before detecting stim
         self.select_epoch("recording")
         stim = self.i if self.clamp_mode == "CurrentClamp" else self.v
         if "stim" not in self.epochs:
