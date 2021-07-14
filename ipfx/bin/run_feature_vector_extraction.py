@@ -168,8 +168,11 @@ def data_for_specimen_id(
         (subthresh_depol_dict,
         depol_deflect_dict) = fv.identify_subthreshold_depol_with_amplitudes(lsq_features,
             lsq_sweeps)
-        result["subthresh_depol_norm"] = fv.subthresh_depol_norm(subthresh_depol_dict,
-            depol_deflect_dict, lsq_start, lsq_end)
+        result["subthresh_depol_norm"] = fv.subthresh_depol_norm(
+            subthresh_depol_dict,
+            depol_deflect_dict,
+            np.round(lsq_start, decimals=3),
+            np.round(lsq_end, decimals=3))
         isi_sweep, isi_sweep_spike_info = fv.identify_sweep_for_isi_shape(
             lsq_sweeps, lsq_features, lsq_end - lsq_start)
         result["isi_shape"] = fv.isi_shape(isi_sweep, isi_sweep_spike_info, lsq_end)
