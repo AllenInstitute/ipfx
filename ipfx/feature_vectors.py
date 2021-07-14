@@ -731,6 +731,7 @@ def _identify_suprathreshold_indices(features, target_amplitudes,
                     logging.debug("No match yet")
                 else:
                     found_match = True
+                    logging.info("Had to shift by {} pA to get more than one matching sweep".format(alt_shift))
                     break
             else:
                 break
@@ -905,9 +906,15 @@ def _spiking_sweeps_at_levels(amps, sweep_indexes, target_amplitudes,
 
     sweeps_to_use = []
     for target_amp in target_amplitudes:
+        # find exact 0 relative amplitude sweep for rheobase (which must exist); otherwise use amp_tolerance
+        if target_amp == 0:
+            used_amp_tolerance = 0
+        else:
+            used_amp_tolerance = amp_tolerance
+
         found_match = False
         for amp, swp_ind in zip(amps, sweep_indexes):
-            if (np.abs(amp - target_amp) <= amp_tolerance):
+            if (np.abs(amp - target_amp) <= used_amp_tolerance):
                 found_match = True
                 sweeps_to_use.append(swp_ind)
                 logging.debug("Using amplitude {} for target {}".format(amp, target_amp))
