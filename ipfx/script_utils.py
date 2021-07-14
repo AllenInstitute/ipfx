@@ -338,7 +338,7 @@ def filter_results(specimen_ids, results):
     return used_ids, results, error_set
 
 
-def organize_results(specimen_ids, results):
+def organize_results(specimen_ids, results, skip_keys=[]):
     """Build dictionary of results, filling data from cells with appropriate-length
         nan arrays where needed"""
     result_sizes = {}
@@ -346,6 +346,8 @@ def organize_results(specimen_ids, results):
     all_keys = np.unique(np.concatenate([list(r.keys()) for r in results]))
 
     for k in all_keys:
+        if k in skip_keys:
+            continue
         if k not in result_sizes:
             for r, sp_id in zip(results, specimen_ids):
                 if k in r and r[k] is not None:
