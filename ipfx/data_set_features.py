@@ -38,6 +38,7 @@ import numpy as np
 import logging
 from .feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
 from ipfx.dataset.ephys_data_set import EphysDataSet
+from ipfx.epochs import get_stim_epoch
 from . import spike_features as spkf
 from . import stimulus_protocol_analysis as spa
 from . import stim_features as stf
@@ -216,7 +217,7 @@ def select_subthreshold_min_amplitude(stim_amps, decimals=0):
 
 @record_errors
 @fallback_on_error()
-def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
+def extract_cell_long_square_features(data_set, subthresh_min_amp=None, check_lsq_truncation=False):
     lu.log_pretty_header("Long Squares:", level=2)
 
     long_square_sweep_numbers = data_set.get_sweep_numbers(
@@ -237,6 +238,10 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
             subthresh_min_amp = -100
             logging.info("Assigned subthreshold minimum amplitude of %f.", subthresh_min_amp)
 
+    if check_lsq_truncation:
+        long_square_table = data_set.filtered_sweep_table(
+                                   stimuli=data_set.ontology.long_square_names)
+        long_square_sweep_numbers = long_square_table.sweep_number[~np.isnan(long_square_table.stimulus_duration)]
     lsq_sweeps = data_set.sweep_set(long_square_sweep_numbers)
     lsq_sweeps.select_epoch("recording")
     lsq_sweeps.align_to_start_of_epoch("experiment")
@@ -244,6 +249,16 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     lsq_start, lsq_dur, _, _, _ = stf.get_stim_characteristics(
                                         lsq_sweeps.sweeps[0].i,
                                         lsq_sweeps.sweeps[0].t)
+
+    if check_lsq_truncation:
+        validated_sweep_list = []
+        for swp in lsq_sweeps.sweeps:
+            check_start, check_end = get_stim_epoch(swp.i)
+            if np.round(swp.t[check_end], 3) >= np.round(lsq_start + lsq_dur, 3):
+                validated_sweep_list.append(swp.sweep_number)
+        lsq_sweeps = data_set.sweep_set(validated_sweep_list)
+        lsq_sweeps.select_epoch('recording')
+        lsq_sweeps.align_to_start_of_epoch('experiment')
 
     lsq_spx, lsq_spfx = extractors_for_sweeps(lsq_sweeps,
                                               start=lsq_start,
@@ -328,7 +343,7 @@ def extract_cell_ramp_features(data_set):
         )
 
 
-def extract_data_set_features(data_set, subthresh_min_amp=None):
+def extract_data_set_features(data_set, subthresh_min_amp=None, check_lsq_truncation=False):
     """
 
     Parameters
@@ -359,7 +374,8 @@ def extract_data_set_features(data_set, subthresh_min_amp=None):
     (cell_features['long_squares'], feature_states['long_squares_state']) = \
         extract_cell_long_square_features(
             data_set,
-            subthresh_min_amp)
+            subthresh_min_amp,
+            check_lsq_truncation)
 
     (cell_features['short_squares'], feature_states['short_squares_state']) = \
         extract_cell_short_square_features(data_set)
