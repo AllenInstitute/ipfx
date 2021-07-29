@@ -6,7 +6,9 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 ### Changed
-
+- Round the duration calculation in `run_feature_vector_extraction` so that
+vectors of the same length are produced even when floating point approximations
+of times are different.
 
 ## [1.0.3] = 2021-02-02
 Changed:
