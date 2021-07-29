@@ -16,6 +16,7 @@ def sweep():
 
 def test_select_epoch(sweep):
 
+    sweep.select_epoch("sweep")
     i_sweep = sweep.i
     v_sweep = sweep.v
 
