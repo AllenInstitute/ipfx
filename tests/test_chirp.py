@@ -9,9 +9,8 @@ def test_chirp_output():
     sampling_rate = 2000
     t = np.arange(0, 20 * sampling_rate) * (1 / sampling_rate)
     clamp_mode = "CurrentClamp"
-    epochs = {"sweep": (0, len(t) - 1),
+    epochs = {"recording": (0, len(t) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None}
 
@@ -52,9 +51,8 @@ def test_chirp_downsample():
     sampling_rate = 2000
     t = np.arange(0, 20 * sampling_rate) * (1 / sampling_rate)
     clamp_mode = "CurrentClamp"
-    epochs = {"sweep": (0, len(t) - 1),
+    epochs = {"recording": (0, len(t) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None}
 
@@ -80,9 +78,8 @@ def test_divide_chirps_by_stimulus():
     sampling_rate = 2000
     t = np.arange(0, 20 * sampling_rate) * (1 / sampling_rate)
     clamp_mode = "CurrentClamp"
-    epochs = {"sweep": (0, len(t) - 1),
+    epochs = {"recording": (0, len(t) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None}
 

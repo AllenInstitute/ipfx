@@ -274,16 +274,16 @@ def test_isi_shape():
             return np.arange(20)
 
     obtained = fv.isi_shape(
-        Sweep(), 
-        pd.DataFrame(sweep_spike_info), 
-        50, 
+        Sweep(),
+        pd.DataFrame(sweep_spike_info),
+        50,
         n_points=10
     )
     assert np.allclose(np.arange(3.5, 13.5, 1.0), obtained)
 
 
 def test_identify_subthreshold_hyperpol_with_amplitudes(subthreshold_sweeps):
-  
+
     class SomeSweeps:
         @property
         def sweeps(self):
@@ -298,8 +298,8 @@ def test_identify_subthreshold_hyperpol_with_amplitudes(subthreshold_sweeps):
         )
 
     expected = {
-        -30.0: np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 
-        -50.0: np.array([11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]), 
+        -30.0: np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+        -50.0: np.array([11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]),
         -70.0: np.array([22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32])
     }
 
@@ -333,9 +333,8 @@ def test_step_subthreshold_interpolation():
     t = np.arange(6)
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, 5),
+        "recording": (0, 5),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -367,9 +366,8 @@ def test_subthresh_norm_normalization():
     t = np.arange(len(v))
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, len(v) - 1),
+        "recording": (0, len(v) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -414,9 +412,8 @@ def test_subthresh_depol_norm_normalization():
     t = np.arange(len(v))
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, len(v) - 1),
+        "recording": (0, len(v) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -460,11 +457,11 @@ def test_identify_subthreshold_depol_with_amplitudes(subthreshold_sweeps):
 
     expected = {
         "amp": {
-            470.0: np.array([33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43]), 
+            470.0: np.array([33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43]),
             480.0: np.array([44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54])
         },
         "deflect": {
-            470.0: (-68.29730987548828, -30.550001), 
+            470.0: (-68.29730987548828, -30.550001),
             480.0: (-68.26968383789062, -28.54375)
         }
     }
@@ -505,9 +502,8 @@ def test_first_ap_correct_section():
     t = np.arange(len(v))
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, len(v) - 1),
+        "recording": (0, len(v) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -537,9 +533,8 @@ def test_first_ap_resampling():
     t = np.arange(len(v))
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, len(v) - 1),
+        "recording": (0, len(v) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -627,6 +622,24 @@ def test_psth_between_sweep_interpolation():
     )
 
 
+def test_psth_duration_rounding():
+    start_a, end_a = 1.02, 2.02
+    start_b, end_b = 1.02, 2.0199999999999996
+
+    np.random.seed(42)
+    n_spikes = np.random.randint(0, 100)
+
+    test_spike_times = np.random.random(n_spikes) * (end_a - start_a) + start_a
+    spike_info = pd.DataFrame({"threshold_t": test_spike_times})
+
+    width = 50
+
+    output_a = fv.psth_vector([spike_info], start=start_a, end=end_a, width=width)
+    output_b = fv.psth_vector([spike_info], start=start_b, end=end_b, width=width)
+
+    assert output_a.shape == output_b.shape
+
+
 def test_inst_freq_one_spike():
     test_spike_times = [0.2]
     spike_info = pd.DataFrame({"threshold_t": test_spike_times})
@@ -674,6 +687,21 @@ def test_inst_freq_between_sweep_interpolation():
             axis=0
         ),
     )
+
+
+def test_inst_freq_duration_rounding():
+    start_a, end_a = 1.02, 2.02
+    start_b, end_b = 1.02, 2.0199999999999996
+
+    test_spike_times = [1.2, 1.5, 1.6, 1.7]
+    spike_info = pd.DataFrame({"threshold_t": test_spike_times})
+
+    width = 20
+
+    output_a = fv.inst_freq_vector([spike_info], start=start_a, end=end_a, width=width)
+    output_b = fv.inst_freq_vector([spike_info], start=start_b, end=end_b, width=width)
+
+    assert output_a.shape == output_b.shape
 
 
 def test_spike_feature_within_sweep_interpolation():
@@ -729,6 +757,31 @@ def test_spike_feature_between_sweep_interpolation():
     assert np.all(output[4 * n_bins : 5 * n_bins] == test_feature_values[1])
 
 
+def test_spike_feature_duration_rounding():
+    start_a, end_a = 1.02, 2.02
+    start_b, end_b = 1.02, 2.0199999999999996
+
+    test_spike_times = [1.2, 1.5, 1.6, 1.7]
+
+    feature = "test_feature_name"
+    test_feature_values = [1, 2, 3, 4]
+
+    spike_info = pd.DataFrame({
+        "threshold_t": test_spike_times,
+        "clipped": np.zeros_like(test_spike_times).astype(bool),
+        feature: test_feature_values,
+    })
+
+    width = 20
+
+    output_a = fv.spike_feature_vector(
+        feature, [spike_info], start=start_a, end=end_a, width=width)
+    output_b = fv.spike_feature_vector(
+        feature, [spike_info], start=start_b, end=end_b, width=width)
+
+    assert output_a.shape == output_b.shape
+
+
 def test_identify_sub_hyperpol_levels():
     test_input_amplitudes = [-2000, -100, -90, -50, -10, 10]
     test_features = {
@@ -752,9 +805,8 @@ def test_identify_sub_hyperpol_levels():
     t = np.arange(len(v))
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, len(v) - 1),
+        "recording": (0, len(v) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -810,9 +862,8 @@ def test_identify_sub_depol_levels_with_subthreshold_sweeps():
     t = np.arange(len(v))
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, len(v) - 1),
+        "recording": (0, len(v) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -866,9 +917,8 @@ def test_identify_sub_depol_levels_without_subthreshold_sweeps():
     t = np.arange(len(v))
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, len(v) - 1),
+        "recording": (0, len(v) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -923,9 +973,8 @@ def test_identify_isi_shape_min_spike():
     t = np.arange(n_points)
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, n_points - 1),
+        "recording": (0, n_points - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -963,9 +1012,8 @@ def test_identify_isi_shape_largest_below_min_spike():
     t = np.arange(n_points)
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, n_points - 1),
+        "recording": (0, n_points - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -1003,9 +1051,8 @@ def test_identify_isi_shape_one_spike():
     t = np.arange(n_points)
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, n_points - 1),
+        "recording": (0, n_points - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -1086,9 +1133,8 @@ def test_isi_shape_aligned():
     t = np.arange(len(v))
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, len(v) - 1),
+        "recording": (0, len(v) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -1129,9 +1175,8 @@ def test_isi_shape_skip_short():
     t = np.arange(len(v))
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, len(v) - 1),
+        "recording": (0, len(v) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }
@@ -1180,9 +1225,8 @@ def test_isi_shape_one_spike():
     t = np.arange(len(v))
     i = np.zeros_like(t)
     epochs = {
-        "sweep": (0, len(v) - 1),
+        "recording": (0, len(v) - 1),
         "test": None,
-        "recording": None,
         "experiment": None,
         "stim": None,
     }

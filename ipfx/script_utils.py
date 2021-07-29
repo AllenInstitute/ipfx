@@ -179,7 +179,6 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option="none", sp
 
 def validate_sweeps(data_set, sweep_numbers, extra_dur=0.2):
     check_sweeps = data_set.sweep_set(sweep_numbers)
-    check_sweeps.select_epoch("recording")
     valid_sweep_stim = []
     start = None
     dur = None
@@ -216,7 +215,6 @@ def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthr
     lsq_sweeps, lsq_start, lsq_end = validate_sweeps(data_set, sweep_numbers, extra_dur=extra_dur)
     if len(lsq_sweeps.sweeps) == 0:
         raise er.FeatureError("No long square sweeps were long enough or did not end early")
-    lsq_sweeps.select_epoch("recording")
 
     lsq_spx, lsq_spfx = dsf.extractors_for_sweeps(
         lsq_sweeps,
@@ -239,7 +237,6 @@ def preprocess_short_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, spike
     ssq_sweeps, ssq_start, ssq_end  = validate_sweeps(data_set, sweep_numbers, extra_dur=extra_dur)
     if len(ssq_sweeps.sweeps) == 0:
         raise er.FeatureError("No short square sweeps were long enough or did not end early")
-    ssq_sweeps.select_epoch("recording")
 
     ssq_spx, ssq_spfx = dsf.extractors_for_sweeps(ssq_sweeps,
                                                   est_window = [ssq_start, ssq_start + 0.001],
@@ -258,7 +255,6 @@ def preprocess_ramp_sweeps(data_set, sweep_numbers):
         raise er.FeatureError("No ramp sweeps available for feature extraction")
 
     ramp_sweeps = data_set.sweep_set(sweep_numbers)
-    ramp_sweeps.select_epoch("recording")
 
     ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
     ramp_spx, ramp_spfx = dsf.extractors_for_sweeps(ramp_sweeps,

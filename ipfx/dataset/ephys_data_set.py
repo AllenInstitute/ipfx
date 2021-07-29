@@ -313,17 +313,7 @@ class EphysDataSet(object):
             }
         """
         sweep_data = cp.copy(self._data.get_sweep_data(sweep_number))
-
-        response = sweep_data['response']
-
-        nonzero = np.flatnonzero(response)
-        if len(nonzero) == 0:
-            recording_end_idx = 0
-        else:
-            recording_end_idx = nonzero[-1] + 1
-
-        sweep_data["response"] = response[:recording_end_idx]
-        sweep_data["stimulus"] = sweep_data["stimulus"][:recording_end_idx]
+        sweep_data["response"] = _nan_trailing_zeros(sweep_data["response"])
 
         return sweep_data
 
@@ -433,3 +423,21 @@ class EphysDataSet(object):
             )
 
         return voltage, current
+
+def _nan_trailing_zeros(
+        array: np.ndarray, 
+        inplace: bool = False
+) -> np.ndarray:
+    """If an array ends with one or more zeros, replace those zeros with 
+    np.nan
+    """
+
+    if not inplace:
+        array = array.copy()
+
+    nonzero = np.flatnonzero(array)
+    if len(nonzero) == 0 or nonzero[-1] + 1 >= len(array):
+        return array
+
+    array[nonzero[-1] + 1:] = np.nan
+    return array
