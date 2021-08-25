@@ -8,6 +8,17 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - adjusted get_stimulus_epoch to require a complete stimulus (both onset and offset) to define the stimulus epoch
 
+## [1.0.4] = 2021-07-29
+Changed:
+- selects recording rather than sweep epoch by default
+- restructures epoch detection to use recording epoch for stim epoch detection
+- Use NaNs instead of truncating
+
+Bug fixes:
+- Round the duration calculation in `run_feature_vector_extraction` so that
+vectors of the same length are produced even when floating point approximations
+of times are different.
+
 ## [1.0.3] = 2021-02-02
 Changed:
 - Adds new 'Stimulus contains NaN values' tag and error handling to qc_feature_extractor
