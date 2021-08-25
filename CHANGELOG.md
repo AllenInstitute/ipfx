@@ -6,9 +6,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 ### Changed
-- Round the duration calculation in `run_feature_vector_extraction` so that
-vectors of the same length are produced even when floating point approximations
-of times are different.
+- adjusted get_stimulus_epoch to require a complete stimulus (both onset and offset) to define the stimulus epoch
 
 ## [1.0.4] = 2021-07-29
 Changed:
