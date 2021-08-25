@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 ### Changed
-
+- adjusted get_stimulus_epoch to require a complete stimulus (both onset and offset) to define the stimulus epoch
 
 ## [1.0.4] = 2021-07-29
 Changed:

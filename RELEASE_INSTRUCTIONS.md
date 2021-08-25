@@ -25,7 +25,7 @@ or a predetermined release date is approaching
 
 - [ ] Bump the version in version.txt, if not bumped CI deployment to PyPi will fail
 - [ ] Set release version with "git tag v#.#.#" (e.g. "git tag v1.0.0", equivalent to the version you bumped to), this triggers circleci to publish ipfx to pypi
-  - [ ] [Deployment Plan](http://bamboo.corp.alleninstitute.org/deploy/viewDeploymentProjectEnvironments.action?id=164855841)
+  - [ ] [Build](http://bamboo.corp.alleninstitute.org/deploy/viewDeploymentProjectEnvironments.action?id=164855841) and [Deploy](http://bamboo.corp.alleninstitute.org/deploy/viewDeploymentProjectEnvironments.action?id=164855841) IPFX Nightly
 - [ ] After release/deployment, merge master branch (bug fixes,  document generation, etc.) back into dev and delete the release branch
 - [ ] Announce release on https://community.brain-map.org
 
