@@ -344,6 +344,7 @@ def current_clamp_sweep_qc_features(sweep, is_ramp):
     voltage = sweep.v
     current = sweep.i
     hz = sweep.sampling_rate
+    autobias_v = sweep.autobias_v
 
     expt_start_idx, _ = ep.get_experiment_epoch(current, hz)
     # measure noise before stimulus
@@ -379,7 +380,8 @@ def current_clamp_sweep_qc_features(sweep, is_ramp):
     qc_features["slow_vm_mv"] = mean_first_stability_epoch
     qc_features["slow_noise_rms_mv"] = rms_first_stability_epoch
 
-    qc_features["vm_delta_mv"] = qcf.measure_vm_delta(mean_first_stability_epoch, mean_last_stability_epoch)
+    qc_features["pre_vm_delta_mv"] = qcf.measure_vm_delta(mean_first_stability_epoch, autobias_v)
+    qc_features["post_vm_delta_mv"] = qcf.measure_vm_delta(mean_last_stability_epoch, autobias_v)
 
     return qc_features
 

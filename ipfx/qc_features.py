@@ -38,10 +38,10 @@ def measure_vm(vals):
     return float(mean), float(rms)
 
 
-def measure_vm_delta(mean_start, mean_end):
+def measure_vm_delta(mean_baseline, target_v):
 
-    if mean_end is not None:
-        delta = abs(mean_start - mean_end)
+    if mean_baseline is not None:
+        delta = abs(mean_baseline - target_v)
         return float(delta)
     else:
         return None

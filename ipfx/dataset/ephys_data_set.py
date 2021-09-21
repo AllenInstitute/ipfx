@@ -248,7 +248,7 @@ class EphysDataSet(object):
                 sampling_rate=sweep_data["sampling_rate"],
                 sweep_number=sweep_number,
                 clamp_mode=sweep_metadata["clamp_mode"],
-                autovias_v = sweep_metadata["autobias_v"],
+                autobias_v = sweep_metadata["autobias_v"],
                 epochs=sweep_data.get("epochs", None),
             )
 
