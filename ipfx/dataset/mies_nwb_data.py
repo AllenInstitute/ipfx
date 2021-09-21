@@ -47,7 +47,9 @@ class MIESNWBData(EphysNWBData):
             ),
             "stimulus_code": self.get_stimulus_code(sweep_number),
             "stimulus_code_ext": self.get_stim_code_ext(sweep_number),
-            "clamp_mode": self.get_clamp_mode(sweep_number)
+            "clamp_mode": self.get_clamp_mode(sweep_number),
+            "autobias_v": self.notebook.get_value(
+                "Autobias Vcom", sweep_number, None)
         }
 
         if self.ontology:

@@ -2,13 +2,14 @@ import ipfx.epochs as ep
 
 
 class Sweep(object):
-    def __init__(self, t, v, i, clamp_mode, sampling_rate, sweep_number=None, epochs=None):
+    def __init__(self, t, v, i, clamp_mode, autobias_v, sampling_rate, sweep_number=None, epochs=None):
         self._t = t
         self._v = v
         self._i = i
         self.sampling_rate = sampling_rate
         self.sweep_number = sweep_number
         self.clamp_mode = clamp_mode
+        self.autobias_v = autobias_v
         if epochs:
             self.epochs = epochs
         else:
