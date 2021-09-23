@@ -40,7 +40,7 @@ def measure_vm(vals):
 
 def measure_vm_delta(mean_baseline, target_v):
 
-    if mean_baseline is not None:
+    if mean_baseline is not None and target_v is not None:
         delta = abs(mean_baseline - target_v)
         return float(delta)
     else:

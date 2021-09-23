@@ -20,9 +20,9 @@ passing_sweep = Sweep(t, passing_v, i, sampling_rate=sampling_rate, autobias_v=a
 failing_sweep = Sweep(t, failing_v, i, sampling_rate=sampling_rate, autobias_v=autobias_v, clamp_mode="CurrentClamp")  
 
 passing_mean_first_stability_epoch, _ = qcf.measure_vm(passing_v[4:7])
-passing_mean_last_stability_epoch, _ = qcf.measure_vm(passing_v[4:7])
+passing_mean_last_stability_epoch, _ = qcf.measure_vm(passing_v[12:16])
 
-failing_mean_first_stability_epoch, _ = qcf.measure_vm(failing_v[12:16])
+failing_mean_first_stability_epoch, _ = qcf.measure_vm(failing_v[4:7])
 failing_mean_last_stability_epoch, _ = qcf.measure_vm(failing_v[12:16])
 
 passing_qc_features = qfex.current_clamp_sweep_qc_features(passing_sweep, False)
@@ -37,7 +37,6 @@ def test_sweep_autobias_v():
 
 def test_measure_vm_delta():
 
-    passing_mean_first_stability_epoch, _ = qcf.measure_vm(passing_v[4:7])
     assert round(qcf.measure_vm_delta(passing_mean_first_stability_epoch, passing_sweep.autobias_v), 2) == 0.99
     assert round(qcf.measure_vm_delta(passing_mean_last_stability_epoch, passing_sweep.autobias_v), 2) == 0.99
 
@@ -63,4 +62,13 @@ def test_qc_current_clamp_sweep():
     
     assert fail_tags[0] == "pre Vm delta: 1.010 above threshold:1.000"
     assert fail_tags[1] == "post Vm delta: 1.010 above threshold:1.000"
+
+
+def test_none_autobias_v():
+
+    none_autobias_v = None
+    sweep = Sweep(t, passing_v, i, sampling_rate=sampling_rate, autobias_v=none_autobias_v, clamp_mode="CurrentClamp")
+    delta = qcf.measure_vm_delta(passing_mean_first_stability_epoch, sweep.autobias_v)
+    
+    assert delta is None
 
