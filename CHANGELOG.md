@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 
 ## Unreleased
+Changed:
+- Independently compares differences between mean pre and post stimulus baseline stability epochs and the autobias target voltage to the vm_delta_mv_max qc criteria and applies unique fail tags for each.
+
+Bug fixes:
+- Call load_default_qc_criteria() from qc_feature_evaluator.py instead of qc_features.py
 
 ### Added
 
