@@ -118,7 +118,7 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
                 return nwb2_path
         try:
             data_set = create_ephys_data_set(nwb_file=nwb2_path, load_into_memory=False)
-        except:
+        except Exception as detail:
             logging.warning("Exception when loading NWB2 (and attempting NWB1) for specimen {:d} from LIMS".format(specimen_id))
             logging.warning(detail)
             return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
