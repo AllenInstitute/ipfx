@@ -274,16 +274,16 @@ def test_isi_shape():
             return np.arange(20)
 
     obtained = fv.isi_shape(
-        Sweep(), 
-        pd.DataFrame(sweep_spike_info), 
-        50, 
+        Sweep(),
+        pd.DataFrame(sweep_spike_info),
+        50,
         n_points=10
     )
     assert np.allclose(np.arange(3.5, 13.5, 1.0), obtained)
 
 
 def test_identify_subthreshold_hyperpol_with_amplitudes(subthreshold_sweeps):
-  
+
     class SomeSweeps:
         @property
         def sweeps(self):
@@ -298,8 +298,8 @@ def test_identify_subthreshold_hyperpol_with_amplitudes(subthreshold_sweeps):
         )
 
     expected = {
-        -30.0: np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 
-        -50.0: np.array([11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]), 
+        -30.0: np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+        -50.0: np.array([11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]),
         -70.0: np.array([22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32])
     }
 
@@ -460,11 +460,11 @@ def test_identify_subthreshold_depol_with_amplitudes(subthreshold_sweeps):
 
     expected = {
         "amp": {
-            470.0: np.array([33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43]), 
+            470.0: np.array([33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43]),
             480.0: np.array([44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54])
         },
         "deflect": {
-            470.0: (-68.29730987548828, -30.550001), 
+            470.0: (-68.29730987548828, -30.550001),
             480.0: (-68.26968383789062, -28.54375)
         }
     }
@@ -598,6 +598,24 @@ def test_psth_number_of_spikes():
 
     output = fv.psth_vector([spike_info], start=start, end=end, width=width)
     assert np.isclose(output.mean(), n_spikes)
+
+
+def test_psth_duration_rounding():
+    start_a, end_a = 1.02, 2.02
+    start_b, end_b = 1.02, 2.0199999999999996
+
+    np.random.seed(42)
+    n_spikes = np.random.randint(0, 100)
+
+    test_spike_times = np.random.random(n_spikes) * (end_a - start_a) + start_a
+    spike_info = pd.DataFrame({"threshold_t": test_spike_times})
+
+    width = 50
+
+    output_a = fv.psth_vector([spike_info], start=start_a, end=end_a, width=width)
+    output_b = fv.psth_vector([spike_info], start=start_b, end=end_b, width=width)
+
+    assert output_a.shape == output_b.shape
 
 
 def test_psth_between_sweep_interpolation():
