@@ -28,7 +28,7 @@ class Stimulus(object):
 class StimulusOntology(object):
 
     DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(
-        os.path.dirname(__file__), 
+        os.path.dirname(__file__),
         "defaults",
         "stimulus_ontology.json"
     )
@@ -69,7 +69,7 @@ class StimulusOntology(object):
         self.breakin_names = ( 'EXTPBREAKN', )
         self.extp_names = ( 'EXTP', )
 
-    def find(self, tag, tag_type=None):
+    def find(self, tag, tag_type=None, trim_da_suffix=True):
         """
         Find stimuli matching a given tag
         Parameters
@@ -82,6 +82,9 @@ class StimulusOntology(object):
         matching_stims: list of Stimuli objects
 
         """
+        if trim_da_suffix and tag.endswith("_DA_0"):
+            tag = tag[:-5]
+
         matching_stims = [ s for s in self.stimuli if s.has_tag(tag, tag_type=tag_type) ]
 
         if not matching_stims:
