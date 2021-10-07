@@ -30,7 +30,7 @@ def get_scalar_value(dataset_from_nwb):
 def is_file_mies(path: str) -> bool:
     with h5py.File(path, "r") as fil:
         if "generated_by" in fil["general"].keys():
-            generated_by = dict(fil["general"]["generated_by"][:])
+            generated_by = dict(fil["general"]["generated_by"][:].astype(str))
             return generated_by.get("Package", "None") == "MIES"
 
     return False
