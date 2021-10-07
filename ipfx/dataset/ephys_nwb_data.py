@@ -163,15 +163,17 @@ class EphysNWBData(EphysDataInterface):
         # check how many series we have to make sure we only got 1 TimeSeries
         num_series = len(matching_series)
         if num_series == 1:
+#             print(matching_series[0].name, "for", sweep_number)
             return matching_series[0]
         else:
             # check series type so we can display an appropriate error
 
-            if isinstance(series_class, self.STIMULUS):
+            if isinstance(series_class, self.STIMULUS) or (series_class == self.STIMULUS):
                 series_name = "stimulus"
-            elif isinstance(series_class, self.RESPONSE):
+            elif isinstance(series_class, self.RESPONSE) or (series_class == self.RESPONSE):
                 series_name = "response"
             else:
+                print(series_class)
                 raise TypeError(
                     f"{type(series_class)} is not a stimulus or response PatchClampSeries"
                 )
@@ -183,11 +185,18 @@ class EphysNWBData(EphysDataInterface):
                 )
             else:
                 # check how many matching series we have
-                raise ValueError(
-                    f"Found {num_series} {series_name} PatchClampSeries "
-                    f"{[s.name for s in matching_series]} "
-                    f"for sweep number {sweep_number}."
-                )
+                print(f"Found {num_series} {series_name} PatchClampSeries ")
+                print(f"{[s.name for s in matching_series]} ")
+                print(f"for sweep number {sweep_number}.")
+
+                print("Returning last one")
+
+                return matching_series[-1]
+#                 raise ValueError(
+#                     f"Found {num_series} {series_name} PatchClampSeries "
+#                     f"{[s.name for s in matching_series]} "
+#                     f"for sweep number {sweep_number}."
+#                 )
 
     def get_sweep_data(
         self, sweep_number: int
