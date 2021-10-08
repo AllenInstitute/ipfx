@@ -39,6 +39,22 @@ def measure_vm(vals):
 
 
 def measure_vm_delta(mean_baseline, target_v):
+    """Measure delta between mean baseline and autobias target voltage,
+       or if autobias is not available then measure delta between
+       pre and post stimulus baselines.
+    
+    
+    Parameters
+    ----------
+        mean_baseline : float mean baseline membrane voltage 
+        target_v : float autobias taget voltage or post-stimulus 
+                   mean baseline membrane voltage
+    
+    Returns
+    -------
+        delta: absolute voltage diff 
+    
+    """
 
     if mean_baseline is not None and target_v is not None:
         delta = abs(mean_baseline - target_v)
