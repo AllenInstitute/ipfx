@@ -166,16 +166,13 @@ def qc_current_clamp_sweep(sweep, is_ramp, qc_criteria=None):
         logging.info("sweep %d skipping vrest criteria on ramp", sweep["sweep_number"])
 
     if sweep["slow_noise_rms_mv"] > qc_criteria["slow_noise_rms_mv_max"]:
-        fail_tags.append("slow noise: %.3f above threshold: %.3f" % (sweep["slow_noise_rms_mv"], qc_criteria["slow_noise_rms_mv_max"]) )
+        fail_tags.append("slow noise: %.3f above threshold: %.3f" % (sweep["slow_noise_rms_mv"], qc_criteria["slow_noise_rms_mv_max"]))
 
-    if sweep["pre_vm_delta_mv"] is not None and sweep["pre_vm_delta_mv"] > qc_criteria["vm_delta_mv_max"]:
-        fail_tags.append("pre Vm delta: %.3f above threshold: %.3f" % (sweep["pre_vm_delta_mv"], qc_criteria["vm_delta_mv_max"]))
-
-    if sweep["post_vm_delta_mv"] is not None and sweep["post_vm_delta_mv"] > qc_criteria["vm_delta_mv_max"]:
-        fail_tags.append("post Vm delta: %.3f above threshold: %.3f" % (sweep["post_vm_delta_mv"], qc_criteria["vm_delta_mv_max"]))
-
-    if sweep["vm_delta_mv"] is not None and sweep["vm_delta_mv"] > qc_criteria["vm_delta_mv_max"]:
-        fail_tags.append("Vm delta: %.3f above threshold: %.3f" % (sweep["vm_delta_mv"], qc_criteria["vm_delta_mv_max"]))
+    if sweep["vm_autobias_delta_mv"] is not None and sweep["vm_autobias_delta_mv"] > qc_criteria["vm_delta_mv_max"]:
+        fail_tags.append("Vm delta: %.3f above threshold: %.3f" % (sweep["vm_autobias_delta_mv"], qc_criteria["vm_delta_mv_max"]))
+    else:
+        if sweep["vm_delta_mv"] is not None and sweep["vm_delta_mv"] > (qc_criteria["vm_delta_mv_max"] * 2):
+            fail_tags.append("Vm delta: %.3f above threshold: %.3f" % (sweep["vm_delta_mv"], (qc_criteria["vm_delta_mv_max"] * 2)))
 
     if fail_tags:
         logging.info("sweep: {}, {}, {}".format(sweep["sweep_number"], sweep["stimulus_name"], fail_tags))

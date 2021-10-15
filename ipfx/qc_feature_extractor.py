@@ -379,14 +379,14 @@ def current_clamp_sweep_qc_features(sweep, is_ramp):
     qc_features["pre_vm_mv"] = mean_first_stability_epoch
     qc_features["slow_vm_mv"] = mean_first_stability_epoch
     qc_features["slow_noise_rms_mv"] = rms_first_stability_epoch
-    if autobias_v != None:
-        qc_features["pre_vm_delta_mv"] = qcf.measure_vm_delta(mean_first_stability_epoch, autobias_v)
-        qc_features["post_vm_delta_mv"] = qcf.measure_vm_delta(mean_last_stability_epoch, autobias_v)
-        qc_features["vm_delta_mv"] = None
+
+    qc_features["vm_delta_mv"] = qcf.measure_vm_delta(mean_first_stability_epoch, mean_last_stability_epoch)
+    if autobias_v and not is_ramp:
+        pre_vm_delta_mv = qcf.measure_vm_delta(autobias_v, mean_first_stability_epoch)
+        post_vm_delta_mv = qcf.measure_vm_delta(autobias_v, mean_last_stability_epoch)
+        qc_features["vm_autobias_delta_mv"] = max(pre_vm_delta_mv, post_vm_delta_mv)
     else:
-        qc_features["vm_delta_mv"] = qcf.measure_vm_delta(mean_first_stability_epoch, mean_last_stability_epoch)
-        qc_features["pre_vm_delta_mv"] = None
-        qc_features["post_vm_delta_mv"] = None
+        qc_features["vm_autobias_delta_mv"] = None
 
     return qc_features
 
