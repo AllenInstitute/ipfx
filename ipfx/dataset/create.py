@@ -27,6 +27,17 @@ def get_scalar_value(dataset_from_nwb):
     return dataset_from_nwb
 
 
+def get_string_value(nwb_version):
+    """
+    Since Igor Pro 9 the nwb_version attr is a utf-8 encoded byte string.
+    Use this function to decode byte object to string.
+    """
+    if isinstance(nwb_version, bytes):
+        return nwb_version.decode('utf-8')
+
+    return nwb_version
+
+
 def is_file_mies(path: str) -> bool:
     with h5py.File(path, "r") as fil:
         if "generated_by" in fil["general"].keys():
@@ -67,7 +78,7 @@ def get_nwb_version(nwb_file: str) -> Dict[str, Any]:
                 }
 
         elif "nwb_version" in f.attrs:   # in version 2 this is an attribute
-            nwb_version = f.attrs["nwb_version"]
+            nwb_version = get_string_value(f.attrs["nwb_version"])
             if nwb_version is not None and (
                     re.match("^2", nwb_version) or
                     re.match("^NWB-2", nwb_version)
