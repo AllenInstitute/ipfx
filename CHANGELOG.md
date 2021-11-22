@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 
 ## Unreleased
+- Adds get_string_value() function to be used by get_nwb_version() to first check
+if the nwb_version attribute from the nwb file is a utf-8 encoded byte string and
+decodes it to a string literal if it is. This solution is meant to prevent the 
+TypeError that is currently causing all IVSCC pipeline experiments to crash prior 
+to sweep extraction. 
 
 ### Added
 
