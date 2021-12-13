@@ -11,7 +11,7 @@ from ipfx.dataset.ephys_data_set import EphysDataSet
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.hbg_nwb_data import HBGNWBData
 from ipfx.dataset.mies_nwb_data import MIESNWBData
-from ipfx import py2to3
+from ipfx.string_utils import to_str
 from ipfx.dataset.labnotebook import LabNotebookReaderIgorNwb
 
 
@@ -59,7 +59,7 @@ def get_nwb_version(nwb_file: str) -> Dict[str, Any]:
     with h5py.File(nwb_file, 'r') as f:
         if "nwb_version" in f:         # In version 0 and 1 this is a dataset
             nwb_version = get_scalar_value(f["nwb_version"][()])
-            nwb_version_str = py2to3.to_str(nwb_version)
+            nwb_version_str = to_str(nwb_version)
             if nwb_version is not None and re.match("^NWB-", nwb_version_str):
                 return {
                     "major": int(nwb_version_str[4]), 
@@ -67,12 +67,12 @@ def get_nwb_version(nwb_file: str) -> Dict[str, Any]:
                 }
 
         elif "nwb_version" in f.attrs:   # in version 2 this is an attribute
-            nwb_version = f.attrs["nwb_version"]
-            if nwb_version is not None and (
-                    re.match("^2", nwb_version) or
-                    re.match("^NWB-2", nwb_version)
+            nwb_version_str = to_str(f.attrs["nwb_version"])
+            if nwb_version_str is not None and (
+                    re.match("^2", nwb_version_str) or
+                    re.match("^NWB-2", nwb_version_str)
             ):
-                return {"major": 2, "full": nwb_version}
+                return {"major": 2, "full": nwb_version_str}
 
     return {"major": None, "full": None}
 

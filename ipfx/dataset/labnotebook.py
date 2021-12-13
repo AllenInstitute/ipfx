@@ -1,6 +1,6 @@
 import h5py
 import math
-from ipfx.py2to3 import to_str
+from ipfx.string_utils import to_str
 
 class LabNotebookReader(object):
     """
