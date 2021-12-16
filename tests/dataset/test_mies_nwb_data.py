@@ -58,6 +58,7 @@ def test_get_sweep_metadata(mies_nwb_data):
         'stimulus_code_ext': 'STIMULUS_CODE[1]',
         'clamp_mode': 'CurrentClamp',
         'stimulus_name': 'expected name',
+        'autobias_v': None
     }
 
     obtained = mies_nwb_data.get_sweep_metadata(sweep_number=4)

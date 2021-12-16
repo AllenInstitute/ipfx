@@ -228,6 +228,10 @@ class EphysDataSet(object):
 
         sweep_data = self.get_sweep_data(sweep_number)
         sweep_metadata = self._data.get_sweep_metadata(sweep_number)
+        if "autobias_v" in sweep_metadata.keys():
+            autobias_v = sweep_metadata["autobias_v"]
+        else:
+            autobias_v = None
 
         time = np.arange(
             len(sweep_data["stimulus"])
@@ -249,6 +253,7 @@ class EphysDataSet(object):
                 sweep_number=sweep_number,
                 clamp_mode=sweep_metadata["clamp_mode"],
                 epochs=sweep_data.get("epochs", None),
+                autobias_v = autobias_v
             )
 
         except Exception:
