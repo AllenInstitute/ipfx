@@ -82,7 +82,7 @@ class StimulusOntology(object):
         matching_stims: list of Stimuli objects
 
         """
-        if trim_da_suffix and tag.endswith("_DA_0"):
+        if trim_da_suffix and tag.endswith("_DA_0"): # seems only needed for NWB1 files
             tag = tag[:-5]
 
         matching_stims = [ s for s in self.stimuli if s.has_tag(tag, tag_type=tag_type) ]
