@@ -95,17 +95,35 @@ def extract_clamp_seal(data_set, tags, manual_values=None):
 
     ontology = data_set.ontology
 
+    # Try to find the break-in sweeps, so that only sweeps pre-break-in will
+    # be considered
+
     try:
-        seal_sweep_number = data_set.get_sweep_numbers(ontology.seal_names,"VoltageClamp")[-1]
-        seal_data = data_set.sweep(seal_sweep_number)
+        breakin_sweep_number = data_set.get_sweep_numbers(ontology.breakin_names, "VoltageClamp")[-1]
+    except:
+        breakin_sweep_number = None
 
-        seal_gohm = qcf.measure_seal(seal_data.v,
-                                 seal_data.i,
-                                 seal_data.t)
+    try:
+        seal_sweep_numbers = data_set.get_sweep_numbers(ontology.seal_names,"VoltageClamp")
 
-        if seal_gohm is None or not np.isfinite(seal_gohm):
-            raise er.FeatureError("Could not compute seal")
+        if breakin_sweep_number is not None:
+            seal_sweep_numbers = [s for s in seal_sweep_numbers if s < breakin_sweep_number]
 
+        # Find the maximum seal value encountered, in case break-in happened
+        # in later "cell-attached" sweeps
+
+        seal_values = []
+        for sn in seal_sweep_numbers:
+            seal_data = data_set.sweep(sn)
+
+            seal_gohm = qcf.measure_seal(seal_data.v,
+                                     seal_data.i,
+                                     seal_data.t)
+            if seal_gohm is None or not np.isfinite(seal_gohm):
+                raise er.FeatureError("Could not compute seal")
+            seal_values.append(seal_gohm)
+
+        seal_gohm = max(seal_values)
     except IndexError as e:
         # seal is not available, for whatever reason. log error
         tags.append("Seal is not available")

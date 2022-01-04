@@ -66,26 +66,40 @@ def get_r_from_stable_pulse_response(v, i, t):
     one_ms = int(0.001 / dt)
 
     r = []
-    for ii in range(len(up_idx)):
-        # take average v and i one ms before start
-        end = up_idx[ii] - 1
-        start = end - one_ms
 
-        avg_v_base = np.mean(v[start:end])
-        avg_i_base = np.mean(i[start:end])
+    # Average each pulse together, then calculate values
+    # (This is less noisy than calculating the resistance separately
+    # for each pulse)
+    pulses_i = []
+    pulses_v = []
+    for u, d in zip(up_idx, down_idx):
+        #
+        start_idx = u - one_ms * 2
+        end_idx = d + one_ms * 2
+        pulses_i.append(i[start_idx:end_idx])
+        pulses_v.append(v[start_idx:end_idx])
 
-        # take average v and i one ms before end
-        end = down_idx[ii]-1
-        start = end - one_ms
+        relative_up_ind = u - start_idx
+        relative_down_ind = d - start_idx
 
-        avg_v_steady = np.mean(v[start:end])
-        avg_i_steady = np.mean(i[start:end])
+    avg_i = np.vstack(pulses_i).mean(axis=0)
+    avg_v = np.vstack(pulses_v).mean(axis=0)
 
-        r_instance = (avg_v_steady-avg_v_base) / (avg_i_steady-avg_i_base)
+    # baseline - take average v and i one ms before start
+    end = relative_up_ind - 1
+    start = end - one_ms
+    avg_v_base = np.mean(avg_v[start:end])
+    avg_i_base = np.mean(avg_i[start:end])
 
-        r.append(r_instance)
+    # steady-state - take average v and i one ms before end
+    end = relative_down_ind - 1
+    start = end - one_ms
+    avg_v_steady = np.mean(avg_v[start:end])
+    avg_i_steady = np.mean(avg_i[start:end])
 
-    return np.mean(r)
+    r = (avg_v_steady - avg_v_base) / (avg_i_steady - avg_i_base)
+
+    return r
 
 
 def get_r_from_peak_pulse_response(v, i, t):
@@ -94,23 +108,40 @@ def get_r_from_peak_pulse_response(v, i, t):
 
     dt = t[1] - t[0]
     one_ms = int(0.001 / dt)
-    r = []
-    for ii in range(len(up_idx)):
-        # take average v and i one ms before
-        end = up_idx[ii] - 1
-        start = end - one_ms
-        avg_v_base = np.mean(v[start:end])
-        avg_i_base = np.mean(i[start:end])
-        # take average v and i one ms before end
-        start = up_idx[ii]
-        end = down_idx[ii] - 1
-        idx = start + np.argmax(i[start:end])
-        avg_v_peak = v[idx]
-        avg_i_peak = i[idx]
-        r_instance = (avg_v_peak-avg_v_base) / (avg_i_peak-avg_i_base)
-        r.append(r_instance)
 
-    return np.mean(r)
+    # Average each pulse together, then calculate values
+    # (This is less noisy than calculating the resistance separately
+    # for each pulse)
+    pulses_i = []
+    pulses_v = []
+    for u, d in zip(up_idx, down_idx):
+        #
+        start_idx = u - one_ms * 2
+        end_idx = d + one_ms * 2
+        pulses_i.append(i[start_idx:end_idx])
+        pulses_v.append(v[start_idx:end_idx])
+
+        relative_up_ind = u - start_idx
+        relative_down_ind = d - start_idx
+
+    avg_i = np.vstack(pulses_i).mean(axis=0)
+    avg_v = np.vstack(pulses_v).mean(axis=0)
+
+    # take average v and i one ms before start of pulse
+    end = relative_up_ind - 1
+    start = end - one_ms
+    avg_v_base = np.mean(v[start:end])
+    avg_i_base = np.mean(i[start:end])
+
+    # find peak i during the pulse
+    start = relative_up_ind
+    end = relative_down_ind - 1
+    idx = start + np.argmax(avg_i[start:end])
+    avg_v_peak = avg_v[idx]
+    avg_i_peak = avg_i[idx]
+    r = (avg_v_peak - avg_v_base) / (avg_i_peak - avg_i_base)
+
+    return r
 
 
 def get_square_pulse_idx(v):
