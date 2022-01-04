@@ -113,6 +113,7 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
         if type(nwb2_path) is dict and "error" in nwb2_path:
             if nwb2_path["error"]["type"] == "no_nwb2":
                 # try to get NWB1 file instead
+                logging.info("trying nwb1 for", specimen_id)
                 return dataset_for_nwb1(specimen_id, ontology)
             else:
                 return nwb2_path
@@ -224,8 +225,11 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option="none", sp
 
         # otherwise, check for having an error tag that isn't 'Vm delta'
         # and exclude those sweeps
-        has_non_delta_tags = np.array([np.any((results_df["sweep_number"].values == sn) &
-            (results_df["name"].values != "Vm delta")) for sn in failed_sweep_list])
+        has_non_delta_tags = np.array([np.any(
+            (results_df["sweep_number"].values == sn) &
+            (~results_df["name"].str.startswith("Vm delta").values) &
+            (results_df["name"].values != "Blowout is not available") # don't fail for blowout unavailable because we are considering patch-seq sweeps
+            ) for sn in failed_sweep_list])
 
         also_passing_nums = np.array(failed_sweep_list)[tagged_mask & ~has_non_delta_tags]
 
@@ -264,6 +268,34 @@ def validate_sweeps(data_set, sweep_numbers, extra_dur=0.2):
                               and v is True
                               and not np.all(s.v[tsu.find_time_index(s.t, end)-100:tsu.find_time_index(s.t, end)] == 0)]
     return SweepSet(sweeps=good_sweeps), start, end
+
+
+def validate_ramp_sweeps(data_set, sweep_numbers):
+    check_sweeps = data_set.sweep_set(sweep_numbers)
+    check_sweeps.select_epoch("recording")
+    valid_sweep_stim = []
+    start = None
+    dur = None
+    for swp in check_sweeps.sweeps:
+        if len(swp.t) == 0:
+            valid_sweep_stim.append(False)
+            continue
+
+        swp_start, swp_dur, _, _, _ = stf.get_stim_characteristics(swp.i, swp.t)
+        if swp_start is None or swp_dur is None:
+            valid_sweep_stim.append(False)
+        else:
+            start = swp_start
+            dur = swp_dur
+            valid_sweep_stim.append(True)
+    if start is None:
+        # Could not find any sweeps to define stimulus interval
+        return [], None, None
+
+    # Check that all sweeps are long enough and not ended early
+    good_sweeps = [s for s, v in zip(check_sweeps.sweeps, valid_sweep_stim)
+                              if v is True]
+    return SweepSet(sweeps=good_sweeps)
 
 
 def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthresh_min_amp=-100.):
@@ -314,7 +346,8 @@ def preprocess_ramp_sweeps(data_set, sweep_numbers):
     if len(sweep_numbers) == 0:
         raise er.FeatureError("No ramp sweeps available for feature extraction")
 
-    ramp_sweeps = data_set.sweep_set(sweep_numbers)
+    ramp_sweeps = validate_ramp_sweeps(data_set, sweep_numbers)
+
     ramp_sweeps.select_epoch("recording")
 
     ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
