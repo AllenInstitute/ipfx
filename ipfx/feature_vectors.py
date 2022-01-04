@@ -292,7 +292,8 @@ def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
     return subsampled_v
 
 
-def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5):
+def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5,
+    exclude_sweep_numbers=[]):
     """ Find lowest-amplitude spiking sweep that has at least min_spike
         or else sweep with most spikes
 
@@ -306,6 +307,8 @@ def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5):
             Length of stimulus interval (seconds)
         min_spike: int (optional, default 5)
             Minimum number of spikes for first preference sweep (default 5)
+        exclude_sweep_numbers : list
+            List of sweep numbers to not consider
 
         Returns
         -------
@@ -315,8 +318,11 @@ def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5):
             Spike info for selected sweep
     """
     sweep_table = features["sweeps"]
-    mask_supra = (sweep_table["avg_rate"].values > 0) & (sweep_table["stim_amp"] > 0)
-    supra_table = sweep_table.loc[mask_supra, :]
+    mask_exclude = np.array([s.sweep_number in exclude_sweep_numbers for s in sweeps.sweeps])
+    include_table = sweep_table.loc[~mask_exclude, :]
+    mask_supra = (include_table["avg_rate"].values > 0) & (include_table["stim_amp"] > 0)
+    supra_table = include_table.loc[mask_supra, :]
+
     amps = np.rint(supra_table["stim_amp"].values)
     n_spikes = supra_table["avg_rate"].values * duration
 
@@ -337,7 +343,7 @@ def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5):
         only_one_spike = True
         selection_index = np.argmin(amps)
 
-    selected_sweep = np.array(sweeps.sweeps)[mask_supra][selection_index]
+    selected_sweep = np.array(sweeps.sweeps)[~mask_exclude][mask_supra][selection_index]
     info_index = supra_table.index.tolist()[selection_index]
     selected_spike_info = features["spikes_set"][info_index]
     return selected_sweep, selected_spike_info
@@ -373,6 +379,10 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
             Averaged, threshold-aligned, duration-normalized voltage trace
     """
 
+    spike_info = spike_info.copy()
+
+    # only consider non-clipped spikes
+    spike_info = spike_info.loc[~spike_info["clipped"], :]
     n_spikes = spike_info.shape[0]
 
     if n_spikes > 1:
@@ -389,6 +399,9 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
             isi_norm = _subsample_average(isi_raw[:width * n_points], width)
             isi_list.append(isi_norm)
 
+        if len(isi_list) == 0:
+            logging.debug("All potential ISIs were too short")
+            return None
         isi_norm = np.vstack(isi_list).mean(axis=0)
     else:
         threshold_v = spike_info["threshold_v"][0]
