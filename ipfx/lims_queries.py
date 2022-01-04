@@ -23,10 +23,10 @@ if TIMEOUT is not None:
 def _connect(user, host, dbname, password, port, timeout=TIMEOUT):
 
     conn = pg8000.connect(
-        user=user, 
-        host=host, 
-        database=dbname, 
-        password=password, 
+        user=user,
+        host=host,
+        database=dbname,
+        password=password,
         port=int(port),
         timeout=timeout
     )
@@ -54,6 +54,7 @@ def _select(cursor, query, parameters=None):
         cursor.execute(query)
     else:
         pg8000.paramstyle = 'numeric'
+        cursor.paramstyle = 'numeric'
         cursor.execute(query, parameters)
     columns = [ to_str(d[0]) for d in cursor.description ]
     return [ dict(zip(columns, c)) for c in cursor.fetchall() ]
