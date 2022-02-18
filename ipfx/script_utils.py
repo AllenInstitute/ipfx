@@ -330,6 +330,10 @@ def preprocess_short_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, spike
         raise er.FeatureError("No short square sweeps were long enough or did not end early")
     ssq_sweeps.select_epoch("recording")
 
+    for swp in ssq_sweeps.sweeps:
+        if swp.t[-1] < ssq_end + spike_window:
+            spike_window = swp.t[-1] - ssq_end - 0.001
+
     ssq_spx, ssq_spfx = dsf.extractors_for_sweeps(ssq_sweeps,
                                                   est_window = [ssq_start, ssq_start + 0.001],
                                                   start=ssq_start,

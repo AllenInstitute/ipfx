@@ -802,7 +802,7 @@ def psth_vector(spike_info_list, start, end, width=50):
     return output_vector
 
 
-def inst_freq_vector(spike_info_list, start, end, width=20):
+def inst_freq_vector(spike_info_list, start, end, width=20, gap_factor=4):
     """ Create binned instantaneous frequency feature vector,
         concatenated across sweeps
 
@@ -816,7 +816,10 @@ def inst_freq_vector(spike_info_list, start, end, width=20):
         End of stimulus interval (seconds)
     width: float (optional, default 20)
         Bin width in ms
-
+    gap_factor: int, default 4
+        Factor to multiply average ISI by to determine if a gap should
+        be interpolated over or set to zero spikes/s (i.e., if the gap exceeds
+        avg_isi * gap_factor, it will be set to zero).
 
     Returns
     -------
@@ -844,9 +847,25 @@ def inst_freq_vector(spike_info_list, start, end, width=20):
         output = stats.binned_statistic(inst_freq_times,
                                         inst_freq,
                                         bins=bin_edges)[0]
-        nan_ind = np.isnan(output)
+
+        # Check for long gaps without spikes
+        nan_ind = np.flatnonzero(np.isnan(output))
+        consecutive_sections = np.split(nan_ind, np.where(np.diff(nan_ind) != 1)[0] + 1)
+
+        avg_isi = 1 / np.mean(inst_freq)
+        for sec in consecutive_sections:
+            gap_length = (sec[-1] - sec[0] + 1) * bin_width
+            if gap_length > gap_factor * avg_isi:
+                # Since gap is long, set beginning and end of gap to 0 spikes/s
+                output[sec[0]] = 0
+                output[sec[-1]] = 0
+
+        # Get mask for interpolation
+        nan_mask = np.isnan(output)
+
+        # Interpolate missing values
         x = np.arange(len(output))
-        output[nan_ind] = np.interp(x[nan_ind], x[~nan_ind], output[~nan_ind])
+        output[nan_mask] = np.interp(x[nan_mask], x[~nan_mask], output[~nan_mask])
         vector_list.append(output)
 
     output_vector = _combine_and_interpolate(vector_list)
@@ -998,21 +1017,16 @@ def _inst_freq_feature(threshold_t, start, end):
 
     This function attempts to estimate a semi-continuous instantanteous firing
     rate from a set of interspike intervals (ISIs) and spike times. It makes
-    several assumptions:
+    several assumptions/methodological decisions:
+    - It only estimates the firing frequency when at the times of spikes.
     - It assumes that the instantaneous firing rate at the start of the stimulus
     interval is the inverse of the latency to the first spike.
     - It estimates the firing rate at each spike as the average of the ISIs
     on each side of the spike
-    - If the time between the end of the interval and the last spike is less
-    than the last true interspike interval, it sets the instantaneous rate of
-    that last spike and of the end of the interval to the inverse of the last ISI.
-    Therefore, the instantaneous rate would not "jump" just because the
-    stimulus interval ends.
-    - However, if the time between the end of the interval and the last spike is
-    longer than the final ISI, it assumes there may have been a spike just
-    after the end of the interval. Therefore, it essentially returns an upper
-    bound on the estimated rate.
-
+    - It does not consider the interval between the last spike and the end of
+    the stimulus as an interspike interval (because there is no spike at the end).
+    Consequently, it only uses the last actual ISI for the estimated rate
+    of the last spike of the train.
 
     Parameters
     ----------
@@ -1035,21 +1049,15 @@ def _inst_freq_feature(threshold_t, start, end):
     inst_inv_rate = []
     time_points = []
     isis = [(threshold_t[0] - start)] + np.diff(threshold_t).tolist()
-    isis = isis + [max(isis[-1], end - threshold_t[-1])]
 
-    # Estimate at start of stimulus interval
-    inst_inv_rate.append(isis[0])
-    time_points.append(start)
+    # Add an ISI for the end so the average for the last spike will be its
+    # prior ISI
+    isis = isis + [isis[-1]]
 
     # Estimate for each spike time
     for t, pre_isi, post_isi in zip(threshold_t, isis[:-1], isis[1:]):
         inst_inv_rate.append((pre_isi + post_isi) / 2)
         time_points.append(t)
-
-    # Estimate for end of stimulus interval
-    inst_inv_rate.append(isis[-1])
-    time_points.append(end)
-
 
     inst_firing_rate = 1 / np.array(inst_inv_rate)
     time_points = np.array(time_points)
