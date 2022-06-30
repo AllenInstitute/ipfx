@@ -63,7 +63,11 @@ def append_spike_times(input_nwb_path: PathLike,
 
         nwbfile.add_processing_module(spike_module)
 
-        nwb_io.write(nwbfile)
+        # Because the NWB schema versions of NWB data produced by MIES are older
+        # we do not want to cache the newer schema versions that IPFX is currently using
+        # WARNING: Doing this may introduce fragility down the road though if IPFX writes NWB fields
+        #          that require the newer schema versions...
+        nwb_io.write(nwbfile, cache_spec=False)
     else:
         raise ValueError("Cannot add spikes times to the nwb file: "
                          "spikes times already exist!")

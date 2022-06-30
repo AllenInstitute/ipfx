@@ -94,7 +94,11 @@ class Nwb2Sink(MetadataSink):
 
         set_container_sources(self.nwbfile, self._h5_file.filename)
         self.nwbfile.set_modified(True)
-        self._nwb_io.write(self.nwbfile)
+        # Because the NWB schema versions of NWB data produced by MIES are older
+        # we do not want to cache the newer schema versions that IPFX is currently using
+        # WARNING: Doing this may introduce fragility down the road though if IPFX writes NWB fields
+        #          that require the newer schema versions...
+        self._nwb_io.write(self.nwbfile, cache_spec=False)
         self._nwb_io.close()
         self._h5_file.close()
 
