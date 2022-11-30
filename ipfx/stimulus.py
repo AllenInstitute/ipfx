@@ -4,6 +4,58 @@ import warnings
 
 import allensdk.core.json_utilities as ju
 
+from enum import Enum
+
+_STIMULUS_TYPE_NAME_MAPPING = {
+    # Maps stimulus type to set of names
+    "ramp": {"Ramp"},
+    "long_square": {
+        "Long Square",
+        "Long Square Threshold",
+        "Long Square SupraThreshold",
+        "Long Square SubThreshold",
+    },
+    "coarse_long_square": {
+        "C1LSCOARSE",
+    },
+    "short_square_triple": {
+        "Short Square - Triple",
+    },
+    "short_square": {
+        "Short Square",
+        "Short Square Threshold",
+        "Short Square - Hold -60mV",
+        "Short Square - Hold -70mV",
+        "Short Square - Hold -80mV",
+    },
+    "chirp": {
+        "Chirp",
+        "ChirpA",
+        "ChirpB",
+        "ChirpC",
+        "ChirpD",
+    },
+    "search": {"Search"},
+    "test": {"Test"},
+    "blowout": {"EXTPBLWOUT"},
+    "bath": {"EXTPINBATH"},
+    "seal": {"EXTPCllATT"},
+    "breakin": {"EXTPBREAKN"},
+    "extp": {"EXTP"}
+}
+
+StimulusType = Enum("StimulusType", [(k.upper(), k) for k in _STIMULUS_TYPE_NAME_MAPPING.keys()])
+# e.g. ipfx.stimulus.StimulusType.detection_parameters(StimulusType. => <StimulusType.detection_parameters(StimulusType.: "long_square">
+
+STIMULUS_TYPE_NAME_MAPPING = {StimulusType(stim_type): stim_names for stim_type, stim_names in _STIMULUS_TYPE_NAME_MAPPING.items()}
+
+
+def get_stimulus_type(stimulus_name):
+    for stim_type, stim_names in STIMULUS_TYPE_NAME_MAPPING.items():
+        if stimulus_name in stim_names:
+            return stim_type
+    else:
+        raise ValueError(f"stimulus_name {stimulus_name} not found.\nSTIMULUS_TYPE_NAME_MAPPING: {STIMULUS_TYPE_NAME_MAPPING}")
 
 
 class Stimulus(object):
@@ -45,29 +97,10 @@ class StimulusOntology(object):
 
         self.stimuli = list(Stimulus(s) for s in stim_ontology_tags)
 
-        self.ramp_names = ( "Ramp",)
+        for stimulus_type, names in _STIMULUS_TYPE_NAME_MAPPING.items():
+            # Sets helper attributes like StimulusOntology.RAMP_NAMES
+            setattr(self, f"{stimulus_type.upper()}_NAMES", names)
 
-        self.long_square_names = ( "Long Square",
-                                   "Long Square Threshold",
-                                   "Long Square SupraThreshold",
-                                   "Long Square SubThreshold" )
-
-        self.coarse_long_square_names = ( "C1LSCOARSE",)
-        self.short_square_triple_names = ( "Short Square - Triple", )
-
-        self.short_square_names = ( "Short Square",
-                                    "Short Square Threshold",
-                                    "Short Square - Hold -60mV",
-                                    "Short Square - Hold -70mV",
-                                    "Short Square - Hold -80mV" )
-
-        self.search_names = ("Search",)
-        self.test_names = ("Test",)
-        self.blowout_names = ( 'EXTPBLWOUT', )
-        self.bath_names = ( 'EXTPINBATH', )
-        self.seal_names = ( 'EXTPCllATT', )
-        self.breakin_names = ( 'EXTPBREAKN', )
-        self.extp_names = ( 'EXTP', )
 
     def find(self, tag, tag_type=None):
         """

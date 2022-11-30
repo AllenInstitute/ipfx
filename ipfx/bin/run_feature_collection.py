@@ -33,9 +33,9 @@ def data_for_specimen_id(specimen_id, passed_only, data_source, ontology, file_l
         return {}
 
     try:
-        lsq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.long_square_names)
-        ssq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.short_square_names)
-        ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.ramp_names)
+        lsq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.LONG_SQUARE_NAMES)
+        ssq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.SHORT_SQUARE_NAMES)
+        ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.RAMP_NAMES)
     except Exception as detail:
         logging.warn("Exception when processing specimen {:d}".format(specimen_id))
         logging.warn(detail)

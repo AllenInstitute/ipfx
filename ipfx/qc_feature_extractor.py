@@ -25,7 +25,7 @@ def extract_blowout(data_set, tags):
     ontology = data_set.ontology
 
     try:
-        blowout_sweep_number = data_set.get_sweep_numbers(ontology.blowout_names)[-1]
+        blowout_sweep_number = data_set.get_sweep_numbers(ontology.BLOWOUT_NAMES)[-1]
         blowout_data = data_set.sweep(blowout_sweep_number)
         _,test_end_idx = blowout_data.epochs["test"]
         blowout_mv = qcf.measure_blowout(blowout_data.v, test_end_idx)
@@ -54,7 +54,7 @@ def extract_electrode_0(data_set, tags):
     ontology = data_set.ontology
 
     try:
-        bath_sweep_number = data_set.get_sweep_numbers(ontology.bath_names)[-1]
+        bath_sweep_number = data_set.get_sweep_numbers(ontology.BATH_NAMES)[-1]
         bath_data = data_set.sweep(bath_sweep_number)
 
         e0 = qcf.measure_electrode_0(bath_data.i, bath_data.sampling_rate)
@@ -96,7 +96,7 @@ def extract_clamp_seal(data_set, tags, manual_values=None):
     ontology = data_set.ontology
 
     try:
-        seal_sweep_number = data_set.get_sweep_numbers(ontology.seal_names,"VoltageClamp")[-1]
+        seal_sweep_number = data_set.get_sweep_numbers(ontology.SEAL_NAMES,"VoltageClamp")[-1]
         seal_data = data_set.sweep(seal_sweep_number)
 
         seal_gohm = qcf.measure_seal(seal_data.v,
@@ -148,7 +148,7 @@ def extract_input_and_access_resistance(data_set, tags, manual_values=None):
 
 
     try:
-        breakin_sweep_number = data_set.get_sweep_numbers(ontology.breakin_names, "VoltageClamp")[-1]
+        breakin_sweep_number = data_set.get_sweep_numbers(ontology.BREAKIN_NAMES, "VoltageClamp")[-1]
         breakin_data = data_set.sweep(breakin_sweep_number)
     except IndexError as e:
         tags.append("Breakin sweep not found")
@@ -276,7 +276,7 @@ def sweep_qc_features(data_set):
 
         sweep_num = sweep_info['sweep_number']
         sweep = data_set.sweep(sweep_num)
-        is_ramp = sweep_info['stimulus_name'] in ontology.ramp_names
+        is_ramp = sweep_info['stimulus_name'] in ontology.RAMP_NAMES
         tags = check_sweep_integrity(sweep, is_ramp)
         sweep_features["tags"] = tags
 

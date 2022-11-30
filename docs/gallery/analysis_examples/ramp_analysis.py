@@ -33,7 +33,7 @@ drop_failed_sweeps(data_set)
 
 # get sweep table of Ramp sweeps
 ramp_table = data_set.filtered_sweep_table(
-    stimuli=data_set.ontology.ramp_names
+    stimuli=data_set.ontology.RAMP_NAMES
 )
 ramp_sweeps = data_set.sweep_set(ramp_table.sweep_number)
 

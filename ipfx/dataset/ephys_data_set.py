@@ -32,12 +32,6 @@ class EphysDataSet(object):
                     SWEEP_NUMBER,
                     ]
 
-    LONG_SQUARE = 'long_square'
-    COARSE_LONG_SQUARE = 'coarse_long_square'
-    SHORT_SQUARE_TRIPLE = 'short_square_triple'
-    SHORT_SQUARE = 'short_square'
-    RAMP = 'ramp'
-
     VOLTAGE_CLAMP = "VoltageClamp"
     CURRENT_CLAMP = "CurrentClamp"
 

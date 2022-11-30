@@ -32,7 +32,7 @@ drop_failed_sweeps(data_set)
 
 # get sweep table of Long Square sweeps
 long_square_table = data_set.filtered_sweep_table(
-    stimuli=data_set.ontology.long_square_names
+    stimuli=data_set.ontology.LONG_SQUARE_NAMES
 )
 long_square_sweeps = data_set.sweep_set(long_square_table.sweep_number)
 

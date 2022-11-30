@@ -42,21 +42,21 @@ For example, Short Square stimuli are identified by the following name tags:
 
 .. code-block:: python
 
-        self.short_square_names = ( "Short Square",
+        self.SHORT_SQUARE_NAMES = ( "Short Square",
                                     "Short Square Threshold",
                                     "Short Square - Hold -60mV",
                                     "Short Square - Hold -70mV",
                                     "Short Square - Hold -80mV" )
 
 that allows mapping the sweep with the stimulus code "``C1SSCOARSE150112``" to
-the Short Square stimuli 'self.short_square_names'.
+the Short Square stimuli 'self.SHORT_SQUARE_NAMES'.
 
 With the ontology defined, you can now filter :py:class:`~ipfx.dataset.ephys_data_set.EphysDataSet` sweeps by the stimulus type:
 
 .. code-block:: python
 
     short_square_table = data_set.filtered_sweep_table(
-        stimuli=data_set.ontology.long_square_names
+        stimuli=data_set.ontology.LONG_SQUARE_NAMES
     )
 
-that returns a table of metadata for the sweeps matching the ``self.short_square_names`` tags.
+that returns a table of metadata for the sweeps matching the ``self.SHORT_SQUARE_NAMES`` tags.

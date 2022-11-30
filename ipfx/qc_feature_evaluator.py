@@ -66,7 +66,7 @@ def qc_sweeps(ontology, sweep_features, qc_criteria):
     for sweep in sweep_features:
 
         sweep_num = sweep["sweep_number"]
-        is_ramp = ontology.stimulus_has_any_tags(sweep["stimulus_code"], ontology.ramp_names)
+        is_ramp = ontology.stimulus_has_any_tags(sweep["stimulus_code"], ontology.RAMP_NAMES)
         fail_tags = qc_current_clamp_sweep(sweep, is_ramp, qc_criteria)
         sweep_state = sp.create_sweep_state(sweep_num, fail_tags)
         sweep_states.append(sweep_state)
