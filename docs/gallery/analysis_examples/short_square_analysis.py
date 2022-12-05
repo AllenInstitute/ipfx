@@ -31,7 +31,7 @@ data_set = create_ephys_data_set(nwb_file=nwb_file)
 drop_failed_sweeps(data_set)
 
 short_square_table = data_set.filtered_sweep_table(
-    stimuli=data_set.ontology.SHORT_SQUARE_NAMES
+    stimuli=data_set.ontology.short_square_names
 )
 short_square_sweeps = data_set.sweep_set(short_square_table.sweep_number)
 

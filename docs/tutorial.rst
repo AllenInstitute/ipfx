@@ -99,7 +99,7 @@ To create an instance of the :py:class:`~ipfx.dataset.ephys_data_set.EphysDataSe
     from ipfx.dataset.create import create_ephys_data_set
 
     dataset = create_ephys_data_set(nwb_file="path/to/experiment.nwb")
-    long_squares = dataset.filtered_sweep_table(stimuli=ds.ontology.LONG_SQUARE_NAMES) # more on this next!
+    long_squares = dataset.filtered_sweep_table(stimuli=ds.ontology.long_square_names) # more on this next!
     sweep_set = dataset.sweep_set(long_squares.sweep_number)
 
 where ``path/to/experiment.nwb`` is a local path to the nwb2 file that you have downloaded from the public archive.
@@ -121,7 +121,7 @@ by filtering the ``sweep_table``:
 
 .. code-block:: python
 
-    long_squares = dataset.filtered_sweep_table(stimuli=dataset.ontology.LONG_SQUARE_NAMES) # more on this next!
+    long_squares = dataset.filtered_sweep_table(stimuli=dataset.ontology.long_square_names) # more on this next!
     sweep_set = dataset.sweep_set(long_squares.sweep_number)
 
 where ``dataset.ontology`` includes references to the names of all stimuli types known to ``IPFX``.

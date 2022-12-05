@@ -233,7 +233,7 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     lu.log_pretty_header("Long Squares:", level=2)
 
     long_square_sweep_numbers = data_set.get_sweep_numbers(
-        data_set.ontology.LONG_SQUARE_NAMES,
+        data_set.ontology.long_square_names,
         clamp_mode=data_set.CURRENT_CLAMP)
     if len(long_square_sweep_numbers) == 0:
         raise er.FeatureError("No long_square sweeps available for feature extraction")
@@ -241,7 +241,7 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     if subthresh_min_amp is None:
         clsq_sweeps = data_set.filtered_sweep_table(
                         clamp_mode=data_set.CURRENT_CLAMP,
-                        stimuli=data_set.ontology.COARSE_LONG_SQUARE_NAMES)
+                        stimuli=data_set.ontology.coarse_long_square_names)
         clsq_sweep_numbers = clsq_sweeps['sweep_number'].sort_values().values
         if len(clsq_sweep_numbers) > 0:
             subthresh_min_amp, clsq_amp_delta = select_subthreshold_min_amplitude(clsq_sweeps['stimulus_amplitude'])
@@ -284,7 +284,7 @@ def extract_cell_short_square_features(data_set):
     lu.log_pretty_header("Short Squares:", level=2)
 
     short_square_sweep_numbers = data_set.get_sweep_numbers(
-        data_set.ontology.SHORT_SQUARE_NAMES,
+        data_set.ontology.short_square_names,
         clamp_mode=data_set.CURRENT_CLAMP)
     if len(short_square_sweep_numbers) == 0:
         raise er.FeatureError("No short square sweeps available for feature extraction")
@@ -317,7 +317,7 @@ def extract_cell_ramp_features(data_set):
     lu.log_pretty_header("Ramps:", level=2)
 
     ramp_sweep_numbers = data_set.get_sweep_numbers(
-        data_set.ontology.RAMP_NAMES,
+        data_set.ontology.ramp_names,
         clamp_mode=data_set.CURRENT_CLAMP)
     if len(ramp_sweep_numbers) == 0:
         raise er.FeatureError("No ramp sweeps available for feature extraction")

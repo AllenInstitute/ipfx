@@ -112,7 +112,7 @@ def data_for_specimen_id(
     # Identify and preprocess long square sweeps
     try:
         lsq_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
-            ontology.LONG_SQUARE_NAMES, sweep_qc_option=sweep_qc_option,
+            ontology.long_square_names, sweep_qc_option=sweep_qc_option,
             specimen_id=specimen_id)
         (lsq_sweeps,
         lsq_features,
@@ -128,7 +128,7 @@ def data_for_specimen_id(
     # Identify and preprocess short square sweeps
     try:
         ssq_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
-            ontology.SHORT_SQUARE_NAMES, sweep_qc_option=sweep_qc_option,
+            ontology.short_square_names, sweep_qc_option=sweep_qc_option,
             specimen_id=specimen_id)
         ssq_sweeps, ssq_features, _ = su.preprocess_short_square_sweeps(data_set,
             ssq_sweep_numbers)
@@ -140,7 +140,7 @@ def data_for_specimen_id(
     # Identify and preprocess ramp sweeps
     try:
         ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
-            ontology.RAMP_NAMES, sweep_qc_option=sweep_qc_option,
+            ontology.ramp_names, sweep_qc_option=sweep_qc_option,
             specimen_id=specimen_id)
         ramp_sweeps, ramp_features, _ = su.preprocess_ramp_sweeps(data_set,
             ramp_sweep_numbers)

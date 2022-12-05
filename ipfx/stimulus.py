@@ -6,48 +6,60 @@ import allensdk.core.json_utilities as ju
 
 from enum import Enum
 
-_STIMULUS_TYPE_NAME_MAPPING = {
+
+class StimulusType(Enum):
+    RAMP = "ramp"
+    LONG_SQUARE = "long_square"
+    COARSE_LONG_SQUARE = "coarse_long_square"
+    SHORT_SQUARE_TRIPLE = "short_square_triple"
+    SHORT_SQUARE = "short_square"
+    CHIRP = "chirp"
+    SEARCH = "search"
+    TEST = "test"
+    BLOWOUT = "blowout"
+    BATH = "bath"
+    SEAL = "seal"
+    BREAKIN = "breakin"
+    EXTP = "extp"
+
+
+STIMULUS_TYPE_NAME_MAPPING = {
     # Maps stimulus type to set of names
-    "ramp": {"Ramp"},
-    "long_square": {
+    StimulusType.RAMP: {"Ramp"},
+    StimulusType.LONG_SQUARE: {
         "Long Square",
         "Long Square Threshold",
         "Long Square SupraThreshold",
         "Long Square SubThreshold",
     },
-    "coarse_long_square": {
+    StimulusType.COARSE_LONG_SQUARE: {
         "C1LSCOARSE",
     },
-    "short_square_triple": {
+    StimulusType.SHORT_SQUARE_TRIPLE: {
         "Short Square - Triple",
     },
-    "short_square": {
+    StimulusType.SHORT_SQUARE: {
         "Short Square",
         "Short Square Threshold",
         "Short Square - Hold -60mV",
         "Short Square - Hold -70mV",
         "Short Square - Hold -80mV",
     },
-    "chirp": {
+    StimulusType.CHIRP: {
         "Chirp",
         "Chirp A Threshold",
         "Chirp B - Hold -65mV",
         "Chirp C - Hold -60mV",
         "Chirp D - Hold -55mV",
     },
-    "search": {"Search"},
-    "test": {"Test"},
-    "blowout": {"EXTPBLWOUT"},
-    "bath": {"EXTPINBATH"},
-    "seal": {"EXTPCllATT"},
-    "breakin": {"EXTPBREAKN"},
-    "extp": {"EXTP"}
+    StimulusType.SEARCH: {"Search"},
+    StimulusType.TEST: {"Test"},
+    StimulusType.BLOWOUT: {"EXTPBLWOUT"},
+    StimulusType.BATH: {"EXTPINBATH"},
+    StimulusType.SEAL: {"EXTPCllATT"},
+    StimulusType.BREAKIN: {"EXTPBREAKN"},
+    StimulusType.EXTP: {"EXTP"}
 }
-
-StimulusType = Enum("StimulusType", [(k.upper(), k) for k in _STIMULUS_TYPE_NAME_MAPPING.keys()])
-# e.g. ipfx.stimulus.StimulusType.detection_parameters(StimulusType. => <StimulusType.detection_parameters(StimulusType.: "long_square">
-
-STIMULUS_TYPE_NAME_MAPPING = {StimulusType(stim_type): stim_names for stim_type, stim_names in _STIMULUS_TYPE_NAME_MAPPING.items()}
 
 
 def get_stimulus_type(stimulus_name):
@@ -97,9 +109,22 @@ class StimulusOntology(object):
 
         self.stimuli = list(Stimulus(s) for s in stim_ontology_tags)
 
-        for stimulus_type, names in _STIMULUS_TYPE_NAME_MAPPING.items():
-            # Sets helper attributes like StimulusOntology.RAMP_NAMES
-            setattr(self, f"{stimulus_type.upper()}_NAMES", names)
+        # Must match Stimulus Type Name Mapping, e.g 
+        # for stimulus_type, names in _STIMULUS_TYPE_NAME_MAPPING.items():
+        #     setattr(self, f"{stimulus_type.upper()}_NAMES", names)
+        self.ramp_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.RAMP]
+        self.long_square_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.LONG_SQUARE]
+        self.coarse_long_square_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.COARSE_LONG_SQUARE]
+        self.short_square_triple_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.SHORT_SQUARE_TRIPLE]
+        self.short_square_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.SHORT_SQUARE]
+        self.chirp_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.CHIRP]
+        self.search_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.SEARCH]
+        self.test_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.TEST]
+        self.blowout_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.BLOWOUT]
+        self.bath_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.BATH]
+        self.seal_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.SEAL]
+        self.breakin_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.BREAKIN]
+        self.extp_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.EXTP]
 
 
     def find(self, tag, tag_type=None):
