@@ -7,6 +7,15 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [1.0.7] = 2022-12-5
+Changed:
+- Added StimulusType and STIMULUS_TYPE_NAME_MAPPING to stimulus ontology, replacing definitions in EphysDataset
+- Updated data_set_features to use correct sweep feature extractor detection parameters based on StimulusType
+
+## [1.0.6] = 2022-6-29
+Changed: 
+- Stop IPFX from caching its NWB Schemas when writing/modifying NWB files
+
 ## [1.0.5] = 2021-12-13
 Bug fixes: 
 - Converts nwb_version attribute to string if it is in utf-8 encoded bytes.
