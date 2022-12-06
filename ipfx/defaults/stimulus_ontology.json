@@ -2043,5 +2043,20 @@
       "core",
       "Core 1"
     ]
+  ],
+  [
+    [
+      "code",
+      "C2CHIRPA",
+      "C2CHIRPA180503"
+    ],
+    [
+      "core",
+      "Core 2"
+    ],
+    [
+      "name",
+      "Chirp A Threshold"
+    ]
   ]
 ]
