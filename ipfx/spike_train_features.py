@@ -53,7 +53,7 @@ def pause(t, spikes_df, start, end, cost_weight=1.0):
     isis = get_isis(t, thresholds)
     isi_types = spikes_df["isi_type"][:-1].values
 
-    pause_list = spkf.detect_pauses(isis, isi_types, cost_weight)
+    pause_list = detect_pauses(isis, isi_types, cost_weight)
 
     if len(pause_list) == 0:
         return 0, 0.
