@@ -84,7 +84,7 @@ def burst(t, spikes_df, tol=0.5, pause_cost=1.0):
     slow_tr_t = spikes_df["slow_trough_t"].values
     thr_v = spikes_df["threshold_v"].values
 
-    bursts = spkf.detect_bursts(isis, isi_types,
+    bursts = detect_bursts(isis, isi_types,
                               fast_tr_v, fast_tr_t,
                               slow_tr_v, slow_tr_t,
                               thr_v, tol, pause_cost)
