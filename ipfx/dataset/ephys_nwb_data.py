@@ -147,14 +147,14 @@ class EphysNWBData(EphysDataInterface):
 
         series = self.nwb.sweep_table.get_series(sweep_number)
 
-        if series is None:
+        if not series:
             raise ValueError(
                 f"No TimeSeries found for sweep number {sweep_number}."
             )
 
         matching_series = []
 
-        # Look for instances of stimulus or response PatchCLampSeries
+        # Look for instances of matching series types PatchCLampSeries
         for s in series:
             if isinstance(s, series_class):
                 matching_series.append(s)
@@ -164,29 +164,27 @@ class EphysNWBData(EphysDataInterface):
         if num_series == 1:
             return matching_series[0]
         else:
-            # check series type so we can display an appropriate error
-
-            if isinstance(series_class, self.STIMULUS):
+            # simplify series class to stimulus or response for error messages
+            if series_class == self.STIMULUS:
                 series_name = "stimulus"
-            elif isinstance(series_class, self.RESPONSE):
+            elif series_class == self.RESPONSE:
                 series_name = "response"
             else:
-                raise TypeError(
-                    f"{type(series_class)} is not a stimulus or response PatchClampSeries"
-                )
+                # Unknown series categorization so don't simplify
+                series_name = series_class
 
-            if num_series == 0:
-                raise ValueError(
-                    f"Could not find any {series_name} PatchClampSeries "
-                    f"for sweep number {sweep_number}."
-                )
-            else:
-                # check how many matching series we have
+            if num_series > 1:
                 raise ValueError(
                     f"Found {num_series} {series_name} PatchClampSeries "
                     f"{[s.name for s in matching_series]} "
                     f"for sweep number {sweep_number}."
                 )
+            else:
+                raise ValueError(
+                    f"Could not find any {series_name} PatchClampSeries "
+                    f"for sweep number {sweep_number}."
+                )
+
 
     def get_sweep_data(
         self, sweep_number: int
