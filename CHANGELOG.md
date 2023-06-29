@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [1.0.8] = 2023-06-29
+Changed:
+- Fixed an error that was obscuring underlying errors when trying to _get_series information for a PatchClampSeries
+
 ## [1.0.7] = 2022-12-5
 Changed:
 - Added StimulusType and STIMULUS_TYPE_NAME_MAPPING to stimulus ontology, replacing definitions in EphysDataset
