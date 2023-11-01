@@ -7,5 +7,5 @@ docker run -v ${PWD}:/root/ipfx \
            /bin/bash --login -c "source activate py27; \
                                  export TEST_COMPLETE=true; \
                                  pip install -r requirements.txt; \
-                                 pip install -r test_requirements.txt; \
+                                 pip install -r requirements-test.txt; \
                                  cd tests; py.test || exit 0"

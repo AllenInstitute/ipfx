@@ -12,6 +12,7 @@ pillow
 pyabf<2.3.0
 pynwb>=1.3.2,<2.0.0
 pyYAML<6.0.0
+ruamel.yaml<0.18.0
 scipy>=0.15.1
 simplejson>=3.10.0
 watchdog
