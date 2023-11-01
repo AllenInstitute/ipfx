@@ -78,5 +78,11 @@ sandbox/
 #linters
 .mypy_cache
 
-#virtualenv
-venv
+# virtualenv / environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
