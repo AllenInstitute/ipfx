@@ -1,0 +1,16 @@
+argschema
+dictdiffer
+h5py
+marshmallow
+matplotlib
+methodtools
+numpy
+pandas
+pg8000
+pillow
+pyabf
+pynwb
+pyYAML
+scipy
+simplejson
+watchdog

@@ -9,7 +9,7 @@ env:
   TEST_API_ENDPOINT: "http://api.brain-map.org"
 
 jobs:
-  test-install:
+  test-36:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -28,7 +28,35 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run tests
+        run: |
+          pip install -r requirements-test.txt
+          mkdir -p test-results
+          git lfs install
+          git config lfs.url 'https://github.com/AllenInstitute/ipfx.git/info/lfs'
+          git lfs env
+          git lfs pull
+          py.test --junitxml=test-results/junit.xml --verbose
 
+  test-39:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          sudo apt-get update 
+          sudo apt-get install -y hdf5-tools curl
+          python -m pip install --upgrade pip
+          pip install -r requirements-py3.9.txt
+          pip install allensdk
+      - name: Run tests
         run: |
           pip install -r requirements-test.txt
           mkdir -p test-results
