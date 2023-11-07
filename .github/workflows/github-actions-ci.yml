@@ -3,65 +3,99 @@ name: ci/github-actions
 on: [push, pull_request]
 
 env:
-  SKIP_LIMS: true
-  TEST_INHOUSE: false
-  ALLOW_TEST_DOWNLOADS: false
+  # SKIP_LIMS: true
+  # TEST_INHOUSE: false
+  # ALLOW_TEST_DOWNLOADS: false
   TEST_API_ENDPOINT: "http://api.brain-map.org"
 
 jobs:
-  test-36:
-    runs-on: ubuntu-20.04
+  # test-36:
+  #   runs-on: ubuntu-20.04
+  #   strategy:
+  #     matrix:
+  #       python-version: ["3.6"]
+
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #     - name: Install dependencies
+  #       run: |
+  #         sudo apt-get update 
+  #         sudo apt-get install -y hdf5-tools curl
+  #         python -m pip install --upgrade pip
+  #         pip install -r requirements.txt
+  #     - name: Run tests
+  #       run: |
+  #         pip install -r requirements-test.txt
+  #         mkdir -p test-results
+  #         git lfs install
+  #         git config lfs.url 'https://github.com/AllenInstitute/ipfx.git/info/lfs'
+  #         git lfs env
+  #         git lfs pull
+  #         py.test --junitxml=test-results/junit.xml --verbose
+
+  # test-39:
+  #   runs-on: ubuntu-20.04
+  #   strategy:
+  #     matrix:
+  #       python-version: ["3.9"]
+
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #     - name: Install dependencies
+  #       run: |
+  #         sudo apt-get update 
+  #         sudo apt-get install -y hdf5-tools curl
+  #         python -m pip install --upgrade pip
+  #         pip install -r requirements-py3.9.txt
+  #         pip install allensdk
+  #     - name: Run tests
+  #       run: |
+  #         pip install -r requirements-test.txt
+  #         mkdir -p test-results
+  #         git lfs install
+  #         git config lfs.url 'https://github.com/AllenInstitute/ipfx.git/info/lfs'
+  #         git lfs env
+  #         git lfs pull
+  #         py.test --junitxml=test-results/junit.xml --verbose
+
+  onprem:
+    name: python 3.6 on-prem test
+    runs-on: ["self-hosted"]
     strategy:
       matrix:
-        python-version: ["3.6"]
-
+        image: ["ghcr.io/sheriferson/ipfxtests:latest"]
+        branch: ["feature/**"]
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+      - uses: actions/checkout@v4
+      - name: run test in docker
         run: |
-          sudo apt-get update 
-          sudo apt-get install -y hdf5-tools curl
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Run tests
-        run: |
-          pip install -r requirements-test.txt
-          mkdir -p test-results
-          git lfs install
-          git config lfs.url 'https://github.com/AllenInstitute/ipfx.git/info/lfs'
-          git lfs env
-          git lfs pull
-          py.test --junitxml=test-results/junit.xml --verbose
-
-  test-39:
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        python-version: ["3.9"]
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          sudo apt-get update 
-          sudo apt-get install -y hdf5-tools curl
-          python -m pip install --upgrade pip
-          pip install -r requirements-py3.9.txt
-          pip install allensdk
-      - name: Run tests
-        run: |
-          pip install -r requirements-test.txt
-          mkdir -p test-results
-          git lfs install
-          git config lfs.url 'https://github.com/AllenInstitute/ipfx.git/info/lfs'
-          git lfs env
-          git lfs pull
-          py.test --junitxml=test-results/junit.xml --verbose
+          docker run \
+            --mount type=bind,source=$PWD,target=/local1/github_worker,bind-propagation=rshared \
+            -v /data/informatics/module_test_data/:/data/informatics/module_test_data/ \
+            -v /allen/aibs/informatics/module_test_data/:/allen/aibs/informatics/module_test_data/ \
+            -v /allen/programs/celltypes/production/mousecelltypes/:/allen/programs/celltypes/production/mousecelltypes/ \
+            -v /allen/programs/celltypes/workgroups/279/:/allen/programs/celltypes/workgroups/279/ \
+            -v /allen/programs/celltypes/production/humancelltypes/:/allen/programs/celltypes/production/humancelltypes/ \
+            --workdir /local1/github_worker --rm \
+            --user 1001:1001 \
+            ${{ matrix.image }} \
+                /bin/bash -c "python -m venv .venv; \
+                              source .venv/bin/activate; \
+                              pip install --upgrade pip; \
+                              pip install numpy; \
+                              pip install -r requirements.txt; \
+                              export TEST_API_ENDPOINT=http://api.brain-map.org; \
+                              pip install -r requirements-test.txt; \
+                              git config lfs.url 'https://github.com/AllenInstitute/ipfx.git/info/lfs'; \
+                              git lfs env; \
+                              git lfs pull; \
+                              python -m pytest \
+                                --junitxml=test-reports/test.xml --verbose"
