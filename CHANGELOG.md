@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 ### Changed
+- Removed Python 3.6 support
+- Updated dependencies and library for Python 3.9 to 3.11 support
+- Moved CI and testing to GitHub Actions
 
 ## [1.0.8] = 2023-06-29
 Changed:
