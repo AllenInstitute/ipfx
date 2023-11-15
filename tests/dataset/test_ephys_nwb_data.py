@@ -58,7 +58,7 @@ def nwbfile_to_test():
         **stimulus_meta_data
     )
 
-    nwbfile.add_stimulus(stimulus_series)
+    nwbfile.add_stimulus(stimulus_series, use_sweep_table=True)
 
     response_data = [1, 2, 3, 4, 5]
     response_meta_data = {
@@ -80,7 +80,7 @@ def nwbfile_to_test():
                                              **response_meta_data
                                              )
 
-    nwbfile.add_acquisition(acquisition_series)
+    nwbfile.add_acquisition(acquisition_series, use_sweep_table=True)
 
     return nwbfile
 

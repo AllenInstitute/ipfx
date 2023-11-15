@@ -2,10 +2,10 @@ name: ci/github-actions
 
 on:
   pull_request:
-    branches: [ master, feature/* ]
+    branches: [ master, feature/** ]
 
   push:
-    branches: [ master, feature/* ]
+    branches: [ master, feature/** ]
 
 
 jobs:

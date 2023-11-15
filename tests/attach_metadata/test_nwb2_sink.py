@@ -42,7 +42,7 @@ def nwbfile():
           electrode=ice,
           sweep_number=12
     )
-    _nwbfile.add_acquisition(series)
+    _nwbfile.add_acquisition(series, use_sweep_table=True)
     _nwbfile.subject = pynwb.file.Subject()
 
     return _nwbfile
@@ -50,12 +50,13 @@ def nwbfile():
 
 def test_set_container_sources(nwbfile):
     ts = pynwb.TimeSeries(
+          unit='s',
           name="a timeseries", 
           data=[1, 2, 3], 
           starting_time=0.0, 
           rate=1.0
         )
-    nwbfile.add_acquisition(ts)
+    nwbfile.add_acquisition(ts, use_sweep_table=True)
 
     nwb2_sink.set_container_sources(nwbfile, "foo")
     assert ts.container_source == "foo"
