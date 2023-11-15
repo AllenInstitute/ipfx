@@ -57,6 +57,7 @@ jobs:
       - name: run test in docker
         run: |
           docker run \
+          --env-file ~/env.list \
           --mount type=bind,source=$PWD,target=/local1/github_worker,bind-propagation=rshared \
           -v /data/informatics/module_test_data/:/data/informatics/module_test_data/ \
           -v /allen/aibs/informatics/module_test_data/:/allen/aibs/informatics/module_test_data/ \
