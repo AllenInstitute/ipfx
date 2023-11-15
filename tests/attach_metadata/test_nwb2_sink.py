@@ -48,22 +48,6 @@ def nwbfile():
     return _nwbfile
 
 
-def test_set_container_sources(nwbfile):
-    ts = pynwb.TimeSeries(
-          unit='s',
-          name="a timeseries", 
-          data=[1, 2, 3], 
-          starting_time=0.0, 
-          rate=1.0
-        )
-    nwbfile.add_acquisition(ts, use_sweep_table=True)
-
-    nwb2_sink.set_container_sources(nwbfile, "foo")
-    assert ts.container_source == "foo"
-    assert nwbfile.container_source == "foo"
-    assert nwbfile.subject.container_source == "foo"
-
-
 def test_get_single_ic_electrode(nwbfile):
     sink = nwb2_sink.Nwb2Sink(None)
     sink.nwbfile = nwbfile
