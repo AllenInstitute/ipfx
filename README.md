@@ -23,5 +23,5 @@ We welcome contributions! Please see our [contribution guide](https://github.com
 Deprecation Warning
 -------------------
 
-The 1.1.0 release of IPFX drops support for Python 3.6 which reached end of life and stopped receiving security updated on December 23, 2021.
+The 2.0.0 release of IPFX drops support for Python 3.6 which reached end of life and stopped receiving security updated on December 23, 2021.
 IPFX is now tested on Python 3.9 and higher.
