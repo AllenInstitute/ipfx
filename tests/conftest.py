@@ -87,10 +87,7 @@ def pytest_collection_modifyitems(config, items):
     """
 
     skip_requires_lims = pytest.mark.skipif(
-        (
-            os.environ.get("SKIP_LIMS", "false") == "true"
-            or not lq.able_to_connect_to_lims()
-        ),
+        os.environ.get("SKIP_LIMS", "false") == "true",
         reason='This test requires connection to lims'
     )
     if config.getoption("--do-x-nwb-tests"):
@@ -117,7 +114,7 @@ def pytest_collection_modifyitems(config, items):
     )
 
     for item in items:
-        if 'requires_lims' in item.keywords:
+        if item.get_closest_marker("requires_lims"):
             item.add_marker(skip_requires_lims)
 
         if "xnwbtest" in item.keywords:

@@ -112,7 +112,7 @@ class MetadataSink(abc.ABC):
             targets = self.targets
         elif isinstance(targets, dict):
             targets = [targets]
-        elif isinstance(targets, collections.Sequence):
+        elif isinstance(targets, collections.abc.Sequence):
             targets = list(targets)
         else:
             raise ValueError(

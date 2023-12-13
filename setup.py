@@ -68,7 +68,8 @@ setup(
         "License :: Other/Proprietary License", # Allen Institute Software License
         "Natural Language :: English",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.11",
         "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
     cmdclass={'check_version': CheckVersionCommand}

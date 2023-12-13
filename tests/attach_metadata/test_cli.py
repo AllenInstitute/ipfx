@@ -60,9 +60,11 @@ def simple_nwb(base_path):
         pynwb.TimeSeries(
             name="a timeseries", 
             data=[1, 2, 3], 
+            unit='s',
             starting_time=0.0, 
             rate=1.0
-        )
+        ),
+        use_sweep_table=True
     )
     with pynwb.NWBHDF5IO(path=in_nwb_path, mode="w") as writer:
         writer.write(nwbfile)

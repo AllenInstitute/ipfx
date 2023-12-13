@@ -96,7 +96,7 @@ visual git plugins, we prefer the following convention for branch naming:
     GH-712/bugfix/auto-reward-key
     GH-9999/feature/parallel-behavior-analysis
     ```
-* Create an environment and install necessary requirements: `requirements.txt` and `test_requirements.txt`
+* Create an environment and install necessary requirements: `requirements.txt` and `requirements-test.txt`
 * Start writing code!
 
 ### Style guidelines

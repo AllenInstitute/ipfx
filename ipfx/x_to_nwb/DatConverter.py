@@ -71,10 +71,10 @@ class DatConverter:
             nwbFile.add_ic_electrode(electrodes)
 
             for i in self._createAcquiredSeries(electrodes, elem):
-                nwbFile.add_acquisition(i)
+                nwbFile.add_acquisition(i, use_sweep_table=True)
 
             for i in self._createStimulusSeries(electrodes, elem):
-                nwbFile.add_stimulus(i)
+                nwbFile.add_stimulus(i, use_sweep_table=True)
 
             if multipleGroupsPerFile:
                 outFileFmt = outFile

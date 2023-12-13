@@ -22,8 +22,6 @@ We welcome contributions! Please see our [contribution guide](https://github.com
 
 Deprecation Warning
 -------------------
-The 1.0.0 release of ipfx brings some new features, like NWB2 support, along with improvements to our documentation and testing. We will also drop support for
-- NWB1
-- Python 2
 
-Older versions of ipfx will continue to be available, but may receive only occasional bugfixes and patches.
+The 2.0.0 release of IPFX drops support for Python 3.6 which reached end of life and stopped receiving security updated on December 23, 2021.
+IPFX is now tested on Python 3.9 and higher.
