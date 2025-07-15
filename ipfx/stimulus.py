@@ -4,6 +4,70 @@ import warnings
 
 import allensdk.core.json_utilities as ju
 
+from enum import Enum
+
+
+class StimulusType(Enum):
+    RAMP = "ramp"
+    LONG_SQUARE = "long_square"
+    COARSE_LONG_SQUARE = "coarse_long_square"
+    SHORT_SQUARE_TRIPLE = "short_square_triple"
+    SHORT_SQUARE = "short_square"
+    CHIRP = "chirp"
+    SEARCH = "search"
+    TEST = "test"
+    BLOWOUT = "blowout"
+    BATH = "bath"
+    SEAL = "seal"
+    BREAKIN = "breakin"
+    EXTP = "extp"
+
+
+STIMULUS_TYPE_NAME_MAPPING = {
+    # Maps stimulus type to set of names
+    StimulusType.RAMP: {"Ramp"},
+    StimulusType.LONG_SQUARE: {
+        "Long Square",
+        "Long Square Threshold",
+        "Long Square SupraThreshold",
+        "Long Square SubThreshold",
+    },
+    StimulusType.COARSE_LONG_SQUARE: {
+        "C1LSCOARSE",
+    },
+    StimulusType.SHORT_SQUARE_TRIPLE: {
+        "Short Square - Triple",
+    },
+    StimulusType.SHORT_SQUARE: {
+        "Short Square",
+        "Short Square Threshold",
+        "Short Square - Hold -60mV",
+        "Short Square - Hold -70mV",
+        "Short Square - Hold -80mV",
+    },
+    StimulusType.CHIRP: {
+        "Chirp",
+        "Chirp A Threshold",
+        "Chirp B - Hold -65mV",
+        "Chirp C - Hold -60mV",
+        "Chirp D - Hold -55mV",
+    },
+    StimulusType.SEARCH: {"Search"},
+    StimulusType.TEST: {"Test"},
+    StimulusType.BLOWOUT: {"EXTPBLWOUT"},
+    StimulusType.BATH: {"EXTPINBATH"},
+    StimulusType.SEAL: {"EXTPCllATT"},
+    StimulusType.BREAKIN: {"EXTPBREAKN"},
+    StimulusType.EXTP: {"EXTP"}
+}
+
+
+def get_stimulus_type(stimulus_name):
+    for stim_type, stim_names in STIMULUS_TYPE_NAME_MAPPING.items():
+        if stimulus_name in stim_names:
+            return stim_type
+    else:
+        raise ValueError(f"stimulus_name {stimulus_name} not found.\nSTIMULUS_TYPE_NAME_MAPPING: {STIMULUS_TYPE_NAME_MAPPING}")
 
 
 class Stimulus(object):
@@ -45,29 +109,23 @@ class StimulusOntology(object):
 
         self.stimuli = list(Stimulus(s) for s in stim_ontology_tags)
 
-        self.ramp_names = ( "Ramp",)
+        # Must match Stimulus Type Name Mapping, e.g 
+        # for stimulus_type, names in _STIMULUS_TYPE_NAME_MAPPING.items():
+        #     setattr(self, f"{stimulus_type.upper()}_NAMES", names)
+        self.ramp_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.RAMP]
+        self.long_square_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.LONG_SQUARE]
+        self.coarse_long_square_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.COARSE_LONG_SQUARE]
+        self.short_square_triple_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.SHORT_SQUARE_TRIPLE]
+        self.short_square_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.SHORT_SQUARE]
+        self.chirp_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.CHIRP]
+        self.search_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.SEARCH]
+        self.test_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.TEST]
+        self.blowout_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.BLOWOUT]
+        self.bath_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.BATH]
+        self.seal_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.SEAL]
+        self.breakin_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.BREAKIN]
+        self.extp_names = STIMULUS_TYPE_NAME_MAPPING[StimulusType.EXTP]
 
-        self.long_square_names = ( "Long Square",
-                                   "Long Square Threshold",
-                                   "Long Square SupraThreshold",
-                                   "Long Square SubThreshold" )
-
-        self.coarse_long_square_names = ( "C1LSCOARSE",)
-        self.short_square_triple_names = ( "Short Square - Triple", )
-
-        self.short_square_names = ( "Short Square",
-                                    "Short Square Threshold",
-                                    "Short Square - Hold -60mV",
-                                    "Short Square - Hold -70mV",
-                                    "Short Square - Hold -80mV" )
-
-        self.search_names = ("Search",)
-        self.test_names = ("Test",)
-        self.blowout_names = ( 'EXTPBLWOUT', )
-        self.bath_names = ( 'EXTPINBATH', )
-        self.seal_names = ( 'EXTPCllATT', )
-        self.breakin_names = ( 'EXTPBREAKN', )
-        self.extp_names = ( 'EXTP', )
 
     def find(self, tag, tag_type=None):
         """

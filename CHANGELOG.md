@@ -7,8 +7,27 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [2.0.0] = 2024-10-23
+Changed:
+- Removed Python 3.6 support
+- Updated dependencies and library for Python 3.9 to 3.11 support
+- Moved CI and testing to GitHub Actions
+
+## [1.0.8] = 2023-06-29
+Changed:
+- Fixed an error that was obscuring underlying errors when trying to _get_series information for a PatchClampSeries
+
+## [1.0.7] = 2022-12-5
+Changed:
+- Added StimulusType and STIMULUS_TYPE_NAME_MAPPING to stimulus ontology, replacing definitions in EphysDataset
+- Updated data_set_features to use correct sweep feature extractor detection parameters based on StimulusType
+
+## [1.0.6] = 2022-6-29
+Changed:
+- Stop IPFX from caching its NWB Schemas when writing/modifying NWB files
+
 ## [1.0.5] = 2021-12-13
-Bug fixes: 
+Bug fixes:
 - Converts nwb_version attribute to string if it is in utf-8 encoded bytes.
 
 ## [1.0.4] = 2021-07-29

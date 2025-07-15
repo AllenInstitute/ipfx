@@ -79,10 +79,10 @@ class ABFConverter:
         nwbFile.add_ic_electrode(electrodes)
 
         for i in self._createStimulusSeries(electrodes):
-            nwbFile.add_stimulus(i)
+            nwbFile.add_stimulus(i, use_sweep_table=True)
 
         for i in self._createAcquiredSeries(electrodes):
-            nwbFile.add_acquisition(i)
+            nwbFile.add_acquisition(i, use_sweep_table=True)
 
         with NWBHDF5IO(outFile, "w") as io:
             io.write(nwbFile, cache_spec=True)

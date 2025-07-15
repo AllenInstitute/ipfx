@@ -35,9 +35,10 @@
 #
 import functools
 import numpy as np
+from collections import defaultdict
 import logging
 from .feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
-from ipfx.dataset.ephys_data_set import EphysDataSet
+from ipfx.stimulus import StimulusOntology, StimulusType, get_stimulus_type
 from . import spike_features as spkf
 from . import stimulus_protocol_analysis as spa
 from . import stim_features as stf
@@ -45,16 +46,17 @@ from . import feature_record as fr
 from . import error as er
 from . import logging_utils as lu
 
-DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 
-DETECTION_PARAMETERS = {
-    EphysDataSet.SHORT_SQUARE: {'thresh_frac_floor': 0.1 },
-    EphysDataSet.RAMP: { },
-    EphysDataSet.LONG_SQUARE: { }
-}
-
-
-
+DETECTION_PARAMETERS = defaultdict(
+    lambda: {},
+    {
+        # To override detection parameters for specific StimulusType, add it here.
+        # If not explicitly listed, default detection parameters will be used (see extractors_for_sweeps()).
+        # See ipfx.stimulus for stimulus types
+        StimulusType.SHORT_SQUARE: {'thresh_frac_floor': 0.1 },
+        StimulusType.CHIRP: {"filter_frequency": None}
+    }
+)
 
 
 SUBTHRESHOLD_LONG_SQUARE_MIN_AMPS = {
@@ -65,8 +67,18 @@ SUBTHRESHOLD_LONG_SQUARE_MIN_AMPS = {
 TEST_PULSE_DURATION_SEC = 0.4
 
 
-def detection_parameters(stimulus_name):
-    return DETECTION_PARAMETERS.get(stimulus_name, {})
+def detection_parameters(stimulus_type):
+    return DETECTION_PARAMETERS[stimulus_type]
+
+
+def detection_parameters_from_stimulus_name(stimulus_name):
+    try:
+        stimulus_type = get_stimulus_type(stimulus_name)
+        dp = detection_parameters(stimulus_type)
+    except ValueError as e:
+        logging.warning(f"Warning: {e}\nUsing default detection parameters")
+        dp = detection_parameters(None)
+    return dp
 
 
 def record_errors(fn):
@@ -102,6 +114,7 @@ def extractors_for_sweeps(sweep_set,
                           dv_cutoff=20., thresh_frac=0.05,
                           reject_at_stim_start_interval=0,
                           min_peak=-30,
+                          filter_frequency=10.,
                           thresh_frac_floor=None,
                           est_window=None,
                           start=None, end=None):
@@ -139,6 +152,7 @@ def extractors_for_sweeps(sweep_set,
         start=start,
         end=end,
         min_peak=min_peak,
+        filter=filter_frequency,
         reject_at_stim_start_interval=reject_at_stim_start_interval)
 
     stfx = SpikeTrainFeatureExtractor(start, end)
@@ -162,7 +176,7 @@ def extract_sweep_features(data_set, sweep_table):
         sweep_set = data_set.sweep_set(sweep_numbers)
         sweep_set.align_to_start_of_epoch("experiment")
 
-        dp = detection_parameters(stimulus_name).copy()
+        dp = detection_parameters_from_stimulus_name(stimulus_name).copy()
         for k in [ "start", "end" ]:
             if k in dp:
                 dp.pop(k)
@@ -246,7 +260,7 @@ def extract_cell_long_square_features(data_set, subthresh_min_amp=None):
     lsq_spx, lsq_spfx = extractors_for_sweeps(lsq_sweeps,
                                               start=lsq_start,
                                               end=lsq_start+lsq_dur,
-                                              **detection_parameters(data_set.LONG_SQUARE))
+                                              **detection_parameters(StimulusType.LONG_SQUARE))
 
     lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx,
                                     subthresh_min_amp=subthresh_min_amp)
@@ -285,7 +299,7 @@ def extract_cell_short_square_features(data_set):
     SSQ_WINDOW = 0.001
     ssq_spx, ssq_spfx = extractors_for_sweeps(ssq_sweeps,
                                               est_window=[ssq_start, ssq_start+SSQ_WINDOW],
-                                              **detection_parameters(data_set.SHORT_SQUARE))
+                                              **detection_parameters(StimulusType.SHORT_SQUARE))
 
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
 
@@ -315,7 +329,7 @@ def extract_cell_ramp_features(data_set):
 
     ramp_spx, ramp_spfx = extractors_for_sweeps(ramp_sweeps,
                                                 start=ramp_start,
-                                                **detection_parameters(data_set.RAMP))
+                                                **detection_parameters(StimulusType.RAMP))
     ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
     ramp_features = ramp_an.analyze(ramp_sweeps)
     return ramp_an.as_dict(

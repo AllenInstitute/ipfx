@@ -31,7 +31,12 @@ def is_file_mies(path: str) -> bool:
     with h5py.File(path, "r") as fil:
         if "generated_by" in fil["general"].keys():
             generated_by = dict(fil["general"]["generated_by"][:])
-            return generated_by.get("Package", "None") == "MIES"
+            try:
+                decoded_generation_info = {k.decode(): v.decode() for k, v in generated_by.items()}
+            except:
+                decoded_generation_info = generated_by
+
+            return decoded_generation_info.get("Package", "None") == "MIES"
 
     return False
 

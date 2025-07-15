@@ -92,7 +92,6 @@ class Nwb2Sink(MetadataSink):
         recorded until _reload_nwbfile
         """
 
-        set_container_sources(self.nwbfile, self._h5_file.filename)
         self.nwbfile.set_modified(True)
         # Because the NWB schema versions of NWB data produced by MIES are older
         # we do not want to cache the newer schema versions that IPFX is currently using
@@ -236,36 +235,3 @@ class Nwb2Sink(MetadataSink):
                 file_.write(self._data.getvalue())
 
         self._reload_nwbfile()
-
-
-def set_container_sources(
-        container: hdmf.container.AbstractContainer,
-        source: str
-):
-    """Traverse an NWBFile starting at a given container, setting the
-    container_source attribute inplace on each container.
-
-    Parameters
-    ----------
-    container : container_source will be set on this object as well as on 
-        each of its applicable children.
-    source : The new value of container source
-    """
-    children = [container]
-    while children:
-        current = children.pop()
-
-        # 💀💀💀
-        # container_source is set on write, but cannot be overrwritten, making 
-        # read -> modify -> write elsewhere
-        # pretty tricky!
-        # this is a fragile workaround
-        if hasattr(current, "_AbstractContainer__container_source"):
-            setattr(
-                current, 
-                "_AbstractContainer__container_source",
-                source
-            )
-
-        if hasattr(current, "children"):
-            children.extend(current.children)

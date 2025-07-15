@@ -15,6 +15,7 @@ import ipfx.stimulus_protocol_analysis as spa
 import ipfx.data_set_features as dsf
 import ipfx.time_series_utils as tsu
 import ipfx.error as er
+from ipfx.stimulus import StimulusType
 from ipfx.sweep import SweepSet
 from ipfx.dataset.create import create_ephys_data_set
 
@@ -221,7 +222,7 @@ def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthr
         start=lsq_start,
         end=lsq_end,
         min_peak=-25,
-        **dsf.detection_parameters(data_set.LONG_SQUARE)
+        **dsf.detection_parameters(StimulusType.LONG_SQUARE)
     )
     lsq_an = spa.LongSquareAnalysis(lsq_spx, lsq_spfx,
         subthresh_min_amp=subthresh_min_amp)
@@ -243,7 +244,7 @@ def preprocess_short_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, spike
                                                   start=ssq_start,
                                                   end=ssq_end + spike_window,
                                                   reject_at_stim_start_interval=0.0002,
-                                                  **dsf.detection_parameters(data_set.SHORT_SQUARE))
+                                                  **dsf.detection_parameters(StimulusType.SHORT_SQUARE))
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
     ssq_features = ssq_an.analyze(ssq_sweeps)
 
@@ -259,7 +260,7 @@ def preprocess_ramp_sweeps(data_set, sweep_numbers):
     ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
     ramp_spx, ramp_spfx = dsf.extractors_for_sweeps(ramp_sweeps,
                                                 start = ramp_start,
-                                                **dsf.detection_parameters(data_set.RAMP))
+                                                **dsf.detection_parameters(StimulusType.RAMP))
     ramp_an = spa.RampAnalysis(ramp_spx, ramp_spfx)
     ramp_features = ramp_an.analyze(ramp_sweeps)
 
