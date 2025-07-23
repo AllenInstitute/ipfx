@@ -124,7 +124,9 @@ def fit_fi_slope(stim_amps, avg_rates):
     """Fit the rate and stimulus amplitude to a line and return the slope of the fit."""
 
     if len(stim_amps) < 2:
-        raise er.FeatureError("Cannot fit f-I curve slope with less than two sweeps")
+#         raise er.FeatureError("Cannot fit f-I curve slope with less than two sweeps")
+        logging.info("Cannot fit f-I curve slope with less than two sweeps")
+        return np.nan
 
     x = stim_amps
     y = avg_rates
