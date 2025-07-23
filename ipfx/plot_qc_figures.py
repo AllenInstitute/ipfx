@@ -11,7 +11,7 @@ import scipy.misc
 import datetime
 import matplotlib.pyplot as plt
 import glob
-from allensdk.config.manifest import Manifest
+from pathlib import Path
 
 import matplotlib
 matplotlib.use('agg')
@@ -743,6 +743,57 @@ def exp_curve(x, a, inv_tau, y0):
     return y0 + a * np.exp(-inv_tau * x)
 
 
+def safe_mkdir(directory):
+    '''Create path if not already there.
+
+    Parameters
+    ----------
+    directory : string
+        create it if it doesn't exist
+
+    Returns
+    -------
+    leftmost : string
+        most rootward directory created
+
+    '''
+
+    parts = Path(directory).parts
+    sub_paths = [Path(parts[0])]
+    for part in parts[1:]:
+        sub_paths.append(sub_paths[-1] / part)
+
+    leftmost = None
+    for sub_path in sub_paths:
+        if not sub_path.exists():
+            leftmost = str(sub_path)
+
+    try:
+        os.makedirs(directory)
+    except OSError as e:
+        if ((sys.platform == "darwin") and (e.errno == errno.EISDIR) and \
+            (e.filename == "/")):
+            # undocumented behavior of mkdir on OSX where for / it raises
+            # EISDIR and not EEXIST
+            # https://bugs.python.org/issue24231 (old but still holds true)
+            pass
+        elif sys.platform == "win32" and e.errno == errno.EACCES:
+            root_path = os.path.abspath(os.sep)
+            if e.filename == root_path or \
+               e.filename == root_path.replace("\\", "/"):
+                # When attempting to os.makedirs the root drive letter on
+                # Windows, EACCES is raised, not EEXIST
+                pass
+            else:
+                raise
+        elif e.errno == errno.EEXIST:
+            pass
+        else:
+            raise
+
+    return leftmost
+
+
 def display_features(qc_fig_dir, data_set, feature_data):
     """
 
@@ -763,8 +814,8 @@ def display_features(qc_fig_dir, data_set, feature_data):
         shutil.rmtree(qc_fig_dir)
 
     image_dir = os.path.join(qc_fig_dir,"img")
-    Manifest.safe_mkdir(qc_fig_dir)
-    Manifest.safe_mkdir(image_dir)
+    safe_mkdir(qc_fig_dir)
+    safe_mkdir(image_dir)
 
     logging.info("Saving figures")
     make_sweep_page(data_set, qc_fig_dir)
