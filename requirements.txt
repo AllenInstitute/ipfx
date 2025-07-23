@@ -1,4 +1,3 @@
-allensdk
 argschema
 dictdiffer
 h5py
