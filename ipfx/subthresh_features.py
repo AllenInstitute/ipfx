@@ -139,7 +139,8 @@ def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     -------
     sag : fraction that membrane potential relaxes back to baseline
     """
-    v_peak, peak_index = voltage_deflection(t, v, i, start, end, "min")
+    v_peak, peak_index = voltage_deflection(t, v, i,
+        start, end - baseline_interval, "min")
     v_peak_avg = tsu.average_voltage(v, t, start=t[peak_index] - peak_width / 2.,
                                  end=t[peak_index] + peak_width / 2.)
     v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
@@ -157,7 +158,8 @@ def input_resistance(t_set, i_set, v_set, start, end, baseline_interval=0.1):
     i_vals = []
     for t, i, v, in zip(t_set, i_set, v_set):
         v_peak, min_index = voltage_deflection(t, v, i, start, end, 'min')
-        v_vals.append(v_peak)
+        v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
+        v_vals.append(v_peak - v_baseline)
         i_vals.append(i[min_index])
 
     v = np.array(v_vals)
@@ -166,11 +168,11 @@ def input_resistance(t_set, i_set, v_set, start, end, baseline_interval=0.1):
     if len(v) == 1:
         # If there's just one sweep, we'll have to use its own baseline to estimate
         # the input resistance
-        v = np.append(v, baseline_voltage(t_set[0], v_set[0], start, baseline_interval=baseline_interval))
+        v = np.append(v, 0.)
         i = np.append(i, 0.)
 
     A = np.vstack([i, np.ones_like(i)]).T
-    m, c = np.linalg.lstsq(A, v,rcond=None)[0]
+    m, c = np.linalg.lstsq(A, v, rcond=None)[0]
 
     return m * 1e3
 
