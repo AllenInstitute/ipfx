@@ -124,7 +124,7 @@ def convertDataset(array, compression):
 
 def getPackageInfo():
     """
-    Return a dictionary with version information for the allensdk package
+    Return a dictionary with version information for the ipfx package
     """
 
     def get_git_version():
@@ -144,7 +144,7 @@ def getPackageInfo():
         return f"({branch}) {rev}"
 
     try:
-        package_version = get_distribution('allensdk').version
+        package_version = get_distribution('ipfx').version
     except DistributionNotFound:  # not installed as a package
         package_version = None
 
