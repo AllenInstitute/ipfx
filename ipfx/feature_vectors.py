@@ -788,6 +788,7 @@ def psth_vector(spike_info_list, start, end, width=50):
         spike_count = np.ones_like(thresh_t)
         one_ms = 0.001
         duration = np.round(end, decimals=3) - np.round(start, decimals=3) # round to nearest ms to deal with float approximations
+        duration = np.round(duration, decimals=3)
         n_bins = int(duration / one_ms) // width
         bin_edges = np.linspace(start, end, n_bins + 1) # includes right edge, so adding one to desired bin number
         bin_width = bin_edges[1] - bin_edges[0]
@@ -840,6 +841,7 @@ def inst_freq_vector(spike_info_list, start, end, width=20, gap_factor=4):
 
         one_ms = 0.001
         duration = np.round(end, decimals=3) - np.round(start, decimals=3) # round to nearest ms to deal with float approximations
+        duration = np.round(duration, decimals=3)
         n_bins = int(duration / one_ms) // width
         bin_edges = np.linspace(start, end, n_bins + 1) # includes right edge, so adding one to desired bin number
         bin_width = bin_edges[1] - bin_edges[0]
@@ -916,6 +918,7 @@ def spike_feature_vector(feature, spike_info_list, start, end, width=20):
 
         one_ms = 0.001
         duration = np.round(end, decimals=3) - np.round(start, decimals=3) # round to nearest ms to deal with float approximations
+        duration = np.round(duration, decimals=3)
         n_bins = int(duration / one_ms) // width
         bin_edges = np.linspace(start, end, n_bins + 1) # includes right edge, so adding one to desired bin number
         bin_width = bin_edges[1] - bin_edges[0]
