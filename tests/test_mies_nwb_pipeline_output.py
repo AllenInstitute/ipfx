@@ -3,7 +3,7 @@ from builtins import str
 import pytest
 import pandas as pd
 import os
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 from ipfx.bin.run_pipeline import run_pipeline
 from pkg_resources import resource_filename
 from dictdiffer import diff
@@ -81,13 +81,13 @@ def test_mies_nwb_pipeline_output(input_json, output_json, tmpdir_factory):
 
     output_diff = list(diff(expected, obtained, tolerance=0.001))
 
-    # There is a known issue with newer MIES-generated NWBs: They report 
-    # recording date in offsetless UTC, rather than local time +- an offset to 
+    # There is a known issue with newer MIES-generated NWBs: They report
+    # recording date in offsetless UTC, rather than local time +- an offset to
     # UTC as in the older generation.
     unacceptable = []
     for item in output_diff:
         if not "recording_date" in item[1]:
-            unacceptable.append(item)      
+            unacceptable.append(item)
 
     if unacceptable:
         print(unacceptable)
