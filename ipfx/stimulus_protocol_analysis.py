@@ -192,6 +192,9 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         calc_subthresh_features = subthreshold_sweep_features[ (subthreshold_sweep_features["stim_amp"] < self.SUBTHRESH_MAX_AMP) & \
                                                             (subthreshold_sweep_features["stim_amp"] > self.subthresh_min_amp) ].copy()
 
+        # only use the last-acquired sweeps
+        calc_subthresh_features.drop_duplicates("stim_amp", keep="last", inplace=True)
+
         if len(calc_subthresh_features) == 0:
             error_string = F"No subthreshold long square sweeps with stim_amp " \
                            F"in range [{self.subthresh_min_amp,self.SUBTHRESH_MAX_AMP}] " \
