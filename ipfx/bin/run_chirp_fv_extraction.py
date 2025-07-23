@@ -32,9 +32,9 @@ class CollectChirpFeatureVectorParameters(ags.ArgSchema):
         ],
         cli_as_single_argument=True)
     data_source = ags.fields.String(
-        description="Source of NWB files ('sdk' or 'lims')",
-        default="sdk",
-        validate=lambda x: x in ["sdk", "lims"]
+        description="Source of NWB files ('lims' is only currently implemented option)",
+        default="lims",
+        validate=lambda x: x in ["lims"]
         )
 
 
