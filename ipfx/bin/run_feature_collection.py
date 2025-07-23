@@ -20,9 +20,9 @@ class CollectFeatureParameters(ags.ArgSchema):
     include_failed_cells = ags.fields.Boolean(default=False)
     run_parallel = ags.fields.Boolean(default=True)
     data_source = ags.fields.String(
-        description="Source of NWB files ('sdk' or 'lims' or 'filesystem')",
-        default="sdk",
-        validate=lambda x: x in ["sdk", "lims", "filesystem"]
+        description="Source of NWB files ('lims' or 'filesystem')",
+        default="lims",
+        validate=lambda x: x in ["lims", "filesystem"]
         )
 
 
