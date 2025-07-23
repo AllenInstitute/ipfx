@@ -6,7 +6,7 @@ import ipfx.lims_queries as lq
 import ipfx.feature_vectors as fv
 import ipfx.script_utils as su
 from ipfx.stimulus import StimulusOntology
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import logging
 from multiprocessing import Pool
 from functools import partial

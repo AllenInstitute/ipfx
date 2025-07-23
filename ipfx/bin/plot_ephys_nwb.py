@@ -6,7 +6,7 @@ from ipfx.dataset.create import create_ephys_data_set
 from ipfx.qc_feature_extractor import sweep_qc_features
 from ipfx.utilities import drop_failed_sweeps
 from ipfx.stimulus import StimulusOntology
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 from typing import (
     Optional, List, Dict, Tuple, Collection, Sequence, Union
 )
@@ -27,11 +27,11 @@ def plot_data_set(data_set,
         data_set.sweep_info = sweep_qc_features(data_set)
 
     sweep_table = data_set.filtered_sweep_table(clamp_mode=clamp_mode, stimuli=stimuli, stimuli_exclude=stimuli_exclude)
-    
+
     if len(sweep_table)==0:
         warnings.warn("No sweeps to plot")
         return
-    
+
     height_ratios, width_ratios = axes_ratios(sweep_table)
 
     fig, ax = plt.subplots(len(height_ratios), 3,
@@ -51,7 +51,7 @@ def plot_data_set(data_set,
         annot = sweep_numbers.astype(str)
         if show_amps:
             annot += sweep_set_table['stimulus_amplitude'].apply(": {:.3g} pA".format)
-            
+
 
         ax_a = ax[fig_row,0]
         ax_i = ax[fig_row,1]
