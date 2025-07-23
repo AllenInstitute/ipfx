@@ -16,37 +16,65 @@ class CollectFeatureParameters(ags.ArgSchema):
     output_file = ags.fields.OutputFile(default=None)
     input = ags.fields.InputFile(default=None, allow_none=True)
     project = ags.fields.String(default="T301")
-    include_failed_sweeps = ags.fields.Boolean(default=False)
     include_failed_cells = ags.fields.Boolean(default=False)
     run_parallel = ags.fields.Boolean(default=True)
     data_source = ags.fields.String(
         description="Source of NWB files ('sdk' or 'lims' or 'filesystem')",
         default="sdk",
-        validate=lambda x: x in ["sdk", "lims", "filesystem"]
+        validate=lambda x: x in ["sdk", "lims", "lims-nwb2", "filesystem"]
         )
+    manual_fail_sweep_file = ags.fields.InputFile()
+    sweep_qc_option = ags.fields.String(
+        description=("Sweep-level QC option - "
+            "'none': use all sweeps; "
+            "'lims-passed-only': check passed status with LIMS and "
+            "only used passed sweeps "
+            "'lims-passed-except-delta-vm': check status with LIMS and "
+            "use passed sweeps and sweeps where only failure criterion is delta_vm"
+            ),
+        default='none'
+    )
 
 
-def data_for_specimen_id(specimen_id, passed_only, data_source, ontology, file_list=None):
+def data_for_specimen_id(specimen_id, sweep_qc_option, data_source, ontology,
+        file_list=None, manual_fail_sweeps=None):
     data_set = su.dataset_for_specimen_id(specimen_id, data_source, ontology, file_list)
     if type(data_set) is dict and "error" in data_set:
         logging.warning("Problem getting AibsDataSet for specimen {:d} from LIMS".format(specimen_id))
         return {}
 
     try:
-        lsq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.long_square_names)
-        ssq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.short_square_names)
-        ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.ramp_names)
+        lsq_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
+            ontology.long_square_names,
+            sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id)
+        if manual_fail_sweeps is not None and specimen_id in manual_fail_sweeps:
+            lsq_sweep_numbers = np.array([sn for sn in lsq_sweep_numbers if sn not in manual_fail_sweeps[specimen_id]])
+
+        ssq_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
+            ontology.short_square_names,
+            sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id)
+        if manual_fail_sweeps is not None and specimen_id in manual_fail_sweeps:
+            ssq_sweep_numbers = np.array([sn for sn in ssq_sweep_numbers if sn not in manual_fail_sweeps[specimen_id]])
+
+        ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
+            ontology.ramp_names,
+            sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id)
+        if manual_fail_sweeps is not None and specimen_id in manual_fail_sweeps:
+            ramp_sweep_numbers = np.array([sn for sn in ramp_sweep_numbers if sn not in manual_fail_sweeps[specimen_id]])
     except Exception as detail:
-        logging.warn("Exception when processing specimen {:d}".format(specimen_id))
-        logging.warn(detail)
+        logging.warning("Exception when processing specimen {:d}".format(specimen_id))
+        logging.warning(detail)
 #         return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=1)}}
         return {}
 
     try:
         result = extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_numbers)
     except Exception as detail:
-        logging.warn("Exception when processing specimen {:d}".format(specimen_id))
-        logging.warn(detail)
+        logging.warning("Exception when extracting features for specimen {:d}".format(specimen_id))
+        logging.warning(detail)
 #         return {"error": {"type": "processing", "details": traceback.format_exc(limit=1)}}
         return {}
 
@@ -55,7 +83,7 @@ def data_for_specimen_id(specimen_id, passed_only, data_source, ontology, file_l
 
 
 def extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_numbers,
-                     amp_interval=20, max_above_rheo=100):
+                     amp_interval=10, max_above_rheo=100):
     features = {}
     # RAMP FEATURES -----------------
     if len(ramp_sweep_numbers) > 0:
@@ -97,7 +125,7 @@ def extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_
         mask_supra = sweep_table["stim_amp"] >= basic_lsq_features["rheobase_i"]
         sweep_indexes = fv._consolidated_long_square_indexes(sweep_table.loc[mask_supra, :])
         amps = np.rint(sweep_table.loc[sweep_indexes, "stim_amp"].values - basic_lsq_features["rheobase_i"])
-        spike_data = np.array(basic_lsq_features["spikes_set"])
+        spike_data = basic_lsq_features["spikes_set"]
 
         for amp, swp_ind in zip(amps, sweep_indexes):
             if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):
@@ -234,20 +262,30 @@ def lin_sqrt_fit(x, y):
 
 
 def run_feature_collection(ids=None, project="T301", include_failed_sweeps=True, include_failed_cells=False,
-         output_file="", run_parallel=True, data_source="lims", file_list=None, **kwargs):
+         output_file="", run_parallel=True, data_source="lims", file_list=None, manual_fail_sweep_file=None, sweep_qc_option="none", **kwargs):
     if ids is not None:
         specimen_ids = ids
     else:
         specimen_ids = lq.project_specimen_ids(project, passed_only=not include_failed_cells)
 
+    if manual_fail_sweep_file is not None:
+        manual_fail_df = pd.read_csv(manual_fail_sweep_file)
+        manual_fail_sweep_dict = {}
+        for specimen_id in manual_fail_df.specimen_id.unique():
+            sweeps_for_specimen = manual_fail_df.loc[manual_fail_df.specimen_id == specimen_id, "sweep_number"].tolist()
+            manual_fail_sweep_dict[specimen_id] = sweeps_for_specimen
+    else:
+        manual_fail_sweep_dict = None
+
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
 
     ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
     get_data_partial = partial(data_for_specimen_id,
-                               passed_only=not include_failed_sweeps,
+                               sweep_qc_option=sweep_qc_option,
                                data_source=data_source,
                                ontology=ontology,
-                               file_list=file_list)
+                               file_list=file_list,
+                               manual_fail_sweeps=manual_fail_sweep_dict)
 
     if run_parallel:
         pool = Pool()
