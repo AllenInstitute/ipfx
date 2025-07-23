@@ -4,7 +4,7 @@ import logging
 import traceback
 from multiprocessing import Pool
 from functools import partial
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 from ipfx.stimulus import StimulusOntology
 import ipfx.script_utils as su
 

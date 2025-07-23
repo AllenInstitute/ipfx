@@ -1,7 +1,7 @@
 import logging
 
-import allensdk.core.json_utilities as json_utilities
 import argschema as ags
+import ipfx.json_utilities as json_utilities
 
 from ipfx._schemas import SweepExtractionParameters
 from ipfx.dataset.create import create_ephys_data_set

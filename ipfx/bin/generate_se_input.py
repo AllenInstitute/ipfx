@@ -1,4 +1,4 @@
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import os
 import ipfx.lims_queries as lq
 import argparse
