@@ -9,7 +9,7 @@ pandas
 pg8000
 pillow
 pyabf
-pynwb==2.2.0
+pynwb==2.*
 pyYAML
 ruamel.yaml<0.18.0
 scipy
