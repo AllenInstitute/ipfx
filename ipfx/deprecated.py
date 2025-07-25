@@ -39,7 +39,7 @@ import functools
 
 try:
     from numpy import VisibleDeprecationWarning
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError):
     from numpy.exceptions import VisibleDeprecationWarning
 
 def deprecated(message=None):

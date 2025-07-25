@@ -254,7 +254,7 @@ def filter_results(specimen_ids, results):
     error_set = [{"id": i, "error": d} for i, d in zip(specimen_ids, results) if "error" in d.keys()]
     if len(filtered_set) == 0:
         logging.info("No specimens had results")
-        return
+        return [], [], error_set
 
     used_ids, results = zip(*filtered_set)
     return used_ids, results, error_set
