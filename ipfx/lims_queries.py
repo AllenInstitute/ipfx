@@ -58,7 +58,7 @@ def able_to_connect_to_lims():
     except pg8000.Error:
         # the connection failed
         return False
-    except TypeError:
+    except (TypeError, KeyError):
         # a credential was missing
         return False
 
