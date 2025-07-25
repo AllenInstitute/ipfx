@@ -8,7 +8,7 @@ import copy as cp
 import pandas as pd
 import numpy as np
 
-from ifpx.deprecated import deprecated
+from ipfx.deprecated import deprecated
 from ipfx.dataset.ephys_data_interface import EphysDataInterface
 from ipfx.stimulus import StimulusOntology
 from ipfx.sweep import Sweep, SweepSet

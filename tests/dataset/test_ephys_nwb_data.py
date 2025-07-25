@@ -1,7 +1,7 @@
 import pytest
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.ephys_nwb_data import EphysNWBData
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import datetime
 import pynwb
 from pynwb.icephys import CurrentClampStimulusSeries, CurrentClampSeries
