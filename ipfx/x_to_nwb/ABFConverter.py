@@ -21,6 +21,7 @@ from pynwb.icephys import IntracellularElectrode
 from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, I0_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, createCycleID
+from ipfx.utilities import inject_sweep_table
 
 log = logging.getLogger(__name__)
 
@@ -77,6 +78,8 @@ class ABFConverter:
 
         electrodes = self._createElectrodes(device)
         nwbFile.add_icephys_electrode(electrodes)
+
+        inject_sweep_table(nwbfile)
 
         for i in self._createStimulusSeries(electrodes):
             nwbFile.add_stimulus(i, use_sweep_table=True)

@@ -16,6 +16,7 @@ from ipfx.x_to_nwb.hr_stimsetgenerator import StimSetGenerator
 from ipfx.x_to_nwb.conversion_utils import PLACEHOLDER, V_CLAMP_MODE, I_CLAMP_MODE, \
      parseUnit, getStimulusSeriesClass, getAcquiredSeriesClass, createSeriesName, convertDataset, \
      getPackageInfo, getStimulusRecordIndex, createCycleID, clampModeToString
+from ipfx.utilities import inject_sweep_table
 
 log = logging.getLogger(__name__)
 
@@ -69,6 +70,8 @@ class DatConverter:
             self.electrodeDict = DatConverter._generateElectrodeDict(elem)
             electrodes = self._createElectrodes(device)
             nwbFile.add_icephys_electrode(electrodes)
+
+            inject_sweep_table(nwbfile)
 
             for i in self._createAcquiredSeries(electrodes, elem):
                 nwbFile.add_acquisition(i, use_sweep_table=True)

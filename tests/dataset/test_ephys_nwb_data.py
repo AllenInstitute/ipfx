@@ -6,6 +6,7 @@ import datetime
 import pynwb
 from pynwb.icephys import CurrentClampStimulusSeries, CurrentClampSeries
 import numpy as np
+from ipfx.utilities import inject_sweep_table
 
 from dictdiffer import diff
 
@@ -58,6 +59,7 @@ def nwbfile_to_test():
         **stimulus_meta_data
     )
 
+    inject_sweep_table(nwbfile)
     nwbfile.add_stimulus(stimulus_series, use_sweep_table=True)
 
     response_data = [1, 2, 3, 4, 5]
