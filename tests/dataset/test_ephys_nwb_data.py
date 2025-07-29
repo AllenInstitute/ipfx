@@ -43,7 +43,7 @@ def nwbfile_to_test():
     stimulus_meta_data = {
         "name": "stimulus",
         "sweep_number": 4,
-        "unit": "A",
+        "unit": "amperes",
         "gain": 32.0,
          "resolution": 1.0,
          "conversion": 1.0E-3,
@@ -64,7 +64,7 @@ def nwbfile_to_test():
     response_meta_data = {
         "name":"acquisition",
          "sweep_number": 4,
-         "unit": "V",
+         "unit": "volts",
          "gain": 32.0,
          "resolution": 1.0,
          "conversion": 1.0E-3,
