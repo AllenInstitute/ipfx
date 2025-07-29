@@ -97,7 +97,7 @@ def extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_
         mask_supra = sweep_table["stim_amp"] >= basic_lsq_features["rheobase_i"]
         sweep_indexes = fv._consolidated_long_square_indexes(sweep_table.loc[mask_supra, :])
         amps = np.rint(sweep_table.loc[sweep_indexes, "stim_amp"].values - basic_lsq_features["rheobase_i"])
-        spike_data = np.array(basic_lsq_features["spikes_set"])
+        spike_data = np.array(basic_lsq_features["spikes_set"], dtype=object)
 
         for amp, swp_ind in zip(amps, sweep_indexes):
             if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):
