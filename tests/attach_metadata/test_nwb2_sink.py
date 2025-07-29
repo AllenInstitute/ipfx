@@ -32,7 +32,7 @@ def nwbfile():
         device=dev,
         description=""
     )
-    _nwbfile.add_ic_electrode(ice)
+    _nwbfile.add_icephys_electrode(ice)
     series = pynwb.icephys.CurrentClampSeries(
           name="a current clamp", 
           data=[1, 2, 3], 

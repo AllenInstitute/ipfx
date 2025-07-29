@@ -68,7 +68,7 @@ class DatConverter:
 
             self.electrodeDict = DatConverter._generateElectrodeDict(elem)
             electrodes = self._createElectrodes(device)
-            nwbFile.add_ic_electrode(electrodes)
+            nwbFile.add_icephys_electrode(electrodes)
 
             for i in self._createAcquiredSeries(electrodes, elem):
                 nwbFile.add_acquisition(i, use_sweep_table=True)
