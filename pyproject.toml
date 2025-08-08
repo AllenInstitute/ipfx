@@ -72,6 +72,7 @@ include = [
     "/docs",
     "requirements.txt",
     "requirements-test.txt",
+    "requirements-docs.txt",
     "AUTHORS.rst",
     "CHANGELOG.md",
     "README.md"]
