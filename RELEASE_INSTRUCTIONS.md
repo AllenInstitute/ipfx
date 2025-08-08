@@ -5,12 +5,11 @@ or a predetermined release date is approaching
 ## GitHub
 
 - [ ] Assign a developer to be responsible for the release deployment
-- [ ] Create a release branch from dev
+- [ ] Create a release branch from master
 - [ ] Create a draft pull request for the release
   - [ ] Add the Project Owner as a reviewer
   - [ ] Copy this checklist into the draft pull request description
 - [ ] Prepare the official release commit
-  - [ ] Bump version in the version.txt
   - [ ] Move changes from the "Unreleased" section to the proper sections in the CHANGELOG.md
   - [ ] Confirm all GitHub Actions tests pass
   - [ ] Change the draft to pull request to "ready for review"
@@ -24,11 +23,9 @@ or a predetermined release date is approaching
 
 ### PyPI and BKP
 
-- [ ] Reconfirm the version is correct in `version.txt`
-- [ ] Set release version with "git tag v#.#.#" (e.g. "git tag v1.0.0", equivalent to the version you bumped to), this triggers circleci to publish ipfx to PyPI (deprecated, need to move to GitHub Actions)
-- [ ] After release/deployment, merge master branch (bug fixes, document generation, etc.) back into dev and delete the release branch
+- [ ] Set release version with "git tag v#.#.#" (e.g. "git tag v1.0.0"), this triggers circleci to publish ipfx to PyPI (deprecated, need to move to GitHub Actions)
 - [ ] Build and deploy:
-    - [ ] `python setup.py sdist` and `python setup.py bdist_wheel`
+    - [ ] `hatch build`
     - [ ] `twine upload dist/* --verbose --config-file ~/.pypirc`
 - [ ] Announce release on https://community.brain-map.org
 
