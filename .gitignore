@@ -89,3 +89,6 @@ venv.bak/
 
 # MacOS Finder
 .DS_Store
+
+# hatch-vcs
+ipfx/_version.py
