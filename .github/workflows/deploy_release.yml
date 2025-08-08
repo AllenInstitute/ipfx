@@ -1,8 +1,6 @@
 name: Deploy release
 on:
   push:
-    tags:
-      - '^v\d+(\.\d+)*(\.[0-9A-Za-z]*)*'
 
 jobs:
   deploy-release:
@@ -42,8 +40,8 @@ jobs:
         run: |
           pip install twine
           ls -1 dist
-          # twine upload -r testpypi -u ${{ secrets.PYPI_USER }} -p ${{ secrets.PYPI_PASSWORD }} --skip-existing dist/*
-          twine upload -u ${{ secrets.PYPI_USER }} -p ${{ secrets.PYPI_PASSWORD }} --skip-existing dist/*
+          twine upload -r testpypi -u ${{ secrets.PYPI_USER }} -p ${{ secrets.PYPI_PASSWORD }} --skip-existing dist/*
+          # twine upload -u ${{ secrets.PYPI_USER }} -p ${{ secrets.PYPI_PASSWORD }} --skip-existing dist/*
 
       - name: Keep packages
         uses: actions/upload-artifact@v4
