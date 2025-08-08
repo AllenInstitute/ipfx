@@ -41,7 +41,7 @@ jobs:
 
       - name: Upload wheel and source distributions to PyPI
         run: |
-          python -m pip install twine
+          pip install twine
           ls -1 dist
           # twine upload --repository-url https://test.pypi.org/legacy/ -u ${{ secrets.BOT_PYPI_USER }} -p ${{ secrets.BOT_PYPI_PASSWORD }} --skip-existing dist/*
           twine upload -u ${{ secrets.BOT_PYPI_USER }} -p ${{ secrets.BOT_PYPI_PASSWORD }} --skip-existing dist/*
