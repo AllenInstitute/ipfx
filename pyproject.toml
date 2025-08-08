@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "IPFX"
+dynamic = ["version"]
+description = "Intrinsic Physiology Feature Extractor (IPFX) - tool for computing neuronal features from the intracellular electrophysiological recordings"
+readme = "README.md"
+license = ""
+authors = [
+    { name = "Allen Institute for Brain Science", email = "Marmot@AllenInstitute.onmicrosoft.com" },
+]
+keywords = [
+    "bioinformatics",
+    "neuroscience",
+    "scientific",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: Other/Proprietary License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "argschema",
+    "dictdiffer",
+    "h5py",
+    "marshmallow",
+    "matplotlib",
+    "methodtools",
+    "numpy",
+    "pandas",
+    "pg8000",
+    "pillow",
+    "pyabf",
+    "pynwb==3.1.2",
+    "pyYAML",
+    "python-dateutil",
+    "ruamel.yaml<0.18.0",
+    "scipy",
+    "simplejson",
+    "watchdog",
+]
+
+[project.urls]
+Homepage = "https://github.com/AllenInstitute/ipfx"
+
+[tool.hatch.version]
+path = "ipfx/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/ipfx",
+]
