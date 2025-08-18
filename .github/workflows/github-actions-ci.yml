@@ -34,7 +34,6 @@ jobs:
           sudo apt-get install -y hdf5-tools curl
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install allensdk
       - name: Run tests
         run: |
           pip install -r requirements-test.txt
