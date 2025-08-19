@@ -3,6 +3,8 @@ import datetime
 import pynwb
 import numpy as np
 
+from dateutil.tz import tzlocal
+
 from ipfx.nwb_append import append_spike_times
 
 
@@ -11,8 +13,8 @@ def make_skeleton_nwb2_file(nwb2_file_name):
     nwbfile = pynwb.NWBFile(
         session_description='test icephys',
         identifier='session_uuid',
-        session_start_time=datetime.datetime.now(),
-        file_create_date=datetime.datetime.now()
+        session_start_time=datetime.datetime.now(tzlocal()),
+        file_create_date=datetime.datetime.now(tzlocal())
     )
 
     device = nwbfile.create_device(name='electrode_0')

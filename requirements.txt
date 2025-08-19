@@ -11,6 +11,7 @@ pillow
 pyabf
 pynwb
 pyYAML
+python-dateutil
 ruamel.yaml<0.18.0
 scipy
 simplejson
