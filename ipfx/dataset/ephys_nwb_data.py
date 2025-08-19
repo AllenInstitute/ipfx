@@ -308,7 +308,7 @@ class EphysNWBData(EphysDataInterface):
 
     def get_spike_times(self, sweep_number):
         spikes = self.nwb.get_processing_module('spikes')
-        sweep_spikes = spikes.get_data_interface(f"Sweep_{sweep_number}")
+        sweep_spikes = spikes.get(f"Sweep_{sweep_number}")
         return sweep_spikes.timestamps
 
     @staticmethod

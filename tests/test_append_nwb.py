@@ -51,5 +51,5 @@ def test_embed_spike_times_into_nwb(tmpdir_factory):
 
         spikes = nwbfile.get_processing_module('spikes')
         for sweep_num, spike_times in sweep_spike_times.items():
-            sweep_spikes = spikes.get_data_interface(f"Sweep_{sweep_num}").timestamps
+            sweep_spikes = spikes.get(f"Sweep_{sweep_num}").timestamps
             assert np.allclose(sweep_spikes, spike_times)
