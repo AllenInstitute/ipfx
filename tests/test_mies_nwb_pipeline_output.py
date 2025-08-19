@@ -5,13 +5,13 @@ import pandas as pd
 import os
 import ipfx.json_utilities as ju
 from ipfx.bin.run_pipeline import run_pipeline
-from pkg_resources import resource_filename
+import importlib.resources
 from dictdiffer import diff
 
 
-TEST_SPECIMENS_FILE = resource_filename(__name__, 'test_mies_nwb2_specimens.csv')
-
-test_specimens = pd.read_csv(TEST_SPECIMENS_FILE, sep=" ")
+ref = importlib.resources.files('ipfx') / '../tests/test_mies_nwb2_specimens.csv'
+with importlib.resources.as_file(ref) as path:
+    test_specimens = pd.read_csv(path, sep=" ")
 test_specimens_params = [tuple(sp) for sp in test_specimens.values]
 
 
