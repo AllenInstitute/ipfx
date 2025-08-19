@@ -23,7 +23,7 @@ def make_stimulus_ontology(stims):
         scode = stim['stimulus_code']
 
         # code tags
-        m = re.search("(.*)\d{6}$", scode)
+        m = re.search(r"(.*)\d{6}$", scode)
         if m:
             code_name, = m.groups()
             tags.add((CODE, code_name, scode))
