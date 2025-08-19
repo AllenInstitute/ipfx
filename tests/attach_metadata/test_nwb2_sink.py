@@ -80,6 +80,7 @@ def test_get_subject(nwbfile, set_none):
 
 
 @pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
+@pytest.mark.filterwarnings("ignore:.*It is recommended that NWB files using the HDF5 backend use the '.nwb' extension.")
 def test_serialize(tmpdir_factory, nwbfile):
     out_path = os.path.join(
         str(tmpdir_factory.mktemp("test_serialize")),
@@ -90,7 +91,6 @@ def test_serialize(tmpdir_factory, nwbfile):
     sink._data = io.BytesIO()
     sink._h5_file = h5py.File(sink._data, "w")
     sink._nwb_io = pynwb.NWBHDF5IO(
-        path=sink._h5_file.filename,
         mode="w",
         file=sink._h5_file
     )
