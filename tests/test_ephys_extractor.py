@@ -43,7 +43,7 @@ def test_extractors_no_values():
     SpikeFeatureExtractor()
     SpikeTrainFeatureExtractor(start=0, end=0)
 
-
+@pytest.mark.filterwarnings("ignore:.*encountered in divide:RuntimeWarning")
 def test_extractor_wrong_inputs(spike_test_pair):
     data = spike_test_pair
 
@@ -103,6 +103,7 @@ def test_extractor_on_zero_voltage():
     ext.process(t, v, i)
 
 
+@pytest.mark.filterwarnings("ignore:.*encountered in divide:RuntimeWarning")
 def test_extractor_on_variable_time_step(spike_test_var_dt):
     data = spike_test_var_dt
 
