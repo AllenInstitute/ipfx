@@ -79,6 +79,7 @@ def test_get_subject(nwbfile, set_none):
     assert nwbfile.subject.subject_id == "foo"
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_serialize(tmpdir_factory, nwbfile):
     out_path = os.path.join(
         str(tmpdir_factory.mktemp("test_serialize")),
@@ -102,6 +103,7 @@ def test_serialize(tmpdir_factory, nwbfile):
         assert obt.identifier == "test session"
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_roundtrip(tmpdir_factory, nwbfile):
     tmpdir = str(tmpdir_factory.mktemp("test_serialize"))
     first_path = os.path.join(tmpdir, "first.nwb")
@@ -136,6 +138,7 @@ def test_roundtrip(tmpdir_factory, nwbfile):
         "Mus musculus"
     ],
 ])
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_register(
         tmpdir_factory, nwbfile, name, value, sweep_id, getter, expected
 ):
