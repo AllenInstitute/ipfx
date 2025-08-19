@@ -14,6 +14,8 @@ import numpy as np
 import pytest
 from ipfx.utilities import inject_sweep_table
 
+from dateutil.tz import tzlocal
+
 class CliRunner:
 
     def __init__(
@@ -54,7 +56,7 @@ def simple_nwb(base_path):
     nwbfile = pynwb.NWBFile(
         session_description="test session",
         identifier='test session',
-        session_start_time=datetime.now()
+        session_start_time=datetime.now(tzlocal())
     )
 
     inject_sweep_table(nwbfile)

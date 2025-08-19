@@ -15,6 +15,7 @@ import numpy as np
 import pynwb
 import h5py
 
+from dateutil.tz import tzlocal
 from ipfx.attach_metadata.sink import nwb2_sink
 from ipfx.utilities import inject_sweep_table
 
@@ -24,7 +25,7 @@ def nwbfile():
     _nwbfile = pynwb.NWBFile(
         session_description="test session",
         identifier='test session',
-        session_start_time=datetime.now()
+        session_start_time=datetime.now(tzlocal())
     )
     dev = pynwb.device.Device(name="my_device")
     _nwbfile.add_device(dev)

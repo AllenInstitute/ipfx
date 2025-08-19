@@ -7,6 +7,7 @@ import pynwb
 from pynwb.icephys import CurrentClampStimulusSeries, CurrentClampSeries
 import numpy as np
 from ipfx.utilities import inject_sweep_table
+from dateutil.tz import tzlocal
 
 from dictdiffer import diff
 
@@ -28,8 +29,8 @@ def nwbfile_to_test():
     nwbfile = pynwb.NWBFile(
         session_description="test nwb data",
         identifier='test session',
-        session_start_time=datetime.datetime.now(),
-        file_create_date=datetime.datetime.now()
+        session_start_time=datetime.datetime.now(tzlocal()),
+        file_create_date=datetime.datetime.now(tzlocal())
     )
 
     device = nwbfile.create_device(name='electrode_0')
