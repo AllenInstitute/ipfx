@@ -3,13 +3,14 @@ on:
   push:
 
 jobs:
-   call-workflow:
-       uses: ./.github/workflows/github-actions-ci.yml
+  common-actions:
+    name: Run PR Workflow
+    uses: ./.github/workflows/github-actions-ci.yml
+    secrets: inherit
 
   deploy-release:
     needs:
-        - run-light-tests
-        - onprem-tests
+        - common-actions
     name: Deploy release from tag
     runs-on: ubuntu-latest
     steps:
