@@ -4,7 +4,7 @@ on:
 
 jobs:
    call-workflow:
-       uses: ./.github/github-actions-ci.yml
+       uses: ./.github/workflows/github-actions-ci.yml
 
   deploy-release:
     needs:
