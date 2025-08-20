@@ -3,6 +3,9 @@ on:
   push:
 
 jobs:
+   call-workflow:
+       uses: ./.github/github-actions-ci.yml
+
   deploy-release:
     needs:
         - run-light-tests
