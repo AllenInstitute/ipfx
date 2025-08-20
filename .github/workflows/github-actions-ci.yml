@@ -5,6 +5,7 @@ on:
     # branches:
     #   - master
     #   - feature/**
+  workflow_call:
 
   push:
     # branches:
