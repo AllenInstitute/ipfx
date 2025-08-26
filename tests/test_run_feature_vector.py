@@ -14,12 +14,16 @@ TEST_OUTPUT_DIR = os.path.join(current_directory, "data", "feature_vector")
 
 nwb2_file1 = os.path.join(current_directory, "data", "Vip-IRES-Cre;Ai14(IVSCC)-226110.03.01.nwb")
 nwb2_file2 = os.path.join(current_directory, "data", "Vip-IRES-Cre;Ai14(IVSCC)-236654.04.02.nwb")
+nwb2_nwb_schema_2_9_0_file1 = os.path.join(current_directory, "data", "Vip-IRES-Cre;Ai14(IVSCC)-226110.03.01_ITC18USB_Dev_0-nwb-schema-2.9.0.nwb")
+nwb2_nwb_schema_2_9_0_file2 = os.path.join(current_directory, "data", "Vip-IRES-Cre;Ai14(IVSCC)-236654.04.02_ITC18USB_Dev_0-nwb-schema-2.9.0.nwb")
 
 testdata = [dict({500844783: nwb2_file1,
-                  509604672: nwb2_file2})
+                  509604672: nwb2_file2}),
+            dict({500844783: nwb2_nwb_schema_2_9_0_file1,
+                  509604672: nwb2_nwb_schema_2_9_0_file2})
            ]
 
-@pytest.mark.parametrize("ids_and_files", testdata)
+@pytest.mark.parametrize("ids_and_files", testdata, ids = ["default", "schema-2.9.0"])
 def test_feature_vector_extraction(ids_and_files, tmpdir_factory):
 
     temp_output_dir = str(tmpdir_factory.mktemp("feature_vector"))
@@ -61,7 +65,7 @@ def test_feature_vector_extraction(ids_and_files, tmpdir_factory):
         assert np.allclose(test_data, temp_data)
 
 
-@pytest.mark.parametrize("ids_and_files", testdata)
+@pytest.mark.parametrize("ids_and_files", testdata, ids = ["default", "schema-2.9.0"])
 def test_feature_collection(ids_and_files, tmpdir_factory):
 
     temp_output_dir = str(tmpdir_factory.mktemp("feature_vector"))
