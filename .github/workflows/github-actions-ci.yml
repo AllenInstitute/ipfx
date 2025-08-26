@@ -30,7 +30,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          sudo apt-get update 
+          sudo apt-get update
           sudo apt-get install -y hdf5-tools curl
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -51,35 +51,12 @@ jobs:
     runs-on: ["self-hosted"]
     strategy:
       matrix:
-        image: ["ipfx_py39:latest", "ipfx_py311:latest"]
+        pyver: ["3.9" , "3.11"]
     steps:
       - uses: actions/checkout@v4
-      - name: run test in docker
+      - name: Build docker image
         run: |
-          docker run \
-          --env-file ~/env.list \
-          --mount type=bind,source=$PWD,target=/local1/github_worker,bind-propagation=rshared \
-          -v /data/informatics/module_test_data/:/data/informatics/module_test_data/ \
-          -v /allen/aibs/informatics/module_test_data/:/allen/aibs/informatics/module_test_data/ \
-          -v /allen/programs/celltypes/production/mousecelltypes/:/allen/programs/celltypes/production/mousecelltypes/ \
-          -v /allen/programs/celltypes/workgroups/279/:/allen/programs/celltypes/workgroups/279/ \
-          -v /allen/programs/celltypes/production/humancelltypes/:/allen/programs/celltypes/production/humancelltypes/ \
-          --workdir /local1/github_worker --rm \
-          --user 1001:1001 \
-          ${{ matrix.image }} \
-              /bin/bash -c "python -m venv .venv; \
-                            source .venv/bin/activate; \
-                            pip install --upgrade pip; \
-                            pip install numpy; \
-                            pip install -r requirements.txt; \
-                            export TEST_API_ENDPOINT=http://api.brain-map.org; \
-                            export SKIP_LIMS=false; \
-                            export TEST_INHOUSE=true; \
-                            export ALLOW_TEST_DOWNLOADS=true; \
-                            export IPFX_TEST_TIMEOUT=60; \
-                            pip install -r requirements-test.txt; \
-                            git config lfs.url 'https://github.com/AllenInstitute/ipfx.git/info/lfs'; \
-                            git lfs env; \
-                            git lfs pull; \
-                            python -m pytest \
-                              --junitxml=test-reports/test.xml --verbose"
+          docker build --build-arg PYTHON_VERSION="${{ matrix.pyver }}" -t "ipfx_${{ matrix.pyver }}:latest" docker
+      - name: Run test in docker
+        run: |
+          DOCKER_IMAGE="ipfx_${{ matrix.pyver }}:latest" ./docker/run_tests_with_docker.sh
