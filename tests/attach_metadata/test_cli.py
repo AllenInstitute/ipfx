@@ -12,7 +12,9 @@ import yaml
 import pynwb
 import numpy as np
 import pytest
+from ipfx.utilities import inject_sweep_table
 
+from dateutil.tz import tzlocal
 
 class CliRunner:
 
@@ -54,8 +56,11 @@ def simple_nwb(base_path):
     nwbfile = pynwb.NWBFile(
         session_description="test session",
         identifier='test session',
-        session_start_time=datetime.now()
+        session_start_time=datetime.now(tzlocal())
     )
+
+    inject_sweep_table(nwbfile)
+
     nwbfile.add_acquisition(
         pynwb.TimeSeries(
             name="a timeseries", 
@@ -146,6 +151,7 @@ def test_cli_nwb2(cli_runner):
             [1, 2, 3]
         )
 
+@pytest.mark.filterwarnings("ignore:.*Use of icephys_filtering is deprecated and will be removed in PyNWB 4.0. Use the IntracellularElectrode.filtering field instead")
 def test_cli_mies(cli_runner):
     in_nwb_path = os.path.join(cli_runner.tmpdir, "input.nwb")
     out_nwb_path = os.path.join(cli_runner.tmpdir, "meta.nwb")

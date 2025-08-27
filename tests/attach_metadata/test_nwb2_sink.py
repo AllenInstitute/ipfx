@@ -15,7 +15,9 @@ import numpy as np
 import pynwb
 import h5py
 
+from dateutil.tz import tzlocal
 from ipfx.attach_metadata.sink import nwb2_sink
+from ipfx.utilities import inject_sweep_table
 
 
 @pytest.fixture
@@ -23,7 +25,7 @@ def nwbfile():
     _nwbfile = pynwb.NWBFile(
         session_description="test session",
         identifier='test session',
-        session_start_time=datetime.now()
+        session_start_time=datetime.now(tzlocal())
     )
     dev = pynwb.device.Device(name="my_device")
     _nwbfile.add_device(dev)
@@ -32,7 +34,7 @@ def nwbfile():
         device=dev,
         description=""
     )
-    _nwbfile.add_ic_electrode(ice)
+    _nwbfile.add_icephys_electrode(ice)
     series = pynwb.icephys.CurrentClampSeries(
           name="a current clamp", 
           data=[1, 2, 3], 
@@ -42,6 +44,7 @@ def nwbfile():
           electrode=ice,
           sweep_number=12
     )
+    inject_sweep_table(_nwbfile)
     _nwbfile.add_acquisition(series, use_sweep_table=True)
     _nwbfile.subject = pynwb.file.Subject()
 
@@ -76,6 +79,8 @@ def test_get_subject(nwbfile, set_none):
     assert nwbfile.subject.subject_id == "foo"
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
+@pytest.mark.filterwarnings("ignore:.*It is recommended that NWB files using the HDF5 backend use the '.nwb' extension.")
 def test_serialize(tmpdir_factory, nwbfile):
     out_path = os.path.join(
         str(tmpdir_factory.mktemp("test_serialize")),
@@ -86,7 +91,6 @@ def test_serialize(tmpdir_factory, nwbfile):
     sink._data = io.BytesIO()
     sink._h5_file = h5py.File(sink._data, "w")
     sink._nwb_io = pynwb.NWBHDF5IO(
-        path=sink._h5_file.filename,
         mode="w",
         file=sink._h5_file
     )
@@ -99,6 +103,7 @@ def test_serialize(tmpdir_factory, nwbfile):
         assert obt.identifier == "test session"
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_roundtrip(tmpdir_factory, nwbfile):
     tmpdir = str(tmpdir_factory.mktemp("test_serialize"))
     first_path = os.path.join(tmpdir, "first.nwb")
@@ -133,6 +138,7 @@ def test_roundtrip(tmpdir_factory, nwbfile):
         "Mus musculus"
     ],
 ])
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_register(
         tmpdir_factory, nwbfile, name, value, sweep_id, getter, expected
 ):

@@ -1,4 +1,4 @@
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 from ipfx.stimulus import StimulusOntology
 import re
 import ipfx.lims_queries as lq
@@ -23,7 +23,7 @@ def make_stimulus_ontology(stims):
         scode = stim['stimulus_code']
 
         # code tags
-        m = re.search("(.*)\d{6}$", scode)
+        m = re.search(r"(.*)\d{6}$", scode)
         if m:
             code_name, = m.groups()
             tags.add((CODE, code_name, scode))
@@ -84,5 +84,5 @@ def main():
     make_default_stimulus_ontology()
 
 
-if __name__== "__main__": 
+if __name__== "__main__":
     main()

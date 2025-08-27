@@ -27,10 +27,12 @@ def hbg_nwb_data(tmp_nwb_path):
     return HBGNWBData(nwb_file=tmp_nwb_path, ontology=ontology)
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_create_hbg(hbg_nwb_data):
     assert isinstance(hbg_nwb_data,HBGNWBData)
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_get_sweep_metadata(hbg_nwb_data):
 
     expected = {
@@ -48,6 +50,8 @@ def test_get_sweep_metadata(hbg_nwb_data):
     obtained = hbg_nwb_data.get_sweep_metadata(sweep_number=4)
     assert expected == obtained
 
+
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def  test_get_stimulus_code_ext(hbg_nwb_data):
 
     expected = 'STIMULUS_CODE'

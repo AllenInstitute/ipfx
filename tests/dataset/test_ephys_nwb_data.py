@@ -1,11 +1,13 @@
 import pytest
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.ephys_nwb_data import EphysNWBData
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import datetime
 import pynwb
 from pynwb.icephys import CurrentClampStimulusSeries, CurrentClampSeries
 import numpy as np
+from ipfx.utilities import inject_sweep_table
+from dateutil.tz import tzlocal
 
 from dictdiffer import diff
 
@@ -27,8 +29,8 @@ def nwbfile_to_test():
     nwbfile = pynwb.NWBFile(
         session_description="test nwb data",
         identifier='test session',
-        session_start_time=datetime.datetime.now(),
-        file_create_date=datetime.datetime.now()
+        session_start_time=datetime.datetime.now(tzlocal()),
+        file_create_date=datetime.datetime.now(tzlocal())
     )
 
     device = nwbfile.create_device(name='electrode_0')
@@ -43,7 +45,7 @@ def nwbfile_to_test():
     stimulus_meta_data = {
         "name": "stimulus",
         "sweep_number": 4,
-        "unit": "A",
+        "unit": "amperes",
         "gain": 32.0,
          "resolution": 1.0,
          "conversion": 1.0E-3,
@@ -58,13 +60,14 @@ def nwbfile_to_test():
         **stimulus_meta_data
     )
 
+    inject_sweep_table(nwbfile)
     nwbfile.add_stimulus(stimulus_series, use_sweep_table=True)
 
     response_data = [1, 2, 3, 4, 5]
     response_meta_data = {
         "name":"acquisition",
          "sweep_number": 4,
-         "unit": "V",
+         "unit": "volts",
          "gain": 32.0,
          "resolution": 1.0,
          "conversion": 1.0E-3,
@@ -100,14 +103,17 @@ def nwb_data(tmp_nwb_path):
     return EphysNWBData(nwb_file=tmp_nwb_path, ontology=ontology)
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_get_stimulus_unit(nwb_data):
     assert nwb_data.get_stimulus_unit(sweep_number=4) == "Amps"
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_get_stimulus_code(nwb_data):
     assert nwb_data.get_stimulus_code(sweep_number=4) == "STIMULUS_CODE"
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_get_sweep_data(nwb_data):
 
     expected = {
@@ -122,6 +128,7 @@ def test_get_sweep_data(nwb_data):
     assert list(diff(expected, obtained, tolerance=0.001)) == []
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_get_sweep_attrs(nwb_data):
 
     expected = {
@@ -138,12 +145,14 @@ def test_get_sweep_attrs(nwb_data):
     print(expected)
     assert expected == obtained
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_get_clamp_mode(nwb_data):
 
     attrs = nwb_data.get_sweep_attrs(4);
 
     assert attrs['clamp_mode'] == "CurrentClamp"
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_get_full_recording_date(nwb_data):
     assert nwb_data.get_full_recording_date() == nwb_data.nwb.session_start_time
 
