@@ -1,8 +1,8 @@
-import allensdk.core.json_utilities as ju
-import numpy as np
 import sys
 import os
 import logging
+import numpy as np
+import ipfx.json_utilities as ju
 
 
 def nullisclose(a, b):
