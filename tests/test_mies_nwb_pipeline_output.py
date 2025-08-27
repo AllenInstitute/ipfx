@@ -43,6 +43,7 @@ def rebase(new_base: str, path: str, mkdir: bool = False) ->  str:
 
 @pytest.mark.slow
 @pytest.mark.parametrize('input_json,output_json', test_specimens_params)
+@pytest.mark.filterwarnings("ignore:.*Use of icephys_filtering is deprecated and will be removed in PyNWB 4.0. Use the IntracellularElectrode.filtering field instead")
 def test_mies_nwb_pipeline_output(input_json, output_json, tmpdir_factory):
     """
     Runs pipeline, saves to a json file and compares to the existing pipeline output.
