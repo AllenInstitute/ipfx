@@ -11,11 +11,8 @@ jobs:
     strategy:
       matrix:
         pyver: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14-rc"]
-        branch: ["master", "feature/**"]
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ matrix.branch }}
       - name: Build docker image
         run: |
           docker build --build-arg PYTHON_VERSION="${{ matrix.pyver }}" -t "ipfx_${{ matrix.pyver }}:latest" docker
