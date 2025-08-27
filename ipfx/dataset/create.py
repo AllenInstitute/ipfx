@@ -5,7 +5,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 
 from ipfx.dataset.ephys_data_set import EphysDataSet
 from ipfx.stimulus import StimulusOntology
@@ -17,7 +17,7 @@ from ipfx.dataset.labnotebook import LabNotebookReaderIgorNwb
 
 def get_scalar_value(dataset_from_nwb):
     """
-    Some values in NWB are stored as scalar whereas others as np.ndarrays with 
+    Some values in NWB are stored as scalar whereas others as np.ndarrays with
     dimension 1. Use this function to retrieve the scalar value itself.
     """
 
@@ -67,7 +67,7 @@ def get_nwb_version(nwb_file: str) -> Dict[str, Any]:
             nwb_version_str = to_str(nwb_version)
             if nwb_version is not None and re.match("^NWB-", nwb_version_str):
                 return {
-                    "major": int(nwb_version_str[4]), 
+                    "major": int(nwb_version_str[4]),
                     "full": nwb_version_str
                 }
 

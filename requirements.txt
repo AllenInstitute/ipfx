@@ -1,4 +1,3 @@
-allensdk
 argschema
 dictdiffer
 h5py
@@ -10,7 +9,7 @@ pandas
 pg8000
 pillow
 pyabf
-pynwb==2.2.0
+pynwb
 pyYAML
 ruamel.yaml<0.18.0
 scipy
