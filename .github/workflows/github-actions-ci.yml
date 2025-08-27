@@ -2,11 +2,19 @@ name: ci/github-actions
 
 on:
   pull_request:
-    branches: [ master, feature/** ]
+    # branches:
+    #   - master
+    #   - feature/**
+  workflow_call:
 
   push:
-    branches: [ master, feature/** ]
-
+    # branches:
+    #   - master
+    #   - feature/**
+    branches-ignore:
+      - master
+    tags-ignore:
+      - '*'
 
 jobs:
   run-light-tests:
@@ -43,6 +51,7 @@ jobs:
           git config lfs.url 'https://github.com/AllenInstitute/ipfx.git/info/lfs'
           git lfs env
           git lfs pull
+          pip install -e .
           python -m pytest --junitxml=test-results/junit.xml --verbose
 
 
