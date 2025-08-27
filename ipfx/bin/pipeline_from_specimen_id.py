@@ -1,4 +1,4 @@
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import sys
 import os.path
 from .run_pipeline import run_pipeline
@@ -34,19 +34,21 @@ def main():
     pipe_input = gpi.generate_pipeline_input(cell_dir,
                                              specimen_id=int(specimen_id))
 
-    input_json = os.path.join(cell_dir,INPUT_JSON)
-    ju.write(input_json,pipe_input)
+    input_json = os.path.join(cell_dir, INPUT_JSON)
+    ju.write(input_json, pipe_input)
 
     #   reading back from disk
     pipe_input = ju.read(input_json)
-    pipe_output = run_pipeline(pipe_input["input_nwb_file"],
-                          pipe_input["output_nwb_file"],
-                          pipe_input.get("stimulus_ontology_file", None),
-                          pipe_input.get("qc_fig_dir",None),
-                          pipe_input["qc_criteria"],
-                          pipe_input["manual_sweep_states"])
+    pipe_output = run_pipeline(
+        pipe_input["input_nwb_file"],
+        pipe_input["output_nwb_file"],
+        pipe_input.get("stimulus_ontology_file", None),
+        pipe_input.get("qc_fig_dir",None),
+        pipe_input["qc_criteria"],
+        pipe_input["manual_sweep_states"],
+    )
 
-    ju.write(os.path.join(cell_dir,OUTPUT_JSON), pipe_output)
+    ju.write(os.path.join(cell_dir, OUTPUT_JSON), pipe_output)
 
 if __name__ == "__main__": main()
 

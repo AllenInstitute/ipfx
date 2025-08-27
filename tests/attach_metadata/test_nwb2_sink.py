@@ -16,6 +16,7 @@ import pynwb
 import h5py
 
 from ipfx.attach_metadata.sink import nwb2_sink
+from ipfx.utilities import inject_sweep_table
 
 
 @pytest.fixture
@@ -32,7 +33,7 @@ def nwbfile():
         device=dev,
         description=""
     )
-    _nwbfile.add_ic_electrode(ice)
+    _nwbfile.add_icephys_electrode(ice)
     series = pynwb.icephys.CurrentClampSeries(
           name="a current clamp", 
           data=[1, 2, 3], 
@@ -42,6 +43,7 @@ def nwbfile():
           electrode=ice,
           sweep_number=12
     )
+    inject_sweep_table(_nwbfile)
     _nwbfile.add_acquisition(series, use_sweep_table=True)
     _nwbfile.subject = pynwb.file.Subject()
 

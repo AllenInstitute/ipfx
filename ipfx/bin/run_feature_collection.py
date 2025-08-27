@@ -6,7 +6,7 @@ import ipfx.lims_queries as lq
 import ipfx.feature_vectors as fv
 import ipfx.script_utils as su
 from ipfx.stimulus import StimulusOntology
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import logging
 from multiprocessing import Pool
 from functools import partial
@@ -20,9 +20,9 @@ class CollectFeatureParameters(ags.ArgSchema):
     include_failed_cells = ags.fields.Boolean(default=False)
     run_parallel = ags.fields.Boolean(default=True)
     data_source = ags.fields.String(
-        description="Source of NWB files ('sdk' or 'lims' or 'filesystem')",
-        default="sdk",
-        validate=lambda x: x in ["sdk", "lims", "filesystem"]
+        description="Source of NWB files ('lims' or 'filesystem')",
+        default="lims",
+        validate=lambda x: x in ["lims", "filesystem"]
         )
 
 
@@ -97,7 +97,7 @@ def extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_
         mask_supra = sweep_table["stim_amp"] >= basic_lsq_features["rheobase_i"]
         sweep_indexes = fv._consolidated_long_square_indexes(sweep_table.loc[mask_supra, :])
         amps = np.rint(sweep_table.loc[sweep_indexes, "stim_amp"].values - basic_lsq_features["rheobase_i"])
-        spike_data = np.array(basic_lsq_features["spikes_set"])
+        spike_data = np.array(basic_lsq_features["spikes_set"], dtype=object)
 
         for amp, swp_ind in zip(amps, sweep_indexes):
             if (amp % amp_interval != 0) or (amp > max_above_rheo) or (amp < 0):

@@ -4,7 +4,6 @@ functionality.
 """
 
 import math
-from pkg_resources import get_distribution, DistributionNotFound
 import os
 from subprocess import Popen, PIPE
 
@@ -124,7 +123,7 @@ def convertDataset(array, compression):
 
 def getPackageInfo():
     """
-    Return a dictionary with version information for the allensdk package
+    Return a dictionary with version information for the ipfx package
     """
 
     def get_git_version():
@@ -143,10 +142,7 @@ def getPackageInfo():
 
         return f"({branch}) {rev}"
 
-    try:
-        package_version = get_distribution('allensdk').version
-    except DistributionNotFound:  # not installed as a package
-        package_version = None
+    package_version = __version__
 
     try:
         git_version = get_git_version()

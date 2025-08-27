@@ -5,7 +5,7 @@ from dictdiffer import diff
 import ipfx.feature_vectors as fv
 from ipfx.stimulus import StimulusOntology
 from ipfx.sweep import Sweep, SweepSet
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import pytest
 
 
