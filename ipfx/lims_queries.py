@@ -29,6 +29,7 @@ LIMS_DB_CREDENTIAL_DEFAULTS = {
     "LIMS_DBNAME": None,
     "LIMS_USER": None,
     "LIMS_HOST": None,
+    "LIMS_PASSWORD": None,
     "LIMS_PORT": 5432,
 }
 
