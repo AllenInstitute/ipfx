@@ -2,7 +2,7 @@ import os
 import logging
 import warnings
 
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 
 from enum import Enum
 
@@ -92,7 +92,7 @@ class Stimulus(object):
 class StimulusOntology(object):
 
     DEFAULT_STIMULUS_ONTOLOGY_FILE = os.path.join(
-        os.path.dirname(__file__), 
+        os.path.dirname(__file__),
         "defaults",
         "stimulus_ontology.json"
     )

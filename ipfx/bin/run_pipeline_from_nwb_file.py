@@ -1,4 +1,4 @@
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import os.path
 from ipfx.bin.run_pipeline import run_pipeline
 from ipfx.bin.generate_pipeline_input import generate_pipeline_input
@@ -37,7 +37,7 @@ def main():
         )
     )
     parser.add_argument(
-        "--output_json", type=str, default="output.json", 
+        "--output_json", type=str, default="output.json",
         help=(
             "write output json file here (relative to OUTPUT_DIR/cell_name, "
             "where cell_name is the extensionless basename of the input NWB "
@@ -49,7 +49,7 @@ def main():
         help=(
             "Generate qc figures and store them here (relative to "
             "OUTPUT_DIR/cell_name, where cell_name is the extensionless "
-            "basename of the input nwb file). If you supply --qc_fig_dir with " 
+            "basename of the input nwb file). If you supply --qc_fig_dir with "
             "no arguments, the path will be OUTPUT_DIR/cell_name/qc_figs. If "
             "this argument is not supplied, no figures will be generated."
         )
