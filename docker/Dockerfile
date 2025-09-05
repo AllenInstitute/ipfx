@@ -9,6 +9,7 @@ RUN apt-get update                    \
     && apt-get install -y             \
         hdf5-tools                    \
         curl                          \
+        libhdf5-dev                   \
         git-lfs                       \
         && rm -rf /var/lib/apt/lists/*
 

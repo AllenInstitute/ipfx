@@ -7,7 +7,7 @@ from functools import partial
 import os
 import h5py
 from ipfx.stimulus import StimulusOntology
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import ipfx.feature_vectors as fv
 import ipfx.lims_queries as lq
 import ipfx.script_utils as su
@@ -26,9 +26,9 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
         allow_none=True
     )
     data_source = ags.fields.String(
-        description="Source of NWB files ('sdk' or 'lims' or 'filesystem')",
-        default="sdk",
-        validate=lambda x: x in ["sdk", "lims", "filesystem"]
+        description="Source of NWB files ('lims' or 'filesystem')",
+        default="lims",
+        validate=lambda x: x in ["lims", "filesystem"]
         )
     output_code = ags.fields.String(
         description="Code used for naming of output files",

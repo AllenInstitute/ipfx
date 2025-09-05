@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14-dev"]
 
     steps:
       - uses: actions/checkout@v3
@@ -28,13 +28,14 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+      - name: Install system packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y hdf5-tools curl
+          sudo apt-get install -y hdf5-tools curl libhdf5-dev
+      - name: Install pip dependencies
+        run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install allensdk
       - name: Run tests
         run: |
           pip install -r requirements-test.txt
@@ -51,7 +52,7 @@ jobs:
     runs-on: ["self-hosted"]
     strategy:
       matrix:
-        pyver: ["3.9" , "3.11"]
+        pyver: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14-rc"]
     steps:
       - uses: actions/checkout@v4
       - name: Build docker image

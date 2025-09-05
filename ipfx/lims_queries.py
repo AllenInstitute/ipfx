@@ -2,9 +2,6 @@ import os
 import logging
 import pg8000
 
-from allensdk.core.authentication import credential_injector
-from allensdk.core.auth_config import LIMS_DB_CREDENTIAL_MAP
-
 from ipfx.string_utils import to_str
 
 
@@ -19,15 +16,35 @@ if TIMEOUT is not None:
     TIMEOUT = float(TIMEOUT)  # type: ignore
 
 
-@credential_injector(LIMS_DB_CREDENTIAL_MAP)
-def _connect(user, host, dbname, password, port, timeout=TIMEOUT):
+LIMS_DB_CREDENTIAL_MAP = {
+    "dbname": "LIMS_DBNAME",
+    "user": "LIMS_USER",
+    "host": "LIMS_HOST",
+    "password": "LIMS_PASSWORD",
+    "port": "LIMS_PORT"
+}
+
+
+LIMS_DB_CREDENTIAL_DEFAULTS = {
+    "LIMS_DBNAME": None,
+    "LIMS_USER": None,
+    "LIMS_HOST": None,
+    "LIMS_PASSWORD": None,
+    "LIMS_PORT": 5432,
+}
+
+
+def _connect(timeout=TIMEOUT):
+    # Get credentials from environment variables
+    credentials = dict((k, os.environ.get(env_var, LIMS_DB_CREDENTIAL_DEFAULTS[env_var]))
+        for k, env_var in LIMS_DB_CREDENTIAL_MAP.items())
 
     conn = pg8000.connect(
-        user=user, 
-        host=host, 
-        database=dbname, 
-        password=password, 
-        port=int(port),
+        user=credentials["user"],
+        host=credentials["host"],
+        database=credentials["dbname"],
+        password=credentials["password"],
+        port=int(credentials["port"]),
         timeout=timeout
     )
     return conn, conn.cursor()
@@ -42,7 +59,7 @@ def able_to_connect_to_lims():
     except pg8000.Error:
         # the connection failed
         return False
-    except TypeError:
+    except (TypeError, KeyError):
         # a credential was missing
         return False
 

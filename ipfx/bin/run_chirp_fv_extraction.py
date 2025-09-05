@@ -4,7 +4,7 @@ import logging
 import traceback
 from multiprocessing import Pool
 from functools import partial
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 from ipfx.stimulus import StimulusOntology
 import ipfx.script_utils as su
 
@@ -32,9 +32,9 @@ class CollectChirpFeatureVectorParameters(ags.ArgSchema):
         ],
         cli_as_single_argument=True)
     data_source = ags.fields.String(
-        description="Source of NWB files ('sdk' or 'lims')",
-        default="sdk",
-        validate=lambda x: x in ["sdk", "lims"]
+        description="Source of NWB files ('lims' is only currently implemented option)",
+        default="lims",
+        validate=lambda x: x in ["lims"]
         )
 
 
