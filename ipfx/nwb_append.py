@@ -59,7 +59,7 @@ def append_spike_times(input_nwb_path: PathLike,
                             unit='seconds',
                             data=wrapped_spike_times,
                             name=f"Sweep_{sweep_num}")
-            spike_module.add_data_interface(ts)
+            spike_module.add(ts)
 
         nwbfile.add_processing_module(spike_module)
 
