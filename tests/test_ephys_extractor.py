@@ -103,7 +103,6 @@ def test_extractor_on_zero_voltage():
     ext.process(t, v, i)
 
 
-@pytest.mark.filterwarnings("ignore:.*encountered in divide:RuntimeWarning")
 def test_extractor_on_variable_time_step(spike_test_var_dt):
     data = spike_test_var_dt
 

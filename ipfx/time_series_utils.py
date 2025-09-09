@@ -50,11 +50,14 @@ def calculate_dvdt(v, t, filter=None):
         dv = np.diff(v)
 
     dt = np.diff(t)
-    dvdt = 1e-3 * dv / dt  # in V/s = mV/ms
 
-    # some data sources, such as neuron, occasionally report 
+    # some data sources, such as neuron, occasionally report
     # duplicate timestamps, so we require that dt is not 0
-    return dvdt[np.fabs(dt) > sys.float_info.epsilon]
+    mask = np.fabs(dt) > sys.float_info.epsilon
+
+    dvdt = 1e-3 * dv[mask] / dt[mask]  # in V/s = mV/ms
+
+    return dvdt
 
 
 def has_fixed_dt(t):
