@@ -7,8 +7,6 @@ import numpy as np
 import pandas as pd
 import h5py
 
-from allensdk.core.cell_types_cache import CellTypesCache
-
 import ipfx.lims_queries as lq
 import ipfx.stim_features as stf
 import ipfx.stimulus_protocol_analysis as spa
@@ -48,13 +46,6 @@ def lims_nwb_information(specimen_id):
     return nwb_path, h5_path
 
 
-def sdk_nwb_information(specimen_id):
-    ctc = CellTypesCache()
-    nwb_data_set = ctc.get_ephys_data(specimen_id)
-    sweep_info = ctc.get_ephys_sweeps(specimen_id)
-    return nwb_data_set.file_name, sweep_info
-
-
 def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
     if data_source == "lims":
         nwb_path, h5_path = lims_nwb_information(specimen_id)
@@ -67,15 +58,6 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
                 nwb_file=nwb_path, ontology=ontology)
         except Exception as detail:
             logging.warning("Exception when loading specimen {:d} from LIMS".format(specimen_id))
-            logging.warning(detail)
-            return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
-    elif data_source == "sdk":
-        nwb_path, sweep_info = sdk_nwb_information(specimen_id)
-        try:
-            data_set = create_ephys_data_set(
-                nwb_file=nwb_path, sweep_info=sweep_info, ontology=ontology)
-        except Exception as detail:
-            logging.warning("Exception when loading specimen {:d} via Allen SDK".format(specimen_id))
             logging.warning(detail)
             return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
     elif data_source == "filesystem":

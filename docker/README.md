@@ -9,13 +9,5 @@ Our light and on-prem tests are defined in [our workflow file](../.github/workfl
 
 ## Building images
 
-If you are an Allen Institute developer, you will have instructions on how to access the machine running the IPFX self-hosted runner.
-
-On this machine you can create the Docker image corresponding to the Python versions we test on by running:
-
-```
-cd ipfx/docker/py39
-docker build -t ipfx_py39:latest .
-```
-
-And this should be sufficient for the on-prem tests defined in our GitHub workflow to run.
+If you are an Allen Institute developer, you will have instructions on how to access the machine running the
+IPFX self-hosted runner.

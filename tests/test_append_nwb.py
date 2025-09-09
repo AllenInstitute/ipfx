@@ -16,7 +16,7 @@ def make_skeleton_nwb2_file(nwb2_file_name):
     )
 
     device = nwbfile.create_device(name='electrode_0')
-    nwbfile.create_ic_electrode(
+    nwbfile.create_icephys_electrode(
         name="elec0",
         description='intracellular electrode',
         device=device

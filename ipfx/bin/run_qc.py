@@ -4,7 +4,7 @@ from ipfx.stimulus import StimulusOntology
 import ipfx.qc_feature_evaluator as qcp
 import argschema as ags
 from ipfx._schemas import QcParameters
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import ipfx.sweep_props as sp
 import pandas as pd
 import ipfx.logging_utils as lu

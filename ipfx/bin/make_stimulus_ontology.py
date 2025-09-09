@@ -1,4 +1,4 @@
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 from ipfx.stimulus import StimulusOntology
 import re
 import ipfx.lims_queries as lq
@@ -84,5 +84,5 @@ def main():
     make_default_stimulus_ontology()
 
 
-if __name__== "__main__": 
+if __name__== "__main__":
     main()

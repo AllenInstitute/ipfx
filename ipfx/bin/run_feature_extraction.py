@@ -7,7 +7,7 @@ from ipfx.stimulus import StimulusOntology
 from ipfx._schemas import FeatureExtractionParameters
 from ipfx.dataset.create import create_ephys_data_set
 import ipfx.sweep_props as sp
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 from ipfx.nwb_append import append_spike_times
 
 import ipfx.plot_qc_figures as plotqc

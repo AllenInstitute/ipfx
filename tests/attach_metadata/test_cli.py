@@ -12,7 +12,7 @@ import yaml
 import pynwb
 import numpy as np
 import pytest
-
+from ipfx.utilities import inject_sweep_table
 
 class CliRunner:
 
@@ -56,6 +56,9 @@ def simple_nwb(base_path):
         identifier='test session',
         session_start_time=datetime.now()
     )
+
+    inject_sweep_table(nwbfile)
+
     nwbfile.add_acquisition(
         pynwb.TimeSeries(
             name="a timeseries", 

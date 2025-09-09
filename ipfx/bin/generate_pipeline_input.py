@@ -1,5 +1,5 @@
 import ipfx.qc_feature_evaluator as qcp
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import os.path
 from ipfx.bin.generate_se_input import generate_se_input, parse_args
 import ipfx.lims_queries as lq

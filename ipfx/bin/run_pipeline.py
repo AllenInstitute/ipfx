@@ -1,8 +1,7 @@
 import logging
 import argschema as ags
 
-import allensdk.core.json_utilities as json_utilities
-
+import ipfx.json_utilities as json_utilities
 import ipfx.sweep_props as sweep_props
 from ipfx.logging_utils import log_pretty_header
 from ipfx._schemas import PipelineParameters

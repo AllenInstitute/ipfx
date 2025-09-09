@@ -2,7 +2,7 @@ import os
 from ipfx.bin.run_sweep_extraction import run_sweep_extraction
 from ipfx.bin.generate_se_input import generate_se_input, parse_args
 import ipfx.sweep_props as sp
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import ipfx.logging_utils as lu
 
 

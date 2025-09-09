@@ -115,8 +115,8 @@ class Nwb2Sink(MetadataSink):
 
         """
 
-        keys = list(self.nwbfile.ic_electrodes.keys())
-        
+        keys = list(self.nwbfile.icephys_electrodes.keys())
+
         if len(keys) != 1:
             raise ValueError(
                 "expected exactly 1 intracellular electrode, found "
