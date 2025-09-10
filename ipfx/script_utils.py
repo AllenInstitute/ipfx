@@ -15,9 +15,12 @@ import ipfx.stimulus_protocol_analysis as spa
 import ipfx.data_set_features as dsf
 import ipfx.time_series_utils as tsu
 import ipfx.error as er
+import ipfx.qc_feature_extractor as qc_fex
+import ipfx.qc_feature_evaluator as qc_feval
 from ipfx.sweep import SweepSet
 from ipfx.dataset.create import create_ephys_data_set
 from ipfx.aibs_data_set import AibsDataSet
+from ipfx.dataset.labnotebook import LabNotebookReaderIgorNwb
 
 import h5py
 import os
@@ -200,6 +203,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option="none", sp
         sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
         results = lq.query(exist_sql, (specimen_id, sweep_num_list))
         res_nums = pd.DataFrame(results, columns=["sweep_number"])["sweep_number"].tolist()
+        n_found_iclamp_sweeps = len(res_nums)
 
         not_checked_list = []
         for swp_num in sweep_num_list:
@@ -218,6 +222,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option="none", sp
             return np.sort(passed_sweep_nums)
         results = lq.query(passed_except_delta_vm_sql, (specimen_id, failed_sweep_list))
         results_df = pd.DataFrame(results, columns=["sweep_number", "name"])
+        results_df["short_name"] = [s.split(":")[0] for s in results_df["name"]]
 
         # not all cells have tagged QC status - if there are no tags assume the
         # fail call is correct and exclude those sweeps
@@ -232,8 +237,113 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option="none", sp
             ) for sn in failed_sweep_list])
 
         also_passing_nums = np.array(failed_sweep_list)[tagged_mask & ~has_non_delta_tags]
+        n_passing = len(passed_sweep_nums) + len(also_passing_nums) + len(not_checked_list)
+
+        logging.info(f"Specimen {specimen_id}: Found {n_passing} passing current clamp sweeps out of {n_found_iclamp_sweeps} recorded.")
+        logging.info(f"stimuli name: {stimuli_names}")
+        if n_passing < n_found_iclamp_sweeps:
+            logging.info(results_df["short_name"].value_counts())
 
         return np.sort(np.hstack([passed_sweep_nums, also_passing_nums, np.array(not_checked_list)]))
+    elif sweep_qc_option == "lims-passed-except-delta-vm-and-rms":
+        # Don't use LIMS-calculated RMS fail/pass - recalculate here
+
+        # check that sweeps exist in LIMS
+        sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
+        results = lq.query(exist_sql, (specimen_id, sweep_num_list))
+        res_nums = pd.DataFrame(results, columns=["sweep_number"])["sweep_number"].tolist()
+        n_found_iclamp_sweeps = len(res_nums)
+
+        not_checked_list = []
+        for swp_num in sweep_num_list:
+            if swp_num not in res_nums:
+                logging.debug("Could not find sweep {:d} from specimen {:d} in LIMS for QC check".format(swp_num, specimen_id))
+                not_checked_list.append(swp_num)
+
+        # get straight-up passed sweeps
+        results = lq.query(passed_sql, (specimen_id, sweep_num_list))
+        results_df = pd.DataFrame(results, columns=["sweep_number"])
+        passed_sweep_nums = results_df["sweep_number"].values
+
+        # also get sweeps that only fail due to delta Vm
+        failed_sweep_list = list(set(sweep_num_list) - set(passed_sweep_nums))
+        if len(failed_sweep_list) == 0:
+            return np.sort(passed_sweep_nums)
+        results = lq.query(passed_except_delta_vm_sql, (specimen_id, failed_sweep_list))
+        results_df = pd.DataFrame(results, columns=["sweep_number", "name"])
+        results_df["short_name"] = [s.split(":")[0] for s in results_df["name"]]
+
+        # not all cells have tagged QC status - if there are no tags assume the
+        # fail call is correct and exclude those sweeps
+        tagged_mask = np.array([sn in results_df["sweep_number"].tolist() for sn in failed_sweep_list])
+
+        # otherwise, check for having an error tag that isn't 'Vm delta'
+        # or one of the RMS tags and exclude those sweeps
+        has_non_delta_tags = np.array([np.any(
+            (results_df["sweep_number"].values == sn) &
+            (~results_df["name"].str.startswith("Vm delta").values) &
+            (~results_df["name"].str.startswith("slow noise").values) &
+            (~results_df["name"].str.startswith("pre-noise").values) &
+            (~results_df["name"].str.startswith("post-noise").values) &
+            (results_df["name"].values != "Blowout is not available") # don't fail for blowout unavailable because we are considering patch-seq sweeps
+            ) for sn in failed_sweep_list])
+
+        also_passing_nums = np.array(failed_sweep_list)[tagged_mask & ~has_non_delta_tags]
+
+        # Now re-check each sweep's RMS
+        qc_criteria = qc_feval.load_default_qc_criteria()
+
+        # Read the lab notebook for the RMS criteria used for the sweep
+        lnr = LabNotebookReaderIgorNwb(lims_nwb2_information(specimen_id))
+        numeric_fields = [c.decode('utf-8') for c in lnr.colname_number[0]]
+        short_rms_fields = [f for f in numeric_fields if "S-RMS Threshold" in f]
+        long_rms_fields = [f for f in numeric_fields if "L-RMS Threshold" in f]
+
+        pass_rms_nums = []
+        for sn in also_passing_nums:
+            is_ramp = "Ramp" == iclamp_st.at[sn, "stimulus_name"]
+
+            # Short RMS criterion
+            s_rms_threshold = None
+            for f in short_rms_fields:
+                if lnr.get_value(f, sn, None) is not None:
+                    s_rms_threshold = lnr.get_value(f, sn, None) * 1e3 # from V to mV
+                    break
+            if s_rms_threshold is None:
+                s_rms_threshold = qc_criteria["pre_noise_rms_mv_max"]
+
+            # Long RMS criterion
+            l_rms_threshold = None
+            for f in long_rms_fields:
+                if lnr.get_value(f, sn, None) is not None:
+                    l_rms_threshold = lnr.get_value(f, sn, None) * 1e3 # from V to mV
+                    break
+            if l_rms_threshold is None:
+                l_rms_threshold = qc_criteria["slow_noise_rms_mv_max"]
+
+            qc_features = qc_fex.current_clamp_sweep_qc_features(
+                data_set.sweep(sn),
+                is_ramp
+            )
+
+            if is_ramp:
+                if ((qc_features["pre_noise_rms_mv"] < s_rms_threshold) &
+                    (qc_features["slow_noise_rms_mv"] < l_rms_threshold)):
+                    pass_rms_nums.append(sn)
+            else:
+                if ((qc_features["pre_noise_rms_mv"] < s_rms_threshold) &
+                    (qc_features["post_noise_rms_mv"] < s_rms_threshold) &
+                    (qc_features["slow_noise_rms_mv"] < l_rms_threshold)):
+                    pass_rms_nums.append(sn)
+
+        n_passing = len(passed_sweep_nums) + len(pass_rms_nums) + len(not_checked_list)
+        logging.info(f"Specimen {specimen_id}: Found {n_passing} passing current clamp sweeps out of {n_found_iclamp_sweeps} recorded.")
+        logging.info(f"stimuli name: {stimuli_names}")
+        if n_passing < n_found_iclamp_sweeps:
+            dropped_sweep_nums = list(set(res_nums) - set(passed_sweep_nums) - set(pass_rms_nums) - set(not_checked_list))
+            logging.info(results_df.loc[results_df["sweep_number"].isin(dropped_sweep_nums), "short_name"].value_counts())
+
+        return np.sort(np.hstack([passed_sweep_nums, np.array(pass_rms_nums), np.array(not_checked_list)]))
     else:
         raise ValueError("Invalid sweep-level QC option {}".format(sweep_qc_option))
 
@@ -242,8 +352,9 @@ def validate_sweeps(data_set, sweep_numbers, extra_dur=0.2):
     check_sweeps = data_set.sweep_set(sweep_numbers)
     check_sweeps.select_epoch("recording")
     valid_sweep_stim = []
-    start = None
-    dur = None
+    start = []
+    dur = []
+    end = []
     for swp in check_sweeps.sweeps:
         if len(swp.t) == 0:
             valid_sweep_stim.append(False)
@@ -252,25 +363,62 @@ def validate_sweeps(data_set, sweep_numbers, extra_dur=0.2):
         swp_start, swp_dur, _, _, _ = stf.get_stim_characteristics(swp.i, swp.t)
         if swp_start is None:
             valid_sweep_stim.append(False)
+            start.append(None)
+            dur.append(None)
+            end.append(None)
         else:
-            start = swp_start
-            dur = swp_dur
             valid_sweep_stim.append(True)
-    if start is None:
+            start.append(swp_start)
+            dur.append(swp_dur)
+            end.append(swp_start + swp_dur)
+    if len(start) == 0:
         # Could not find any sweeps to define stimulus interval
-        return [], None, None
+        return None, None, None
 
-    end = start + dur
 
     # Check that all sweeps are long enough and not ended early
-    good_sweeps = [s for s, v in zip(check_sweeps.sweeps, valid_sweep_stim)
-                              if s.t[-1] >= end + extra_dur
-                              and v is True
-                              and not np.all(s.v[tsu.find_time_index(s.t, end)-100:tsu.find_time_index(s.t, end)] == 0)]
+    good_sweeps = []
+    good_start = []
+    good_end = []
+    good_dur = []
+    for s, v, swp_start, swp_end, swp_dur in zip(check_sweeps.sweeps, valid_sweep_stim, start, end, dur):
+        if not v:
+            logging.debug(f"Sweep {s.sweep_number} not valid stim")
+            continue
+        if s.t[-1] < swp_end + extra_dur:
+            logging.debug(f"Sweep {s.sweep_number} not long enough after end")
+            continue
+        if np.all(s.v[tsu.find_time_index(s.t, swp_end) - 100:tsu.find_time_index(s.t, swp_end)] == 0):
+            logging.debug(f"Sweep {s.sweep_number} end of stim interval was all zero")
+            continue
+        good_sweeps.append(s)
+        good_start.append(swp_start)
+        good_end.append(swp_end)
+        good_dur.append(swp_dur)
+
+    if len(good_sweeps) == 0:
+        return None, None, None
+
+    # Check for consistent stimulus intervals
+    if not np.all(np.isclose(good_dur, good_dur[0])):
+        logging.warning("Sweeps in set do not all have the same duration")
+
+    if not np.all(np.isclose(good_start, good_start[0])):
+        logging.info("Stimulus start times are not identical across sweeps in set")
+        start = good_start
+    else:
+        start = good_start[0]
+
+    if not np.all(np.isclose(good_end, good_end[0])):
+        logging.info("Stimulus end times are not identical across sweeps in set")
+        end = good_end
+    else:
+        end = good_end[0]
+
     return SweepSet(sweeps=good_sweeps), start, end
 
 
-def validate_ramp_sweeps(data_set, sweep_numbers):
+def validate_ramp_sweeps(data_set, sweep_numbers, min_ramp_dur=0.1):
     check_sweeps = data_set.sweep_set(sweep_numbers)
     check_sweeps.select_epoch("recording")
     valid_sweep_stim = []
@@ -284,15 +432,17 @@ def validate_ramp_sweeps(data_set, sweep_numbers):
         swp_start, swp_dur, _, _, _ = stf.get_stim_characteristics(swp.i, swp.t)
         if swp_start is None or swp_dur is None:
             valid_sweep_stim.append(False)
+        elif swp_dur < min_ramp_dur:
+            valid_sweep_stim.append(False)
         else:
             start = swp_start
             dur = swp_dur
             valid_sweep_stim.append(True)
     if start is None:
         # Could not find any sweeps to define stimulus interval
-        return [], None, None
+        return None
 
-    # Check that all sweeps are long enough and not ended early
+    # Check that all sweeps are long enough and did not end early
     good_sweeps = [s for s, v in zip(check_sweeps.sweeps, valid_sweep_stim)
                               if v is True]
     return SweepSet(sweeps=good_sweeps)
@@ -303,7 +453,7 @@ def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthr
         raise er.FeatureError("No long square sweeps available for feature extraction")
 
     lsq_sweeps, lsq_start, lsq_end = validate_sweeps(data_set, sweep_numbers, extra_dur=extra_dur)
-    if len(lsq_sweeps.sweeps) == 0:
+    if lsq_sweeps is None or len(lsq_sweeps.sweeps) == 0:
         raise er.FeatureError("No long square sweeps were long enough or did not end early")
     lsq_sweeps.select_epoch("recording")
 
@@ -326,18 +476,29 @@ def preprocess_short_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, spike
         raise er.FeatureError("No short square sweeps available for feature extraction")
 
     ssq_sweeps, ssq_start, ssq_end  = validate_sweeps(data_set, sweep_numbers, extra_dur=extra_dur)
-    if len(ssq_sweeps.sweeps) == 0:
+    if ssq_sweeps is None or len(ssq_sweeps.sweeps) == 0:
         raise er.FeatureError("No short square sweeps were long enough or did not end early")
     ssq_sweeps.select_epoch("recording")
 
-    for swp in ssq_sweeps.sweeps:
-        if swp.t[-1] < ssq_end + spike_window:
-            spike_window = swp.t[-1] - ssq_end - 0.001
+    if type(ssq_start) is list:
+        est_window = [ssq_start, [s + 0.001 for s in ssq_start]]
+        extractor_end = []
+        for idx, swp in enumerate(ssq_sweeps.sweeps):
+            if swp.t[-1] < ssq_end[idx] + spike_window:
+                extractor_end.append(swp.t[-1] - 0.001)
+            else:
+                extractor_end.append(ssq_end[idx] + spike_window)
+    else:
+        est_window = [ssq_start, ssq_start + 0.001]
+        for swp in ssq_sweeps.sweeps:
+            if swp.t[-1] < ssq_end + spike_window:
+                spike_window = swp.t[-1] - ssq_end - 0.001
+        extractor_end = ssq_end + spike_window
 
     ssq_spx, ssq_spfx = dsf.extractors_for_sweeps(ssq_sweeps,
-                                                  est_window = [ssq_start, ssq_start + 0.001],
+                                                  est_window = est_window,
                                                   start=ssq_start,
-                                                  end=ssq_end + spike_window,
+                                                  end=extractor_end,
                                                   reject_at_stim_start_interval=0.0002,
                                                   **dsf.detection_parameters(data_set.SHORT_SQUARE))
     ssq_an = spa.ShortSquareAnalysis(ssq_spx, ssq_spfx)
@@ -351,10 +512,22 @@ def preprocess_ramp_sweeps(data_set, sweep_numbers):
         raise er.FeatureError("No ramp sweeps available for feature extraction")
 
     ramp_sweeps = validate_ramp_sweeps(data_set, sweep_numbers)
-
+    if ramp_sweeps is None or len(ramp_sweeps.sweeps) == 0:
+        raise er.FeatureError("No ramp sweeps were long enough")
     ramp_sweeps.select_epoch("recording")
 
-    ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(ramp_sweeps.sweeps[0].i, ramp_sweeps.sweeps[0].t)
+    starts = []
+    durs = []
+    for swp in ramp_sweeps.sweeps:
+        ramp_start, ramp_dur, _, _, _ = stf.get_stim_characteristics(
+            swp.i, swp.t)
+        starts.append(ramp_start)
+        durs.append(ramp_dur)
+
+    if np.all(np.isclose(starts, starts[0])):
+        ramp_start = starts[0]
+    else:
+        ramp_start = starts
     ramp_spx, ramp_spfx = dsf.extractors_for_sweeps(ramp_sweeps,
                                                 start = ramp_start,
                                                 **dsf.detection_parameters(data_set.RAMP))
@@ -391,7 +564,7 @@ def organize_results(specimen_ids, results, skip_keys=[]):
                     if k not in result_sizes:
                         result_sizes[k] = len(r[k])
                     elif len(r[k]) != result_sizes[k]:
-                        print(f"found result with length {len(r[k])} when expecting length {result_sizes[k]} for {k}; specimen ID {sp_id}")
+                        logging.warning(f"found result with length {len(r[k])} when expecting length {result_sizes[k]} for {k}; specimen ID {sp_id}")
 
         data = np.array([r[k] if k in r else np.nan * np.zeros(result_sizes[k])
                         for r in results])

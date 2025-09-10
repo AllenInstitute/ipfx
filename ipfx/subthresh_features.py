@@ -2,6 +2,7 @@ import numpy as np
 import logging
 from . import time_series_utils as tsu
 from scipy.optimize import curve_fit
+from scipy.signal import savgol_filter
 from . import error as er
 
 def baseline_voltage(t, v, start, baseline_interval=0.1, baseline_detect_thresh=0.3, filter_frequency=1.0):
@@ -27,7 +28,7 @@ def baseline_voltage(t, v, start, baseline_interval=0.1, baseline_detect_thresh=
         return np.nan
 
 
-def voltage_deflection(t, v, i, start, end, deflect_type=None):
+def voltage_deflection(t, v, i, start, end, deflect_type=None, reject_transients=False, smoothing=True):
     """Measure deflection (min or max, between start and end if specified).
 
     Parameters
@@ -63,8 +64,88 @@ def voltage_deflection(t, v, i, start, end, deflect_type=None):
 
     deflect_func = deflect_dispatch[deflect_type]
 
-    v_window = v[start_index:end_index]
+    if smoothing:
+        v_smooth = savgol_filter(v, 40, 2)
+        v_window = v_smooth[start_index:end_index]
+    else:
+        v_window = v[start_index:end_index]
+
     deflect_index = deflect_func(v_window) + start_index
+
+    # Try to automatically detect and reject transients if requested
+    # - look near the peak for high dv/dt values and block them out
+    if reject_transients:
+        nan_deflect_dispatch = {
+            "min": np.nanargmin,
+            "max": np.nanargmax,
+        }
+        nan_deflect_func = nan_deflect_dispatch[deflect_type]
+
+        # use an adaptive threshold to avoid treating the start of the step as a transient
+        dvdt_thresh = 1.0 # mV/ms
+        t_envelope = 1e3 * (t[start_index:end_index] - t[start_index])
+        dvdt_thresh_envelope = 5 * np.exp(-t_envelope / 2) + dvdt_thresh
+
+        window_width = 400
+        dvdt = savgol_filter(v, 50, 2, deriv=1, delta=1e3 * (t[1] - t[0])) # mV/ms, smoothed
+        if smoothing:
+            temp_v = v_smooth.copy()
+        else:
+            temp_v = v.copy()
+
+        window_start = max(deflect_index - window_width, start_index)
+        window_end = min(deflect_index + window_width, end_index)
+        dvdt_window = dvdt[window_start:window_end]
+        peak_dvdt_ind = np.argmax(np.abs(dvdt_window))
+        peak_dvdt = dvdt_window[peak_dvdt_ind]
+        peak_dvdt_ind += window_start
+
+        iter_count = 0
+        max_iter = 500
+        while np.abs(peak_dvdt) > dvdt_thresh_envelope[peak_dvdt_ind - start_index]:
+            # found a peak to reject
+            iter_count += 1
+            if iter_count > max_iter:
+                break
+            # determine extent of transient
+
+            # find start
+            search_start = min(deflect_index, peak_dvdt_ind)
+            transient_start_index = np.flatnonzero(np.abs(dvdt[search_start:start_index - 1:-1]) < dvdt_thresh_envelope[search_start - start_index::-1] / 5)[0]
+            transient_start_index = search_start - transient_start_index
+            print("transient_start_index", transient_start_index)
+
+            transient_base_avg = np.mean(v[transient_start_index - window_width * 2:transient_start_index])
+            transient_base_range = 3 * np.std(v[transient_start_index - window_width:transient_start_index])
+
+            # find end
+            search_start = max(deflect_index, peak_dvdt_ind)
+            print(search_start, transient_base_avg, transient_base_range)
+            baseline_return = np.flatnonzero(np.abs(v[search_start:] - transient_base_avg) < transient_base_range)
+            if len(baseline_return) > 0:
+                transient_end_index = baseline_return[0]
+                transient_end_index += search_start
+            else:
+                transient_end_index = len(t) - 1
+
+            # blank out the transient
+            print("blanking", transient_start_index, transient_end_index)
+
+            temp_v[transient_start_index:transient_end_index + 1] = np.nan
+            dvdt[transient_start_index:transient_end_index + 1] = np.nan
+
+            # find a new peak
+            v_window = temp_v[start_index:end_index]
+            deflect_index = nan_deflect_func(v_window) + start_index
+
+            # check the dv/dt around the new peak
+            window_start = max(deflect_index - window_width, start_index)
+            window_end = min(deflect_index + window_width, end_index)
+            dvdt_window = dvdt[window_start:window_end]
+            peak_dvdt_ind = np.nanargmax(np.abs(dvdt_window))
+            peak_dvdt = dvdt_window[peak_dvdt_ind]
+            peak_dvdt_ind += window_start
+
 
     return v[deflect_index], deflect_index
 
@@ -94,8 +175,17 @@ def time_constant(t, v, i, start, end, max_fit_end=None,
     -------
     tau : membrane time constant in seconds
     """
-    # Assumes this is being done on a hyperpolarizing step
-    v_peak, peak_index = voltage_deflection(t, v, i, start, end, "min")
+
+    # Check if this is being done on a hyperpolarizing step
+    check_index = tsu.find_time_index(t, end - baseline_interval)
+    stim_amp = i[check_index]
+    if stim_amp < 0:
+        reject_transients = True
+    else:
+        reject_transients = False
+
+    v_peak, peak_index = voltage_deflection(
+        t, v, i, start, end, "min", reject_transients=reject_transients)
     if max_fit_end is not None:
         max_peak_index = tsu.find_time_index(t, max_fit_end)
         peak_index = min(max_peak_index, peak_index)
@@ -139,8 +229,18 @@ def sag(t, v, i, start, end, peak_width=0.005, baseline_interval=0.03):
     -------
     sag : fraction that membrane potential relaxes back to baseline
     """
+
+    # Check if actually hyperpolarizing (otherwise don't use reject_transients option
+    # for voltage deflection calculation, since there may be APs)
+    check_index = tsu.find_time_index(t, end - baseline_interval)
+    stim_amp = i[check_index]
+    if stim_amp < 0:
+        reject_transients = True
+    else:
+        reject_transients = False
+
     v_peak, peak_index = voltage_deflection(t, v, i,
-        start, end - baseline_interval, "min")
+        start, end - baseline_interval, "min", reject_transients=reject_transients)
     v_peak_avg = tsu.average_voltage(v, t, start=t[peak_index] - peak_width / 2.,
                                  end=t[peak_index] + peak_width / 2.)
     v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
@@ -156,8 +256,17 @@ def input_resistance(t_set, i_set, v_set, start, end, baseline_interval=0.1):
 
     v_vals = []
     i_vals = []
-    for t, i, v, in zip(t_set, i_set, v_set):
-        v_peak, min_index = voltage_deflection(t, v, i, start, end, 'min')
+
+    if type(start) is list:
+        starts = start
+        ends = end
+    else:
+        starts = [start] * len(t_set)
+        ends = [end] * len(t_set)
+
+    for t, i, v, start, end in zip(t_set, i_set, v_set, starts, end):
+        v_peak, min_index = voltage_deflection(
+            t, v, i, start, end, 'min', reject_transients=True)
         v_baseline = baseline_voltage(t, v, start, baseline_interval=baseline_interval)
         v_vals.append(v_peak - v_baseline)
         i_vals.append(i[min_index])

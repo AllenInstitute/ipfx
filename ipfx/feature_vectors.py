@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 from scipy import stats
+from scipy.signal import savgol_filter
 from . import data_set_features as dsf
 from . import stimulus_protocol_analysis as spa
 from . import time_series_utils as tsu
@@ -95,7 +96,7 @@ def identify_subthreshold_depol_with_amplitudes(features, sweeps):
 
 def step_subthreshold(amp_sweep_dict, target_amps, start, end,
                       extend_duration=0.2, subsample_interval=0.01,
-                      amp_tolerance=0.):
+                      amp_tolerance=0., remove_transients=True):
     """ Subsample set of subthreshold step responses including regions before and after step
 
         Parameters
@@ -104,9 +105,9 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
             Amplitude-sweep pairs
         target_amps: list
             Desired amplitudes for output vector
-        start: float
+        start: float or dict
             start stimulus interval (seconds)
-        end: float
+        end: float or dict
             end of stimulus interval (seconds)
         extend_duration: float (optional, default 0.2)
             Duration to extend sweep before and after stimulus interval (seconds)
@@ -124,11 +125,30 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
     subsampled_dict = {}
     for amp in amp_sweep_dict:
         swp = amp_sweep_dict[amp]
-        start_index = tsu.find_time_index(swp.t, start - extend_duration)
+
+        if type(start) is dict:
+            swp_start = start[swp.sweep_number]
+        else:
+            swp_start = start
+        if type(end) is dict:
+            swp_end = end[swp.sweep_number]
+        else:
+            swp_end = end
+
+        if remove_transients:
+            v = swp.v.copy()
+            start_index = tsu.find_time_index(swp.t, swp_start)
+            end_index = tsu.find_time_index(swp.t, swp_end)
+            v_clean = _remove_transients(v[start_index:end_index], swp.t[start_index:end_index])
+            v[start_index:end_index] = v_clean
+        else:
+            v = swp.v
+
+        start_index = tsu.find_time_index(swp.t, swp_start - extend_duration)
         delta_t = swp.t[1] - swp.t[0]
         subsample_width = int(np.round(subsample_interval / delta_t))
-        end_index = tsu.find_time_index(swp.t, end + extend_duration)
-        subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
+        end_index = tsu.find_time_index(swp.t, swp_end + extend_duration)
+        subsampled_v = _subsample_average(v[start_index:end_index], subsample_width)
         subsampled_dict[amp] = subsampled_v
 
     extend_length = int(np.round(extend_duration / subsample_interval))
@@ -178,6 +198,53 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
     return np.hstack(output_list)
 
 
+def _remove_transients(v, t, dvdt_thresh=2.0, window_width=400):
+    dvdt = savgol_filter(v, 50, 2, deriv=1, delta=1e3 * (t[1] - t[0])) # mV/ms, smoothed
+    v_clean = v.copy()
+
+    # use an adaptive threshold to avoid treating the start of the step as a transient
+    t_envelope = 1e3 * (t - t[0])
+    dvdt_thresh_envelope = 13 * np.exp(-t_envelope / 5) + dvdt_thresh
+
+    while np.any(np.abs(dvdt) > dvdt_thresh_envelope):
+        exceed_inds = np.flatnonzero(np.abs(dvdt) > dvdt_thresh_envelope)
+        exceed_peak_ind = np.argmax(np.abs(dvdt)[exceed_inds])
+        dvdt_peak_ind = exceed_inds[exceed_peak_ind]
+        print("dvdt peak to remove", dvdt_peak_ind, dvdt[dvdt_peak_ind])
+        peak_ind = np.nanargmax(np.abs(v[dvdt_peak_ind - window_width:dvdt_peak_ind + window_width]))
+        peak_ind += dvdt_peak_ind - window_width
+
+        search_start = min(peak_ind, dvdt_peak_ind)
+        transient_start_index = np.flatnonzero(np.abs(dvdt[search_start::-1]) < dvdt_thresh / 10)[0]
+        transient_start_index = search_start - transient_start_index
+
+        transient_base_avg = np.mean(v[transient_start_index - window_width:transient_start_index])
+        transient_base_range = 3 * np.std(v[transient_start_index - window_width:transient_start_index])
+
+        search_start = max(peak_ind, dvdt_peak_ind)
+        print(peak_ind, dvdt_peak_ind)
+        print(search_start, transient_base_avg, transient_base_range)
+
+        baseline_return = np.flatnonzero(np.abs(v[search_start:] - transient_base_avg) < transient_base_range)
+        if len(baseline_return) > 0:
+            transient_end_index = baseline_return[0]
+            transient_end_index += search_start
+        else:
+            transient_end_index = len(t) - 1
+
+        # blank out the transient
+        print("blanking", transient_start_index, transient_end_index)
+        v_clean[transient_start_index:transient_end_index + 1] = np.nan
+        dvdt[transient_start_index:transient_end_index + 1] = np.nan
+
+    nan_mask = np.isnan(v_clean)
+    nan_ind = np.nonzero(nan_mask)
+    not_nan_ind = np.nonzero(~nan_mask)
+
+    v_clean[nan_ind] = np.interp(t[nan_ind], t[not_nan_ind], v_clean[not_nan_ind])
+    return v_clean
+
+
 def _subsample_average(x, width):
     """Downsamples x by averaging `width` points"""
 
@@ -186,7 +253,7 @@ def _subsample_average(x, width):
 
 
 def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
-                   extend_duration=0.2, subsample_interval=0.01):
+                   extend_duration=0.2, subsample_interval=0.01, remove_transients=True):
     """ Subthreshold step response closest to target amplitude normalized to baseline and peak deflection
 
         Parameters
@@ -195,9 +262,9 @@ def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
             Amplitude-sweep pairs
         deflect_dict:
             Dictionary of (baseline, deflect) tuples with amplitude keys
-        start: float
+        start: float or dict
             start stimulus interval (seconds)
-        end: float
+        end: float or dict
             end of stimulus interval (seconds)
         target_amp: float (optional, default=-101)
             Search target for amplitude (pA)
@@ -219,11 +286,29 @@ def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
     base, deflect_v = deflect_dict[matching_amp]
     delta = base - deflect_v
 
-    start_index = tsu.find_time_index(swp.t, start - extend_duration)
+    if type(start) is dict:
+        swp_start = start[swp.sweep_number]
+    else:
+        swp_start = start
+    if type(end) is dict:
+        swp_end = end[swp.sweep_number]
+    else:
+        swp_end = end
+
+    if remove_transients:
+        v = swp.v.copy()
+        start_index = tsu.find_time_index(swp.t, swp_start)
+        end_index = tsu.find_time_index(swp.t, swp_end)
+        v_clean = _remove_transients(v[start_index:end_index], swp.t[start_index:end_index])
+        v[start_index:end_index] = v_clean
+    else:
+        v = swp.v
+
+    start_index = tsu.find_time_index(swp.t, swp_start - extend_duration)
     delta_t = swp.t[1] - swp.t[0]
     subsample_width = int(np.round(subsample_interval / delta_t))
-    end_index = tsu.find_time_index(swp.t, end + extend_duration)
-    subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
+    end_index = tsu.find_time_index(swp.t, swp_end + extend_duration)
+    subsampled_v = _subsample_average(v[start_index:end_index], subsample_width)
     subsampled_v -= base
     subsampled_v /= delta
 
@@ -241,9 +326,9 @@ def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
             Amplitude-sweep pairs
         deflect_dict:
             Dictionary of (baseline, deflect) tuples with amplitude keys
-        start: float
+        start: float or dict
             start stimulus interval (seconds)
-        end: float
+        end: float or dict
             end of stimulus interval (seconds)
         extend_duration: float (optional, default 0.2)
             Duration to extend sweep on each side of stimulus interval (seconds)
@@ -258,14 +343,26 @@ def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
             Subsampled, normalized voltage trace
     """
 
-    if (end - start) < steady_state_interval:
-        raise ValueError("steady state interval cannot exceed stimulus interval")
-
     if len(amp_sweep_dict) == 0:
         logging.debug("No subthreshold depolarizing sweeps found - returning all-nan response")
 
         # create all-nan response of appropriate length
-        total_interval = extend_duration * 2 + (end - start)
+        k = None
+        if type(start) is dict:
+            # Weird because not really using this sweep, but will just take the first sweep
+            # in the list
+            k = list(start.keys())[0]
+            swp_start = start[k]
+        else:
+            swp_start = start
+        if type(end) is dict:
+            if k is None:
+                k = list(end.keys())[0]
+            swp_end = end[k]
+        else:
+            swp_end = end
+
+        total_interval = extend_duration * 2 + (swp_end - swp_start)
         length = int(total_interval / subsample_interval)
         return np.ones(length) * np.nan
 
@@ -273,18 +370,30 @@ def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
     max_amp = np.max(available_amps)
     swp = amp_sweep_dict[max_amp]
 
+    if type(start) is dict:
+        swp_start = start[swp.sweep_number]
+    else:
+        swp_start = start
+    if type(end) is dict:
+        swp_end = end[swp.sweep_number]
+    else:
+        swp_end = end
+
+    if (swp_end - swp_start) < steady_state_interval:
+        raise ValueError("steady state interval cannot exceed stimulus interval")
+
     base, _ = deflect_dict[max_amp]
 
-    interval_start_index = tsu.find_time_index(swp.t, end - steady_state_interval)
-    interval_end_index = tsu.find_time_index(swp.t, end)
+    interval_start_index = tsu.find_time_index(swp.t, swp_end - steady_state_interval)
+    interval_end_index = tsu.find_time_index(swp.t, swp_end)
     steady_state_v = swp.v[interval_start_index:interval_end_index].mean()
 
     delta = steady_state_v - base
 
-    start_index = tsu.find_time_index(swp.t, start - extend_duration)
+    start_index = tsu.find_time_index(swp.t, swp_start - extend_duration)
     delta_t = swp.t[1] - swp.t[0]
     subsample_width = int(np.round(subsample_interval / delta_t))
-    end_index = tsu.find_time_index(swp.t, end + extend_duration)
+    end_index = tsu.find_time_index(swp.t, swp_end + extend_duration)
     subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
     subsampled_v -= base
     subsampled_v /= delta
@@ -292,7 +401,7 @@ def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
     return subsampled_v
 
 
-def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5,
+def identify_sweep_for_isi_shape(sweeps, features, start, end, min_spike=5,
     exclude_sweep_numbers=[]):
     """ Find lowest-amplitude spiking sweep that has at least min_spike
         or else sweep with most spikes
@@ -303,8 +412,10 @@ def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5,
             Sweeps to consider for ISI shape calculation
         features: dict
             Output of LongSquareAnalysis.analyze()
-        duration: float
-            Length of stimulus interval (seconds)
+        start: float or dict
+            start of stimulus interval (seconds)
+        end: float or dict
+            end of stimulus interval (seconds)
         min_spike: int (optional, default 5)
             Minimum number of spikes for first preference sweep (default 5)
         exclude_sweep_numbers : list
@@ -318,12 +429,24 @@ def identify_sweep_for_isi_shape(sweeps, features, duration, min_spike=5,
             Spike info for selected sweep
     """
     sweep_table = features["sweeps"]
+    sweep_numbers = np.array([s.sweep_number for s in sweeps.sweeps], dtype=int)
     mask_exclude = np.array([s.sweep_number in exclude_sweep_numbers for s in sweeps.sweeps])
+
     include_table = sweep_table.loc[~mask_exclude, :]
     mask_supra = (include_table["avg_rate"].values > 0) & (include_table["stim_amp"] > 0)
     supra_table = include_table.loc[mask_supra, :]
+    if type(start) is dict:
+        swp_start = np.array([start[sn] for sn in sweep_numbers])[~mask_exclude][mask_supra]
+    else:
+        swp_start = start
+    if type(end) is dict:
+        swp_end = np.array([end[sn] for sn in sweep_numbers])[~mask_exclude][mask_supra]
+    else:
+        swp_end = end
+    duration = swp_end - swp_start
 
     amps = np.rint(supra_table["stim_amp"].values)
+
     n_spikes = supra_table["avg_rate"].values * duration
 
     # Pick out the sweep to get the ISI shape
@@ -359,7 +482,7 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
             Sweep object with at least one action potential
         spike_info: DataFrame
             Spike info for sweep
-        end: float
+        end: float or dict
             End of stimulus interval (seconds)
         n_points: int (optional, default 100)
             Number of points in output
@@ -385,6 +508,11 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
     spike_info = spike_info.loc[~spike_info["clipped"], :]
     n_spikes = spike_info.shape[0]
 
+    if type(end) is dict:
+        swp_end = end[sweep.sweep_number]
+    else:
+        swp_end = end
+
     if n_spikes > 1:
         threshold_indexes = spike_info["threshold_index"].values
         threshold_voltages = spike_info["threshold_v"].values
@@ -407,11 +535,11 @@ def isi_shape(sweep, spike_info, end, n_points=100, steady_state_interval=0.1,
         threshold_v = spike_info["threshold_v"][0]
         fast_trough_index = spike_info["fast_trough_index"].astype(int)[0]
         fast_trough_t = spike_info["fast_trough_t"][0]
-        stim_end_index = tsu.find_time_index(sweep.t, end)
-        if fast_trough_t < end - steady_state_interval:
+        stim_end_index = tsu.find_time_index(sweep.t, swp_end)
+        if fast_trough_t < swp_end - steady_state_interval:
             max_end_index = tsu.find_time_index(sweep.t, sweep.t[fast_trough_index] + single_max_duration)
 
-            std_start_index = tsu.find_time_index(sweep.t, end - steady_state_interval)
+            std_start_index = tsu.find_time_index(sweep.t, swp_end - steady_state_interval)
             steady_state_v = sweep.v[std_start_index:stim_end_index].mean()
             above_ss_ind = np.flatnonzero(sweep.v[fast_trough_index:] >= steady_state_v - single_return_tolerance)
 
@@ -593,7 +721,7 @@ def first_ap_waveform(sweep, spikes, length_in_points):
     return sweep.v[start_index:end_index]
 
 
-def identify_suprathreshold_spike_info(features, target_amplitudes,
+def identify_suprathreshold_spike_info(features, target_amplitudes, sweep_numbers=None,
         shift=None, amp_tolerance=0, needed_amplitudes=None):
     """ Find spike information for sweeps matching desired amplitudes relative to rheobase
 
@@ -620,7 +748,11 @@ def identify_suprathreshold_spike_info(features, target_amplitudes,
     spike_data = features["spikes_set"]
     sweeps_to_use = _identify_suprathreshold_indices(
         features, target_amplitudes, shift, amp_tolerance, needed_amplitudes=needed_amplitudes)
-    return [spike_data[ind] if ind is not None else None for ind in sweeps_to_use]
+    if sweep_numbers is not None:
+        used_sweep_numbers = [sweep_numbers[ind] if ind is not None else None for ind in sweeps_to_use]
+    else:
+        used_sweep_numbers = None
+    return [spike_data[ind] if ind is not None else None for ind in sweeps_to_use], used_sweep_numbers
 
 
 def identify_suprathreshold_sweeps(sweeps, features, target_amplitudes,
@@ -755,7 +887,7 @@ def _identify_suprathreshold_indices(features, target_amplitudes,
     return sweeps_to_use
 
 
-def psth_vector(spike_info_list, start, end, width=50):
+def psth_vector(spike_info_list, start, end, width=50, duration=1.0):
     """ Create binned "PSTH"-like feature vector based on spike times, concatenated
         across sweeps
 
@@ -763,9 +895,9 @@ def psth_vector(spike_info_list, start, end, width=50):
     ----------
     spike_info_list: list
         Spike info DataFrames for each sweep
-    start: float
+    start: float or list
         Start of stimulus interval (seconds)
-    end: float
+    end: float or list
         End of stimulus interval (seconds)
     width: float (optional, default 50)
         Bin width in ms
@@ -780,17 +912,30 @@ def psth_vector(spike_info_list, start, end, width=50):
     if spike_info_list[0] is None:
         logging.warning("Rheobase sweep appears to be missing")
 
-    for si in spike_info_list:
+    for i, si in enumerate(spike_info_list):
+        if type(start) is list:
+            swp_start = start[i]
+        else:
+            swp_start = start
+
+        if type(end) is list:
+            swp_end = end[i]
+        else:
+            swp_end = end
+
         if si is None:
             vector_list.append(None)
             continue
         thresh_t = si["threshold_t"]
         spike_count = np.ones_like(thresh_t)
         one_ms = 0.001
-        duration = np.round(end, decimals=3) - np.round(start, decimals=3) # round to nearest ms to deal with float approximations
-        duration = np.round(duration, decimals=3)
+        actual_duration = swp_end - swp_start
+        # only use calculated duration to check against requested duration
+        if np.abs(actual_duration - duration) > one_ms:
+            logging.warning(f"Actual duration ({actual_duration}) does not match duration specified for analysis ({duration})")
+
         n_bins = int(duration / one_ms) // width
-        bin_edges = np.linspace(start, end, n_bins + 1) # includes right edge, so adding one to desired bin number
+        bin_edges = np.linspace(swp_start, swp_start + duration, n_bins + 1) # includes right edge, so adding one to desired bin number
         bin_width = bin_edges[1] - bin_edges[0]
         output = stats.binned_statistic(thresh_t,
                                         spike_count,
@@ -803,7 +948,7 @@ def psth_vector(spike_info_list, start, end, width=50):
     return output_vector
 
 
-def inst_freq_vector(spike_info_list, start, end, width=20, gap_factor=4):
+def inst_freq_vector(spike_info_list, start, end, width=20, gap_factor=4, duration=1.0):
     """ Create binned instantaneous frequency feature vector,
         concatenated across sweeps
 
@@ -811,9 +956,9 @@ def inst_freq_vector(spike_info_list, start, end, width=20, gap_factor=4):
     ----------
     spike_info_list: list
         Spike info DataFrames for each sweep
-    start: float
+    start: float or list
         Start of stimulus interval (seconds)
-    end: float
+    end: float or list
         End of stimulus interval (seconds)
     width: float (optional, default 20)
         Bin width in ms
@@ -832,18 +977,31 @@ def inst_freq_vector(spike_info_list, start, end, width=20, gap_factor=4):
         logging.warning("Rheobase sweep appears to be missing")
 
     vector_list = []
-    for si in spike_info_list:
+    for i, si in enumerate(spike_info_list):
+        if type(start) is list:
+            swp_start = start[i]
+        else:
+            swp_start = start
+
+        if type(end) is list:
+            swp_end = end[i]
+        else:
+            swp_end = end
+
         if si is None:
             vector_list.append(None)
             continue
         thresh_t = si["threshold_t"].values
-        inst_freq, inst_freq_times = _inst_freq_feature(thresh_t, start, end)
+        inst_freq, inst_freq_times = _inst_freq_feature(thresh_t, swp_start, swp_end)
 
         one_ms = 0.001
-        duration = np.round(end, decimals=3) - np.round(start, decimals=3) # round to nearest ms to deal with float approximations
-        duration = np.round(duration, decimals=3)
+        actual_duration = swp_end - swp_start
+        # only use calculated duration to check against requested duration
+        if np.abs(actual_duration - duration) > one_ms:
+            logging.warning(f"Actual duration ({actual_duration}) does not match duration specified for analysis ({duration})")
+
         n_bins = int(duration / one_ms) // width
-        bin_edges = np.linspace(start, end, n_bins + 1) # includes right edge, so adding one to desired bin number
+        bin_edges = np.linspace(swp_start, swp_start + duration, n_bins + 1) # includes right edge, so adding one to desired bin number
         bin_width = bin_edges[1] - bin_edges[0]
 
         output = stats.binned_statistic(inst_freq_times,
@@ -856,6 +1014,8 @@ def inst_freq_vector(spike_info_list, start, end, width=20, gap_factor=4):
 
         avg_isi = 1 / np.mean(inst_freq)
         for sec in consecutive_sections:
+            if len(sec) == 0:
+                continue
             gap_length = (sec[-1] - sec[0] + 1) * bin_width
             if gap_length > gap_factor * avg_isi:
                 # Since gap is long, set beginning and end of gap to 0 spikes/s
@@ -875,7 +1035,7 @@ def inst_freq_vector(spike_info_list, start, end, width=20, gap_factor=4):
     return output_vector
 
 
-def spike_feature_vector(feature, spike_info_list, start, end, width=20):
+def spike_feature_vector(feature, spike_info_list, start, end, width=20, duration=1.0):
     """ Create binned feature vector for specified features,
         concatenated across sweeps
 
@@ -885,9 +1045,9 @@ def spike_feature_vector(feature, spike_info_list, start, end, width=20):
         Name of feature found in members of spike_info_list
     spike_info_list: list
         Spike info DataFrames for each sweep
-    start: float
+    start: float or list
         Start of stimulus interval (seconds)
-    end: float
+    end: float or list
         End of stimulus interval (seconds)
     width: float (optional, default 20)
         Bin width in ms
@@ -901,8 +1061,21 @@ def spike_feature_vector(feature, spike_info_list, start, end, width=20):
     if spike_info_list[0] is None:
         logging.warning("Rheobase sweep appears to be missing")
 
+    one_ms = 0.001
+    n_bins = int(duration / one_ms) // width
+
     vector_list = []
-    for si in spike_info_list:
+    for i, si in enumerate(spike_info_list):
+        if type(start) is list:
+            swp_start = start[i]
+        else:
+            swp_start = start
+
+        if type(end) is list:
+            swp_end = end[i]
+        else:
+            swp_end = end
+
         if si is None:
             vector_list.append(None)
             continue
@@ -913,14 +1086,21 @@ def spike_feature_vector(feature, spike_info_list, start, end, width=20):
         else:
             feature_values = si[feature].values
             mask = ~si["clipped"].values
-            thresh_t = thresh_t[mask]
-            feature_values = feature_values[mask]
+            if np.sum(mask) == 0:
+                if np.all(np.isnan(feature_values)):
+                    logging.warning(f"All spikes were clipped (n={len(thresh_t)}) and had NaN values for feature {feature}; dropping sweep for this feature")
+                    vector_list.append(None)
+                    continue
+            else:
+                thresh_t = thresh_t[mask]
+                feature_values = feature_values[mask]
 
-        one_ms = 0.001
-        duration = np.round(end, decimals=3) - np.round(start, decimals=3) # round to nearest ms to deal with float approximations
-        duration = np.round(duration, decimals=3)
-        n_bins = int(duration / one_ms) // width
-        bin_edges = np.linspace(start, end, n_bins + 1) # includes right edge, so adding one to desired bin number
+        actual_duration = swp_end - swp_start
+        # only use calculated duration to check against requested duration
+        if np.abs(actual_duration - duration) > one_ms:
+            logging.warning(f"Actual duration ({actual_duration}) does not match duration specified for analysis ({duration})")
+
+        bin_edges = np.linspace(swp_start, swp_start + duration, n_bins + 1) # includes right edge, so adding one to desired bin number
         bin_width = bin_edges[1] - bin_edges[0]
 
         output = stats.binned_statistic(thresh_t,
@@ -949,7 +1129,7 @@ def _spiking_sweeps_at_levels(amps, sweep_indexes, target_amplitudes,
 
         found_match = False
         for amp, swp_ind in zip(amps, sweep_indexes):
-            if (np.abs(amp - target_amp) <= used_amp_tolerance):
+            if (np.abs(amp - target_amp) <= used_amp_tolerance) and swp_ind not in sweeps_to_use:
                 found_match = True
                 sweeps_to_use.append(swp_ind)
                 logging.debug("Using amplitude {} for target {}".format(amp, target_amp))

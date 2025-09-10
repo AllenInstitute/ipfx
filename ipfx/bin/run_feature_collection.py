@@ -31,6 +31,9 @@ class CollectFeatureParameters(ags.ArgSchema):
             "only used passed sweeps "
             "'lims-passed-except-delta-vm': check status with LIMS and "
             "use passed sweeps and sweeps where only failure criterion is delta_vm"
+            "'lims-passed-except-delta-vm-and-rms': check status with LIMS and "
+            "use passed sweeps and sweeps where only failure criterion is delta_vm,"
+            "but also re-calculate RMS values with current code"
             ),
         default='none'
     )

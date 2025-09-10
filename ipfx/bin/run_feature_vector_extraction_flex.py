@@ -54,6 +54,9 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
             "only used passed sweeps "
             "'lims-passed-except-delta-vm': check status with LIMS and "
             "use passed sweeps and sweeps where only failure criterion is delta_vm"
+            "'lims-passed-except-delta-vm-and-rms': check status with LIMS and "
+            "use passed sweeps and sweeps where only failure criterion is delta_vm,"
+            "but also re-calculate RMS values with current code"
             ),
         default='none'
     )
@@ -142,6 +145,15 @@ def data_for_specimen_id(
         lsq_start,
         lsq_end) = su.preprocess_long_square_sweeps(data_set, lsq_sweep_numbers)
 
+        lsq_start_dict = None
+        if type(lsq_start) is list:
+            logging.info(f"Specimen {specimen_id} has different start times in long squares")
+            lsq_start_dict = {lsq_sweeps.sweeps[i].sweep_number: lsq_start[i] for i in range(len(lsq_start))}
+        lsq_end_dict = None
+        if type(lsq_end) is list:
+            logging.info(f"Specimen {specimen_id} has different end times in long squares")
+            lsq_end_dict = {lsq_sweeps.sweeps[i].sweep_number: lsq_end[i] for i in range(len(lsq_end))}
+
     except Exception as detail:
         logging.warning("Exception when preprocessing long square sweeps from specimen {:d}".format(specimen_id))
         logging.warning(detail)
@@ -183,6 +195,11 @@ def data_for_specimen_id(
         result["id"] = [specimen_id]
 
     try:
+        if lsq_start_dict is not None:
+            lsq_start = lsq_start_dict
+        if lsq_end_dict is not None:
+            lsq_end = lsq_end_dict
+
         (subthresh_hyperpol_dict,
         hyperpol_deflect_dict) = fv.identify_subthreshold_hyperpol_with_amplitudes(lsq_features,
             lsq_sweeps)
@@ -196,9 +213,9 @@ def data_for_specimen_id(
         depol_deflect_dict) = fv.identify_subthreshold_depol_with_amplitudes(lsq_features,
             lsq_sweeps)
         result["subthresh_depol_norm"] = fv.subthresh_depol_norm(subthresh_depol_dict,
-            depol_deflect_dict, np.round(lsq_start, decimals=3), np.round(lsq_end, decimals=3))
+            depol_deflect_dict, lsq_start, lsq_end)
         isi_sweep, isi_sweep_spike_info = fv.identify_sweep_for_isi_shape(
-            lsq_sweeps, lsq_features, lsq_end - lsq_start)
+            lsq_sweeps, lsq_features, lsq_start, lsq_end)
         result["isi_shape"] = fv.isi_shape(isi_sweep, isi_sweep_spike_info, lsq_end)
 
         if result["isi_shape"] is None:
@@ -207,16 +224,16 @@ def data_for_specimen_id(
             while result["isi_shape"] is None:
                 exclude_sweeps_for_isi.append(isi_sweep.sweep_number)
                 isi_sweep, isi_sweep_spike_info = fv.identify_sweep_for_isi_shape(
-                    lsq_sweeps, lsq_features, lsq_end - lsq_start, exclude_sweep_numbers=exclude_sweeps_for_isi)
+                    lsq_sweeps, lsq_features, lsq_start, lsq_end, exclude_sweep_numbers=exclude_sweeps_for_isi)
                 result["isi_shape"] = fv.isi_shape(isi_sweep, isi_sweep_spike_info, lsq_end)
 
-        # Calculate waveforms from each type of sweep
+        # Calculate waveforms from each type of sweep - if multiple sweeps, use the earliest
         spiking_ssq_sweep_list = [ssq_sweeps.sweeps[swp_ind]
             for swp_ind in ssq_features["common_amp_sweeps"].index]
         spiking_ssq_info_list = [ssq_features["spikes_set"][swp_ind]
             for swp_ind in ssq_features["common_amp_sweeps"].index]
-        ssq_ap_v, ssq_ap_dv = fv.first_ap_vectors(spiking_ssq_sweep_list,
-            spiking_ssq_info_list,
+        ssq_ap_v, ssq_ap_dv = fv.first_ap_vectors(spiking_ssq_sweep_list[:1],
+            spiking_ssq_info_list[:1],
             target_sampling_rate=target_sampling_rate,
             window_length=ap_window_length,
             skip_clipped=True)
@@ -232,8 +249,8 @@ def data_for_specimen_id(
             for swp_ind in ramp_features["spiking_sweeps"].index]
         spiking_ramp_info_list = [ramp_features["spikes_set"][swp_ind]
             for swp_ind in ramp_features["spiking_sweeps"].index]
-        ramp_ap_v, ramp_ap_dv = fv.first_ap_vectors(spiking_ramp_sweep_list,
-            spiking_ramp_info_list,
+        ramp_ap_v, ramp_ap_dv = fv.first_ap_vectors(spiking_ramp_sweep_list[:1],
+            spiking_ramp_info_list[:1],
             target_sampling_rate=target_sampling_rate,
             window_length=ap_window_length,
             skip_clipped=True)
@@ -243,21 +260,31 @@ def data_for_specimen_id(
         result["first_ap_dv"] = np.hstack([ssq_ap_dv, lsq_ap_dv, ramp_ap_dv])
 
         target_amplitudes = np.arange(0, 100, 10)
-        supra_info_list = fv.identify_suprathreshold_spike_info(
+        supra_info_list, supra_sweep_numbers = fv.identify_suprathreshold_spike_info(
             lsq_features,
             target_amplitudes,
+            sweep_numbers=[swp.sweep_number for swp in lsq_sweeps.sweeps],
             shift=None,
             amp_tolerance=amp_tolerance,
             needed_amplitudes=needed_amplitudes
         )
+
+        if type(lsq_start) is dict:
+            supra_lsq_start = [lsq_start[sn] if sn is not None else None for sn in supra_sweep_numbers]
+        else:
+            supra_lsq_start = lsq_start
+        if type(lsq_end) is dict:
+            supra_lsq_end = [lsq_end[sn] if sn is not None else None for sn in supra_sweep_numbers]
+        else:
+            supra_lsq_end = lsq_end
 
         actual_amps = [int(a) for a, si in zip(target_amplitudes, supra_info_list) if si is not None]
         actual_rheobase_i = int(lsq_features["rheobase_i"])
 
         result["long_squares_data_info"] = {"rheobase_i": actual_rheobase_i, "amplitudes_with_data": actual_amps}
 
-        result["psth"] = fv.psth_vector(supra_info_list, lsq_start, lsq_end)
-        result["inst_freq"] = fv.inst_freq_vector(supra_info_list, lsq_start, lsq_end)
+        result["psth"] = fv.psth_vector(supra_info_list, supra_lsq_start, supra_lsq_end)
+        result["inst_freq"] = fv.inst_freq_vector(supra_info_list, supra_lsq_start, supra_lsq_end)
 
         spike_feature_list = [
             "upstroke_downstroke_ratio",
@@ -268,7 +295,7 @@ def data_for_specimen_id(
         ]
         for feature in spike_feature_list:
             result["spiking_" + feature] = fv.spike_feature_vector(feature,
-                supra_info_list, lsq_start, lsq_end)
+                supra_info_list, supra_lsq_start, supra_lsq_end)
     except Exception as detail:
         logging.warning("Exception when processing specimen {:d}".format(specimen_id))
         logging.warning(detail)

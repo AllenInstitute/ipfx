@@ -70,11 +70,12 @@ class StimulusProtocolAnalysis(object):
 
     def analyze_basic_features(self, sweep_set, extra_sweep_features=None, exclude_clipped=False):
         self._spikes_set = []
-        for sweep in sweep_set.sweeps:
-            self._spikes_set.append(self.spx.process(sweep.t, sweep.v, sweep.i))
+        for idx, sweep in enumerate(sweep_set.sweeps):
+            self._spikes_set.append(self.spx.process(sweep.t, sweep.v, sweep.i, sweep_index=idx))
 
-        self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features, exclude_clipped=exclude_clipped)
-                                              for sweep, spikes in zip(sweep_set.sweeps, self._spikes_set) ])
+        self._sweep_features = pd.DataFrame([
+            self.sptx.process(sweep.t, sweep.v, sweep.i, spikes, extra_sweep_features, exclude_clipped=exclude_clipped, sweep_index=idx)
+            for idx, (sweep, spikes) in enumerate(zip(sweep_set.sweeps, self._spikes_set))])
 
     def reset_basic_features(self):
         self._spikes_set = None
@@ -206,9 +207,19 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
 
 
         calc_subthresh_ss = SweepSet([sweep_set.sweeps[i] for i in calc_subthresh_features.index.values])
-        median_peak_time = np.median([s.t[subf.voltage_deflection(s.t, s.v, s.i, self.spx.start, self.spx.end, "min")[1]]
-                                      for s in calc_subthresh_ss.sweeps])
-        taus = [ subf.time_constant(s.t, s.v, s.i, self.spx.start, self.spx.end, median_peak_time, self.tau_frac, self.sptx.baseline_interval) for s in calc_subthresh_ss.sweeps ]
+
+        # Handle non-identical start/end times
+        if type(self.spx.start) is list:
+            starts = [self.spx.start[i] for i in calc_subthresh_features.index.values]
+            ends = [self.spx.end[i] for i in calc_subthresh_features.index.values]
+        else:
+            starts = [self.spx.start] * len(calc_subthresh_ss.sweeps)
+            ends = [self.spx.end] * len(calc_subthresh_ss.sweeps)
+
+        median_peak_time = np.median([s.t[subf.voltage_deflection(s.t, s.v, s.i, start, end, "min")[1]]
+                                      for s, start, end in zip(calc_subthresh_ss.sweeps, starts, ends)])
+        taus = [ subf.time_constant(s.t, s.v, s.i, start, end, median_peak_time, self.tau_frac, self.sptx.baseline_interval)
+            for s, start, end in zip(calc_subthresh_ss.sweeps, starts, ends)]
 
         calc_subthresh_features['tau'] = taus
 
@@ -216,7 +227,7 @@ class LongSquareAnalysis(StimulusProtocolAnalysis):
         features["input_resistance"] = subf.input_resistance(calc_subthresh_ss.t,
                                                            calc_subthresh_ss.i,
                                                            calc_subthresh_ss.v,
-                                                           self.spx.start, self.spx.end,
+                                                           starts, ends,
                                                            self.sptx.baseline_interval)
 
         features["tau"] = np.nanmean(calc_subthresh_features['tau'])

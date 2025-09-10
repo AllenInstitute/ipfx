@@ -355,13 +355,21 @@ def estimate_adjusted_detection_parameters(v_set, t_set, interval_start, interva
     if len(v_set) == 0:
         raise er.FeatureError("t_set and v_set are empty")
 
-    start_index = tsu.find_time_index(t_set[0], interval_start)
-    end_index = tsu.find_time_index(t_set[0], interval_end)
 
     maxes = []
     ends = []
     dv_set = []
-    for v, t in zip(v_set, t_set):
+    for idx, (v, t) in enumerate(zip(v_set, t_set)):
+        if type(interval_start) is list:
+            start_t = interval_start[idx]
+            end_t = interval_end[idx]
+        else:
+            start_t = interval_start
+            end_t = interval_end
+
+        start_index = tsu.find_time_index(t_set[idx], start_t)
+        end_index = tsu.find_time_index(t_set[idx], end_t)
+
         dv = tsu.calculate_dvdt(v, t, filter)
         dv_set.append(dv)
         maxes.append(dv[start_index:end_index].max())
