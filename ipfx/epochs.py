@@ -41,12 +41,12 @@ def get_last_stability_epoch(idx1, hz):
     return idx0, idx1
 
 
-def get_first_noise_epoch(idx, hz):
+def get_noise_epoch_from_start(idx, hz):
 
     return idx, idx + int(NOISE_EPOCH * hz)
 
 
-def get_last_noise_epoch(idx1, hz):
+def get_noise_epoch_from_end(idx1, hz):
 
     return idx1-int(NOISE_EPOCH * hz), idx1
 
