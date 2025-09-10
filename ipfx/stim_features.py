@@ -7,6 +7,10 @@ def get_stim_characteristics(i, t, test_pulse=True):
     Identify the start time, duration, amplitude, start index, and end index of a general stimulus.
     """
 
+    nan_mask = np.isnan(i)
+    i = i[~nan_mask]
+    t = t[~nan_mask]
+
     di = np.diff(i)
     di_idx = np.flatnonzero(di)   # != 0
     start_idx_idx = 2 if test_pulse else 0     # skip the first up/down (test pulse) if present
