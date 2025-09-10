@@ -1,0 +1,102 @@
+[build-system]
+requires = ["hatchling >= 1.27", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "IPFX"
+dynamic = ["version"]
+description = "Intrinsic Physiology Feature Extractor (IPFX) - tool for computing neuronal features from the intracellular electrophysiological recordings"
+readme = "README.md"
+license = "LicenseRef-Proprietary"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Allen Institute for Brain Science", email = "Marmot@AllenInstitute.onmicrosoft.com" },
+]
+
+requires-python = ">= 3.9"
+
+keywords = [
+    "bioinformatics",
+    "neuroscience",
+    "scientific",
+]
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: Other/Proprietary License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+# https://github.com/repo-helper/hatch-requirements-txt looks promising but seems unmaintained
+dependencies = [
+    "argschema",
+    "dictdiffer",
+    "h5py",
+    "marshmallow",
+    "matplotlib",
+    "methodtools",
+    "numpy",
+    "pandas",
+    "pg8000",
+    "pillow",
+    "pyabf",
+    "pynwb==3.1.2",
+    "pyYAML",
+    "python-dateutil",
+    "ruamel.yaml<0.18.0",
+    "scipy",
+    "simplejson",
+    "watchdog",
+]
+
+[project.urls]
+Homepage = "https://github.com/AllenInstitute/ipfx"
+Documentation = "https://ipfx.readthedocs.io/en/latest/"
+"Bug Tracker" = "https://github.com/AllenInstitute/ipfx/issues"
+Changelog = "https://github.com/AllenInstitute/ipfx/blob/master/CHANGELOG.md"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "ipfx/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/ipfx",
+    "/docs",
+    "requirements.txt",
+    "requirements-test.txt",
+    "requirements-docs.txt",
+    "AUTHORS.rst",
+    "CHANGELOG.md",
+    "README.md"]
+exclude = ["/ipfx/bin/*.sh", "docker", "test", ".flake8"]
+
+[tool.hatch.build.targets.wheel]
+include = [
+    "/ipfx",
+    "AUTHORS.rst",
+    "LICENSE"]
+exclude = ["/ipfx/bin/*.sh", "docs", "docker", "test", ".flake8"]
+
+[tool.pytest.ini_options]
+addopts = "--junitxml=test-reports/test.xml"
+markers = ["slow: slow tests",
+           "requires_lims: require connection to LIMS",
+           "requires_inhouse_data: require inhouse data"]
+filterwarnings = ["error",
+                  "ignore:add_child is deprecated. Set the parent attribute instead.:DeprecationWarning",
+                  "ignore::marshmallow.warnings.RemovedInMarshmallow4Warning",
+                  "ignore::marshmallow.warnings.ChangedInMarshmallow4Warning",
+                  "ignore:scipy.misc is deprecated and will be removed in 2.0.0",
+                  "ignore:.*behaviour will change in pandas 3.0!.*:FutureWarning"]
