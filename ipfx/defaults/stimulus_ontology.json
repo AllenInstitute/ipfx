@@ -1136,7 +1136,13 @@
     [
       "code",
       "C2CHIRP",
-      "C2CHIRP180503"
+      "C2CHIRP180503",
+      "C2CHIRPA180503",
+      "C2CHIRPB180503",
+      "C2CHIRPC180503",
+      "C2CHIRPD180503",
+      "C2CHIRPB18050",
+      "C2CHIRPC18050"
     ],
     [
       "name",
@@ -1306,16 +1312,7 @@
     ],
     [
       "code",
-      "X7Ramp"
-    ]
-  ],
-  [
-    [
-      "name",
-      "Ramp"
-    ],
-    [
-      "code",
+      "X7Ramp",
       "X7RAMP"
     ]
   ],
@@ -2022,6 +2019,17 @@
   [
     [
       "code",
+      "X4PS_SupraThresh_DA_1",
+      "Y4PS_SupraThresh_DA_1"
+    ],
+    [
+      "name",
+      "Long Square"
+    ]
+  ],
+  [
+    [
+      "code",
       "Rheo_Supra_backu"
     ],
     [
@@ -2037,6 +2045,56 @@
     [
       "name",
       "Long Square"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Y1PS_SubThresh"
+    ],
+    [
+      "name",
+      "Long Square"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Y5SP_Search"
+    ],
+    [
+      "name",
+      "Search"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Y6SP_Rheo"
+    ],
+    [
+      "name",
+      "Short Square"
+    ]
+  ],
+  [
+    [
+      "code",
+      "Y7RAMP"
+    ],
+    [
+      "name",
+      "Ramp"
+    ]
+  ],
+  [
+    [
+      "code",
+      "X0NRMP"
+    ],
+    [
+      "name",
+      "Unknown"
     ]
   ],
   [
