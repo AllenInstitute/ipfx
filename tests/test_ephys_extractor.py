@@ -43,7 +43,7 @@ def test_extractors_no_values():
     SpikeFeatureExtractor()
     SpikeTrainFeatureExtractor(start=0, end=0)
 
-
+@pytest.mark.filterwarnings("ignore:.*encountered in divide:RuntimeWarning")
 def test_extractor_wrong_inputs(spike_test_pair):
     data = spike_test_pair
 
