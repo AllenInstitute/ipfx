@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ipfx.dataset.create import create_ephys_data_set
 from ipfx.stimulus import StimulusOntology
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 
 
 def plot_data_set(data_set, sweep_table, nwb_file_name):

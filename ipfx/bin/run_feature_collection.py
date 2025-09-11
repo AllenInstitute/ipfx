@@ -6,7 +6,7 @@ import ipfx.lims_queries as lq
 import ipfx.feature_vectors as fv
 import ipfx.script_utils as su
 from ipfx.stimulus import StimulusOntology
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import logging
 from multiprocessing import Pool
 from functools import partial
@@ -19,9 +19,9 @@ class CollectFeatureParameters(ags.ArgSchema):
     include_failed_cells = ags.fields.Boolean(default=False)
     run_parallel = ags.fields.Boolean(default=True)
     data_source = ags.fields.String(
-        description="Source of NWB files ('sdk' or 'lims' or 'filesystem')",
-        default="sdk",
-        validate=lambda x: x in ["sdk", "lims", "lims-nwb2", "filesystem"]
+        description="Source of NWB files ('lims-nwb2' or 'lims' or 'filesystem')",
+        default="lims-nwb2",
+        validate=lambda x: x in ["lims", "lims-nwb2", "filesystem"]
         )
     manual_fail_sweep_file = ags.fields.InputFile()
     sweep_qc_option = ags.fields.String(

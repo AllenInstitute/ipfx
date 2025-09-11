@@ -6,6 +6,9 @@ import ipfx.qc_feature_evaluator as qcp
 from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.ephys_data_set import EphysDataSet
 
+from pynwb.icephys import SweepTable
+import pynwb
+
 
 def drop_failed_sweeps(
         dataset: EphysDataSet,
@@ -41,3 +44,13 @@ def drop_failed_sweeps(
 
     dataset.sweep_info = sweep_features
 
+
+def inject_sweep_table(nwbfile: pynwb.NWBFile):
+    """
+    Allows us to keep using the SweepTable which can not be constructed anymore in pynwb 3.0.
+    """
+
+    sweep_table = SweepTable.__new__(SweepTable, parent=nwbfile, in_construct_mode=True)
+    sweep_table.__init__(name='sweep_table')
+    sweep_table._in_construct_mode = False
+    nwbfile.sweep_table = sweep_table

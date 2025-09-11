@@ -1,7 +1,7 @@
 """A shim for backwards compatible imports of create_data_set
 """
 
-from allensdk.deprecated import deprecated
+from ipfx.deprecated import deprecated
 
 from ipfx.dataset.create import create_ephys_data_set
 create_data_set = deprecated(  # type: ignore

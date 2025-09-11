@@ -2,7 +2,7 @@ import os
 import logging
 import warnings
 
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 
 
 

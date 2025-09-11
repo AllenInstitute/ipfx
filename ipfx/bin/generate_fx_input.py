@@ -1,5 +1,5 @@
 import os
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import ipfx.sweep_props as sp
 from ipfx.bin.run_sweep_extraction import run_sweep_extraction
 from ipfx.bin.generate_qc_input import generate_qc_input

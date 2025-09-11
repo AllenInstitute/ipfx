@@ -7,7 +7,7 @@ from functools import partial
 import os
 import h5py
 from ipfx.stimulus import StimulusOntology
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import ipfx.feature_vectors as fv
 import ipfx.lims_queries as lq
 import ipfx.script_utils as su

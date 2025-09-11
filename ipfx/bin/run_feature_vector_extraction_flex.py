@@ -9,7 +9,7 @@ import os
 import h5py
 import json
 from ipfx.stimulus import StimulusOntology
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 import ipfx.feature_vectors as fv
 import ipfx.lims_queries as lq
 import ipfx.script_utils as su

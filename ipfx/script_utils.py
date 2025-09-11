@@ -2,12 +2,9 @@ import logging
 import os
 import json
 import traceback
-
+import h5py
 import numpy as np
 import pandas as pd
-import h5py
-
-from allensdk.core.cell_types_cache import CellTypesCache
 
 import ipfx.lims_queries as lq
 import ipfx.stim_features as stf
@@ -22,11 +19,6 @@ from ipfx.dataset.create import create_ephys_data_set
 from ipfx.aibs_data_set import AibsDataSet
 from ipfx.dataset.labnotebook import LabNotebookReaderIgorNwb
 
-import h5py
-import os
-import json
-from allensdk.core.cell_types_cache import CellTypesCache
-import traceback
 
 
 def lims_nwb_information(specimen_id):
@@ -81,13 +73,6 @@ def lims_nwb2_information(specimen_id):
     return nwb_path
 
 
-def sdk_nwb_information(specimen_id):
-    ctc = CellTypesCache()
-    nwb_data_set = ctc.get_ephys_data(specimen_id)
-    sweep_info = ctc.get_ephys_sweeps(specimen_id)
-    return nwb_data_set.file_name, sweep_info
-
-
 def dataset_for_nwb1(specimen_id, ontology):
     nwb_path, h5_path = lims_nwb_information(specimen_id) # h5_path now unused with new create_ephys_data_set?
     if type(nwb_path) is dict and "error" in nwb_path:
@@ -109,8 +94,7 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
     # Find or retrieve NWB file and ancillary info and construct an EphysDataSet object
 
     if data_source == "lims":
-            return dataset_for_nwb1(specimen_id, ontology)
-
+        return dataset_for_nwb1(specimen_id, ontology)
     elif data_source == "lims-nwb2":
         nwb2_path = lims_nwb2_information(specimen_id)
         if type(nwb2_path) is dict and "error" in nwb2_path:
@@ -126,17 +110,6 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
             logging.warning("Exception when loading NWB2 (and attempting NWB1) for specimen {:d} from LIMS".format(specimen_id))
             logging.warning(detail)
             return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
-
-    elif data_source == "sdk":
-        nwb_path, sweep_info = sdk_nwb_information(specimen_id)
-        try:
-            data_set = create_ephys_data_set(
-                nwb_file=nwb_path, sweep_info=sweep_info, ontology=ontology)
-        except Exception as detail:
-            logging.warning("Exception when loading specimen {:d} via Allen SDK".format(specimen_id))
-            logging.warning(detail)
-            return {"error": {"type": "dataset", "details": traceback.format_exc(limit=None)}}
-
     elif data_source == "filesystem":
         nwb_path = file_list[specimen_id]
         try:

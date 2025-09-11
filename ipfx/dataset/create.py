@@ -5,7 +5,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-import allensdk.core.json_utilities as ju
+import ipfx.json_utilities as ju
 
 from ipfx.dataset.ephys_data_set import EphysDataSet
 from ipfx.stimulus import StimulusOntology
