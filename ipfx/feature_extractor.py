@@ -284,7 +284,7 @@ class SpikeTrainFeatureExtractor(object):
 
         if features["avg_rate"] > 0:
             if 'pause' in extra_features:
-                features['pause'] = strf.pause(t, spikes_df, self.start, self.end, self.pause_cost_weight)
+                features['pause'] = strf.pause(t, spikes_df, self.start, self.end, self.pause_cost)
             if 'burst' in extra_features:
                 features['burst'] = strf.burst(t, spikes_df, self.burst_tol, self.pause_cost)
             if 'delay' in extra_features:
