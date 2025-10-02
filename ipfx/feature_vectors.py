@@ -95,7 +95,7 @@ def identify_subthreshold_depol_with_amplitudes(features, sweeps):
 
 
 def step_subthreshold(amp_sweep_dict, target_amps, start, end,
-                      extend_duration=0.2, subsample_interval=0.01,
+                      extend_duration_before=0.2, extend_duration_after=0.2, subsample_interval=0.01,
                       amp_tolerance=0., remove_transients=True):
     """ Subsample set of subthreshold step responses including regions before and after step
 
@@ -109,8 +109,8 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
             start stimulus interval (seconds)
         end: float or dict
             end of stimulus interval (seconds)
-        extend_duration: float (optional, default 0.2)
-            Duration to extend sweep before and after stimulus interval (seconds)
+        extend_duration_[before, after]: float (optional, default 0.2)
+            Duration to extend sweep before or after stimulus interval (seconds)
         subsample_interval: float (optional, default 0.01)
             Size of subsampled bins (seconds)
         amp_tolerance: float (optional, default 0)
@@ -144,14 +144,15 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
         else:
             v = swp.v
 
-        start_index = tsu.find_time_index(swp.t, swp_start - extend_duration)
+        start_index = tsu.find_time_index(swp.t, swp_start - extend_duration_before)
         delta_t = swp.t[1] - swp.t[0]
         subsample_width = int(np.round(subsample_interval / delta_t))
-        end_index = tsu.find_time_index(swp.t, swp_end + extend_duration)
+        end_index = tsu.find_time_index(swp.t, swp_end + extend_duration_after)
         subsampled_v = _subsample_average(v[start_index:end_index], subsample_width)
         subsampled_dict[amp] = subsampled_v
 
-    extend_length = int(np.round(extend_duration / subsample_interval))
+    extend_length_before = int(np.round(extend_duration_before / subsample_interval))
+    extend_length_after = int(np.round(extend_duration_after / subsample_interval))
     available_amps = np.array(list(subsampled_dict.keys()))
     output_list = []
     for amp in target_amps:
@@ -179,20 +180,20 @@ def step_subthreshold(amp_sweep_dict, target_amps, start, end,
                 logging.debug("interpolating for amp {} with lower {} and upper {}".format(amp, lower_amp, upper_amp))
                 avg = (subsampled_dict[lower_amp] + subsampled_dict[upper_amp]) / 2.
                 scale = amp / ((lower_amp + upper_amp) / 2.)
-                base_v = avg[:extend_length].mean()
-                avg[extend_length:-extend_length] = (avg[extend_length:-extend_length] - base_v) * scale + base_v
+                base_v = avg[:extend_length_before].mean()
+                avg[extend_length_before:-extend_length_after] = (avg[extend_length_before:-extend_length_after] - base_v) * scale + base_v
             elif lower_amp != 0:
                 logging.debug("interpolating for amp {} from lower {}".format(amp, lower_amp))
                 avg = subsampled_dict[lower_amp].copy()
                 scale = amp / lower_amp
-                base_v = avg[:extend_length].mean()
-                avg[extend_length:] = (avg[extend_length:] - base_v) * scale + base_v
+                base_v = avg[:extend_length_before].mean()
+                avg[extend_length_before:] = (avg[extend_length_before:] - base_v) * scale + base_v
             elif upper_amp != 0:
                 logging.debug("interpolating for amp {} from upper {}".format(amp, upper_amp))
                 avg = subsampled_dict[upper_amp].copy()
                 scale = amp / upper_amp
-                base_v = avg[:extend_length].mean()
-                avg[extend_length:] = (avg[extend_length:] - base_v) * scale + base_v
+                base_v = avg[:extend_length_before].mean()
+                avg[extend_length_before:] = (avg[extend_length_before:] - base_v) * scale + base_v
             output_list.append(avg)
 
     return np.hstack(output_list)
@@ -253,7 +254,8 @@ def _subsample_average(x, width):
 
 
 def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
-                   extend_duration=0.2, subsample_interval=0.01, remove_transients=True):
+                   extend_duration_before=0.2, extend_duration_after=0.2,
+                   subsample_interval=0.01, remove_transients=True):
     """ Subthreshold step response closest to target amplitude normalized to baseline and peak deflection
 
         Parameters
@@ -268,8 +270,8 @@ def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
             end of stimulus interval (seconds)
         target_amp: float (optional, default=-101)
             Search target for amplitude (pA)
-        extend_duration: float (optional, default 0.2)
-            Duration to extend sweep on each side of stimulus interval (seconds)
+        extend_duration_[before, after]: float (optional, default 0.2)
+            Duration to extend sweep on either side of stimulus interval (seconds)
         subsample_interval: float (optional, default 0.01)
             Size of subsampled bins (seconds)
 
@@ -304,13 +306,60 @@ def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
     else:
         v = swp.v
 
-    start_index = tsu.find_time_index(swp.t, swp_start - extend_duration)
+    start_index = tsu.find_time_index(swp.t, swp_start - extend_duration_before)
     delta_t = swp.t[1] - swp.t[0]
     subsample_width = int(np.round(subsample_interval / delta_t))
-    end_index = tsu.find_time_index(swp.t, swp_end + extend_duration)
+    end_index = tsu.find_time_index(swp.t, swp_end + extend_duration_after)
     subsampled_v = _subsample_average(v[start_index:end_index], subsample_width)
     subsampled_v -= base
     subsampled_v /= delta
+
+    return subsampled_v
+
+
+def subthresh_rebound(amp_sweep_dict, start, dur=0.2, target_amp=-101.,
+                   extend_duration_before=0.05, extend_duration_after=0.05,
+                   subsample_interval=0.01):
+    """ Subthreshold step rebound response closest to target amplitude
+
+        Parameters
+        ----------
+        amp_sweep_dict: dict
+            Amplitude-sweep pairs
+        start: float
+            start stimulus interval (seconds)
+        dur: float
+            duration of rebound interval (seconds)
+        target_amp: float (optional, default=-101)
+            Search target for amplitude (pA)
+        extend_duration_[before, after]: float (optional, default 0.05)
+            Durations to extend sweep on either side of interval (seconds)
+        subsample_interval: float (optional, default 0.01)
+            Size of subsampled bins (seconds)
+
+        Returns
+        -------
+        subsampled_v: array
+            Subsampled, normalized voltage trace
+    """
+    available_amps = np.array(list(amp_sweep_dict.keys()))
+
+    sweep_ind = np.argmin(np.abs(available_amps - target_amp))
+    matching_amp = available_amps[sweep_ind]
+    swp = amp_sweep_dict[matching_amp]
+
+    if type(start) is dict:
+        swp_start = start[swp.sweep_number]
+    else:
+        swp_start = start
+
+
+    start_index = tsu.find_time_index(swp.t, swp_start - extend_duration_before)
+    delta_t = swp.t[1] - swp.t[0]
+    subsample_width = int(np.round(subsample_interval / delta_t))
+    end_index = tsu.find_time_index(swp.t, swp_start + dur + extend_duration_after)
+
+    subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
 
     return subsampled_v
 

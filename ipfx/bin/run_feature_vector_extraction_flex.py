@@ -16,6 +16,59 @@ import ipfx.script_utils as su
 from ipfx.dataset.create import create_ephys_data_set
 
 
+class StartEndDurationSchema(ags.schemas.DefaultSchema):
+    before = ags.fields.Float(
+        description="duration to extend before stimulus",
+        default=0.2,
+    )
+    after = ags.fields.Float(
+        description="duration to extend after stimulus",
+        default=0.2,
+    )
+
+
+class ExtendDurationSchema(ags.schemas.DefaultSchema):
+    step_subthresh = ags.fields.Nested(StartEndDurationSchema,
+        required=True,
+        default={"before": 0.2, "after": 0.2},
+        description="parameters for extending duration around step subthreshold analysis",
+    )
+    subthresh_norm = ags.fields.Nested(StartEndDurationSchema,
+        required=True,
+        default={"before": 0.2, "after": 0.2},
+        description="parameters for extending duration around normalized subthreshold analysis",
+    )
+    subthresh_rebound = ags.fields.Nested(StartEndDurationSchema,
+        required=True,
+        default={"before": 0.05, "after": 0.05},
+        description="parameters for extending duration around subthreshold rebound analysis",
+    )
+
+class ApWaveformSchema(ags.schemas.DefaultSchema):
+    use = ags.fields.Boolean(
+        default=True,
+        description="whether to use AP from stimulus type",
+    )
+    duration = ags.fields.Float(
+        default=0.003,
+        description="Duration after threshold for AP shape (s)",
+    )
+
+class ApWaveformForStimuliSchema(ags.schemas.DefaultSchema):
+    ssq = ags.fields.Nested(ApWaveformSchema,
+        default={},
+        description="analysis parameters for short square AP waveform",
+    )
+    lsq = ags.fields.Nested(ApWaveformSchema,
+        default={},
+        description="analysis parameters for long square AP waveform",
+    )
+    ramp = ags.fields.Nested(ApWaveformSchema,
+        default={},
+        description="analysis parameters for ramp AP waveform",
+    )
+
+
 class CollectFeatureVectorParameters(ags.ArgSchema):
     output_dir = ags.fields.OutputDir(
         description="Destination directory for output files",
@@ -68,9 +121,17 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
         description="boolean - use multiprocessing",
         default=True
     )
-    ap_window_length = ags.fields.Float(
-        description="Duration after threshold for AP shape (s)",
-        default=0.003
+    ap_waveforms = ags.fields.Nested(ApWaveformForStimuliSchema,
+        default={},
+        description="parameters for AP waveform analysis",
+    )
+    extend_durations = ags.fields.Nested(ExtendDurationSchema,
+        description="parameters for extending time windows for analyses",
+        default={},
+    )
+    extract_from_ramp = ags.fields.Boolean(
+        description="whether to run analysis on ramp sweep",
+        default=True,
     )
     needed_amplitudes = ags.fields.List(
         ags.fields.Integer,
@@ -82,7 +143,11 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
         default=4.
     )
     manual_fail_sweep_file = ags.fields.InputFile()
-
+    additional_fvs = ags.fields.List(ags.fields.String,
+        allow_none=True,
+        default=[],
+        cli_as_single_argument=True,
+    )
 
 
 def data_for_specimen_id(
@@ -90,12 +155,16 @@ def data_for_specimen_id(
     sweep_qc_option,
     data_source,
     ontology,
-    ap_window_length=0.005,
+    ap_waveforms,
+    extend_durations,
+    extract_from_ramp,
+    additional_fvs,
     target_sampling_rate=50000,
     needed_amplitudes=None,
     amp_tolerance=0.,
     file_list=None,
     manual_fail_sweeps=None,
+
 ):
     """
     Extract feature vector from given cell identified by the specimen_id
@@ -109,8 +178,6 @@ def data_for_specimen_id(
         see CollectFeatureVectorParameters input schema for details
     ontology : stimulus.StimulusOntology
         mapping of stimuli names to stimulus codes
-    ap_window_length : float
-        see CollectFeatureVectorParameters input schema for details
     target_sampling_rate : float
         sampling rate
     file_list : list of str
@@ -175,18 +242,20 @@ def data_for_specimen_id(
         return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=None)}}
 
     # Identify and preprocess ramp sweeps
-    try:
-        ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
-            ontology.ramp_names, sweep_qc_option=sweep_qc_option,
-            specimen_id=specimen_id)
-        if manual_fail_sweeps is not None and specimen_id in manual_fail_sweeps:
-            ramp_sweep_numbers = np.array([sn for sn in ramp_sweep_numbers if sn not in manual_fail_sweeps[specimen_id]])
-        ramp_sweeps, ramp_features, _ = su.preprocess_ramp_sweeps(data_set,
-            ramp_sweep_numbers)
-    except Exception as detail:
-        logging.warning("Exception when preprocessing ramp sweeps from specimen {:d}".format(specimen_id))
-        logging.warning(detail)
-        return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=None)}}
+    if extract_from_ramp:
+        logging.info("Identifying and processing ramp sweeps")
+        try:
+            ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
+                ontology.ramp_names, sweep_qc_option=sweep_qc_option,
+                specimen_id=specimen_id)
+            if manual_fail_sweeps is not None and specimen_id in manual_fail_sweeps:
+                ramp_sweep_numbers = np.array([sn for sn in ramp_sweep_numbers if sn not in manual_fail_sweeps[specimen_id]])
+            ramp_sweeps, ramp_features, _ = su.preprocess_ramp_sweeps(data_set,
+                ramp_sweep_numbers)
+        except Exception as detail:
+            logging.warning("Exception when preprocessing ramp sweeps from specimen {:d}".format(specimen_id))
+            logging.warning(detail)
+            return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=None)}}
 
     # Calculate desired feature vectors
     result = {}
@@ -206,9 +275,23 @@ def data_for_specimen_id(
         target_amps_for_step_subthresh = [-90, -70, -50, -30, -10]
         result["step_subthresh"] = fv.step_subthreshold(
             subthresh_hyperpol_dict, target_amps_for_step_subthresh,
-            lsq_start, lsq_end, amp_tolerance=5)
+            lsq_start, lsq_end, amp_tolerance=amp_tolerance,
+            extend_duration_before=extend_durations["step_subthresh"]["before"],
+            extend_duration_after=extend_durations["step_subthresh"]["after"],
+        )
         result["subthresh_norm"] = fv.subthresh_norm(subthresh_hyperpol_dict, hyperpol_deflect_dict,
-            lsq_start, lsq_end)
+            lsq_start, lsq_end,
+            extend_duration_before=extend_durations["subthresh_norm"]["before"],
+            extend_duration_after=extend_durations["subthresh_norm"]["after"],
+        )
+        if "subthresh_rebound" in additional_fvs:
+            result["subthresh_rebound"] = fv.subthresh_rebound(
+                subthresh_hyperpol_dict,
+                start=lsq_end, dur=0.2,
+                extend_duration_before=extend_durations["subthresh_rebound"]["before"],
+                extend_duration_after=extend_durations["subthresh_rebound"]["after"],
+            )
+
         (subthresh_depol_dict,
         depol_deflect_dict) = fv.identify_subthreshold_depol_with_amplitudes(lsq_features,
             lsq_sweeps)
@@ -228,36 +311,48 @@ def data_for_specimen_id(
                 result["isi_shape"] = fv.isi_shape(isi_sweep, isi_sweep_spike_info, lsq_end)
 
         # Calculate waveforms from each type of sweep - if multiple sweeps, use the earliest
-        spiking_ssq_sweep_list = [ssq_sweeps.sweeps[swp_ind]
-            for swp_ind in ssq_features["common_amp_sweeps"].index]
-        spiking_ssq_info_list = [ssq_features["spikes_set"][swp_ind]
-            for swp_ind in ssq_features["common_amp_sweeps"].index]
-        ssq_ap_v, ssq_ap_dv = fv.first_ap_vectors(spiking_ssq_sweep_list[:1],
-            spiking_ssq_info_list[:1],
-            target_sampling_rate=target_sampling_rate,
-            window_length=ap_window_length,
-            skip_clipped=True)
+        ap_v_list = []
+        ap_dv_list = []
 
-        rheo_ind = lsq_features["rheobase_sweep"].name
-        sweep = lsq_sweeps.sweeps[rheo_ind]
-        lsq_ap_v, lsq_ap_dv = fv.first_ap_vectors([sweep],
-            [lsq_features["spikes_set"][rheo_ind]],
-            target_sampling_rate=target_sampling_rate,
-            window_length=ap_window_length)
+        if ap_waveforms["ssq"]["use"]:
+            spiking_ssq_sweep_list = [ssq_sweeps.sweeps[swp_ind]
+                for swp_ind in ssq_features["common_amp_sweeps"].index]
+            spiking_ssq_info_list = [ssq_features["spikes_set"][swp_ind]
+                for swp_ind in ssq_features["common_amp_sweeps"].index]
+            ssq_ap_v, ssq_ap_dv = fv.first_ap_vectors(spiking_ssq_sweep_list[:1],
+                spiking_ssq_info_list[:1],
+                target_sampling_rate=target_sampling_rate,
+                window_length=ap_waveforms["ssq"]["duration"],
+                skip_clipped=True)
+            ap_v_list.append(ssq_ap_v)
+            ap_dv_list.append(ssq_ap_dv)
 
-        spiking_ramp_sweep_list = [ramp_sweeps.sweeps[swp_ind]
-            for swp_ind in ramp_features["spiking_sweeps"].index]
-        spiking_ramp_info_list = [ramp_features["spikes_set"][swp_ind]
-            for swp_ind in ramp_features["spiking_sweeps"].index]
-        ramp_ap_v, ramp_ap_dv = fv.first_ap_vectors(spiking_ramp_sweep_list[:1],
-            spiking_ramp_info_list[:1],
-            target_sampling_rate=target_sampling_rate,
-            window_length=ap_window_length,
-            skip_clipped=True)
+        if ap_waveforms["lsq"]["use"]:
+            rheo_ind = lsq_features["rheobase_sweep"].name
+            sweep = lsq_sweeps.sweeps[rheo_ind]
+            lsq_ap_v, lsq_ap_dv = fv.first_ap_vectors([sweep],
+                [lsq_features["spikes_set"][rheo_ind]],
+                target_sampling_rate=target_sampling_rate,
+                window_length=ap_waveforms["lsq"]["duration"])
+            ap_v_list.append(lsq_ap_v)
+            ap_dv_list.append(lsq_ap_dv)
+
+        if extract_from_ramp and ap_waveforms["ramp"]["use"]:
+            spiking_ramp_sweep_list = [ramp_sweeps.sweeps[swp_ind]
+                for swp_ind in ramp_features["spiking_sweeps"].index]
+            spiking_ramp_info_list = [ramp_features["spikes_set"][swp_ind]
+                for swp_ind in ramp_features["spiking_sweeps"].index]
+            ramp_ap_v, ramp_ap_dv = fv.first_ap_vectors(spiking_ramp_sweep_list[:1],
+                spiking_ramp_info_list[:1],
+                target_sampling_rate=target_sampling_rate,
+                window_length=ap_waveforms["ramp"]["duration"],
+                skip_clipped=True)
+            ap_v_list.append(ramp_ap_v)
+            ap_dv_list.append(ramp_ap_dv)
 
         # Combine so that differences can be assessed by analyses like sPCA
-        result["first_ap_v"] = np.hstack([ssq_ap_v, lsq_ap_v, ramp_ap_v])
-        result["first_ap_dv"] = np.hstack([ssq_ap_dv, lsq_ap_dv, ramp_ap_dv])
+        result["first_ap_v"] = np.hstack(ap_v_list)
+        result["first_ap_dv"] = np.hstack(ap_dv_list)
 
         target_amplitudes = np.arange(0, 100, 10)
         supra_info_list, supra_sweep_numbers = fv.identify_suprathreshold_spike_info(
@@ -319,9 +414,12 @@ def run_feature_vector_extraction(
     sweep_qc_option,
     include_failed_cells,
     run_parallel,
-    ap_window_length,
     needed_amplitudes,
     amp_tolerance,
+    ap_waveforms,
+    extend_durations,
+    extract_from_ramp,
+    additional_fvs,
     ids=None,
     file_list=None,
     manual_fail_sweep_file=None,
@@ -347,8 +445,6 @@ def run_feature_vector_extraction(
     include_failed_cells: bool
         see CollectFeatureVectorParameters input schema for details
     run_parallel: bool
-        see CollectFeatureVectorParameters input schema for details
-    ap_window_length: float
         see CollectFeatureVectorParameters input schema for details
     ids: int
         ids associated to each cell.
@@ -389,9 +485,12 @@ def run_feature_vector_extraction(
                                sweep_qc_option=sweep_qc_option,
                                data_source=data_source,
                                ontology=ontology,
-                               ap_window_length=ap_window_length,
                                needed_amplitudes=needed_amplitudes,
                                amp_tolerance=amp_tolerance,
+                               ap_waveforms=ap_waveforms,
+                               extend_durations=extend_durations,
+                               extract_from_ramp=extract_from_ramp,
+                               additional_fvs=additional_fvs,
                                file_list=file_list,
                                manual_fail_sweeps=manual_fail_sweep_dict)
 
