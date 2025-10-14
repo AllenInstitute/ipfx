@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import logging
 from scipy import stats
 from scipy.signal import savgol_filter
@@ -6,6 +7,7 @@ from . import data_set_features as dsf
 from . import stimulus_protocol_analysis as spa
 from . import time_series_utils as tsu
 from . import error as er
+from ipfx.sweep import SweepSet
 
 
 def identify_subthreshold_hyperpol_with_amplitudes(features, sweeps):
@@ -318,8 +320,7 @@ def subthresh_norm(amp_sweep_dict, deflect_dict, start, end, target_amp=-101.,
 
 
 def subthresh_rebound(amp_sweep_dict, start, dur=0.2, target_amp=-101.,
-                   extend_duration_before=0.05, extend_duration_after=0.05,
-                   subsample_interval=0.01):
+                   subsample_interval=0.01, psth_bin_width=20):
     """ Subthreshold step rebound response closest to target amplitude
 
         Parameters
@@ -353,15 +354,23 @@ def subthresh_rebound(amp_sweep_dict, start, dur=0.2, target_amp=-101.,
     else:
         swp_start = start
 
+    # Find spikes in rebound interval
+    spx, spfx = dsf.extractors_for_sweeps(
+        SweepSet(sweeps=[swp]),
+        start=swp_start,
+        end=swp_start + dur,
+        min_peak=-25
+    )
+    spike_data = spx.process(swp.t, swp.v, swp.i, sweep_index=0)
 
-    start_index = tsu.find_time_index(swp.t, swp_start - extend_duration_before)
-    delta_t = swp.t[1] - swp.t[0]
-    subsample_width = int(np.round(subsample_interval / delta_t))
-    end_index = tsu.find_time_index(swp.t, swp_start + dur + extend_duration_after)
+    if spike_data.shape[0] == 0:
+        # No spikes
+        spike_data = pd.DataFrame(columns=["threshold_t"])
 
-    subsampled_v = _subsample_average(swp.v[start_index:end_index], subsample_width)
+    rebound_psth = psth_vector(
+        [spike_data], swp_start, swp_start + dur, width=psth_bin_width, duration=dur)
 
-    return subsampled_v
+    return rebound_psth
 
 
 def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
@@ -986,12 +995,17 @@ def psth_vector(spike_info_list, start, end, width=50, duration=1.0):
         n_bins = int(duration / one_ms) // width
         bin_edges = np.linspace(swp_start, swp_start + duration, n_bins + 1) # includes right edge, so adding one to desired bin number
         bin_width = bin_edges[1] - bin_edges[0]
-        output = stats.binned_statistic(thresh_t,
-                                        spike_count,
-                                        statistic='sum',
-                                        bins=bin_edges)[0]
-        output[np.isnan(output)] = 0
-        output /= bin_width # convert to spikes/s
+
+        if len(thresh_t) == 0:
+            # No spikes - return all 0 vector_list
+            output = np.zeros(n_bins)
+        else:
+            output = stats.binned_statistic(thresh_t,
+                                            spike_count,
+                                            statistic='sum',
+                                            bins=bin_edges)[0]
+            output[np.isnan(output)] = 0
+            output /= bin_width # convert to spikes/s
         vector_list.append(output)
     output_vector = _combine_and_interpolate(vector_list)
     return output_vector

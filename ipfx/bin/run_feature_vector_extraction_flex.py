@@ -38,11 +38,7 @@ class ExtendDurationSchema(ags.schemas.DefaultSchema):
         default={"before": 0.2, "after": 0.2},
         description="parameters for extending duration around normalized subthreshold analysis",
     )
-    subthresh_rebound = ags.fields.Nested(StartEndDurationSchema,
-        required=True,
-        default={"before": 0.05, "after": 0.05},
-        description="parameters for extending duration around subthreshold rebound analysis",
-    )
+
 
 class ApWaveformSchema(ags.schemas.DefaultSchema):
     use = ags.fields.Boolean(
@@ -287,9 +283,7 @@ def data_for_specimen_id(
         if "subthresh_rebound" in additional_fvs:
             result["subthresh_rebound"] = fv.subthresh_rebound(
                 subthresh_hyperpol_dict,
-                start=lsq_end, dur=0.2,
-                extend_duration_before=extend_durations["subthresh_rebound"]["before"],
-                extend_duration_after=extend_durations["subthresh_rebound"]["after"],
+                start=lsq_end, dur=0.3,
             )
 
         (subthresh_depol_dict,
