@@ -23,7 +23,7 @@ or a predetermined release date is approaching
 
 ### PyPI and BKP
 
-- [ ] Set release version with "git tag v#.#.#" (e.g. "git tag v1.0.0"), this triggers circleci to publish ipfx to PyPI (deprecated, need to move to GitHub Actions)
+- [ ] Set release version with "git tag v#.#.#" (e.g. "git tag v1.0.0"), this triggers CI to publish ipfx to PyPI
 - [ ] Build and deploy:
     - [ ] `hatch build`
     - [ ] `twine upload dist/* --verbose --config-file ~/.pypirc`
