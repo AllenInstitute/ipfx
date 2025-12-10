@@ -1,0 +1,56 @@
+name: Deploy release
+on:
+  push:
+   tags:
+     - '^v\d+(\.\d+)*(\.[0-9A-Za-z]*)*'
+
+jobs:
+  common-actions:
+    name: Run PR Workflow
+    uses: ./.github/workflows/github-actions-ci.yml
+    secrets: inherit
+
+  deploy-release:
+    needs:
+        - common-actions
+    name: Deploy release from tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # this should be the lowest supported version
+          python-version: '3.10'
+
+      - name: Install build dependencies
+        run: |
+          pip install --upgrade pip
+          pip install hatch
+          pip list
+
+      - name: Build wheel and source distribution
+        run: |
+          hatch build
+          ls -1 dist
+
+      - name: Upload wheel and source distributions to PyPI
+        run: |
+          pip install twine
+          ls -1 dist
+          # our current token does not work on testpypi
+          # twine upload -r testpypi -u ${{ secrets.PYPI_USER }} -p ${{ secrets.PYPI_PASSWORD }} --skip-existing dist/*
+          twine upload -u ${{ secrets.PYPI_USER }} -p ${{ secrets.PYPI_PASSWORD }} --skip-existing dist/*
+
+      - name: Keep packages
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: pypi-wheel-and-sdist
+          path: |
+              dist/*
+          if-no-files-found: error
