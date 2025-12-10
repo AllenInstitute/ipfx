@@ -1,12 +1,15 @@
 name: ci/github-actions
 
 on:
+  workflow_call:
   pull_request:
     branches:
       - master
   push:
     branches:
       - master
+    tags_ignore:
+      - '*'
 
 jobs:
   run-light-tests:
