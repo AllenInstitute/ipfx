@@ -2,11 +2,11 @@ name: ci/github-actions
 
 on:
   pull_request:
-    branches: [ master, feature/** ]
-
+    branches:
+      - master
   push:
-    branches: [ master, feature/** ]
-
+    branches:
+      - master
 
 jobs:
   run-light-tests:
