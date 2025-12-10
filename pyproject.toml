@@ -13,7 +13,7 @@ authors = [
     { name = "Allen Institute for Brain Science", email = "Marmot@AllenInstitute.onmicrosoft.com" },
 ]
 
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 
 keywords = [
     "bioinformatics",
@@ -27,7 +27,6 @@ classifiers = [
     "License :: Other/Proprietary License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
