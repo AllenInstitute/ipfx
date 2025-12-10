@@ -7,6 +7,21 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [2.1.0] = 2025-12-10
+
+Changed:
+- Removed Python 3.9 support #587
+- Add testing with Python 3.14
+- Move release CI to github actions and drop circle CI #584
+
+Fixed:
+- Convert more large files to git LFS #570
+- Move to pyproject.toml packaging using hatch #571
+- Fix and silence warnings #578
+- Require fixed pynwb version 3.1.2 #580
+- Get on-premise tests working again #581
+- Get the tests working again with newer version of dependencies, remove dependency on AllenSDK #582
+
 ## [2.0.0] = 2024-10-23
 Changed:
 - Removed Python 3.6 support
