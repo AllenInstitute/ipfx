@@ -8,7 +8,7 @@ import copy as cp
 import pandas as pd
 import numpy as np
 
-from allensdk.deprecated import deprecated
+# from allensdk.deprecated import deprecated
 
 from ipfx.dataset.ephys_data_interface import EphysDataInterface
 from ipfx.stimulus import StimulusOntology
@@ -37,6 +37,7 @@ class EphysDataSet(object):
     SHORT_SQUARE_TRIPLE = 'short_square_triple'
     SHORT_SQUARE = 'short_square'
     RAMP = 'ramp'
+    CELL_ATTACHED = 'cell_attached'
 
     VOLTAGE_CLAMP = "VoltageClamp"
     CURRENT_CLAMP = "CurrentClamp"
@@ -192,7 +193,7 @@ class EphysDataSet(object):
 
         return sweeps[self.SWEEP_NUMBER].values.tolist()
 
-    @deprecated("call .get_sweep_numbers()[-1] instead")
+  #  @deprecated("call .get_sweep_numbers()[-1] instead")
     def get_sweep_number(
             self,
             stimuli: Collection[str],

@@ -37,6 +37,8 @@ import functools
 import numpy as np
 import logging
 from .feature_extractor import SpikeFeatureExtractor,SpikeTrainFeatureExtractor
+from .feature_extractor_cellattached import SpikeFeatureExtractor as CellAttachedSpikeFeatureExtractor
+from .feature_extractor_cellattached import SpikeTrainFeatureExtractor as CellAttachedSpikeTrainFeatureExtractor
 from ipfx.dataset.ephys_data_set import EphysDataSet
 from ipfx.epochs import get_stim_epoch
 from . import spike_features as spkf
@@ -51,7 +53,17 @@ DEFAULT_DETECTION_PARAMETERS = { 'dv_cutoff': 20.0, 'thresh_frac': 0.05 }
 DETECTION_PARAMETERS = {
     EphysDataSet.SHORT_SQUARE: {'thresh_frac_floor': 0.1 },
     EphysDataSet.RAMP: { },
-    EphysDataSet.LONG_SQUARE: { }
+    EphysDataSet.LONG_SQUARE: { },
+    EphysDataSet.CELL_ATTACHED: {
+        #'di_cutoff': 40.,
+        'filter': 2.,
+        'thresh_frac': 0.05,
+        'reject_at_stim_start_interval': 0,
+        #'min_peak': -15,
+        'baseline_win': 0.01,
+        'fraction': 0.8,
+        'time_win': 0.001
+    },
 }
 
 
@@ -145,6 +157,64 @@ def extractors_for_sweeps(sweep_set,
     stfx = SpikeTrainFeatureExtractor(start, end)
 
     return sfx, stfx
+
+
+def extractors_for_cellattached_sweeps(sweep_set,
+                          di_cutoff=40., filter=2.,
+                          thresh_frac=0.05,
+                          reject_at_stim_start_interval=0,
+                          min_peak=-15, baseline_win=0.01,
+                          fraction=0.8, time_win=0.001,
+                          thresh_frac_floor=None,
+                          est_window=None,
+                          start=None, end=None):
+    """Extract data from cell-attached sweeps
+
+    Parameters
+    ----------
+    sweep_set : SweepSet object
+
+    di_cutoff : float
+    thresh_frac :
+    reject_at_stim_start_interval :
+    thresh_frac_floor
+    fraction:
+    time_win:
+    est_window :
+    start :
+    end :
+
+    Returns
+    -------
+    ca_spx : cell-attached SpikeExtractor object
+    ca_spfx : cell-attached SpikeTrainFeatureExtractor object
+
+    """
+
+    if est_window is not None:
+        di_cutoff, thresh_frac = spkf.estimate_adjusted_detection_parameters(sweep_set.i, sweep_set.t,
+                                                                           est_window[0],
+                                                                           est_window[1])
+
+    if thresh_frac_floor is not None:
+        thresh_frac = max(thresh_frac_floor, thresh_frac)
+
+    ca_sfx = CellAttachedSpikeFeatureExtractor(
+        di_cutoff=di_cutoff,
+        filter=filter,
+        start=start,
+        end=end,
+        min_peak=min_peak,
+        baseline_win=baseline_win,
+        fraction=fraction,
+        time_win=time_win,
+        thresh_frac=thresh_frac,
+        reject_at_stim_start_interval=reject_at_stim_start_interval
+        )
+
+    ca_stfx = CellAttachedSpikeTrainFeatureExtractor(start, end)
+
+    return ca_sfx, ca_stfx
 
 
 @record_errors

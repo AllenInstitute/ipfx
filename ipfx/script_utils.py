@@ -6,6 +6,9 @@ import h5py
 import numpy as np
 import pandas as pd
 
+import scipy.signal as signal
+from scipy.stats import binned_statistic
+
 import ipfx.lims_queries as lq
 import ipfx.stim_features as stf
 import ipfx.stimulus_protocol_analysis as spa
@@ -321,6 +324,17 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option="none", sp
         raise ValueError("Invalid sweep-level QC option {}".format(sweep_qc_option))
 
 
+def categorize_cellattached_sweeps(data_set, stimuli_names):
+    # No QC in LIMS for these traces
+    cell_attached_st = data_set.filtered_sweep_table(clamp_mode=data_set.VOLTAGE_CLAMP,
+                                                     stimuli=stimuli_names)
+
+    if cell_attached_st.shape[0] == 0:
+        return np.array([])
+    else:
+        return np.array(cell_attached_st["sweep_number"].sort_values().values)
+
+
 def validate_sweeps(data_set, sweep_numbers, extra_dur=0.2):
     check_sweeps = data_set.sweep_set(sweep_numbers)
     check_sweeps.select_epoch("recording")
@@ -421,6 +435,39 @@ def validate_ramp_sweeps(data_set, sweep_numbers, min_ramp_dur=0.1):
     return SweepSet(sweeps=good_sweeps)
 
 
+def validate_cellattached_sweeps(data_set, sweep_numbers, start_delay=1.0, minimum_duration=2):
+    # Check that sweeps have a minimum duration, remove the first second or so, which contains test-pulses.
+
+    check_sweeps = data_set.sweep_set(sweep_numbers)
+    check_sweeps.select_epoch("recording")
+    valid_sweep_stim = []
+
+    if len(check_sweeps.sweeps) > 0:
+        for swp in check_sweeps.sweeps:
+            if len(swp.t) == 0:
+                valid_sweep_stim.append(False)
+                continue
+
+            swp_dur = swp.t[-1]
+
+            # Add a minimal duration for cell-attached sweeps
+            if swp_dur < minimum_duration:
+                valid_sweep_stim.append(False)
+            else:
+                valid_sweep_stim.append(True)
+
+        # Check that all sweeps are long enough and not ended early
+        good_sweeps = [s for s, v in zip(check_sweeps.sweeps, valid_sweep_stim)
+                                if v is True]
+
+        swp_start = start_delay
+        swp_end = swp_dur
+        swp_duration = swp_end - swp_start
+    else:
+        return None, None, None
+    return SweepSet(sweeps=good_sweeps), SweepSet(sweeps=check_sweeps.sweeps), swp_start, swp_end, swp_duration
+
+
 def preprocess_long_square_sweeps(data_set, sweep_numbers, extra_dur=0.2, subthresh_min_amp=-100.):
     if len(sweep_numbers) == 0:
         raise er.FeatureError("No long square sweeps available for feature extraction")
@@ -508,6 +555,54 @@ def preprocess_ramp_sweeps(data_set, sweep_numbers):
     ramp_features = ramp_an.analyze(ramp_sweeps)
 
     return ramp_sweeps, ramp_features, ramp_an
+
+
+def preprocess_cell_attached_sweeps(data_set, sweep_numbers, min_peak=-50, di_cutoff=40, start_delay=0.5, minimum_duration=2):
+    if len(sweep_numbers) == 0:
+        raise er.FeatureError("No cell-attached sweeps available for feature extraction")
+
+    #ca_sweeps, ca_start, ca_end = validate_cellattached_sweeps(data_set, sweep_numbers,
+    #                                                           start_delay, minimum_duration)
+    good_ca_sweeps, all_ca_sweeps, ca_start, ca_end, ca_duration = validate_cellattached_sweeps(data_set, sweep_numbers,
+                                                               start_delay, minimum_duration)
+    if len(good_ca_sweeps.sweeps) == 0:
+        return good_ca_sweeps, all_ca_sweeps, None, None, ca_start, ca_end, ca_duration
+        raise er.FeatureError("No cell-attached sweeps were long enough.")
+    good_ca_sweeps.select_epoch("recording")
+
+
+    ca_spx, ca_spfx = dsf.extractors_for_cellattached_sweeps(
+        sweep_set=good_ca_sweeps,
+        thresh_frac_floor=None,
+        est_window=None,
+        start=ca_start, end=ca_end,
+        min_peak=min_peak,
+        di_cutoff=di_cutoff,
+        **dsf.detection_parameters(data_set.CELL_ATTACHED)
+    )
+
+    ca_an = spa.CellAttachedAnalysis(ca_spx, ca_spfx)
+    ca_features = ca_an.analyze(good_ca_sweeps)
+
+    return good_ca_sweeps, all_ca_sweeps, ca_features, ca_an, ca_start, ca_end, ca_duration
+
+
+def get_filtered_baseline(i, sample_freq, filter_khz=0.01):
+        filt_coeff = (filter_khz * 1e3) / (sample_freq / 2.) # filter kHz -> Hz, then get fraction of Nyquist frequency
+        if filt_coeff < 0 or filt_coeff >= 1:
+            raise ValueError("bessel coeff ({:f}) is outside of valid range [0,1); cannot filter sampling frequency {:.1f} kHz with cutoff frequency {:.1f} kHz.".format(filt_coeff, sample_freq / 1e3, filter))
+        b, a = signal.bessel(4, filt_coeff, "low")
+        i_filt = signal.filtfilt(b, a, i, axis=0)
+
+        return i_filt
+
+
+def bin_baseline_statistic(t, i, bin_width = 0.5, statistic="mean"):
+        bins = np.arange(t[0],t[-1],bin_width)
+        bin_stat, bin_edges, binnumber = binned_statistic(t, i,
+            statistic=statistic, bins=bins)
+
+        return bin_stat, bin_edges, binnumber
 
 
 def filter_results(specimen_ids, results):

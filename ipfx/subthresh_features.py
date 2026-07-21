@@ -113,14 +113,12 @@ def voltage_deflection(t, v, i, start, end, deflect_type=None, reject_transients
             search_start = min(deflect_index, peak_dvdt_ind)
             transient_start_index = np.flatnonzero(np.abs(dvdt[search_start:start_index - 1:-1]) < dvdt_thresh_envelope[search_start - start_index::-1] / 5)[0]
             transient_start_index = search_start - transient_start_index
-            print("transient_start_index", transient_start_index)
 
             transient_base_avg = np.mean(v[transient_start_index - window_width * 2:transient_start_index])
             transient_base_range = 3 * np.std(v[transient_start_index - window_width:transient_start_index])
 
             # find end
             search_start = max(deflect_index, peak_dvdt_ind)
-            print(search_start, transient_base_avg, transient_base_range)
             baseline_return = np.flatnonzero(np.abs(v[search_start:] - transient_base_avg) < transient_base_range)
             if len(baseline_return) > 0:
                 transient_end_index = baseline_return[0]
@@ -129,7 +127,6 @@ def voltage_deflection(t, v, i, start, end, deflect_type=None, reject_transients
                 transient_end_index = len(t) - 1
 
             # blank out the transient
-            print("blanking", transient_start_index, transient_end_index)
 
             temp_v[transient_start_index:transient_end_index + 1] = np.nan
             dvdt[transient_start_index:transient_end_index + 1] = np.nan

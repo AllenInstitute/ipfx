@@ -26,6 +26,7 @@ class EphysDataSet(object):
     SHORT_SQUARE_TRIPLE = 'short_square_triple'
     SHORT_SQUARE = 'short_square'
     RAMP = 'ramp'
+    CELL_ATTACHED = 'cell_attached'
 
     VOLTAGE_CLAMP = "VoltageClamp"
     CURRENT_CLAMP = "CurrentClamp"

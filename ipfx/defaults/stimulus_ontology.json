@@ -1278,7 +1278,8 @@
   [
     [
       "code",
-      "X3LP_Rheo"
+      "X3LP_Rheo",
+      "X5LP_Rheo"
     ],
     [
       "name",
@@ -1288,7 +1289,8 @@
   [
     [
       "code",
-      "X4PS_SupraThresh"
+      "X4PS_SupraThresh",
+      "X6PS_SupraThresh"
     ],
     [
       "name",
@@ -1298,7 +1300,8 @@
   [
     [
       "code",
-      "X6SP_Rheo"
+      "X6SP_Rheo",
+      "X3SP_Rheo"
     ],
     [
       "name",
@@ -1379,7 +1382,8 @@
   [
     [
       "code",
-      "X5SP_Search"
+      "X5SP_Search",
+      "X2SP_Search"
     ],
     [
       "name",
@@ -1889,7 +1893,8 @@
   [
     [
       "code",
-      "X2LP_Search"
+      "X2LP_Search",
+      "X4LP_Search"
     ],
     [
       "name",
@@ -2020,7 +2025,8 @@
     [
       "code",
       "X4PS_SupraThresh_DA_1",
-      "Y4PS_SupraThresh_DA_1"
+      "Y4PS_SupraThresh_DA_1",
+      "X6PS_SupraThresh_DA_1"
     ],
     [
       "name",
@@ -2110,6 +2116,38 @@
     [
       "core",
       "Core 1"
+    ]
+  ],
+  [
+    [
+      "code",
+      "DA03_FI",
+      "FI"
+    ],
+    [
+      "name",
+      "Long Square"
+    ]
+  ],
+  [
+    [
+      "code",
+      "DA02_VI_fine",
+      "VI_fine"
+    ],
+    [
+      "name",
+      "Long Square"
+    ]
+  ],
+  [
+    [
+      "code",
+      "DA04_short_squar"
+    ],
+    [
+      "name",
+      "Short Square"
     ]
   ]
 ]

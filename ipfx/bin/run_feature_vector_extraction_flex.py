@@ -489,7 +489,7 @@ def run_feature_vector_extraction(
                                manual_fail_sweeps=manual_fail_sweep_dict)
 
     if run_parallel:
-        pool = Pool()
+        pool = Pool(processes=7)
         results = pool.map(get_data_partial, specimen_ids)
     else:
         results = map(get_data_partial, specimen_ids)

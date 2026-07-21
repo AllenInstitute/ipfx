@@ -5,6 +5,7 @@ from collections import Counter
 from . import stim_features as stf
 from . import subthresh_features as subf
 from . import spike_train_features as strf
+from . import script_utils as su
 from .sweep import SweepSet
 from . import error as er
 
@@ -317,4 +318,59 @@ class ShortSquareAnalysis(StimulusProtocolAnalysis):
         del out["spikes_set"]
         for k in [ "common_amp_sweeps" ]:
             out[k] = self._sweeps_to_dict(out[k], extra_params)
+        return out
+
+
+class CellAttachedAnalysis(StimulusProtocolAnalysis):
+    def __init__(self, spx, sptx):
+        super(CellAttachedAnalysis, self).__init__(spx, sptx)
+
+    def analyze_basic_cellattached_features(self, sweep_set, extra_sweep_features=None, exclude_clipped=False):
+        self._spikes_set = []
+        self._putative_spikes_set = []
+        self._binned_mean_filtered_baseline = []
+        self._bins = []
+
+        for sweep in sweep_set.sweeps:
+            i_baseline_filt = su.get_filtered_baseline(sweep.i, sweep.sampling_rate, filter_khz=0.05)
+            bin_mean, bin_edges, __ = su.bin_baseline_statistic(sweep.t, i_baseline_filt, bin_width = 0.1, statistic="mean")
+
+            self._binned_mean_filtered_baseline.append(bin_mean)
+            self._bins.append(bin_edges)
+
+            putative_spikes = self.spx.process(sweep.t, sweep.i, sweep.v, sweep.sampling_rate, i_baseline_filt)
+            #self._spikes_set.append(filtered_peaks)
+            self._putative_spikes_set.append(putative_spikes)
+
+        #self._sweep_features = pd.DataFrame([ self.sptx.process(sweep.t, sweep.i, spikes, extra_sweep_features, exclude_clipped=exclude_clipped)
+        #                                      for sweep, spikes in zip(sweep_set.sweeps, self._spikes_set) ])
+        #self._sweep_features = pd.DataFrame()
+        #return {"sweeps": self._sweep_features, "binned_mean_filtered_baseline": self._binned_mean_filtered_baseline, "bins":self._bins, "putative_spikes_set": self._putative_spikes_set}
+        return {"binned_mean_filtered_baseline": self._binned_mean_filtered_baseline, "bins":self._bins, "putative_spikes_set": self._putative_spikes_set}
+
+    def analyze(self, sweep_set):
+        features = {}
+        spike_features = self.analyze_basic_cellattached_features(sweep_set)
+        # Maybe add extra sweep feature here for baseline I
+
+        #features = super(CellAttachedAnalysis, self).analyze(sweep_set)
+        #features = super(CellAttachedAnalysis, self).analyze_cellattached(sweep_set)
+        #features["i_baseline"] = np.nanmean(self._sweep_features["v_baseline"].values)
+
+
+        #spiking_sweep_features = self.suprathreshold_sweep_features()
+        #features["spiking_sweeps"] = spiking_sweep_features
+        #features["mean_spike_0"] = self.mean_features_first_spike(self._spikes_set)
+        features["spikes"] = spike_features
+
+        return features
+
+    def as_dict(self, features, extra_params=None):
+        out = features.copy()
+        del out["sweeps"]
+        del out["spikes_set"]
+
+        for k in [ "spiking_sweeps" ]:
+            out[k] = self._sweeps_to_dict(out[k], extra_params)
+
         return out

@@ -213,7 +213,6 @@ def _remove_transients(v, t, dvdt_thresh=2.0, window_width=400):
         exceed_inds = np.flatnonzero(np.abs(dvdt) > dvdt_thresh_envelope)
         exceed_peak_ind = np.argmax(np.abs(dvdt)[exceed_inds])
         dvdt_peak_ind = exceed_inds[exceed_peak_ind]
-        print("dvdt peak to remove", dvdt_peak_ind, dvdt[dvdt_peak_ind])
         peak_ind = np.nanargmax(np.abs(v[dvdt_peak_ind - window_width:dvdt_peak_ind + window_width]))
         peak_ind += dvdt_peak_ind - window_width
 
@@ -225,8 +224,6 @@ def _remove_transients(v, t, dvdt_thresh=2.0, window_width=400):
         transient_base_range = 3 * np.std(v[transient_start_index - window_width:transient_start_index])
 
         search_start = max(peak_ind, dvdt_peak_ind)
-        print(peak_ind, dvdt_peak_ind)
-        print(search_start, transient_base_avg, transient_base_range)
 
         baseline_return = np.flatnonzero(np.abs(v[search_start:] - transient_base_avg) < transient_base_range)
         if len(baseline_return) > 0:
@@ -236,7 +233,6 @@ def _remove_transients(v, t, dvdt_thresh=2.0, window_width=400):
             transient_end_index = len(t) - 1
 
         # blank out the transient
-        print("blanking", transient_start_index, transient_end_index)
         v_clean[transient_start_index:transient_end_index + 1] = np.nan
         dvdt[transient_start_index:transient_end_index + 1] = np.nan
 
@@ -373,7 +369,7 @@ def subthresh_rebound(amp_sweep_dict, start, dur=0.2, target_amp=-101.,
     return rebound_psth
 
 
-def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
+def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end, duration=1.0,
     extend_duration=0.2, subsample_interval=0.01, steady_state_interval=0.1):
     """ Largest positive-going subthreshold step response that does not evoke spikes,
         normalized to baseline and steady-state at end of step
@@ -388,6 +384,8 @@ def subthresh_depol_norm(amp_sweep_dict, deflect_dict, start, end,
             start stimulus interval (seconds)
         end: float or dict
             end of stimulus interval (seconds)
+        duration: float (optional, default 1.0)
+            Duration of stimulus interval (seconds)
         extend_duration: float (optional, default 0.2)
             Duration to extend sweep on each side of stimulus interval (seconds)
         subsample_interval: float (optional, default 0.01)

@@ -9,7 +9,7 @@ from io import BytesIO
 from pynwb.icephys import (CurrentClampSeries, CurrentClampStimulusSeries, VoltageClampSeries,
                            VoltageClampStimulusSeries, IZeroClampSeries)
 from ipfx.py2to3 import to_str
-from allensdk.core.nwb_data_set import NwbDataSet
+# from allensdk.core.nwb_data_set import NwbDataSet
 
 
 def custom_formatwarning(msg, *args, **kwargs):
@@ -563,10 +563,10 @@ class NwbMiesReader(NwbReader):
 
         return sweep_number
 
-    def get_spike_times(self, sweep_number):
-
-        spike_times = NwbDataSet(self.nwb_file).get_spike_times(sweep_number)
-        return spike_times
+#     def get_spike_times(self, sweep_number):
+#
+#         spike_times = NwbDataSet(self.nwb_file).get_spike_times(sweep_number)
+#         return spike_times
 
     def get_stim_code(self, sweep_number):
 
