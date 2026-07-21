@@ -42,10 +42,12 @@ def mies_nwb_data(tmp_nwb_path):
                        ontology=ontology)
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_create_mies(mies_nwb_data):
     assert isinstance(mies_nwb_data, MIESNWBData)
 
 
+@pytest.mark.filterwarnings("ignore:.*Value with data type int64 is being converted to data type uint64.*")
 def test_get_sweep_metadata(mies_nwb_data):
 
     expected = {

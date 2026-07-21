@@ -27,4 +27,5 @@ docker run                                                                      
                     git config lfs.url 'https://github.com/AllenInstitute/ipfx.git/info/lfs'; \
                     git lfs env;                                                              \
                     git lfs pull;                                                             \
+                    pip install -e .;                                                         \
                     python -m pytest --junitxml=test-reports/test.xml --verbose"

@@ -1,12 +1,15 @@
 name: ci/github-actions
 
 on:
+  workflow_call:
   pull_request:
-    branches: [ master, feature/** ]
-
+    branches:
+      - master
   push:
-    branches: [ master, feature/** ]
-
+    branches:
+      - master
+    tags_ignore:
+      - '*'
 
 jobs:
   run-light-tests:
@@ -20,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14-dev"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v3
@@ -44,6 +47,7 @@ jobs:
           git config lfs.url 'https://github.com/AllenInstitute/ipfx.git/info/lfs'
           git lfs env
           git lfs pull
+          pip install -e .
           python -m pytest --junitxml=test-results/junit.xml --verbose
 
 
@@ -52,7 +56,7 @@ jobs:
     runs-on: ["self-hosted"]
     strategy:
       matrix:
-        pyver: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14-rc"]
+        pyver: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - name: Build docker image
