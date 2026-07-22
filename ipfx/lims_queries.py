@@ -1,6 +1,6 @@
 import os
 import logging
-import pg8000
+import pg8000.dbapi
 
 from ipfx.string_utils import to_str
 
@@ -39,7 +39,7 @@ def _connect(timeout=TIMEOUT):
     credentials = dict((k, os.environ.get(env_var, LIMS_DB_CREDENTIAL_DEFAULTS[env_var]))
         for k, env_var in LIMS_DB_CREDENTIAL_MAP.items())
 
-    conn = pg8000.connect(
+    conn = pg8000.dbapi.connect(
         user=credentials["user"],
         host=credentials["host"],
         database=credentials["dbname"],
@@ -70,7 +70,10 @@ def _select(cursor, query, parameters=None):
     if parameters is None:
         cursor.execute(query)
     else:
-        pg8000.paramstyle = 'numeric'
+        pg8000.dbapi.paramstyle = 'numeric'
+        print("paramstyle", pg8000.dbapi.paramstyle)
+        print(query)
+        print(parameters)
         cursor.execute(query, parameters)
     columns = [ to_str(d[0]) for d in cursor.description ]
     return [ dict(zip(columns, c)) for c in cursor.fetchall() ]
@@ -227,6 +230,8 @@ def get_nwb_path_from_lims(ephys_roi_result):
         return None
 
 
+
+
 def get_igorh5_path_from_lims(ephys_roi_result):
 
     sql = """
@@ -267,3 +272,32 @@ def project_specimen_ids(project, passed_only=True):
     results = query(SQL)
     sp_ids = [d["id"] for d in results]
     return sp_ids
+
+
+def get_nwb_file_paths_for_specimen_ids(specimen_ids):
+    """ Get file path for each provided specimen ID
+
+    Note: only returns NWB2 file paths
+    well known file type ID for EphysNWB2 files is 1016154283
+    """
+
+    sql = """
+    select specimens.id, f.filename, f.storage_directory
+    from specimens
+    join ephys_roi_results err on err.id = specimens.ephys_roi_result_id
+    join well_known_files f on f.attachable_id = err.id
+    where specimens.id = any(:1)
+    and f.attachable_type = 'EphysRoiResult'
+    and f.well_known_file_type_id = 1016154283
+    """
+    try:
+        result = query(sql, (set(specimen_ids), ))
+    except pg8000.dbapi.ProgrammingError as e:
+        print(f"Error Message: {e}")
+        # Inspect the raw response from the PostgreSQL server
+        if hasattr(e, 'args') and len(e.args) > 0:
+            print(f"Server Payload: {e.args}")
+
+    file_list = {r["id"]: os.path.join(r["storage_directory"], r["filename"])
+        for r in result}
+    return file_list

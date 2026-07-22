@@ -5,6 +5,8 @@ import json
 import argschema as ags
 import numpy as np
 
+import ipfx.lims_queries as lq
+
 
 class CollectFeatureVectorParameters(ags.ArgSchema):
     output_dir = ags.fields.OutputDir(
@@ -15,7 +17,7 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
         description=("Input file of specimen IDs (one per line)"),
     )
     nwb_path_file = ags.fields.InputFile(
-        description=("File with paths to each specimen's NWB file - "
+        description=("JSON file with paths to each specimen's NWB file - "
             "if not supplied, LIMS will be queried for them"),
         default=None,
         allow_none=True,
@@ -45,9 +47,16 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
 
 
 def main(args):
-    with open(module.args["specimen_id_file"], "r") as f:
-        ids = [int(line.strip("\n")) for line in f]
+    ids = np.genfromtxt(args["specimen_id_file"], dtype=int).tolist()
 
+    nwb_path_file = args["nwb_path_file"]
+    if nwb_path_file is None:
+        file_list = lq.get_nwb_file_paths_for_specimen_ids(ids)
+    else:
+        with open(nwb_path_file, "r") as f:
+            file_list = json.load(f)
+
+    print(file_list)
 
 if __name__ == "__main__":
     module = ags.ArgSchemaParser(schema_type=CollectFeatureVectorParameters)
