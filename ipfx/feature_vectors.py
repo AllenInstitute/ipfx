@@ -720,8 +720,8 @@ def first_ap_waveform(sweep, spikes, length_in_points):
     return sweep.v[start_index:end_index]
 
 
-def identify_suprathreshold_spike_info(features, target_amplitudes,
-        shift=None, amp_tolerance=0):
+def identify_suprathreshold_spike_info(features, target_amplitudes, sweep_numbers=None,
+        shift=None, amp_tolerance=0, needed_amplitudes=None):
     """ Find spike information for sweeps matching desired amplitudes relative to rheobase
 
     Parameters
@@ -747,12 +747,12 @@ def identify_suprathreshold_spike_info(features, target_amplitudes,
     spike_data = features["spikes_set"]
     sweeps_to_use = _identify_suprathreshold_indices(
         features, target_amplitudes, shift, amp_tolerance, needed_amplitudes=needed_amplitudes)
-
     if sweep_numbers is not None:
         used_sweep_numbers = [sweep_numbers[ind] if ind is not None else None for ind in sweeps_to_use]
     else:
         used_sweep_numbers = None
     return [spike_data[ind] if ind is not None else None for ind in sweeps_to_use], used_sweep_numbers
+
 
 
 def identify_suprathreshold_sweeps(sweeps, features, target_amplitudes,
@@ -775,7 +775,6 @@ def identify_suprathreshold_sweeps(sweeps, features, target_amplitudes,
         Tolerance for matching amplitude (pA)
     needed_amplitudes: list-like (optional, default None)
         Subset of `target_amplitudes` of which at least two are required
-
     Returns
     -------
     sweeps: list
@@ -804,8 +803,6 @@ def _identify_suprathreshold_indices(features, target_amplitudes,
         A value of None means that no shift is attempted.
     amp_tolerance: float (optional, default 0)
         Tolerance for matching amplitude (pA)
-    needed_amplitudes: list-like (optional, default None)
-        Subset of `target_amplitudes` of which at least two are required
 
     Returns
     -------
@@ -915,18 +912,18 @@ def psth_vector(spike_info_list, stim_timing_list, width=50, duration=1.0):
     if spike_info_list[0] is None:
         logging.warning("Rheobase sweep appears to be missing")
 
+    one_ms = 0.001
+    n_bins = int(duration / one_ms) // width
     for si, stim_timing in zip(spike_info_list, stim_timing_list):
         if si is None:
             vector_list.append(None)
             continue
         thresh_t = si["threshold_t"]
         spike_count = np.ones_like(thresh_t)
-        one_ms = 0.001
         # only use actual duration to check against requested duration
         if np.abs(stim_timing.dur - duration) > one_ms:
             logging.warning(f"Actual duration ({stim_timing.dur}) does not match duration specified for analysis ({duration})")
 
-        n_bins = int(duration / one_ms) // width
         bin_edges = np.linspace(stim_timing.start, stim_timing.start + duration, n_bins + 1) # includes right edge, so adding one to desired bin number
         bin_width = bin_edges[1] - bin_edges[0]
 
@@ -974,6 +971,8 @@ def inst_freq_vector(spike_info_list, stim_timing_list, width=20, gap_factor=4, 
         logging.warning("Rheobase sweep appears to be missing")
 
     vector_list = []
+    one_ms = 0.001
+    n_bins = int(duration / one_ms) // width
     for si, stim_timing in zip(spike_info_list, stim_timing_list):
         if si is None:
             vector_list.append(None)
@@ -981,12 +980,10 @@ def inst_freq_vector(spike_info_list, stim_timing_list, width=20, gap_factor=4, 
         thresh_t = si["threshold_t"].values
         inst_freq, inst_freq_times = _inst_freq_feature(thresh_t, stim_timing.start, stim_timing.end)
 
-        one_ms = 0.001
         # only use actual duration to check against requested duration
         if np.abs(stim_timing.dur - duration) > one_ms:
             logging.warning(f"Actual duration ({stim_timing.dur}) does not match duration specified for analysis ({duration})")
 
-        n_bins = int(duration / one_ms) // width
         bin_edges = np.linspace(stim_timing.start, stim_timing.start + duration, n_bins + 1) # includes right edge, so adding one to desired bin number
         bin_width = bin_edges[1] - bin_edges[0]
 
@@ -1022,7 +1019,7 @@ def inst_freq_vector(spike_info_list, stim_timing_list, width=20, gap_factor=4, 
 
 
 
-def spike_feature_vector(feature, spike_info_list, start, end, width=20):
+def spike_feature_vector(feature, spike_info_list, stim_timing_list, width=20, duration=1.0):
     """ Create binned feature vector for specified features,
         concatenated across sweeps
 
@@ -1032,9 +1029,9 @@ def spike_feature_vector(feature, spike_info_list, start, end, width=20):
         Name of feature found in members of spike_info_list
     spike_info_list: list
         Spike info DataFrames for each sweep
-    start: float
+    start: float or list
         Start of stimulus interval (seconds)
-    end: float
+    end: float or list
         End of stimulus interval (seconds)
     width: float (optional, default 20)
         Bin width in ms
@@ -1045,8 +1042,14 @@ def spike_feature_vector(feature, spike_info_list, start, end, width=20):
         Concatenated vector of binned spike features
     """
 
+    if spike_info_list[0] is None:
+        logging.warning("Rheobase sweep appears to be missing")
+
+    one_ms = 0.001
+    n_bins = int(duration / one_ms) // width
+
     vector_list = []
-    for si in spike_info_list:
+    for si, stim_timing in zip(spike_info_list, stim_timing_list):
         if si is None:
             vector_list.append(None)
             continue
@@ -1057,16 +1060,20 @@ def spike_feature_vector(feature, spike_info_list, start, end, width=20):
         else:
             feature_values = si[feature].values
             mask = ~si["clipped"].values
-            thresh_t = thresh_t[mask]
-            feature_values = feature_values[mask]
+            if np.sum(mask) == 0:
+                if np.all(np.isnan(feature_values)):
+                    logging.warning(f"All spikes were clipped (n={len(thresh_t)}) and had NaN values for feature {feature}; dropping sweep for this feature")
+                    vector_list.append(None)
+                    continue
+            else:
+                thresh_t = thresh_t[mask]
+                feature_values = feature_values[mask]
 
-        one_ms = 0.001
+        # only use actual duration to check against requested duration
+        if np.abs(stim_timing.dur - duration) > one_ms:
+            logging.warning(f"Actual duration ({actual_duration}) does not match duration specified for analysis ({duration})")
 
-        # round to nearest ms to deal with float approximations
-        duration = np.round(end, decimals=3) - np.round(start, decimals=3)
-
-        n_bins = int(duration / one_ms) // width
-        bin_edges = np.linspace(start, end, n_bins + 1) # includes right edge, so adding one to desired bin number
+        bin_edges = np.linspace(stim_timing.start, stim_timing.start + duration, n_bins + 1) # includes right edge, so adding one to desired bin number
         bin_width = bin_edges[1] - bin_edges[0]
 
         output = stats.binned_statistic(thresh_t,
@@ -1081,15 +1088,22 @@ def spike_feature_vector(feature, spike_info_list, start, end, width=20):
     return output_vector
 
 
-def _spiking_sweeps_at_levels(amps, sweep_indexes, target_amplitudes,
-        amp_tolerance):
+
+def _spiking_sweeps_at_levels(
+        amps, sweep_indexes, target_amplitudes, amp_tolerance):
     """Search for sweep indexes that match target amplitudes"""
 
     sweeps_to_use = []
     for target_amp in target_amplitudes:
+        # find exact 0 relative amplitude sweep for rheobase (which must exist); otherwise use amp_tolerance
+        if target_amp == 0:
+            used_amp_tolerance = 0
+        else:
+            used_amp_tolerance = amp_tolerance
+
         found_match = False
         for amp, swp_ind in zip(amps, sweep_indexes):
-            if (np.abs(amp - target_amp) <= amp_tolerance):
+            if (np.abs(amp - target_amp) <= used_amp_tolerance) and swp_ind not in sweeps_to_use:
                 found_match = True
                 sweeps_to_use.append(swp_ind)
                 logging.debug("Using amplitude {} for target {}".format(amp, target_amp))
@@ -1098,6 +1112,7 @@ def _spiking_sweeps_at_levels(amps, sweep_indexes, target_amplitudes,
             sweeps_to_use.append(None)
 
     return sweeps_to_use
+
 
 
 def _consolidated_long_square_indexes(sweep_table):
@@ -1160,21 +1175,16 @@ def _inst_freq_feature(threshold_t, start, end):
 
     This function attempts to estimate a semi-continuous instantanteous firing
     rate from a set of interspike intervals (ISIs) and spike times. It makes
-    several assumptions:
+    several assumptions/methodological decisions:
+    - It only estimates the firing frequency when at the times of spikes.
     - It assumes that the instantaneous firing rate at the start of the stimulus
     interval is the inverse of the latency to the first spike.
     - It estimates the firing rate at each spike as the average of the ISIs
     on each side of the spike
-    - If the time between the end of the interval and the last spike is less
-    than the last true interspike interval, it sets the instantaneous rate of
-    that last spike and of the end of the interval to the inverse of the last ISI.
-    Therefore, the instantaneous rate would not "jump" just because the
-    stimulus interval ends.
-    - However, if the time between the end of the interval and the last spike is
-    longer than the final ISI, it assumes there may have been a spike just
-    after the end of the interval. Therefore, it essentially returns an upper
-    bound on the estimated rate.
-
+    - It does not consider the interval between the last spike and the end of
+    the stimulus as an interspike interval (because there is no spike at the end).
+    Consequently, it only uses the last actual ISI for the estimated rate
+    of the last spike of the train.
 
     Parameters
     ----------
@@ -1197,21 +1207,15 @@ def _inst_freq_feature(threshold_t, start, end):
     inst_inv_rate = []
     time_points = []
     isis = [(threshold_t[0] - start)] + np.diff(threshold_t).tolist()
-    isis = isis + [max(isis[-1], end - threshold_t[-1])]
 
-    # Estimate at start of stimulus interval
-    inst_inv_rate.append(isis[0])
-    time_points.append(start)
+    # Add an ISI for the end so the average for the last spike will be its
+    # prior ISI
+    isis = isis + [isis[-1]]
 
     # Estimate for each spike time
     for t, pre_isi, post_isi in zip(threshold_t, isis[:-1], isis[1:]):
         inst_inv_rate.append((pre_isi + post_isi) / 2)
         time_points.append(t)
-
-    # Estimate for end of stimulus interval
-    inst_inv_rate.append(isis[-1])
-    time_points.append(end)
-
 
     inst_firing_rate = 1 / np.array(inst_inv_rate)
     time_points = np.array(time_points)

@@ -42,6 +42,32 @@ class ExtendDurationSchema(ags.schemas.DefaultSchema):
     )
 
 
+class ApWaveformSchema(ags.schemas.DefaultSchema):
+    use = ags.fields.Boolean(
+        default=True,
+        description="whether to use AP from stimulus type",
+    )
+    duration = ags.fields.Float(
+        default=0.003,
+        description="Duration after threshold for AP shape (s)",
+    )
+
+
+class ApWaveformForStimuliSchema(ags.schemas.DefaultSchema):
+    ssq = ags.fields.Nested(ApWaveformSchema,
+        default={},
+        description="analysis parameters for short square AP waveform",
+    )
+    lsq = ags.fields.Nested(ApWaveformSchema,
+        default={},
+        description="analysis parameters for long square AP waveform",
+    )
+    ramp = ags.fields.Nested(ApWaveformSchema,
+        default={},
+        description="analysis parameters for ramp AP waveform",
+    )
+
+
 class CollectFeatureVectorParameters(ags.ArgSchema):
     output_dir = ags.fields.OutputDir(
         description="Destination directory for output files",
@@ -101,6 +127,16 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
         description="parameters for extending time windows for analyses",
         default={},
     )
+    ap_waveforms = ags.fields.Nested(ApWaveformForStimuliSchema,
+        default={},
+        description="parameters for AP waveform analysis",
+    )
+    needed_amplitudes = ags.fields.List(
+        ags.fields.Integer,
+        allow_none=True,
+        default=None,
+        cli_as_single_argument=True
+    )
     run_parallel = ags.fields.Boolean(
         description="boolean - use multiprocessing",
         default=True
@@ -113,12 +149,12 @@ def data_for_specimen_id(
     sweep_qc_option,
     sweep_qc_record,
     file_list,
-#     ap_waveforms,
+    ap_waveforms,
     extend_durations,
     extract_from_ramp,
     additional_fvs,
-#     target_sampling_rate=50000,
-#     needed_amplitudes=None,
+    target_sampling_rate=50000,
+    needed_amplitudes=None,
     amp_tolerance=0.,
     manual_fail_sweeps=None,
 ):
@@ -208,8 +244,6 @@ def data_for_specimen_id(
             logging.warning(detail)
             return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=None), "specimen_id": specimen_id}}
 
-    print(f"Finished preprocessing of {specimen_id}")
-
     # Calculate desired feature vectors
     result = {"id": specimen_id}
 
@@ -253,7 +287,6 @@ def data_for_specimen_id(
                     lsq_sweeps, lsq_features, lsq_stim_timing_dict, exclude_sweep_numbers=exclude_sweeps_for_isi)
                 result["isi_shape"] = fv.isi_shape(isi_sweep, isi_sweep_spike_info, lsq_stim_timing_dict)
 
-        return result
 
         # Calculate waveforms from each type of sweep - if multiple sweeps, use the earliest
         ap_v_list = []
@@ -309,22 +342,15 @@ def data_for_specimen_id(
             needed_amplitudes=needed_amplitudes
         )
 
-        if type(lsq_start) is dict:
-            supra_lsq_start = [lsq_start[sn] if sn is not None else None for sn in supra_sweep_numbers]
-        else:
-            supra_lsq_start = lsq_start
-        if type(lsq_end) is dict:
-            supra_lsq_end = [lsq_end[sn] if sn is not None else None for sn in supra_sweep_numbers]
-        else:
-            supra_lsq_end = lsq_end
+        supra_lsq_stim_timing_list = [lsq_stim_timing_dict[sn] if sn is not None else None for sn in supra_sweep_numbers]
 
         actual_amps = [int(a) for a, si in zip(target_amplitudes, supra_info_list) if si is not None]
         actual_rheobase_i = int(lsq_features["rheobase_i"])
 
         result["long_squares_data_info"] = {"rheobase_i": actual_rheobase_i, "amplitudes_with_data": actual_amps}
 
-        result["psth"] = fv.psth_vector(supra_info_list, supra_lsq_start, supra_lsq_end)
-        result["inst_freq"] = fv.inst_freq_vector(supra_info_list, supra_lsq_start, supra_lsq_end)
+        result["psth"] = fv.psth_vector(supra_info_list, supra_lsq_stim_timing_list)
+        result["inst_freq"] = fv.inst_freq_vector(supra_info_list, supra_lsq_stim_timing_list)
 
         spike_feature_list = [
             "upstroke_downstroke_ratio",
@@ -335,11 +361,11 @@ def data_for_specimen_id(
         ]
         for feature in spike_feature_list:
             result["spiking_" + feature] = fv.spike_feature_vector(feature,
-                supra_info_list, supra_lsq_start, supra_lsq_end)
+                supra_info_list, supra_lsq_stim_timing_list)
     except Exception as detail:
         logging.warning("Exception when processing specimen {:d}".format(specimen_id))
         logging.warning(detail)
-        return {"error": {"type": "processing", "details": traceback.format_exc(limit=None)}}
+        return {"error": {"type": "processing", "details": traceback.format_exc(limit=None)}, "specimen_id": specimen_id}
 
     logging.info(f"Successfully processed {specimen_id}")
 
@@ -348,7 +374,6 @@ def data_for_specimen_id(
         data_set._data._get_series.cache_clear()
 
     return result
-
 
 
 def run_feature_vector_extraction(
@@ -363,6 +388,8 @@ def run_feature_vector_extraction(
         amp_tolerance,
         additional_fvs,
         extend_durations,
+        ap_waveforms,
+        needed_amplitudes,
         run_parallel=True,
     ):
     """
@@ -371,9 +398,9 @@ def run_feature_vector_extraction(
 
     get_data_partial = partial(data_for_specimen_id,
                                sweep_qc_option=sweep_qc_option,
-#                                needed_amplitudes=needed_amplitudes,
+                               needed_amplitudes=needed_amplitudes,
                                amp_tolerance=amp_tolerance,
-#                                ap_waveforms=ap_waveforms,
+                               ap_waveforms=ap_waveforms,
                                extend_durations=extend_durations,
                                extract_from_ramp=extract_from_ramp,
                                additional_fvs=additional_fvs,
@@ -433,6 +460,8 @@ def main(args):
         amp_tolerance=args["amp_tolerance"],
         additional_fvs=args["additional_fvs"],
         extend_durations=args["extend_durations"],
+        ap_waveforms=args["ap_waveforms"],
+        needed_amplitudes=args["needed_amplitudes"],
         run_parallel=args["run_parallel"],
     )
 
