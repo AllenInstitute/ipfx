@@ -71,9 +71,6 @@ def _select(cursor, query, parameters=None):
         cursor.execute(query)
     else:
         pg8000.dbapi.paramstyle = 'numeric'
-        print("paramstyle", pg8000.dbapi.paramstyle)
-        print(query)
-        print(parameters)
         cursor.execute(query, parameters)
     columns = [ to_str(d[0]) for d in cursor.description ]
     return [ dict(zip(columns, c)) for c in cursor.fetchall() ]
@@ -301,3 +298,18 @@ def get_nwb_file_paths_for_specimen_ids(specimen_ids):
     file_list = {r["id"]: os.path.join(r["storage_directory"], r["filename"])
         for r in result}
     return file_list
+
+
+def get_sweep_states_and_tags_for_specimens(specimen_ids):
+    sql = """
+    select swp.specimen_id, swp.sweep_number, swp.workflow_state, tag.name as tag_name
+    from ephys_sweeps swp
+    left join ephys_sweep_tags_ephys_sweeps estes on estes.ephys_sweep_id = swp.id
+    left join ephys_sweep_tags tag on tag.id = estes.ephys_sweep_tag_id
+    where swp.specimen_id = any(:1)
+    order by swp.specimen_id, swp.sweep_number
+    """
+    result = query(sql, (set(specimen_ids), ))
+
+    return result
+

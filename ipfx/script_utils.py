@@ -13,6 +13,8 @@ import ipfx.stimulus_protocol_analysis as spa
 import ipfx.data_set_features as dsf
 import ipfx.time_series_utils as tsu
 import ipfx.error as er
+import ipfx.qc_feature_extractor as qc_fex
+import ipfx.qc_feature_evaluator as qc_feval
 from ipfx.stimulus import StimulusType
 from ipfx.sweep import SweepSet
 from ipfx.dataset.create import create_ephys_data_set
@@ -74,88 +76,137 @@ def dataset_for_specimen_id(specimen_id, data_source, ontology, file_list=None):
     return data_set
 
 
-def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_option="none", specimen_id=None):
-    exist_sql = """
-        select swp.sweep_number from ephys_sweeps swp
-        where swp.specimen_id = :1
-        and swp.sweep_number = any(:2)
-    """
+def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_record,
+        sweep_qc_option="none", specimen_id=None):
 
-    passed_sql = """
-        select swp.sweep_number from ephys_sweeps swp
-        where swp.specimen_id = :1
-        and swp.sweep_number = any(:2)
-        and swp.workflow_state like '%%passed'
-    """
-
-    passed_except_delta_vm_sql = """
-        select swp.sweep_number, tag.name
-        from ephys_sweeps swp
-        join ephys_sweep_tags_ephys_sweeps estes on estes.ephys_sweep_id = swp.id
-        join ephys_sweep_tags tag on tag.id = estes.ephys_sweep_tag_id
-        where swp.specimen_id = :1
-        and swp.sweep_number = any(:2)
-    """
-
-    iclamp_st = data_set.filtered_sweep_table(clamp_mode=data_set.CURRENT_CLAMP, stimuli=stimuli_names)
+    my_sweep_qc_record = sweep_qc_record.loc[sweep_qc_record["specimen_id"] == specimen_id]
+    iclamp_st = data_set.filtered_sweep_table(
+        clamp_mode=data_set.CURRENT_CLAMP, stimuli=stimuli_names)
 
     if iclamp_st.shape[0] == 0:
         return np.array([])
 
+    sweep_num_list = iclamp_st["sweep_number"].sort_values().unique().tolist()
     if sweep_qc_option == "none":
-        return iclamp_st["sweep_number"].sort_values().values
-    elif sweep_qc_option == "lims-passed-only":
-        # check that sweeps exist in LIMS
-        sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
-        results = lq.query(exist_sql, (specimen_id, sweep_num_list))
-        res_nums = pd.DataFrame(results, columns=["sweep_number"])["sweep_number"].tolist()
+        return np.array(sweep_num_list)
+    elif sweep_qc_option in ("passed-only", "passed-except-delta-vm", "passed-except-delta-vm-and-rms"):
+        # check that sweeps exist in sweep QC record
         not_checked_list = []
         for swp_num in sweep_num_list:
-            if swp_num not in res_nums:
-                logging.debug("Could not find sweep {:d} from specimen {:d} in LIMS for QC check".format(swp_num, specimen_id))
+            if swp_num not in my_sweep_qc_record["sweep_number"].unique():
                 not_checked_list.append(swp_num)
+        if len(not_checked_list) > 0:
+            sweep_num_list = [sn for sn in sweep_num_list if sn not in not_checked_list]
+            logging.warning("Could not find {:d} sweeps from specimen {:d} in QC record".format(len(not_checked_list), specimen_id))
+        # note: choosing not to include unchecked sweeps in returned list
 
         # Get passed sweeps
-        results = lq.query(passed_sql, (specimen_id, sweep_num_list))
-        results_df = pd.DataFrame(results, columns=["sweep_number"])
-        passed_sweep_nums = results_df["sweep_number"].values
-        return np.sort(np.hstack([passed_sweep_nums, np.array(not_checked_list)])) # deciding to keep non-checked sweeps for now
-    elif sweep_qc_option == "lims-passed-except-delta-vm":
-        # check that sweeps exist in LIMS
-        sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
-        results = lq.query(exist_sql, (specimen_id, sweep_num_list))
-        res_nums = pd.DataFrame(results, columns=["sweep_number"])["sweep_number"].tolist()
+        passed_record = my_sweep_qc_record.loc[
+            my_sweep_qc_record["sweep_number"].isin(sweep_num_list) &
+            my_sweep_qc_record["workflow_state"].str.endswith("passed"), :]
+        passed_sweep_nums = passed_record["sweep_number"].unique()
 
-        not_checked_list = []
-        for swp_num in sweep_num_list:
-            if swp_num not in res_nums:
-                logging.debug("Could not find sweep {:d} from specimen {:d} in LIMS for QC check".format(swp_num, specimen_id))
-                not_checked_list.append(swp_num)
-
-        # get straight-up passed sweeps
-        results = lq.query(passed_sql, (specimen_id, sweep_num_list))
-        results_df = pd.DataFrame(results, columns=["sweep_number"])
-        passed_sweep_nums = results_df["sweep_number"].values
+        if sweep_qc_option == "passed-only":
+            return np.sort(passed_sweep_nums).astype(int)
 
         # also get sweeps that only fail due to delta Vm
         failed_sweep_list = list(set(sweep_num_list) - set(passed_sweep_nums))
         if len(failed_sweep_list) == 0:
-            return np.sort(passed_sweep_nums)
-        results = lq.query(passed_except_delta_vm_sql, (specimen_id, failed_sweep_list))
-        results_df = pd.DataFrame(results, columns=["sweep_number", "name"])
+            return np.sort(passed_sweep_nums).astype(int)
 
-        # not all cells have tagged QC status - if there are no tags assume the
-        # fail call is correct and exclude those sweeps
-        tagged_mask = np.array([sn in results_df["sweep_number"].tolist() for sn in failed_sweep_list])
+        # check if only tag is "Vm delta"
+        also_passing_nums = []
+        for sn in failed_sweep_list:
+            non_delta_vm_tag_record = my_sweep_qc_record.loc[
+                (my_sweep_qc_record["sweep_number"] == sn) &
+                (~my_sweep_qc_record["tag_name"].str.startswith("Vm delta")) &
+                (my_sweep_qc_record["tag_name"] != "Blowout is not available"), :] # don't fail for blowout unavailable because we are considering patch-seq sweeps
+            if non_delta_vm_tag_record.shape[0] == 0:
+                also_passing_nums.append(sn)
+
+        if sweep_qc_option == "passed-except-delta-vm":
+            return np.sort(np.hstack([
+                passed_sweep_nums,
+                np.array(also_passing_nums),
+                ])).astype(int)
+
+        # Don't use LIMS-calculated RMS fail/pass - recalculate here
 
         # otherwise, check for having an error tag that isn't 'Vm delta'
-        # and exclude those sweeps
-        has_non_delta_tags = np.array([np.any((results_df["sweep_number"].values == sn) &
-            (results_df["name"].values != "Vm delta")) for sn in failed_sweep_list])
+        # or one of the RMS tags and exclude those sweeps
+        rms_check_sweep_nums = []
+        for sn in set(failed_sweep_list) - set(also_passing_nums):
+            non_delta_vm_or_rms_tag_record = my_sweep_qc_record.loc[
+                (my_sweep_qc_record["sweep_number"] == sn) &
+                (~my_sweep_qc_record["tag_name"].str.startswith("Vm delta")) &
+                (~my_sweep_qc_record["tag_name"].str.startswith("slow noise")) &
+                (~my_sweep_qc_record["tag_name"].str.startswith("pre-noise")) &
+                (~my_sweep_qc_record["tag_name"].str.startswith("post-noise")) &
+                (my_sweep_qc_record["tag_name"] != "Blowout is not available"), # don't fail for blowout unavailable because we are considering patch-seq sweeps
+                :]
+            if non_delta_vm_tag_record.shape[0] == 0:
+                rms_check_sweep_nums.append(sn)
 
-        also_passing_nums = np.array(failed_sweep_list)[tagged_mask & ~has_non_delta_tags]
+        if len(rms_check_sweep_nums) == 0:
+            # if no sweeps need to be checked, skip the rest
+            return np.sort(np.hstack([
+                passed_sweep_nums,
+                np.array(also_passing_nums),
+                ])).astype(int)
 
-        return np.sort(np.hstack([passed_sweep_nums, also_passing_nums, np.array(not_checked_list)]))
+        # Now re-check each sweep's RMS
+        qc_criteria = qc_feval.load_default_qc_criteria()
+
+        # Read the lab notebook for the RMS criteria used for the sweep
+        lnr = data_set._data.notebook
+        numeric_fields = [c.decode('utf-8') for c in lnr.colname_number[0]]
+        short_rms_fields = [f for f in numeric_fields if "S-RMS Threshold" in f]
+        long_rms_fields = [f for f in numeric_fields if "L-RMS Threshold" in f]
+
+        pass_rms_nums = []
+        for sn in rms_check_sweep_nums:
+            is_ramp = "Ramp" == iclamp_st.at[sn, "stimulus_name"]
+
+            # Short RMS criterion
+            s_rms_threshold = None
+            for f in short_rms_fields:
+                if lnr.get_value(f, sn, None) is not None:
+                    s_rms_threshold = lnr.get_value(f, sn, None) * 1e3 # from V to mV
+                    break
+            if s_rms_threshold is None:
+                s_rms_threshold = qc_criteria["pre_noise_rms_mv_max"]
+
+            # Long RMS criterion
+            l_rms_threshold = None
+            for f in long_rms_fields:
+                if lnr.get_value(f, sn, None) is not None:
+                    l_rms_threshold = lnr.get_value(f, sn, None) * 1e3 # from V to mV
+                    break
+            if l_rms_threshold is None:
+                l_rms_threshold = qc_criteria["slow_noise_rms_mv_max"]
+
+            qc_features = qc_fex.current_clamp_sweep_qc_features(
+                data_set.sweep(sn),
+                is_ramp
+            )
+
+            if is_ramp:
+                if ((qc_features["pre_noise_rms_mv"] < s_rms_threshold) &
+                    (qc_features["slow_noise_rms_mv"] < l_rms_threshold)):
+                    pass_rms_nums.append(sn)
+            else:
+                if ((qc_features["pre_noise_rms_mv"] < s_rms_threshold) &
+                    (qc_features["post_noise_rms_mv"] < s_rms_threshold) &
+                    (qc_features["slow_noise_rms_mv"] < l_rms_threshold)):
+                    pass_rms_nums.append(sn)
+
+        if sweep_qc_option == "passed-except-delta-vm-and-rms":
+            return np.sort(np.hstack([
+                passed_sweep_nums,
+                np.array(also_passing_nums),
+                np.array(pass_rms_nums),
+                ])).astype(int)
+
     else:
         raise ValueError("Invalid sweep-level QC option {}".format(sweep_qc_option))
 
