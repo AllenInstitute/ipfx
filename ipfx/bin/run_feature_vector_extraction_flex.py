@@ -50,11 +50,11 @@ class CollectFeatureVectorParameters(ags.ArgSchema):
     sweep_qc_option = ags.fields.String(
         description=("Sweep-level QC option - "
             "'none': use all sweeps; "
-            "'lims-passed-only': check passed status with LIMS and "
+            "'passed-only': check passed status with LIMS and "
             "only used passed sweeps "
-            "'lims-passed-except-delta-vm': check status with LIMS and "
+            "'passed-except-delta-vm': check status with LIMS and "
             "use passed sweeps and sweeps where only failure criterion is delta_vm"
-            "'lims-passed-except-delta-vm-and-rms': check status with LIMS and "
+            "'passed-except-delta-vm-and-rms': check status with LIMS and "
             "use passed sweeps and sweeps where only failure criterion is delta_vm,"
             "but also re-calculate RMS values with current code"
             ),

@@ -95,17 +95,37 @@ def extract_clamp_seal(data_set, tags, manual_values=None):
 
     ontology = data_set.ontology
 
+    # Try to find the break-in sweeps, so that only sweeps pre-break-in will
+    # be considered
+
     try:
-        seal_sweep_number = data_set.get_sweep_numbers(ontology.seal_names,"VoltageClamp")[-1]
-        seal_data = data_set.sweep(seal_sweep_number)
+        breakin_sweep_number = data_set.get_sweep_numbers(ontology.breakin_names, "VoltageClamp")[-1]
+    except:
+        breakin_sweep_number = None
 
-        seal_gohm = qcf.measure_seal(seal_data.v,
-                                 seal_data.i,
-                                 seal_data.t)
+    try:
+        seal_sweep_numbers = data_set.get_sweep_numbers(ontology.seal_names,"VoltageClamp")
 
-        if seal_gohm is None or not np.isfinite(seal_gohm):
+        if breakin_sweep_number is not None:
+            seal_sweep_numbers = [s for s in seal_sweep_numbers if s < breakin_sweep_number]
+
+        # Find the maximum seal value encountered, in case break-in happened
+        # in later "cell-attached" sweeps
+
+        seal_values = []
+        for sn in seal_sweep_numbers:
+            seal_data = data_set.sweep(sn)
+
+            seal_gohm = qcf.measure_seal(seal_data.v,
+                                     seal_data.i,
+                                     seal_data.t)
+            if seal_gohm is None or not np.isfinite(seal_gohm):
+                continue
+            seal_values.append(seal_gohm)
+
+        if len(seal_values) == 0:
             raise er.FeatureError("Could not compute seal")
-
+        seal_gohm = max(seal_values)
     except IndexError as e:
         # seal is not available, for whatever reason. log error
         tags.append("Seal is not available")
@@ -345,11 +365,6 @@ def current_clamp_sweep_qc_features(sweep, is_ramp):
     current = sweep.i
     hz = sweep.sampling_rate
 
-    expt_start_idx, _ = ep.get_experiment_epoch(current, hz)
-    # measure noise before stimulus
-    idx0, idx1 = ep.get_first_noise_epoch(expt_start_idx, hz)  # count from the beginning of the experiment
-    _, qc_features["pre_noise_rms_mv"] = qcf.measure_vm(voltage[idx0:idx1])
-
     # measure mean and rms of Vm at end of recording
     # do not check for ramps, because they do not have enough time to recover
 
@@ -359,7 +374,7 @@ def current_clamp_sweep_qc_features(sweep, is_ramp):
         idx0, idx1 = ep.get_last_stability_epoch(rec_end_idx, hz)
         mean_last_stability_epoch, _ = qcf.measure_vm(voltage[idx0:idx1])
 
-        idx0, idx1 = ep.get_last_noise_epoch(rec_end_idx, hz)
+        idx0, idx1 = ep.get_noise_epoch_from_end(rec_end_idx, hz)
         _, rms_last_noise_epoch = qcf.measure_vm(voltage[idx0:idx1])
     else:
         rms_last_noise_epoch = None
@@ -375,6 +390,10 @@ def current_clamp_sweep_qc_features(sweep, is_ramp):
     idx0, idx1 = ep.get_first_stability_epoch(stim_start_idx, hz)
     mean_first_stability_epoch, rms_first_stability_epoch = qcf.measure_vm(voltage[idx0:idx1])
 
+    # measure noise before stimulus
+    idx0, idx1 = ep.get_noise_epoch_from_end(idx1, hz)
+    _, qc_features["pre_noise_rms_mv"] = qcf.measure_vm(voltage[idx0:idx1])
+
     qc_features["pre_vm_mv"] = mean_first_stability_epoch
     qc_features["slow_vm_mv"] = mean_first_stability_epoch
     qc_features["slow_noise_rms_mv"] = rms_first_stability_epoch
@@ -382,5 +401,4 @@ def current_clamp_sweep_qc_features(sweep, is_ramp):
     qc_features["vm_delta_mv"] = qcf.measure_vm_delta(mean_first_stability_epoch, mean_last_stability_epoch)
 
     return qc_features
-
 
