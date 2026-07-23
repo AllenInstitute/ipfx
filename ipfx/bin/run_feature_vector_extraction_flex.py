@@ -245,7 +245,7 @@ def data_for_specimen_id(
             return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=None), "specimen_id": specimen_id}}
 
     # Calculate desired feature vectors
-    result = {"id": specimen_id}
+    result = {"id": [specimen_id]} # list because of how the results are accumulated for output
 
     try:
         (subthresh_hyperpol_dict,
@@ -414,11 +414,26 @@ def run_feature_vector_extraction(
             results = executor.map(get_data_partial, specimen_ids)
     else:
         results = map(get_data_partial, specimen_ids)
-    for r in results:
-        if "error" in r:
-            print(r)
-        else:
-            print("OK", r["id"])
+
+    used_ids, results, error_set = su.filter_results(specimen_ids, results)
+
+    logging.info("Finished with {:d} processed specimens".format(len(used_ids)))
+
+    results_dict = su.organize_results(used_ids, results, skip_keys=["long_squares_data_info"])
+
+    su.save_results_to_h5(used_ids, results_dict, output_dir, output_code)
+
+    su.save_errors_to_json(error_set, output_dir, output_code)
+
+    amp_file_name = os.path.join(output_dir, "fv_amplitudes_with_data_{}.json".format(output_code))
+
+    amp_info = {spec_id: r["long_squares_data_info"] for spec_id, r in zip(used_ids, results)}
+
+    with open(amp_file_name, "w") as f:
+        json.dump(amp_info, f)
+
+    logging.info("Finished saving")
+
 
 def main(args):
     ids = np.genfromtxt(args["specimen_id_file"], dtype=int).tolist()

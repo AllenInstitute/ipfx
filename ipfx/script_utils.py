@@ -394,13 +394,13 @@ def filter_results(specimen_ids, results):
     error_set = [{"id": i, "error": d} for i, d in zip(specimen_ids, results) if "error" in d.keys()]
     if len(filtered_set) == 0:
         logging.info("No specimens had results")
-        return
+        return None, None, None
 
     used_ids, results = zip(*filtered_set)
     return used_ids, results, error_set
 
 
-def organize_results(specimen_ids, results):
+def organize_results(specimen_ids, results, skip_keys=[]):
     """Build dictionary of results, filling data from cells with appropriate-length
         nan arrays where needed"""
     result_sizes = {}
@@ -408,10 +408,15 @@ def organize_results(specimen_ids, results):
     all_keys = np.unique(np.concatenate([list(r.keys()) for r in results]))
 
     for k in all_keys:
+        if k in skip_keys:
+            continue
         if k not in result_sizes:
-            for r in results:
+            for r, sp_id in zip(results, specimen_ids):
                 if k in r and r[k] is not None:
-                    result_sizes[k] = len(r[k])
+                    if k not in result_sizes:
+                        result_sizes[k] = len(r[k])
+                    elif len(r[k]) != result_sizes[k]:
+                        logging.warning(f"found result with length {len(r[k])} when expecting length {result_sizes[k]} for {k}; specimen ID {sp_id}")
         data = np.array([r[k] if k in r else np.nan * np.zeros(result_sizes[k])
                         for r in results])
         output[k] = data
