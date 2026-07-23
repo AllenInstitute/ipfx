@@ -14,7 +14,6 @@ import ipfx.script_utils as su
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
-from ipfx.stimulus import StimulusOntology
 from ipfx.dataset.create import create_ephys_data_set
 
 
@@ -88,8 +87,6 @@ def data_for_specimen_id(
         sweep status and error tag dataframe
     data_source: str
         see CollectFeatureVectorParameters input schema for details
-    ontology : stimulus.StimulusOntology
-        mapping of stimuli names to stimulus codes
     target_sampling_rate : float
         sampling rate
     file_list : list of str
@@ -371,7 +368,7 @@ def main(args):
     if sweep_qc_record_file is None:
         sweep_qc_record = lq.get_sweep_states_and_tags_for_specimens(ids)
         sweep_qc_record_df = pd.DataFrame(sweep_qc_record)
-        sweep_qc_record_df.tag_name.fillna("None", inplace=True)
+        sweep_qc_record_df["tag_name"] = sweep_qc_record_df["tag_name"].fillna("None")
     else:
         sweep_qc_record_df = pd.read_csv(sweep_qc_record_file)
 

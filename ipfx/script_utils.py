@@ -144,7 +144,7 @@ def categorize_iclamp_sweeps(data_set, stimuli_names, sweep_qc_record,
                 (~my_sweep_qc_record["tag_name"].str.startswith("post-noise")) &
                 (my_sweep_qc_record["tag_name"] != "Blowout is not available"), # don't fail for blowout unavailable because we are considering patch-seq sweeps
                 :]
-            if non_delta_vm_tag_record.shape[0] == 0:
+            if non_delta_vm_or_rms_tag_record.shape[0] == 0:
                 rms_check_sweep_nums.append(sn)
 
         if len(rms_check_sweep_nums) == 0:
