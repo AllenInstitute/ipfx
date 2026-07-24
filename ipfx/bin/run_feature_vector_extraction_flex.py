@@ -445,6 +445,9 @@ def main(args):
         with open(nwb_path_file, "r") as f:
             file_list = json.load(f)
 
+        # convert string keys to integers
+        file_list = {int(k): v for k, v in file_list.items()}
+
     sweep_qc_record_file = args["sweep_qc_record_file"]
     if sweep_qc_record_file is None:
         sweep_qc_record = lq.get_sweep_states_and_tags_for_specimens(ids)
