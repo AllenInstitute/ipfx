@@ -391,7 +391,7 @@ def preprocess_ramp_sweeps(data_set, sweep_numbers):
 
 def filter_results(specimen_ids, results):
     filtered_set = [(i, r) for i, r in zip(specimen_ids, results) if not "error" in r.keys()]
-    error_set = [{"id": i, "error": d} for i, d in zip(specimen_ids, results) if "error" in d.keys()]
+    error_set = [d for d in results if "error" in d]
     if len(filtered_set) == 0:
         logging.info("No specimens had results")
         return None, None, None
