@@ -454,7 +454,8 @@ def main(args):
         sweep_qc_record_df = pd.DataFrame(sweep_qc_record)
         sweep_qc_record_df["tag_name"] = sweep_qc_record_df["tag_name"].fillna("None")
     else:
-        sweep_qc_record_df = pd.read_csv(sweep_qc_record_file)
+        sweep_qc_record_df = pd.read_csv(sweep_qc_record_file, index_col=0)
+        sweep_qc_record_df["tag_name"] = sweep_qc_record_df["tag_name"].fillna("None")
 
     manual_fail_sweep_file = args["manual_fail_sweep_file"]
     if manual_fail_sweep_file is not None:
