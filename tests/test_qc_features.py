@@ -22,33 +22,66 @@ def test_measure_electrode_0():
 
 
 def test_measure_seal():
-    i = np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0])
-    v = np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0])
-    t = np.arange(len(v)) * 1E-3
-    b = qcf.measure_seal(v, i, t)
-    assert np.allclose([b], [1.0])
+    # measure_seal now averages a series of square voltage test pulses (skipping
+    # the first) and fits the capacitive transient to recover the steady-state
+    # resistance. Build a cell-attached-style recording: v is a clean square
+    # command (mV), curr is a step with a decaying capacitive transient (pA).
+    dt = 1e-5
+    pulse_dur_pts = 500   # 5 ms
+    gap_pts = 400         # 4 ms between pulses
+    lead_pts = 400
+    n_pulses = 4          # first is treated as the test pulse and skipped
+
+    delta_v_mV = 5.0
+    r_seal = 1e9  # 1 GOhm
+    i_ss_pA = (delta_v_mV * 1e-3 / r_seal) * 1e12  # steady current, pA
+    peak_extra_pA = 200.0
+    tau = 5e-5
+
+    total = lead_pts + n_pulses * (pulse_dur_pts + gap_pts)
+    v = np.zeros(total)
+    curr = np.zeros(total)
+    t_rel = np.arange(pulse_dur_pts) * dt
+    idx = lead_pts
+    for _ in range(n_pulses):
+        up = idx
+        down = idx + pulse_dur_pts
+        v[up:down] = delta_v_mV
+        curr[up:down] = i_ss_pA + peak_extra_pA * np.exp(-t_rel / tau)
+        idx = down + gap_pts
+    t = dt * np.arange(total)
+
+    b = qcf.measure_seal(v, curr, t)
+    assert np.allclose([b], [1.0], rtol=1e-3)
 
 
 def test_measure_input_resistance():
+    # get_r_from_stable_pulse_response_fit now operates on a single averaged
+    # pulse (avg_v in V, avg_i in A) plus the relative up/down indices, and fits
+    # the capacitive transient to estimate the steady-state resistance.
+    dt = 1e-5
+    n = 1000
+    up_ind = 200
+    down_ind = 800
 
-    ir = 50.0
-    dt = 1E-4
-    time_range = [0, 0.5]
-    time = np.arange(time_range[0], time_range[1], dt)
-    current = np.zeros(time.shape)
+    delta_v = 5e-3        # V
+    r_expected = 50e6     # Ohm (50 MOhm)
+    i_ss = delta_v / r_expected  # steady-state current, A
+    peak_extra = 200e-12
+    tau = 5e-5
 
-    pulse_intervals = [(0.1, 0.2), (0.24, 0.3), (0.31, 0.32)]
-    current_magnitudes = [1, 2, 3]
+    avg_v = np.zeros(n)
+    avg_v[up_ind:down_ind] = delta_v
 
-    for pulse_interval, current_magnitude in zip(pulse_intervals, current_magnitudes):
+    avg_i = np.zeros(n)
+    t_rel = np.arange(down_ind - up_ind) * dt
+    avg_i[up_ind:down_ind] = i_ss + peak_extra * np.exp(-t_rel / tau)
 
-        ix = np.where((time > pulse_interval[0]) & (time < pulse_interval[1]))
-        current[ix] = current_magnitude
+    t = dt * np.arange(n)
 
-    voltage = ir*current
-
-    ir_tested = qcf.get_r_from_stable_pulse_response(voltage, current, time)
-    assert np.isclose(ir_tested, ir)
+    r = qcf.get_r_from_stable_pulse_response_fit(
+        avg_v, avg_i, t, up_ind, down_ind, post_transient_shift_ms=1.0)
+    assert np.isclose(r, r_expected, rtol=1e-3)
 
 
 def test_get_square_pulse_idx():

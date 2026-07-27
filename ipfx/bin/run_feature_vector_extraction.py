@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import argschema as ags
 import logging
 import traceback
@@ -73,6 +74,7 @@ def data_for_specimen_id(
     sweep_qc_option,
     data_source,
     ontology,
+    sweep_qc_record,
     ap_window_length=0.005,
     target_sampling_rate=50000,
     file_list=None,
@@ -113,12 +115,15 @@ def data_for_specimen_id(
     try:
         lsq_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
             ontology.long_square_names, sweep_qc_option=sweep_qc_option,
-            specimen_id=specimen_id)
+            specimen_id=specimen_id, sweep_qc_record=sweep_qc_record)
         (lsq_sweeps,
         lsq_features,
         _,
-        lsq_start,
-        lsq_end) = su.preprocess_long_square_sweeps(data_set, lsq_sweep_numbers)
+        lsq_stim_timing) = su.preprocess_long_square_sweeps(data_set, lsq_sweep_numbers)
+
+        # Create stimulus timing dictionary keyed on sweep number
+        lsq_stim_timing_dict = {lsq_sweeps.sweeps[i].sweep_number: lsq_stim_timing[i]
+            for i in range(len(lsq_stim_timing))}
 
     except Exception as detail:
         logging.warning("Exception when preprocessing long square sweeps from specimen {:d}".format(specimen_id))
@@ -129,7 +134,7 @@ def data_for_specimen_id(
     try:
         ssq_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
             ontology.short_square_names, sweep_qc_option=sweep_qc_option,
-            specimen_id=specimen_id)
+            specimen_id=specimen_id, sweep_qc_record=sweep_qc_record)
         ssq_sweeps, ssq_features, _ = su.preprocess_short_square_sweeps(data_set,
             ssq_sweep_numbers)
     except Exception as detail:
@@ -141,7 +146,7 @@ def data_for_specimen_id(
     try:
         ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
             ontology.ramp_names, sweep_qc_option=sweep_qc_option,
-            specimen_id=specimen_id)
+            specimen_id=specimen_id, sweep_qc_record=sweep_qc_record)
         ramp_sweeps, ramp_features, _ = su.preprocess_ramp_sweeps(data_set,
             ramp_sweep_numbers)
     except Exception as detail:
@@ -162,20 +167,19 @@ def data_for_specimen_id(
         target_amps_for_step_subthresh = [-90, -70, -50, -30, -10]
         result["step_subthresh"] = fv.step_subthreshold(
             subthresh_hyperpol_dict, target_amps_for_step_subthresh,
-            lsq_start, lsq_end, amp_tolerance=5)
+            lsq_stim_timing_dict, amp_tolerance=5)
         result["subthresh_norm"] = fv.subthresh_norm(subthresh_hyperpol_dict, hyperpol_deflect_dict,
-            lsq_start, lsq_end)
+            lsq_stim_timing_dict)
         (subthresh_depol_dict,
         depol_deflect_dict) = fv.identify_subthreshold_depol_with_amplitudes(lsq_features,
             lsq_sweeps)
         result["subthresh_depol_norm"] = fv.subthresh_depol_norm(
             subthresh_depol_dict,
             depol_deflect_dict,
-            np.round(lsq_start, decimals=3),
-            np.round(lsq_end, decimals=3))
+            lsq_stim_timing_dict)
         isi_sweep, isi_sweep_spike_info = fv.identify_sweep_for_isi_shape(
-            lsq_sweeps, lsq_features, lsq_end - lsq_start)
-        result["isi_shape"] = fv.isi_shape(isi_sweep, isi_sweep_spike_info, lsq_end)
+            lsq_sweeps, lsq_features, lsq_stim_timing_dict)
+        result["isi_shape"] = fv.isi_shape(isi_sweep, isi_sweep_spike_info, lsq_stim_timing_dict)
 
         # Calculate waveforms from each type of sweep
         spiking_ssq_sweep_list = [ssq_sweeps.sweeps[swp_ind]
@@ -210,10 +214,15 @@ def data_for_specimen_id(
         result["first_ap_dv"] = np.hstack([ssq_ap_dv, lsq_ap_dv, ramp_ap_dv])
 
         target_amplitudes = np.arange(0, 120, 20)
-        supra_info_list = fv.identify_suprathreshold_spike_info(
-            lsq_features, target_amplitudes, shift=10)
-        result["psth"] = fv.psth_vector(supra_info_list, lsq_start, lsq_end)
-        result["inst_freq"] = fv.inst_freq_vector(supra_info_list, lsq_start, lsq_end)
+        supra_info_list, supra_sweep_numbers = fv.identify_suprathreshold_spike_info(
+            lsq_features, target_amplitudes,
+            sweep_numbers=[swp.sweep_number for swp in lsq_sweeps.sweeps],
+            shift=10)
+        supra_lsq_stim_timing_list = [
+            lsq_stim_timing_dict[sn] if sn is not None else None
+            for sn in supra_sweep_numbers]
+        result["psth"] = fv.psth_vector(supra_info_list, supra_lsq_stim_timing_list)
+        result["inst_freq"] = fv.inst_freq_vector(supra_info_list, supra_lsq_stim_timing_list)
 
         spike_feature_list = [
             "upstroke_downstroke_ratio",
@@ -224,7 +233,7 @@ def data_for_specimen_id(
         ]
         for feature in spike_feature_list:
             result["spiking_" + feature] = fv.spike_feature_vector(feature,
-                supra_info_list, lsq_start, lsq_end)
+                supra_info_list, supra_lsq_stim_timing_list)
     except Exception as detail:
         logging.warning("Exception when processing specimen {:d}".format(specimen_id))
         logging.warning(detail)
@@ -294,11 +303,25 @@ def run_feature_vector_extraction(
 
     ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
 
+    # Build the sweep QC record used by sweep categorization. When sweep-level QC
+    # is being applied against LIMS, query the record; otherwise an empty record
+    # (with the expected columns) is sufficient.
+    sweep_qc_record_df = kwargs.get("sweep_qc_record_df", None)
+    if sweep_qc_record_df is None:
+        if sweep_qc_option != "none" and data_source == "lims":
+            sweep_qc_record = lq.get_sweep_states_and_tags_for_specimens(specimen_ids)
+            sweep_qc_record_df = pd.DataFrame(sweep_qc_record)
+            sweep_qc_record_df["tag_name"] = sweep_qc_record_df["tag_name"].fillna("None")
+        else:
+            sweep_qc_record_df = pd.DataFrame(
+                columns=["specimen_id", "sweep_number", "workflow_state", "tag_name"])
+
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
     get_data_partial = partial(data_for_specimen_id,
                                sweep_qc_option=sweep_qc_option,
                                data_source=data_source,
                                ontology=ontology,
+                               sweep_qc_record=sweep_qc_record_df,
                                ap_window_length=ap_window_length,
                                file_list=file_list)
 

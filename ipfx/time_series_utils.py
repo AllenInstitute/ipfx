@@ -1,4 +1,5 @@
 import sys
+from functools import lru_cache
 
 import numpy as np
 import scipy.signal as signal
@@ -10,7 +11,7 @@ def find_time_index(t, t_0):
 
     Parameters
     ----------
-    t   : time array
+    t   : time array (assumed monotonically non-decreasing)
     t_0 : time point to find an index
 
     Returns
@@ -19,8 +20,24 @@ def find_time_index(t, t_0):
     """
     assert t[0] <= t_0 <= t[-1], "Given time ({:f}) is outside of time range ({:f}, {:f})".format(t_0, t[0], t[-1])
 
-    idx = np.argmin(abs(t - t_0))
+    # t is sorted (guaranteed by the assert above), so a binary search finds
+    # the closest sample in O(log n) rather than scanning the whole array.
+    idx = int(np.searchsorted(t, t_0))
+    if idx > 0 and (idx == len(t) or abs(t[idx - 1] - t_0) <= abs(t[idx] - t_0)):
+        # prefer the lower index on ties to match np.argmin's behavior
+        idx -= 1
     return idx
+
+
+@lru_cache(maxsize=None)
+def _bessel_lowpass_coeffs(order, filt_coeff):
+    """Design (and cache) a low-pass Bessel filter.
+
+    Coefficients depend only on the order and the normalized cutoff, which are
+    fixed across sweeps sharing a sampling rate, so caching avoids redesigning
+    the filter on every call.
+    """
+    return signal.bessel(order, filt_coeff, "low")
 
 
 def calculate_dvdt(v, t, filter=None):
@@ -43,7 +60,7 @@ def calculate_dvdt(v, t, filter=None):
         filt_coeff = (filter * 1e3) / (sample_freq / 2.) # filter kHz -> Hz, then get fraction of Nyquist frequency
         if filt_coeff < 0 or filt_coeff >= 1:
             raise ValueError("bessel coeff ({:f}) is outside of valid range [0,1); cannot filter sampling frequency {:.1f} kHz with cutoff frequency {:.1f} kHz.".format(filt_coeff, sample_freq / 1e3, filter))
-        b, a = signal.bessel(4, filt_coeff, "low")
+        b, a = _bessel_lowpass_coeffs(4, filt_coeff)
         v_filt = signal.filtfilt(b, a, v, axis=0)
         dv = np.diff(v_filt)
     else:

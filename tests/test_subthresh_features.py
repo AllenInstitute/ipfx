@@ -3,13 +3,26 @@ import numpy as np
 
 
 def test_input_resistance():
-    t = np.arange(0, 1.0, 5e-6)
-    v1 = np.ones_like(t) * -5.
-    v2 = np.ones_like(t) * -10.
-    i1 = np.ones_like(t) * -50.
-    i2 = np.ones_like(t) * -100.
+    # input_resistance now measures the deflection relative to a pre-stimulus
+    # baseline, so the sweeps need a real baseline period before `start` and a
+    # (gently-settling, to avoid transient rejection) step during the stimulus.
+    dt = 5e-6
+    t = np.arange(0, 1.0, dt)
+    start = 0.3
+    end = 0.8
+    ramp_dur = 0.1
 
-    ri = subf.input_resistance([t, t], [i1, i2], [v1, v2], 0, t[-1])
+    def make_sweep(deflection, current):
+        ramp = np.clip((t - start) / ramp_dur, 0.0, 1.0)
+        v = np.where(t < start, 0.0, deflection * ramp)
+        i = np.ones_like(t) * current
+        return v, i
+
+    # 100 MOhm: 0.1 mV/pA -> -50 pA gives -5 mV, -100 pA gives -10 mV
+    v1, i1 = make_sweep(-5., -50.)
+    v2, i2 = make_sweep(-10., -100.)
+
+    ri = subf.input_resistance([t, t], [i1, i2], [v1, v2], start, end)
 
     assert np.allclose(ri, 100.)
 

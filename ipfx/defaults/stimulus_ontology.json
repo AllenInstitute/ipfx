@@ -1252,7 +1252,8 @@
   [
     [
       "code",
-      "X1PS_SubThresh"
+      "X1PS_SubThresh",
+      "Y1PS_SubThresh"
     ],
     [
       "name",
@@ -1282,7 +1283,8 @@
   [
     [
       "code",
-      "X4PS_SupraThresh"
+      "X4PS_SupraThresh",
+      "Y4PS_SupraThresh_DA_1"
     ],
     [
       "name",
@@ -1292,7 +1294,8 @@
   [
     [
       "code",
-      "X6SP_Rheo"
+      "X6SP_Rheo",
+      "Y6SP_Rheo"
     ],
     [
       "name",
@@ -1306,7 +1309,10 @@
     ],
     [
       "code",
-      "X7Ramp"
+      "X7Ramp",
+      "X7RAMP",
+      "X0NRMP",
+      "Y7RAMP"
     ]
   ],
   [
@@ -1372,7 +1378,8 @@
   [
     [
       "code",
-      "X5SP_Search"
+      "X5SP_Search",
+      "Y5SP_Search"
     ],
     [
       "name",
@@ -2057,6 +2064,21 @@
     [
       "name",
       "Chirp A Threshold"
+    ]
+  ],
+  [
+    [
+      "code",
+      "C2CHIRPB",
+      "C2CHIRPB180503"
+    ],
+    [
+      "core",
+      "Core 2"
+    ],
+    [
+      "name",
+      "Chirp B Threshold"
     ]
   ]
 ]
