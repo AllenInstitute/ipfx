@@ -201,3 +201,20 @@ def test_get_stimulus_code_ext(dataset):
 
 def test_get_stimulus_units(dataset):
     assert "amperes" == dataset.get_stimulus_units(1)
+
+
+def test_get_nwb_epochs_not_supported(dataset):
+    """EphysDataFixture (like HBGNWBData) does not implement get_nwb_epochs
+    -- EphysDataSet.get_nwb_epochs must raise a clear AttributeError rather
+    than silently returning nothing."""
+
+    with pytest.raises(AttributeError):
+        dataset.get_nwb_epochs(1)
+
+
+def test_sweep_does_not_fail_when_nwb_epochs_unsupported(dataset):
+    """Building a Sweep must not fail just because the underlying data
+    source doesn't support nwbEpochs -- it should simply carry none."""
+
+    obtained = dataset.sweep(1)
+    assert obtained.nwb_epochs == []

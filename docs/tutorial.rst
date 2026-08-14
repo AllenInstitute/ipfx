@@ -66,6 +66,44 @@ With sweeps aligned, we can obtain common to all sweeps ``start_time`` and ``end
     start_idx, end_idx = sweep.epochs["stim"] # choose stimulus epoch
     start_time, end_time = t[start_idx], t[end_idx]
 
+Working with MIES NWB Epochs
+-----------------------------
+
+NWB files written by MIES include their own epochs, distinct from the
+epochs IPFX detects algorithmically from the trace itself (``test``/``sweep``/
+``recording``/``stim``/``experiment``). The epochs from NWB files
+are only available when the data set was created from a MIES.
+
+To fetch the raw nwbEpoch records for a sweep directly from the data set:
+
+.. code-block:: python
+
+    nwb_epochs = dataset.get_nwb_epochs(sweep_number)
+
+Each record includes ``start_time``/``stop_time`` (absolute session time),
+``start_idx``/``end_idx`` (sample indices into the sweep's own trace),
+``treelevel`` (MIES epoch-hierarchy nesting depth), and ``tags`` (parsed
+``Key=Value`` tag pairs for that interval).
+
+When a :py:class:`~ipfx.sweep.Sweep` is constructed via ``dataset.sweep(sweep_number)``,
+any nwbEpochs for that sweep are attached automatically and made selectable by name --
+prefixed with ``nwb:`` to keep them namespaced apart from the IPFX internal epoch names:
+
+.. code-block:: python
+
+    sweep = dataset.sweep(sweep_number)
+
+    sweep.select_epoch("nwb:E0")     # select by MIES ShortName tag, e.g. "E0"
+    t, v, i = sweep.t, sweep.v, sweep.i
+
+    record = sweep.get_nwb_epoch("nwb:E0")   # raw record, including tags
+
+    start_idx, end_idx = sweep.get_epoch_range("nwb:E0")  # works for legacy or nwbEpoch names
+
+A data source that doesn't support nwbEpochs (e.g. an HBG-generated NWB file) raises
+``AttributeError`` from ``get_nwb_epochs`` rather than returning an empty list.
+
+
 Now that we have this object, we can hand it to one of the stimulus-specific analysis classes.  You first need
 to configure a :py:class:`~ipfx.feature_extractor.SpikeFeatureExtractor` and :py:class:`~ipfx.feature_extractor.SpikeTrainFeatureExtractor`:
 
