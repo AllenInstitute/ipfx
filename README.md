@@ -19,9 +19,3 @@ To start analyzing data now, check out the [quick_start](https://ipfx.readthedoc
 Contributing
 ------------
 We welcome contributions! Please see our [contribution guide](https://github.com/AllenInstitute/ipfx/blob/master/CONTRIBUTING.md) for more information. Thank you!
-
-Deprecation Warning
--------------------
-
-The 2.0.0 release of IPFX drops support for Python 3.6 which reached end of life and stopped receiving security updated on December 23, 2021.
-IPFX is now tested on Python 3.9 and higher.
