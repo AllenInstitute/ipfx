@@ -66,7 +66,7 @@ sphinx_gallery_conf = {
 templates_path = ['aibs_sphinx/templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext'}
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
