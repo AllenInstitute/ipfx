@@ -1,5 +1,5 @@
 sphinx>=8.2
 sphinx-gallery
-m2r
 numpydoc>=0.6.0,<1.0.0
 seaborn
+sphinx-mdinclude

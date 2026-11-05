@@ -50,7 +50,7 @@ extensions = ['sphinx.ext.apidoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.mathjax',
               'sphinx_gallery.gen_gallery',
-              'm2r',
+              'sphinx_mdinclude',
               'numpydoc']
 
 sphinx_gallery_conf = {
