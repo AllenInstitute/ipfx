@@ -24,29 +24,44 @@ class CollectFeatureParameters(ags.ArgSchema):
         default="lims",
         validate=lambda x: x in ["lims", "filesystem"]
         )
+    sweep_qc_option = ags.fields.String(
+        description=("Sweep-level QC option - "
+            "'none': use all sweeps; "
+            "'passed-only': only use passed sweeps; "
+            "'passed-except-delta-vm': also use sweeps whose only failure is delta Vm; "
+            "'passed-except-delta-vm-and-rms': as above but also re-check RMS"),
+        default='none'
+    )
 
 
-def data_for_specimen_id(specimen_id, passed_only, data_source, ontology, file_list=None):
+def data_for_specimen_id(specimen_id, sweep_qc_option, data_source, ontology,
+        sweep_qc_record, file_list=None):
     data_set = su.dataset_for_specimen_id(specimen_id, data_source, ontology, file_list)
     if type(data_set) is dict and "error" in data_set:
         logging.warning("Problem getting AibsDataSet for specimen {:d} from LIMS".format(specimen_id))
         return {}
 
     try:
-        lsq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.long_square_names)
-        ssq_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.short_square_names)
-        ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set, ontology.ramp_names)
+        lsq_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
+            ontology.long_square_names, sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id, sweep_qc_record=sweep_qc_record)
+        ssq_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
+            ontology.short_square_names, sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id, sweep_qc_record=sweep_qc_record)
+        ramp_sweep_numbers = su.categorize_iclamp_sweeps(data_set,
+            ontology.ramp_names, sweep_qc_option=sweep_qc_option,
+            specimen_id=specimen_id, sweep_qc_record=sweep_qc_record)
     except Exception as detail:
-        logging.warn("Exception when processing specimen {:d}".format(specimen_id))
-        logging.warn(detail)
+        logging.warning("Exception when processing specimen {:d}".format(specimen_id))
+        logging.warning(detail)
 #         return {"error": {"type": "sweep_table", "details": traceback.format_exc(limit=1)}}
         return {}
 
     try:
         result = extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_numbers)
     except Exception as detail:
-        logging.warn("Exception when processing specimen {:d}".format(specimen_id))
-        logging.warn(detail)
+        logging.warning("Exception when extracting features for specimen {:d}".format(specimen_id))
+        logging.warning(detail)
 #         return {"error": {"type": "processing", "details": traceback.format_exc(limit=1)}}
         return {}
 
@@ -77,8 +92,7 @@ def extract_features(data_set, ramp_sweep_numbers, ssq_sweep_numbers, lsq_sweep_
         (lsq_sweeps,
         basic_lsq_features,
         lsq_an,
-        lsq_start,
-        lsq_end) = su.preprocess_long_square_sweeps(data_set, lsq_sweep_numbers)
+        lsq_stim_timing) = su.preprocess_long_square_sweeps(data_set, lsq_sweep_numbers)
 
         features.update({
             "input_resistance": basic_lsq_features["input_resistance"],
@@ -234,7 +248,8 @@ def lin_sqrt_fit(x, y):
 
 
 def run_feature_collection(ids=None, project="T301", include_failed_sweeps=True, include_failed_cells=False,
-         output_file="", run_parallel=True, data_source="lims", file_list=None, **kwargs):
+         output_file="", run_parallel=True, data_source="lims", file_list=None,
+         sweep_qc_option="none", **kwargs):
     if ids is not None:
         specimen_ids = ids
     else:
@@ -242,11 +257,25 @@ def run_feature_collection(ids=None, project="T301", include_failed_sweeps=True,
 
     logging.info("Number of specimens to process: {:d}".format(len(specimen_ids)))
 
+    # Build the sweep QC record used by sweep categorization. When sweep-level QC
+    # is being applied against LIMS, query the record; otherwise an empty record
+    # (with the expected columns) is sufficient.
+    sweep_qc_record_df = kwargs.get("sweep_qc_record_df", None)
+    if sweep_qc_record_df is None:
+        if sweep_qc_option != "none" and data_source == "lims":
+            sweep_qc_record = lq.get_sweep_states_and_tags_for_specimens(specimen_ids)
+            sweep_qc_record_df = pd.DataFrame(sweep_qc_record)
+            sweep_qc_record_df["tag_name"] = sweep_qc_record_df["tag_name"].fillna("None")
+        else:
+            sweep_qc_record_df = pd.DataFrame(
+                columns=["specimen_id", "sweep_number", "workflow_state", "tag_name"])
+
     ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
     get_data_partial = partial(data_for_specimen_id,
-                               passed_only=not include_failed_sweeps,
+                               sweep_qc_option=sweep_qc_option,
                                data_source=data_source,
                                ontology=ontology,
+                               sweep_qc_record=sweep_qc_record_df,
                                file_list=file_list)
 
     if run_parallel:

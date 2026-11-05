@@ -1,6 +1,6 @@
 import os
 import logging
-import pg8000
+import pg8000.dbapi
 
 from ipfx.string_utils import to_str
 
@@ -39,7 +39,7 @@ def _connect(timeout=TIMEOUT):
     credentials = dict((k, os.environ.get(env_var, LIMS_DB_CREDENTIAL_DEFAULTS[env_var]))
         for k, env_var in LIMS_DB_CREDENTIAL_MAP.items())
 
-    conn = pg8000.connect(
+    conn = pg8000.dbapi.connect(
         user=credentials["user"],
         host=credentials["host"],
         database=credentials["dbname"],
@@ -70,7 +70,7 @@ def _select(cursor, query, parameters=None):
     if parameters is None:
         cursor.execute(query)
     else:
-        pg8000.paramstyle = 'numeric'
+        pg8000.dbapi.paramstyle = 'numeric'
         cursor.execute(query, parameters)
     columns = [ to_str(d[0]) for d in cursor.description ]
     return [ dict(zip(columns, c)) for c in cursor.fetchall() ]
@@ -179,9 +179,11 @@ def get_specimen_info_from_lims_by_id(specimen_id):
 
 def get_nwb_path_from_lims(ephys_roi_result):
     """
-    Try to find NWBIgor file preferentially
-    If not found, look for a processed NWB file
+    Try to find EphysNWB2 file preferentially
+    If not found, find NWBIgor file
+    If also not found, look for a processed NWB file
 
+    well known file type ID for EphysNWB2 files is 1016154283
     well known file type ID for NWB files is 475137571
     well known file type ID for NWBIgor files is 570280085
 
@@ -198,8 +200,14 @@ def get_nwb_path_from_lims(ephys_roi_result):
 
     result = query("""
     SELECT f.filename, f.storage_directory FROM well_known_files f
-    WHERE f.attachable_type = 'EphysRoiResult' AND f.attachable_id = %s AND f.well_known_file_type_id = 570280085
+    WHERE f.attachable_type = 'EphysRoiResult' AND f.attachable_id = %s AND f.well_known_file_type_id = 1016154283
     """ % (ephys_roi_result,))
+
+    if len(result) == 0:
+        result = query("""
+        SELECT f.filename, f.storage_directory FROM well_known_files f
+        WHERE f.attachable_type = 'EphysRoiResult' AND f.attachable_id = %s AND f.well_known_file_type_id = 570280085
+        """ % (ephys_roi_result,))
 
     if len(result) == 0:
         logging.warning("Fall back to looking for NWB type")
@@ -217,6 +225,8 @@ def get_nwb_path_from_lims(ephys_roi_result):
     else:
         logging.info("Cannot find NWB file")
         return None
+
+
 
 
 def get_igorh5_path_from_lims(ephys_roi_result):
@@ -259,3 +269,47 @@ def project_specimen_ids(project, passed_only=True):
     results = query(SQL)
     sp_ids = [d["id"] for d in results]
     return sp_ids
+
+
+def get_nwb_file_paths_for_specimen_ids(specimen_ids):
+    """ Get file path for each provided specimen ID
+
+    Note: only returns NWB2 file paths
+    well known file type ID for EphysNWB2 files is 1016154283
+    """
+
+    sql = """
+    select specimens.id, f.filename, f.storage_directory
+    from specimens
+    join ephys_roi_results err on err.id = specimens.ephys_roi_result_id
+    join well_known_files f on f.attachable_id = err.id
+    where specimens.id = any(:1)
+    and f.attachable_type = 'EphysRoiResult'
+    and f.well_known_file_type_id = 1016154283
+    """
+    try:
+        result = query(sql, (set(specimen_ids), ))
+    except pg8000.dbapi.ProgrammingError as e:
+        print(f"Error Message: {e}")
+        # Inspect the raw response from the PostgreSQL server
+        if hasattr(e, 'args') and len(e.args) > 0:
+            print(f"Server Payload: {e.args}")
+
+    file_list = {r["id"]: os.path.join(r["storage_directory"], r["filename"])
+        for r in result}
+    return file_list
+
+
+def get_sweep_states_and_tags_for_specimens(specimen_ids):
+    sql = """
+    select swp.specimen_id, swp.sweep_number, swp.workflow_state, tag.name as tag_name
+    from ephys_sweeps swp
+    left join ephys_sweep_tags_ephys_sweeps estes on estes.ephys_sweep_id = swp.id
+    left join ephys_sweep_tags tag on tag.id = estes.ephys_sweep_tag_id
+    where swp.specimen_id = any(:1)
+    order by swp.specimen_id, swp.sweep_number
+    """
+    result = query(sql, (set(specimen_ids), ))
+
+    return result
+

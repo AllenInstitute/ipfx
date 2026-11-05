@@ -15,7 +15,7 @@ def test_get_nwb_path_from_lims():
     ephys_roi_result = 500844779
     result = lq.get_nwb_path_from_lims(ephys_roi_result)
 
-    assert result == "/allen/programs/celltypes/production/mousecelltypes/prod589/Ephys_Roi_Result_500844779/500844779.nwb"
+    assert result == "/allen/programs/celltypes/production/mousecelltypes/prod589/Ephys_Roi_Result_500844779/nwb2_Vip-IRES-Cre;Ai14(IVSCC)-226110.03.01.nwb"
 
 @pytest.mark.requires_lims
 def test_get_igorh5_path_from_lims():

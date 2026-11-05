@@ -5,6 +5,7 @@ from dictdiffer import diff
 import ipfx.feature_vectors as fv
 from ipfx.stimulus import StimulusOntology
 from ipfx.sweep import Sweep, SweepSet
+from ipfx.script_utils import StimulusTiming
 import ipfx.json_utilities as ju
 import pytest
 
@@ -239,21 +240,32 @@ def test_identify_sweep_for_isi_shape():
     end = 1.5
     start = 0.5
 
+    ndata = len(sweeps["data"][0])
+    nsweeps = len(sweeps["index"])
+
+    class FakeSweep:
+        def __init__(self, sweep_number, v):
+            self.sweep_number = sweep_number
+            self.v = v
+
     class SomeSweeps:
         @property
         def sweeps(self):
-            ndata = len(sweeps["data"][0])
-            nsweeps = len(sweeps["index"])
-            return np.arange(nsweeps * ndata).reshape(nsweeps, ndata)
+            arr = np.arange(nsweeps * ndata).reshape(nsweeps, ndata)
+            return [FakeSweep(i, arr[i]) for i in range(nsweeps)]
+
+    stim_timing_dict = {
+        i: StimulusTiming(start, end, end - start) for i in range(nsweeps)
+    }
 
     isi_sweep, isi_sweep_spike_info = fv.identify_sweep_for_isi_shape(
         SomeSweeps(),
         {"sweeps": pd.DataFrame(**sweeps), "spikes_set": {5: "foo"}},
-        end - start,
+        stim_timing_dict,
     )
 
     assert isi_sweep_spike_info == "foo"
-    assert np.allclose(isi_sweep, np.arange(55, 66))
+    assert np.allclose(isi_sweep.v, np.arange(55, 66))
 
 
 def test_isi_shape():
@@ -262,9 +274,12 @@ def test_isi_shape():
         "fast_trough_index": [0, 10, -10000],
         "threshold_index": [-10000, 10, 20],
         "threshold_v": [1, 2, -10000],
+        "clipped": [False, False, False],
     }
 
     class Sweep:
+        sweep_number = 0
+
         @property
         def v(self):
             return np.arange(20)
@@ -276,7 +291,7 @@ def test_isi_shape():
     obtained = fv.isi_shape(
         Sweep(),
         pd.DataFrame(sweep_spike_info),
-        50,
+        {0: StimulusTiming(0, 50, 50)},
         n_points=10
     )
     assert np.allclose(np.arange(3.5, 13.5, 1.0), obtained)
@@ -309,6 +324,8 @@ def test_identify_subthreshold_hyperpol_with_amplitudes(subthreshold_sweeps):
 
 def test_step_subthreshold():
     class Sweep:
+        sweep_number = 0
+
         @property
         def v(self):
             return np.arange(10)
@@ -322,7 +339,9 @@ def test_step_subthreshold():
     }
 
     obtained = fv.step_subthreshold(
-        subthresh_hyperpol_dict, [-30], 4, 6, subsample_interval=1)
+        subthresh_hyperpol_dict, [-30], {0: StimulusTiming(4, 6, 2)},
+        extend_duration_before=0, extend_duration_after=0,
+        subsample_interval=1, remove_transients=False)
     assert np.allclose(obtained, [4, 5])
 
 
@@ -340,18 +359,23 @@ def test_step_subthreshold_interpolation():
     }
     sampling_rate = 1
     clamp_mode = "CurrentClamp"
-    for a in test_amps:
+    for idx, a in enumerate(test_amps):
         v = np.hstack([np.zeros(2), np.ones(2) * a, np.zeros(2)])
-        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate,
+                           sweep_number=idx, epochs=epochs)
         test_sweep_list.append(test_sweep)
     amp_sweep_dict = dict(zip(test_amps, test_sweep_list))
+    stim_timing_dict = {
+        swp.sweep_number: StimulusTiming(2, 4, 2) for swp in test_sweep_list
+    }
     output = fv.step_subthreshold(
         amp_sweep_dict,
         target_amps,
-        start=2,
-        end=4,
-        extend_duration=1,
+        stim_timing_dict,
+        extend_duration_before=1,
+        extend_duration_after=1,
         subsample_interval=1,
+        remove_transients=False,
     )
     assert np.all(output[1:3] == -90)
     assert np.array_equal(output[4:8], test_sweep_list[0].v[1:-1])
@@ -373,7 +397,8 @@ def test_subthresh_norm_normalization():
     }
     sampling_rate = 1
     clamp_mode = "CurrentClamp"
-    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, sweep_number=0,
+                       epochs=epochs)
 
     base = v[0]
     deflect_v = np.min(v)
@@ -383,25 +408,41 @@ def test_subthresh_norm_normalization():
     output = fv.subthresh_norm(
         amp_sweep_dict,
         deflect_dict,
-        start=t[0],
-        end=t[-1],
+        {0: StimulusTiming(t[0], t[-1], t[-1] - t[0])},
         target_amp=-10,
-        extend_duration=0,
+        extend_duration_before=0,
+        extend_duration_after=0,
         subsample_interval=1,
+        remove_transients=False,
     )
     assert np.isclose(output[0], 0)
     assert np.isclose(np.min(output), -1)
 
 
 def test_subthresh_depol_norm_bad_steady_state_interval():
+    class Sweep:
+        sweep_number = 0
+
+        @property
+        def v(self):
+            return np.arange(10)
+
+        @property
+        def t(self):
+            return np.arange(10)
+
+    amp_sweep_dict = {50: Sweep()}
+    deflect_dict = {50: (1, 2)}
     with pytest.raises(ValueError):
         fv.subthresh_depol_norm(
-            {}, {}, start=0, end=1, steady_state_interval=2
+            amp_sweep_dict, deflect_dict, {0: StimulusTiming(0, 1, 1)},
+            steady_state_interval=2
         )
 
 
 def test_subthresh_depol_norm_empty_result():
-    output = fv.subthresh_depol_norm({}, {}, start=1.02, end=2.02)
+    output = fv.subthresh_depol_norm(
+        {}, {}, {0: StimulusTiming(1.02, 2.02, 1.0)})
     assert len(output) == 140
     assert np.all(np.isnan(output))
 
@@ -419,7 +460,8 @@ def test_subthresh_depol_norm_normalization():
     }
     sampling_rate = 1
     clamp_mode = "CurrentClamp"
-    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, sweep_number=0,
+                       epochs=epochs)
 
     base = v[0]
     deflect_v = np.max(v)
@@ -430,8 +472,7 @@ def test_subthresh_depol_norm_normalization():
     output = fv.subthresh_depol_norm(
         amp_sweep_dict,
         deflect_dict,
-        start=t[0],
-        end=t[-1],
+        {0: StimulusTiming(t[0], t[-1], t[-1] - t[0])},
         steady_state_interval=1,
         subsample_interval=1,
         extend_duration=0,
@@ -473,6 +514,8 @@ def test_identify_subthreshold_depol_with_amplitudes(subthreshold_sweeps):
 def test_subthresh_depol_norm():
 
     class Sweep:
+        sweep_number = 0
+
         @property
         def v(self):
             return np.arange(10)
@@ -485,7 +528,8 @@ def test_subthresh_depol_norm():
     deflect_dict = {50: (1, 2)}
 
     obtained = fv.subthresh_depol_norm(
-        amp_sweep_dict, deflect_dict, 4, 7, subsample_interval=1,
+        amp_sweep_dict, deflect_dict, {0: StimulusTiming(4, 7, 3)},
+        extend_duration=0, subsample_interval=1,
         steady_state_interval=2
     )
     assert np.allclose([2/3, 8/9, 10/9], obtained)
@@ -564,7 +608,9 @@ def test_psth_sparse_firing():
     width = 50
 
     # All spikes are in own bins
-    output = fv.psth_vector([spike_info], start=start, end=end, width=width)
+    output = fv.psth_vector(
+        [spike_info], [StimulusTiming(start, end, end - start)],
+        width=width, duration=end - start)
     assert np.sum(output > 0) == len(test_spike_times)
     assert np.max(output) == 1 / (width * 0.001)
 
@@ -577,7 +623,9 @@ def test_psth_compressed_firing():
     width = 50
 
     # All spikes are within one bin
-    output = fv.psth_vector([spike_info], start=start, end=end, width=width)
+    output = fv.psth_vector(
+        [spike_info], [StimulusTiming(start, end, end - start)],
+        width=width, duration=end - start)
     assert np.sum(output > 0) == 1
     assert np.max(output) == len(test_spike_times) / (width * 0.001)
 
@@ -591,7 +639,9 @@ def test_psth_number_of_spikes():
     test_spike_times = np.random.random(n_spikes) * (end - start) + start
     spike_info = pd.DataFrame({"threshold_t": test_spike_times})
 
-    output = fv.psth_vector([spike_info], start=start, end=end, width=width)
+    output = fv.psth_vector(
+        [spike_info], [StimulusTiming(start, end, end - start)],
+        width=width, duration=end - start)
     assert np.isclose(output.mean(), n_spikes)
 
 
@@ -608,7 +658,9 @@ def test_psth_between_sweep_interpolation():
     n_bins = int((end - start) / (width * 0.001))
 
     si_list = [None, available_list[0], None, available_list[1], None]
-    output = fv.psth_vector(si_list, start=start, end=end, width=width)
+    stim_timing_list = [StimulusTiming(start, end, end - start)] * len(si_list)
+    output = fv.psth_vector(
+        si_list, stim_timing_list, width=width, duration=end - start)
 
     assert np.array_equal(output[:n_bins], output[n_bins : 2 * n_bins])
     assert np.array_equal(
@@ -633,9 +685,14 @@ def test_psth_duration_rounding():
     spike_info = pd.DataFrame({"threshold_t": test_spike_times})
 
     width = 50
+    duration = 1.0
 
-    output_a = fv.psth_vector([spike_info], start=start_a, end=end_a, width=width)
-    output_b = fv.psth_vector([spike_info], start=start_b, end=end_b, width=width)
+    output_a = fv.psth_vector(
+        [spike_info], [StimulusTiming(start_a, end_a, end_a - start_a)],
+        width=width, duration=duration)
+    output_b = fv.psth_vector(
+        [spike_info], [StimulusTiming(start_b, end_b, end_b - start_b)],
+        width=width, duration=duration)
 
     assert output_a.shape == output_b.shape
 
@@ -647,7 +704,8 @@ def test_inst_freq_one_spike():
     end = 1
     width = 20
     output = fv.inst_freq_vector(
-        [spike_info], start=start, end=end, width=width
+        [spike_info], [StimulusTiming(start, end, end - start)],
+        width=width, duration=end - start
     )
     assert np.all(output >= 1 / (end - start))
 
@@ -658,8 +716,17 @@ def test_inst_freq_initial_freq():
     start = 0
     end = 1
     width = 20
-    output = fv.inst_freq_vector([spike_info], start=start, end=end, width=width)
-    assert output[0] == 1.0 / (test_spike_times[0] - start)
+    output = fv.inst_freq_vector(
+        [spike_info], [StimulusTiming(start, end, end - start)],
+        width=width, duration=end - start)
+
+    # The instantaneous rate is now only estimated at spike times (the rate at
+    # each spike being the inverse of the average of its adjacent ISIs), and
+    # bins before the first spike extrapolate to that first estimate.
+    first_isi = test_spike_times[0] - start
+    second_isi = test_spike_times[1] - test_spike_times[0]
+    first_spike_rate = 1.0 / ((first_isi + second_isi) / 2)
+    assert output[0] == first_spike_rate
 
 
 def test_inst_freq_between_sweep_interpolation():
@@ -675,7 +742,9 @@ def test_inst_freq_between_sweep_interpolation():
     n_bins = int((end - start) / (width * 0.001))
 
     si_list = [None, available_list[0], None, available_list[1], None]
-    output = fv.inst_freq_vector(si_list, start=start, end=end, width=width)
+    stim_timing_list = [StimulusTiming(start, end, end - start)] * len(si_list)
+    output = fv.inst_freq_vector(
+        si_list, stim_timing_list, width=width, duration=end - start)
 
     assert np.array_equal(output[:n_bins], output[n_bins : 2 * n_bins])
     assert np.array_equal(
@@ -697,9 +766,14 @@ def test_inst_freq_duration_rounding():
     spike_info = pd.DataFrame({"threshold_t": test_spike_times})
 
     width = 20
+    duration = 1.0
 
-    output_a = fv.inst_freq_vector([spike_info], start=start_a, end=end_a, width=width)
-    output_b = fv.inst_freq_vector([spike_info], start=start_b, end=end_b, width=width)
+    output_a = fv.inst_freq_vector(
+        [spike_info], [StimulusTiming(start_a, end_a, end_a - start_a)],
+        width=width, duration=duration)
+    output_b = fv.inst_freq_vector(
+        [spike_info], [StimulusTiming(start_b, end_b, end_b - start_b)],
+        width=width, duration=duration)
 
     assert output_a.shape == output_b.shape
 
@@ -719,7 +793,8 @@ def test_spike_feature_within_sweep_interpolation():
     end = 1
     width = 20
     output = fv.spike_feature_vector(
-        feature, [spike_info], start=start, end=end, width=width
+        feature, [spike_info], [StimulusTiming(start, end, end - start)],
+        width=width, duration=end - start
     )
     assert output[0] == test_feature_values[0]
     assert output[len(output) // 2] > test_feature_values[0]
@@ -747,8 +822,9 @@ def test_spike_feature_between_sweep_interpolation():
     width = 20
     n_bins = int((end - start) / (width * 0.001))
     si_list = [None, available_list[0], None, available_list[1], None]
+    stim_timing_list = [StimulusTiming(start, end, end - start)] * len(si_list)
     output = fv.spike_feature_vector(
-        feature, si_list, start=start, end=end, width=width
+        feature, si_list, stim_timing_list, width=width, duration=end - start
     )
     assert np.all(output[:n_bins] == test_feature_values[0])
     assert np.all(output[n_bins : 2 * n_bins] == test_feature_values[0])
@@ -773,11 +849,14 @@ def test_spike_feature_duration_rounding():
     })
 
     width = 20
+    duration = 1.0
 
     output_a = fv.spike_feature_vector(
-        feature, [spike_info], start=start_a, end=end_a, width=width)
+        feature, [spike_info], [StimulusTiming(start_a, end_a, end_a - start_a)],
+        width=width, duration=duration)
     output_b = fv.spike_feature_vector(
-        feature, [spike_info], start=start_b, end=end_b, width=width)
+        feature, [spike_info], [StimulusTiming(start_b, end_b, end_b - start_b)],
+        width=width, duration=duration)
 
     assert output_a.shape == output_b.shape
 
@@ -981,14 +1060,18 @@ def test_identify_isi_shape_min_spike():
     sampling_rate = 1
     clamp_mode = "CurrentClamp"
     sweep_list = []
-    for a in test_input_amplitudes:
+    for idx, a in enumerate(test_input_amplitudes):
         v = np.random.randn(n_points)
-        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate,
+                           sweep_number=idx, epochs=epochs)
         sweep_list.append(test_sweep)
     test_sweep_set = SweepSet(sweep_list)
+    stim_timing_dict = {
+        swp.sweep_number: StimulusTiming(0, 1, 1) for swp in sweep_list
+    }
 
     selected_sweep, _ = fv.identify_sweep_for_isi_shape(
-        test_sweep_set, test_features, duration=1, min_spike=min_spike
+        test_sweep_set, test_features, stim_timing_dict, min_spike=min_spike
     )
 
     assert np.array_equal(selected_sweep.v, sweep_list[2].v)
@@ -1020,14 +1103,18 @@ def test_identify_isi_shape_largest_below_min_spike():
     sampling_rate = 1
     clamp_mode = "CurrentClamp"
     sweep_list = []
-    for a in test_input_amplitudes:
+    for idx, a in enumerate(test_input_amplitudes):
         v = np.random.randn(n_points)
-        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate,
+                           sweep_number=idx, epochs=epochs)
         sweep_list.append(test_sweep)
     test_sweep_set = SweepSet(sweep_list)
+    stim_timing_dict = {
+        swp.sweep_number: StimulusTiming(0, 1, 1) for swp in sweep_list
+    }
 
     selected_sweep, _ = fv.identify_sweep_for_isi_shape(
-        test_sweep_set, test_features, duration=1, min_spike=min_spike
+        test_sweep_set, test_features, stim_timing_dict, min_spike=min_spike
     )
 
     assert np.array_equal(selected_sweep.v, sweep_list[-1].v)
@@ -1059,14 +1146,18 @@ def test_identify_isi_shape_one_spike():
     sampling_rate = 1
     clamp_mode = "CurrentClamp"
     sweep_list = []
-    for a in test_input_amplitudes:
+    for idx, a in enumerate(test_input_amplitudes):
         v = np.random.randn(n_points)
-        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+        test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate,
+                           sweep_number=idx, epochs=epochs)
         sweep_list.append(test_sweep)
     test_sweep_set = SweepSet(sweep_list)
+    stim_timing_dict = {
+        swp.sweep_number: StimulusTiming(0, 1, 1) for swp in sweep_list
+    }
 
     selected_sweep, _ = fv.identify_sweep_for_isi_shape(
-        test_sweep_set, test_features, duration=1, min_spike=min_spike
+        test_sweep_set, test_features, stim_timing_dict, min_spike=min_spike
     )
 
     assert np.array_equal(selected_sweep.v, sweep_list[1].v)
@@ -1140,7 +1231,8 @@ def test_isi_shape_aligned():
     }
     sampling_rate = 1
     clamp_mode = "CurrentClamp"
-    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, sweep_number=0,
+                       epochs=epochs)
     end = t[-100]
 
     test_threshold_index = np.array([100, 220, 340])
@@ -1155,12 +1247,14 @@ def test_isi_shape_aligned():
             "fast_trough_index": test_fast_trough_index,
             "threshold_v": test_threshold_v,
             "fast_trough_t": test_fast_trough_index,
+            "clipped": np.zeros(len(test_threshold_index), dtype=bool),
         }
     )
 
     n_points = 100
     isi_norm = fv.isi_shape(
-        test_sweep, test_spike_info, end, n_points=n_points
+        test_sweep, test_spike_info, {0: StimulusTiming(0, end, end)},
+        n_points=n_points
     )
     assert len(isi_norm) == n_points
     assert isi_norm[0] == np.mean(
@@ -1182,7 +1276,8 @@ def test_isi_shape_skip_short():
     }
     sampling_rate = 1
     clamp_mode = "CurrentClamp"
-    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, sweep_number=0,
+                       epochs=epochs)
     end = t[-100]
 
     test_subsample = 3
@@ -1198,12 +1293,14 @@ def test_isi_shape_skip_short():
             "fast_trough_index": test_fast_trough_index,
             "threshold_v": test_threshold_v,
             "fast_trough_t": test_fast_trough_index,
+            "clipped": np.zeros(len(test_threshold_index), dtype=bool),
         }
     )
 
     n_points = 100
     isi_norm = fv.isi_shape(
-        test_sweep, test_spike_info, end, n_points=n_points
+        test_sweep, test_spike_info, {0: StimulusTiming(0, end, end)},
+        n_points=n_points
     )
     assert len(isi_norm) == n_points
 
@@ -1232,7 +1329,8 @@ def test_isi_shape_one_spike():
     }
     sampling_rate = 1
     clamp_mode = "CurrentClamp"
-    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, epochs=epochs)
+    test_sweep = Sweep(t, v, i, clamp_mode, sampling_rate, sweep_number=0,
+                       epochs=epochs)
     end = t[-100]
 
     test_threshold_index = [80]
@@ -1244,11 +1342,13 @@ def test_isi_shape_one_spike():
         "fast_trough_index": test_fast_trough_index,
         "threshold_v": test_threshold_v,
         "fast_trough_t": test_fast_trough_index,
+        "clipped": [False],
     })
 
     n_points = 100
     isi_norm = fv.isi_shape(
-        test_sweep, test_spike_info, end, n_points=n_points,
+        test_sweep, test_spike_info, {0: StimulusTiming(0, end, end)},
+        n_points=n_points,
         steady_state_interval=10, single_max_duration=500
     )
     assert len(isi_norm) == n_points

@@ -24,8 +24,8 @@ def get_stim_characteristics(i, t, test_pulse=True):
 
     stim = i[start_idx:end_idx+1]
 
-    peak_high = max(stim)
-    peak_low = min(stim)
+    peak_high = np.max(stim)
+    peak_low = np.min(stim)
 
     if abs(peak_high) > abs(peak_low):
         amplitude = float(peak_high)

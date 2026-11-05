@@ -84,14 +84,30 @@ class SpikeFeatureExtractor(object):
         self.thresh_frac = thresh_frac
         self.reject_at_stim_start_interval = reject_at_stim_start_interval
 
-    def process(self, t, v, i):
+    def process(self, t, v, i, sweep_index=None):
         dvdt = tsu.calculate_dvdt(v, t, self.filter)
 
+        if type(self.start) is list:
+            if sweep_index is not None:
+                start = self.start[sweep_index]
+            else:
+                start = self.start[0]
+        else:
+            start = self.start
+
+        if type(self.end) is list:
+            if sweep_index is not None:
+                end = self.end[sweep_index]
+            else:
+                end = self.end[0]
+        else:
+            end = self.end
+
         # Basic features of spikes
-        putative_spikes = spkd.detect_putative_spikes(v, t, self.start, self.end,
+        putative_spikes = spkd.detect_putative_spikes(v, t, start, end,
                                                     dv_cutoff=self.dv_cutoff,
                                                     dvdt=dvdt)
-        peaks = spkd.find_peak_indexes(v, t, putative_spikes, self.end)
+        peaks = spkd.find_peak_indexes(v, t, putative_spikes, end)
         putative_spikes, peaks = spkd.filter_putative_spikes(v, t, putative_spikes, peaks,
                                                            self.min_height, self.min_peak,
                                                            dvdt=dvdt)
@@ -105,7 +121,7 @@ class SpikeFeatureExtractor(object):
                                                  dvdt=dvdt)
 
         thresholds, peaks, upstrokes, clipped = spkd.check_thresholds_and_peaks(v, t, thresholds, peaks,
-                                                                     upstrokes, self.start, self.end, self.max_interval,
+                                                                     upstrokes, start, end, self.max_interval,
                                                                      dvdt=dvdt,
                                                                      reject_at_stim_start_interval=self.reject_at_stim_start_interval)
         if not thresholds.size:
@@ -114,9 +130,9 @@ class SpikeFeatureExtractor(object):
 
         # Spike list and thresholds have been refined - now find other features
         upstrokes = spkd.find_upstroke_indexes(v, t, thresholds, peaks, self.filter, dvdt)
-        troughs = spkd.find_trough_indexes(v, t, thresholds, peaks, clipped, self.end)
+        troughs = spkd.find_trough_indexes(v, t, thresholds, peaks, clipped, end)
         downstrokes = spkd.find_downstroke_indexes(v, t, peaks, troughs, clipped, dvdt=dvdt)
-        trough_details, clipped = spkf.analyze_trough_details(v, t, thresholds, peaks, clipped, self.end,
+        trough_details, clipped = spkf.analyze_trough_details(v, t, thresholds, peaks, clipped, end,
                                                             dvdt=dvdt)
 
         widths = spkf.find_widths(v, t, thresholds, peaks, trough_details[1], clipped)
@@ -261,34 +277,52 @@ class SpikeTrainFeatureExtractor(object):
         self.sag_baseline_interval = sag_baseline_interval
         self.peak_width = peak_width
 
-    def process(self, t, v, i, spikes_df, extra_features=None, exclude_clipped=False):
-        features = strf.basic_spike_train_features(t, spikes_df, self.start, self.end, exclude_clipped=exclude_clipped)
+    def process(self, t, v, i, spikes_df, extra_features=None, exclude_clipped=False, sweep_index=None):
 
         if self.start is None:
             self.start = 0.0
+
+        if type(self.start) is list:
+            if sweep_index is not None:
+                start = self.start[sweep_index]
+            else:
+                start = self.start[0]
+        else:
+            start = self.start
+
+        if type(self.end) is list:
+            if sweep_index is not None:
+                end = self.end[sweep_index]
+            else:
+                end = self.end[0]
+        else:
+            end = self.end
+
+        features = strf.basic_spike_train_features(t, spikes_df, start, end, exclude_clipped=exclude_clipped)
 
         if extra_features is None:
             extra_features = []
 
         if 'peak_deflect' in extra_features:
-            features['peak_deflect'] = subf.voltage_deflection(t, v, i, self.start, self.end, self.deflect_type)
+            features['peak_deflect'] = subf.voltage_deflection(t, v, i, start, end, self.deflect_type)
 
         if 'stim_amp' in extra_features:
-            features['stim_amp'] = self.stim_amp_fn(t, i, self.start) if self.stim_amp_fn else None
+            features['stim_amp'] = self.stim_amp_fn(t, i, start) if self.stim_amp_fn else None
 
         if 'v_baseline' in extra_features:
-            features['v_baseline'] = subf.baseline_voltage(t, v, self.start, self.baseline_interval, self.filter_frequency)
+            features['v_baseline'] = subf.baseline_voltage(
+                t, v, start, self.baseline_interval, self.filter_frequency)
 
         if 'sag' in extra_features:
-            features['sag'] = subf.sag(t, v, i, self.start, self.end, self.peak_width, self.sag_baseline_interval)
+            features['sag'] = subf.sag(t, v, i, start, end, self.peak_width, self.sag_baseline_interval)
 
         if features["avg_rate"] > 0:
             if 'pause' in extra_features:
-                features['pause'] = strf.pause(t, spikes_df, self.start, self.end, self.pause_cost_weight)
+                features['pause'] = strf.pause(t, spikes_df, start, end, self.pause_cost_weight)
             if 'burst' in extra_features:
                 features['burst'] = strf.burst(t, spikes_df, self.burst_tol, self.pause_cost)
             if 'delay' in extra_features:
-                features['delay'] = strf.delay(t, v, spikes_df, self.start, self.end)
+                features['delay'] = strf.delay(t, v, spikes_df, start, end)
 
         return features
 
