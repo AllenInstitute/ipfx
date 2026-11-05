@@ -41,7 +41,12 @@ import ipfx
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc',
+apidoc_modules = [
+    {'path': '../ipfx', 'destination': 'ipfx', 'separate_modules': True},
+]
+
+extensions = ['sphinx.ext.apidoc',
+              'sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.mathjax',
               'sphinx_gallery.gen_gallery',
@@ -290,14 +295,3 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
-
-def setup(app):
-    app.connect('builder-inited', run_apidoc)
-
-def run_apidoc(_):
-    from sphinx.apidoc import main
-    import sys
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-    cur_dir = os.path.abspath(os.path.dirname(__file__))
-    module = os.path.join(cur_dir,"..","ipfx")
-    main(['-e', '-o', cur_dir, module, '--force'])
