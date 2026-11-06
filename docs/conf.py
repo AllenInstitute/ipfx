@@ -32,23 +32,6 @@ project_root = os.path.dirname(cwd)
 # version is used.
 sys.path.insert(0, project_root)
 
-# readthedocs does not install git-lfs, so we need to do so in order to access 
-# the example data
-# This workaround (courtesy of readthedocs developer @humitos) simply downloads
-# and invokes git-lfs
-is_rtd = os.environ.get("READTHEDOCS", "False") == "True"
-if is_rtd and sp.call(["git-lfs"], shell=True):
-    if not os.path.exists("git-lfs"):
-        sp.check_call(["wget", "https://github.com/git-lfs/git-lfs/releases/download/v2.7.1/git-lfs-linux-amd64-v2.7.1.tar.gz"])
-        sp.check_call(["tar", "xvzf", "git-lfs-linux-amd64-v2.7.1.tar.gz", "git-lfs"])
-
-    env = os.environ.copy()
-    env["PATH"] = f".:{env['PATH']}"
-
-    sp.check_call(["./git-lfs", "install"], env=env)
-    sp.check_call(["./git-lfs", "fetch"], env=env)
-    sp.check_call(["./git-lfs", "checkout"], env=env)
-
 import ipfx
 
 # -- General configuration ---------------------------------------------
@@ -58,11 +41,16 @@ import ipfx
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc',
+apidoc_modules = [
+    {'path': '../ipfx', 'destination': 'ipfx', 'separate_modules': True},
+]
+
+extensions = ['sphinx.ext.apidoc',
+              'sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.mathjax',
               'sphinx_gallery.gen_gallery',
-              'm2r',
+              'sphinx_mdinclude',
               'numpydoc']
 
 sphinx_gallery_conf = {
@@ -78,7 +66,7 @@ sphinx_gallery_conf = {
 templates_path = ['aibs_sphinx/templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext'}
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
@@ -307,14 +295,3 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
-
-def setup(app):
-    app.connect('builder-inited', run_apidoc)
-
-def run_apidoc(_):
-    from sphinx.apidoc import main
-    import sys
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-    cur_dir = os.path.abspath(os.path.dirname(__file__))
-    module = os.path.join(cur_dir,"..","ipfx")
-    main(['-e', '-o', cur_dir, module, '--force'])
