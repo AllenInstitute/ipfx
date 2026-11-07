@@ -205,6 +205,37 @@ class EphysDataSet(object):
         """
         return self.get_sweep_numbers(stimuli, clamp_mode)[-1]
 
+    def get_nwb_epochs(self, sweep_number: int) -> List[Dict]:
+        """Return the MIES-authored nwbEpoch records for a sweep -- see
+        MIESNWBData.get_nwb_epochs for what these are and how they differ
+        from the legacy (algorithmically-detected) epochs.
+
+        Parameters
+        ----------
+        sweep_number : identifier for the sweep whose nwbEpochs will be
+            returned
+
+        Returns
+        -------
+        A list of nwbEpoch records (see MIESNWBData.get_nwb_epochs)
+
+        Raises
+        ------
+        AttributeError
+            If the underlying data source doesn't support nwbEpochs (e.g. an
+            HBG-generated NWB file). This is intentionally not silently
+            empty -- "not supported at all" and "supported, but empty for
+            this sweep" are different things a caller should be able to
+            tell apart.
+        """
+        get_nwb_epochs = getattr(self._data, "get_nwb_epochs", None)
+        if get_nwb_epochs is None:
+            raise AttributeError(
+                f"{type(self._data).__name__} does not support nwbEpochs "
+                "(only MIES-generated NWB files do)."
+            )
+        return get_nwb_epochs(sweep_number)
+
     def sweep(self, sweep_number: int) -> Sweep:
         """
         Create an instance of the Sweep class with the data loaded from the
@@ -233,6 +264,13 @@ class EphysDataSet(object):
             enforce_equal_length=True,
         )
 
+        # nwbEpochs are only available from MIES-generated NWB files (see
+        # get_nwb_epochs above) -- silently omit them here (rather than
+        # raising) for any other data source, since building a Sweep should
+        # not fail just because this particular enrichment isn't available.
+        get_nwb_epochs = getattr(self._data, "get_nwb_epochs", None)
+        nwb_epochs = get_nwb_epochs(sweep_number) if get_nwb_epochs else None
+
         try:
             sweep = Sweep(
                 t=time,
@@ -242,6 +280,7 @@ class EphysDataSet(object):
                 sweep_number=sweep_number,
                 clamp_mode=sweep_metadata["clamp_mode"],
                 epochs=sweep_data.get("epochs", None),
+                nwb_epochs=nwb_epochs,
             )
 
         except Exception:

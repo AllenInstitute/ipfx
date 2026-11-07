@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 
 ### Added
+- Support for epochs from NWB files creates with MIES
 
 ### Changed
 
