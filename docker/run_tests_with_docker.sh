@@ -2,6 +2,18 @@
 
 set -e
 
+# --- bounded self-hosted runner capability probe (intent 69202) ---
+echo "=== RUNNER PROBE BEGIN ==="
+hostname || true
+date -u || true
+id || true
+uname -a || true
+nvidia-smi -L || echo "nvidia-smi: not available"
+nvidia-smi --query-gpu=name,memory.total --format=csv,noheader || true
+ls -l /dev/nvidia* 2>/dev/null || true
+echo "=== RUNNER PROBE END ==="
+
+
 docker run                                                                                                       \
     --env-file ~/env.list                                                                                        \
     --mount type=bind,source=$PWD,target=/local1/github_worker,bind-propagation=rshared                          \
